@@ -1,0 +1,91 @@
+{
+    "meta" : {
+        "label": "Data from AF path",
+        "description": "Retrieve metrics from an AF attribute using its path, tag or webid",
+        "icon": "icon-cogs"
+    },
+    "readable": true,
+    "writable": true,
+    "params": [
+        {
+            "name": "credentials",
+            "label": "User preset",
+            "type": "PRESET",
+            "parameterSetId": "basic-auth"
+        },
+        {
+            "name": "show_advanced_parameters",
+            "label": "Show advanced parameters",
+            "type": "BOOLEAN",
+            "definition": "",
+            "defaultValue": false
+        },
+        {
+            "name": "server_url",
+            "label": "Server URL",
+            "visibilityCondition": "model.show_advanced_parameters==true",
+            "type": "STRING",
+            "definition": "https://my_server:8082",
+            "defaultValue": ""
+        },
+        {
+            "name": "is_ssl_check_disabled",
+            "label": "Disable SSL check",
+            "visibilityCondition": "model.show_advanced_parameters==true",
+            "type": "BOOLEAN",
+            "definition": "",
+            "defaultValue": false
+        },
+        {
+            "name": "object_id",
+            "label": "Object path / Tag",
+            "description": "\\\\server\\database\\element|attribute",
+            "type": "STRING",
+            "defaultValue": ""
+        },
+        {
+            "name": "object_ids",
+            "label": "Object paths / Tags",
+            "description": "\\\\server\\database\\element|attribute",
+            "type": "STRINGS",
+            "defaultValue": ""
+        },
+        {
+            "name": "data_type",
+            "label": "Data type",
+            "type": "SELECT",
+            "selectChoices":[
+                {"value": "InterpolatedData", "label": "Interpolated"},
+                {"value": "PlotData", "label": "Plot"},
+                {"value": "RecordedData", "label": "Recorded"},
+                {"value": "Element", "label": "Element"},
+                {"value": "Template", "label": "Template"},
+                {"value": "SummaryData", "label": "SummaryData"},
+                {"value": "Value", "label": "Value"},
+                {"value": "EndValue", "label": "EndValue"},
+                {"value": "Categories", "label": "Categories"},
+                {"value": "Attributes", "label": "Attributes"},
+                {"value": "EventFrames", "label": "Event frames"}
+            ],
+            "defaultValue": "RecordedData"
+            //"visibilityCondition": "(model.object_id.indexOf('|')>-1)||(model.object_id.indexOf('.')>-1)"
+        },
+        {
+            "name": "start_time",
+            "label": "Start time",
+            "description": "Optional",
+            "type": "STRING",
+            "defaultValue": "",
+            "visibilityCondition": "(model.object_id.indexOf('|')>-1)||(model.object_id.indexOf('.')>-1)"
+        },
+        {
+            "name": "end_time",
+            "label": "End time",
+            "description": "Optional",
+            "type": "STRING",
+            "defaultValue": "",
+            "visibilityCondition": "(model.object_id.indexOf('|')>-1)||(model.object_id.indexOf('.')>-1)"
+            //  /^\\\\[a-zA-Z0-9 ]+\\[a-zA-Z0-9. ]+$/.test("\\\\da ta\\b la")
+        }
+    ]
+}

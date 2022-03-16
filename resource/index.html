@@ -1,0 +1,152 @@
+<div ng-controller="BWDatasetController" >
+
+    <form class="dku-form-horizontal">   
+        
+       <div class="control-group">
+           <label class="control-label">BW Service Account {{config.credentials}}</label>
+           <div class="controls">
+               <select dku-bs-select
+                       ng-model="config.service_account"
+                       ng-options="service_account.name for service_account in config.service_accounts_list"
+                       ng-change="clearAll()">
+               </select>
+           </div>    
+       </div>
+        
+       <div class="control-group">
+           <label class="control-label">User</label>
+           <div class="controls">
+               <input type="text"
+                  ng-model="config.user">
+               </input>
+           </div>    
+       </div>
+        
+       <div class="control-group">
+           <label class="control-label">Password</label>
+           <div class="controls">
+               <input type="password"
+                  ng-model="config.password">
+               </input>
+               <button ng-click="getQueryCatalogs()" class="btn btn--primary link-like">Get Catalogs</button>
+           </div>    
+       </div>
+    
+       <div class="control-group">
+           <legend class="settings-section-title ng-binding added-if-manual-query" id="manual-query-sep">Manual Query Text Editor</legend>
+       </div>
+    
+       <div class="control-group removed-if-manual-query">
+           <legend class="settings-section-title ng-binding removed-if-manual-query">Query Catalog</legend>
+       </div>
+        
+       <div class="control-group removed-if-manual-query">
+           <label class="control-label removed-if-manual-query">Catalog</label>
+           <div class="controls">
+               <select dku-bs-select
+                       ng-model="config.catalog"
+                       ng-options="catalog['name'] for catalog in config['query_catalogs_list']">
+               </select>
+               <button ng-click="getQueryCubes()" class="btn btn--primary link-like removed-if-manual-query">Get Cubes</button>
+           </div>    
+       </div>
+    
+       <div class="control-group removed-if-manual-query">
+           <legend class="settings-section-title ng-binding removed-if-manual-query">Query Cube</legend>
+       </div>
+    
+       <div class="control-group removed-if-manual-query">
+           <label class="control-label">Cube</label>
+           <div class="controls">
+               <select dku-bs-select
+                       ng-model="config.cube"
+                       ng-options="cube.name for cube in config.query_cubes_list"> 
+               </select>
+               <button ng-click="getQueryDimensions()" class="btn btn--primary link-like" id="get-query-dimensions">Get Dimensions, Variables, Measures</button>
+           </div>    
+       </div>
+    
+       <div class="control-group removed-if-manual-query">
+           <legend class="settings-section-title ng-binding removed-if-manual-query">Query Dimensions</legend>
+       </div>
+    
+       <div class="control-group removed-if-manual-query">
+           <label class="control-label">Dimensions</label>
+           <div class="controls">
+               <select dku-bs-select multiple
+                       ng-model="config.dimensions"
+                       ng-options="dimension.name for dimension in config.query_dimensions_list">
+               </select>
+               <button ng-click="getQueryDimensionProperties()" class="btn btn--primary link-like" id="get-query-dim-prop">Get Dimensions Properties</button>
+           </div>    
+       </div>
+    
+       <div class="control-group removed-if-manual-query" id="dim-prop-div">
+           <legend class="settings-section-title ng-binding removed-if-manual-query">Query Dimensions Properties</legend>
+       </div>
+    
+       <div class="control-group removed-if-manual-query" id="variables-section">
+           <legend class="settings-section-title ng-binding removed-if-manual-query">Query Variables</legend>
+           <span style="font-weight: bold;">For date variables, from:to must be YYYY-MM-DD:YYYY-MM-DD</span>
+       </div>
+    
+       <div class="control-group removed-if-manual-query" id="variables-section">
+           <legend class="settings-section-title ng-binding removed-if-manual-query">Query Measures</legend>
+       </div>
+    
+       <div class="control-group removed-if-manual-query">
+           <label class="control-label">Measures</label>
+           <div class="controls">
+               <select dku-bs-select multiple
+                       ng-model="config.measures"
+                       ng-options="measure.name for measure in config.query_measures_list"> 
+               </select>
+           </div>    
+       </div>
+    
+        <div class="control-group removed-if-manual-query" id="generated-query-separator">
+           <legend class="settings-section-title ng-binding">Generated Query</legend>
+       </div>
+    
+       <button ng-click="generateQuery()" class="btn btn--primary link-like removed-if-manual-query" id="generated-query">Generate Query</button>
+       <div id="generated-query-target" class=" removed-if-manual-query"></div> 
+    
+       <button ng-click="removeAll()" class="btn btn--primary link-like removed-if-manual-query" id="replace-query">Manually modify the query</button>
+    
+        <textarea readonly id="query-textbox"
+             class="removed-if-manual-query"
+             style="background-color: white;
+                    color: grey;
+                    height:50px">
+            Click the button to display the generated query
+        </textarea> 
+    
+       <textarea rows="5" 
+                 ng-model="config.query_txt"
+                 id="query-txt-manual">
+        </textarea>
+    
+       <button ng-click="returnToAutoQuery()" 
+               class="btn btn--primary link-like added-if-manual-query" 
+               id="return-to-auto-query">
+           Return to auto query generation mode
+        </button>
+    
+       <div id="display-query-target"></div>
+        
+       <div class="control-group">
+           <legend class="settings-section-title ng-binding"></legend>
+       </div>
+    
+    </form>
+    </div>
+    
+    
+    <style>
+      .required:after {
+        content:" *";
+        color: red;
+      }
+    </style>
+    
+    
