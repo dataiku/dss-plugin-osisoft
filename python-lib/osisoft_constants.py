@@ -69,6 +69,33 @@ class OSIsoftConstants(object):
         {"name": "Id", "type": "string"},
         {"name": "WebId", "type": "string"}
     ]
+    SCHEMA_ATTRIBUTES__METRICS_RESPONSE = [
+        {"name": "Name", "type": "string"},
+        {"name": "Description", "type": "string"},
+        {"name": "Path", "type": "string"},
+        {"name": "Timestamp", "type": "date"},
+        {"name": "Value", "type": "string"},
+        {"name": "UnitsAbbreviation", "type": "string"},
+        {"name": "Type", "type": "string"},
+        {"name": "TypeQualifier", "type": "string"},
+        {"name": "DefaultUnitsName", "type": "string"},
+        {"name": "DefaultUnitsNameAbbreviation", "type": "string"},
+        {"name": "DisplayDigits", "type": "int"},
+        {"name": "DataReferencePlugIn", "type": "string"},
+        {"name": "ConfigString", "type": "string"},
+        {"name": "IsConfigurationItem", "type": "boolean"},
+        {"name": "IsExcluded", "type": "boolean"},
+        {"name": "IsHidden", "type": "boolean"},
+        {"name": "IsManualDataEntry", "type": "boolean"},
+        {"name": "HasChildren", "type": "boolean"},
+        {"name": "CategoryNames", "type": "string"},
+        {"name": "Step", "type": "boolean"},
+        {"name": "TraitName", "type": "string"},
+        {"name": "Span", "type": "float"},
+        {"name": "Zero", "type": "float"},
+        {"name": "Id", "type": "string"},
+        {"name": "WebId", "type": "string"}
+    ]
     WRITE_HEADERS = {'X-Requested-With': 'XmlHttpRequest'}
     CHAR_TO_ESCAPE = {
         " ", "%20",

@@ -4,6 +4,7 @@ from dataiku.connector import Connector
 from osisoft_client import OSIsoftClient, OSIsoftWriter
 from safe_logger import SafeLogger
 from osisoft_plugin_common import OSIsoftConnectorError, RecordsLimit, get_credentials, assert_time_format
+from osisoft_constants import OSIsoftConstants
 
 logger = SafeLogger("OSIsoft plugin", ["user", "password"])
 
@@ -60,7 +61,11 @@ class OSIsoftConnector(Connector):  # Browse
         return "\\".join(path_elements)
 
     def get_read_schema(self):
-        return None
+        return {
+            "columns": OSIsoftConstants.SCHEMA_ATTRIBUTES__METRICS_RESPONSE
+        } if self.must_download_data else {
+            "columns": OSIsoftConstants.SCHEMA_ATTRIBUTES_RESPONSE
+        }
 
     def generate_rows(self, dataset_schema=None, dataset_partitioning=None,
                       partition_id=None, records_limit=-1):
