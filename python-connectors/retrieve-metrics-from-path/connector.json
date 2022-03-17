@@ -44,13 +44,6 @@
             "defaultValue": ""
         },
         {
-            "name": "object_ids",
-            "label": "Object paths / Tags",
-            "description": "\\\\server\\database\\element|attribute",
-            "type": "STRINGS",
-            "defaultValue": ""
-        },
-        {
             "name": "data_type",
             "label": "Data type",
             "type": "SELECT",
@@ -68,7 +61,6 @@
                 {"value": "EventFrames", "label": "Event frames"}
             ],
             "defaultValue": "RecordedData"
-            //"visibilityCondition": "(model.object_id.indexOf('|')>-1)||(model.object_id.indexOf('.')>-1)"
         },
         {
             "name": "start_time",
@@ -85,7 +77,27 @@
             "type": "STRING",
             "defaultValue": "",
             "visibilityCondition": "(model.object_id.indexOf('|')>-1)||(model.object_id.indexOf('.')>-1)"
-            //  /^\\\\[a-zA-Z0-9 ]+\\[a-zA-Z0-9. ]+$/.test("\\\\da ta\\b la")
+        },
+        {
+            "type": "SEPARATOR",
+            "description": "Interpolation",
+            "visibilityCondition": "(model.data_type.toLowerCase().endsWith('interpolateddata'))"
+        },
+        {
+            "name": "interval",
+            "label": "Interval",
+            "visibilityCondition": "(model.data_type.toLowerCase().endsWith('interpolateddata'))",
+            "description": "Optional",
+            "type": "STRING",
+            "defaultValue": ""
+        },
+        {
+            "name": "sync_time",
+            "label": "Sync time",
+            "visibilityCondition": "(model.data_type.toLowerCase().endsWith('interpolateddata'))",
+            "description": "Optional",
+            "type": "STRING",
+            "defaultValue": ""
         }
     ]
 }

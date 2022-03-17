@@ -22,6 +22,8 @@ class OSIsoftConnector(Connector):  # Search
         self.data_type = config.get("data_type", "RecordedData")
         self.start_time = config.get("start_time")
         self.end_time = config.get("end_time")
+        self.interval = config.get("interval")
+        self.sync_time = config.get("sync_time")
         assert_time_format(self.start_time, error_source="start time")
         assert_time_format(self.end_time, error_source="start time")
         self.item = None
@@ -39,12 +41,27 @@ class OSIsoftConnector(Connector):  # Search
         limit = RecordsLimit(records_limit)
 
         if self.item:
-            for row in self.client.get_row_from_item(self.item, self.data_type, start_date=self.start_time, end_date=self.end_time):
+            for row in self.client.get_row_from_item(
+                self.item,
+                self.data_type,
+                start_date=self.start_time,
+                end_date=self.end_time,
+                interval=self.interval,
+                sync_time=self.sync_time
+            ):
                 if limit.is_reached():
                     break
                 yield row
         else:
-            for row in self.client.get_row_from_webid(self.object_id, self.data_type, start_date=self.start_time, end_date=self.end_time):
+            for row in self.client.get_row_from_webid(
+                self.object_id,
+                self.data_type,
+                start_date=self.start_time,
+                end_date=self.end_time,
+                interval=self.interval,
+                sync_time=self.sync_time,
+                endpoint_type="AF"
+            ):
                 if limit.is_reached():
                     break
                 yield row
