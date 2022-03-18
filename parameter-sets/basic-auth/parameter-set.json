@@ -42,6 +42,14 @@
             "defaultValue": false
         },
         {
+            "name": "trusted_ssl_certificate",
+            "label": "Trusted SSL certificate",
+            "type": "STRING",
+            "definition": "Placeholder for future use",
+            "visibilityCondition": false,
+            "defaultValue": false
+        },
+        {
             "name": "osisoft_basic",
             "type": "CREDENTIAL_REQUEST",
             "label": "OSIsoft basic login",
