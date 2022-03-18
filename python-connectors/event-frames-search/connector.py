@@ -40,7 +40,11 @@ class OSIsoftConnector(Connector):
         self.config = config
 
     def get_read_schema(self):
-        return None
+        return {
+            "columns": OSIsoftConstants.SCHEMA_EVENT_FRAMES_METRICS_RESPONSE
+        } if self.must_download_data else {
+            "columns": OSIsoftConstants.SCHEMA_EVENT_FRAMES_RESPONSE
+        }
 
     def generate_rows(self, dataset_schema=None, dataset_partitioning=None,
                       partition_id=None, records_limit=-1):
@@ -75,15 +79,18 @@ class OSIsoftConnector(Connector):
                             for item in items:
                                 rett = copy.deepcopy(ret)
                                 rett.update(item)
+                                rett.pop("Links", None)
                                 yield rett
                                 limit.add_record()
                         else:
+                            ret.pop("Links", None)
                             yield ret
                             limit.add_record()
                 else:
                     ret = copy.deepcopy(event_frame)
                     ret.pop(OSIsoftConstants.API_ITEM_KEY, None)
                     ret.pop("Security", None)
+                    ret.pop("Links", None)
                     yield ret
                     limit.add_record()
                 if limit.is_reached():

@@ -69,7 +69,7 @@ class OSIsoftConstants(object):
         {"name": "Id", "type": "string"},
         {"name": "WebId", "type": "string"}
     ]
-    SCHEMA_ATTRIBUTES__METRICS_RESPONSE = [
+    SCHEMA_ATTRIBUTES_METRICS_RESPONSE = [
         {"name": "Name", "type": "string"},
         {"name": "Description", "type": "string"},
         {"name": "Path", "type": "string"},
@@ -95,6 +95,59 @@ class OSIsoftConstants(object):
         {"name": "Zero", "type": "float"},
         {"name": "Id", "type": "string"},
         {"name": "WebId", "type": "string"}
+    ]
+    SCHEMA_EVENT_FRAMES_RESPONSE = [
+        {"name": "Name", "type": "string"},
+        {"name": "Description", "type": "string"},
+        {"name": "Path", "type": "string"},
+        {"name": "TemplateName", "type": "string"},
+        {"name": "HasChildren", "type": "string"},
+        {"name": "CategoryNames", "type": "string"},
+        {"name": "ExtendedProperties", "type": "string"},
+        {"name": "StartTime", "type": "string"},
+        {"name": "EndTime", "type": "string"},
+        {"name": "Severity", "type": "string"},
+        {"name": "AcknowledgedBy", "type": "string"},
+        {"name": "AcknowledgedDate", "type": "string"},
+        {"name": "CanBeAcknowledged", "type": "string"},
+        {"name": "IsAcknowledged", "type": "string"},
+        {"name": "IsAnnotated", "type": "string"},
+        {"name": "IsLocked", "type": "string"},
+        {"name": "AreValuesCaptured", "type": "string"},
+        {"name": "RefElementWebIds", "type": "string"},
+        {"name": "WebId", "type": "string"},
+        {"name": "Id", "type": "string"},
+        {"name": "Errors", "type": "string"}
+    ]
+    SCHEMA_EVENT_FRAMES_METRICS_RESPONSE = [
+        {"name": "Name", "type": "string"},
+        {"name": "Description", "type": "string"},
+        {"name": "Timestamp", "type": "string"},
+        {"name": "Value", "type": "string"},
+        {"name": "UnitsAbbreviation", "type": "string"},
+        {"name": "Path", "type": "string"},
+        {"name": "TemplateName", "type": "string"},
+        {"name": "HasChildren", "type": "string"},
+        {"name": "CategoryNames", "type": "string"},
+        {"name": "ExtendedProperties", "type": "string"},
+        {"name": "StartTime", "type": "string"},
+        {"name": "EndTime", "type": "string"},
+        {"name": "Severity", "type": "string"},
+        {"name": "AcknowledgedBy", "type": "string"},
+        {"name": "AcknowledgedDate", "type": "string"},
+        {"name": "CanBeAcknowledged", "type": "string"},
+        {"name": "IsAcknowledged", "type": "string"},
+        {"name": "IsAnnotated", "type": "string"},
+        {"name": "IsLocked", "type": "string"},
+        {"name": "AreValuesCaptured", "type": "string"},
+        {"name": "RefElementWebIds", "type": "string"},
+        {"name": "Good", "type": "string"},
+        {"name": "Questionable", "type": "string"},
+        {"name": "Substituted", "type": "string"},
+        {"name": "Annotated", "type": "string"},
+        {"name": "WebId", "type": "string"},
+        {"name": "Id", "type": "string"},
+        {"name": "Errors", "type": "string"}
     ]
     WRITE_HEADERS = {'X-Requested-With': 'XmlHttpRequest'}
     CHAR_TO_ESCAPE = {

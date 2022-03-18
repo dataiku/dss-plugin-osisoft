@@ -62,7 +62,7 @@ class OSIsoftConnector(Connector):  # Browse
 
     def get_read_schema(self):
         return {
-            "columns": OSIsoftConstants.SCHEMA_ATTRIBUTES__METRICS_RESPONSE
+            "columns": OSIsoftConstants.SCHEMA_ATTRIBUTES_METRICS_RESPONSE
         } if self.must_download_data else {
             "columns": OSIsoftConstants.SCHEMA_ATTRIBUTES_RESPONSE
         }
