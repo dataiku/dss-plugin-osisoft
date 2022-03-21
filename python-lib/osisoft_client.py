@@ -84,7 +84,7 @@ class OSIsoftClient(object):
                 self.generic_get,
                 url, start_date=start_date, end_date=end_date, interval=interval, sync_time=sync_time, boundary_type=boundary_type, can_raise=can_raise
             )
-            if "error" in json_response:
+            if OSIsoftConstants.DKU_ERROR_KEY in json_response:
                 yield json_response
             items = json_response.get(OSIsoftConstants.API_ITEM_KEY, [])
             for item in items:
@@ -115,7 +115,7 @@ class OSIsoftClient(object):
                 boundary_type=boundary_type,
                 can_raise=can_raise
             )
-            if "error" in json_response:
+            if OSIsoftConstants.DKU_ERROR_KEY in json_response:
                 yield json_response
             items = json_response.get(OSIsoftConstants.API_ITEM_KEY, [json_response])
             for item in items:
@@ -127,7 +127,7 @@ class OSIsoftClient(object):
             error_message = "This object does not have {} data type".format(data_type)
             if can_raise:
                 raise OSIsoftClientError(error_message)
-            return {"error": error_message}
+            return {OSIsoftConstants.DKU_ERROR_KEY: error_message}
         headers = self.get_requests_headers()
         params = build_requests_params(start_time=start_date, end_time=end_date, interval=interval, sync_time=sync_time, sync_time_boundary_type=boundary_type)
         json_response = self.get(
@@ -293,7 +293,7 @@ class OSIsoftClient(object):
             can_raise=False,
             error_source="get_web_id"
         )
-        if "Errors" in json_response:
+        if OSIsoftConstants.DKU_ERROR_KEY in json_response:
             logging.warning("Path {} not found by resource path search, trying by traversing")
             json_response = self.traverse_path(resource_path)
         return json_response.get("WebId")
@@ -309,7 +309,7 @@ class OSIsoftClient(object):
             can_raise=False,
             error_source="get_item_from_path"
         )
-        if "Errors" in json_response:
+        if OSIsoftConstants.DKU_ERROR_KEY in json_response:
             json_response = self.traverse_path(item_path)
         return json_response
 
@@ -341,7 +341,7 @@ class OSIsoftClient(object):
             raise OSIsoftClientError(error_message)
         error_message = self.assert_valid_response(response, can_raise=can_raise, error_source=error_source)
         if error_message:
-            return {"error": error_message}
+            return {OSIsoftConstants.DKU_ERROR_KEY: error_message}
         json_response = response.json()
         return json_response
 
@@ -527,7 +527,7 @@ class OSIsoftClient(object):
             "databaseWebId": database_webid
         }
         json_response = self.get(url=search_attributes_base_url, headers=headers, params=params)
-        if "error" in json_response:
+        if OSIsoftConstants.DKU_ERROR_KEY in json_response:
             yield json_response
         items = json_response.get(OSIsoftConstants.API_ITEM_KEY, [])
         for item in items:

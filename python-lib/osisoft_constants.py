@@ -3,6 +3,7 @@ class OSIsoftConstants(object):
     API_VALUE_KEY = "Value"
     API_TIMESTAMP_KEY = "Timestamp"
     ATTRIBUTES_PATH = "attributes"
+    DKU_ERROR_KEY = "error"
     LINKS = "Links"
     POSSIBLE_WEB_ID_STARTS = ["F1", "I1", "P1", "L1", "D1"]
     RECORD_PATH = "recorded"

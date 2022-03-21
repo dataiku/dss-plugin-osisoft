@@ -51,7 +51,7 @@
                 {"value": "InterpolatedData", "label": "Interpolated"},
                 {"value": "PlotData", "label": "Plot"},
                 {"value": "RecordedData", "label": "Recorded"},
-                {"value": "Element", "label": "Element"},
+                {"value": "Elements", "label": "Elements"},
                 {"value": "Template", "label": "Template"},
                 {"value": "SummaryData", "label": "SummaryData"},
                 {"value": "Value", "label": "Value"},
