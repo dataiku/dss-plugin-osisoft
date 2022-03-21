@@ -5,6 +5,7 @@ import pandas as pd
 from safe_logger import SafeLogger
 from osisoft_plugin_common import get_credentials, get_interpolated_parameters
 from osisoft_client import OSIsoftClient
+from osisoft_constants import OSIsoftConstants
 
 
 logger = SafeLogger("osisoft plugin", forbiden_keys=["token", "password"])
@@ -81,7 +82,7 @@ for index, input_parameters_row in input_parameters_dataframe.iterrows():
             endpoint_type="AF"
         )
     for row in rows:
-        base = {"object_id": object_id, "error": ""}
+        base = {"object_id": object_id, OSIsoftConstants.DKU_ERROR_KEY: ""}
         base.update(row)
         extention = client.unnest_row(base)
         results.extend(extention)
