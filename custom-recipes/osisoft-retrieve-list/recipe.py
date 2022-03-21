@@ -3,7 +3,7 @@ import dataiku
 from dataiku.customrecipe import get_input_names_for_role, get_recipe_config, get_output_names_for_role
 import pandas as pd
 from safe_logger import SafeLogger
-from osisoft_plugin_common import get_credentials, get_interpolated_parameters
+from osisoft_plugin_common import get_credentials, get_interpolated_parameters, normalize_af_path
 from osisoft_client import OSIsoftClient
 from osisoft_constants import OSIsoftConstants
 
@@ -57,6 +57,7 @@ for index, input_parameters_row in input_parameters_dataframe.iterrows():
     object_id = input_parameters_row.get(path_column)
     item = None
     if client.is_resource_path(object_id):
+        object_id = normalize_af_path(object_id)
         item = client.get_item_from_path(object_id)
     if item:
         rows = client.get_row_from_item(
