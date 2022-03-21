@@ -150,6 +150,10 @@ def get_schema_as_arrays(dataset_schema):
     return column_names, column_types
 
 
+def normalize_af_path(af_path):
+    return "\\\\" + af_path.strip("\\")
+
+
 class RecordsLimit():
     def __init__(self, records_limit=-1):
         self.has_no_limit = (records_limit == -1)

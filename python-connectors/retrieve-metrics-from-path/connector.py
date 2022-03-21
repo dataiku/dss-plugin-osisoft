@@ -1,7 +1,7 @@
 from dataiku.connector import Connector
 from osisoft_client import OSIsoftClient, OSIsoftWriter
 from safe_logger import SafeLogger
-from osisoft_plugin_common import OSIsoftConnectorError, RecordsLimit, get_credentials, assert_time_format, get_schema_as_arrays
+from osisoft_plugin_common import OSIsoftConnectorError, RecordsLimit, get_credentials, assert_time_format, get_schema_as_arrays, normalize_af_path
 
 
 logger = SafeLogger("OSIsoft plugin", ["user", "password"])
@@ -28,6 +28,7 @@ class OSIsoftConnector(Connector):  # Search
         assert_time_format(self.end_time, error_source="start time")
         self.item = None
         if self.client.is_resource_path(self.object_id):
+            self.object_id = normalize_af_path(self.object_id)
             self.item = self.client.get_item_from_path(self.object_id)
 
     def get_read_schema(self):
