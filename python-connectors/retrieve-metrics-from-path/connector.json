@@ -68,7 +68,7 @@
             "description": "Optional",
             "type": "STRING",
             "defaultValue": "",
-            "visibilityCondition": "(model.object_id.indexOf('|')>-1)||(model.object_id.indexOf('.')>-1)"
+            "visibilityCondition": "(['InterpolatedData', 'RecordedData', 'PlotData', 'EventFrames'].includes(model.data_type))"
         },
         {
             "name": "end_time",
@@ -76,7 +76,7 @@
             "description": "Optional",
             "type": "STRING",
             "defaultValue": "",
-            "visibilityCondition": "(model.object_id.indexOf('|')>-1)||(model.object_id.indexOf('.')>-1)"
+            "visibilityCondition": "(['InterpolatedData', 'RecordedData', 'PlotData', 'EventFrames'].includes(model.data_type))"
         },
         {
             "type": "SEPARATOR",
