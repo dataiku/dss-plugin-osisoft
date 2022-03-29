@@ -12,6 +12,7 @@ logger = SafeLogger("osisoft plugin", forbiden_keys=["token", "password"])
 
 
 input_dataset = get_input_names_for_role('input_dataset')
+output_names_stats = get_output_names_for_role('api_output')
 config = get_recipe_config()
 dku_flow_variables = dataiku.get_flow_variables()
 
@@ -40,57 +41,60 @@ interval, sync_time, boundary_type = get_interpolated_parameters(config)
 
 
 input_parameters_dataset = dataiku.Dataset(input_dataset[0])
+output_dataset = dataiku.Dataset(output_names_stats[0])
 input_parameters_dataframe = input_parameters_dataset.get_dataframe()
 
 results = []
 time_last_request = None
 client = None
 previous_server_url = ""
-for index, input_parameters_row in input_parameters_dataframe.iterrows():
-    server_url = input_parameters_row.get(server_url_column, server_url) if use_server_url_column else server_url
-    start_time = input_parameters_row.get(start_time_column, start_time) if use_start_time_column else start_time
-    end_time = input_parameters_row.get(end_time_column, end_time) if use_end_time_column else end_time
+with output_dataset.get_writer() as writer:
+    first_dataframe = True
+    for index, input_parameters_row in input_parameters_dataframe.iterrows():
+        server_url = input_parameters_row.get(server_url_column, server_url) if use_server_url_column else server_url
+        start_time = input_parameters_row.get(start_time_column, start_time) if use_start_time_column else start_time
+        end_time = input_parameters_row.get(end_time_column, end_time) if use_end_time_column else end_time
 
-    if client is None or previous_server_url != server_url:
-        client = OSIsoftClient(server_url, auth_type, username, password, is_ssl_check_disabled=is_ssl_check_disabled)
-        previous_server_url = server_url
-    object_id = input_parameters_row.get(path_column)
-    item = None
-    if client.is_resource_path(object_id):
-        object_id = normalize_af_path(object_id)
-        item = client.get_item_from_path(object_id)
-    if item:
-        rows = client.get_row_from_item(
-            item,
-            data_type,
-            start_date=start_time,
-            end_date=end_time,
-            interval=interval,
-            sync_time=sync_time,
-            boundary_type=boundary_type,
-            can_raise=False
-        )
-    else:
-        rows = client.get_row_from_webid(
-            object_id,
-            data_type,
-            start_date=start_time,
-            end_date=end_time,
-            interval=interval,
-            sync_time=sync_time,
-            boundary_type=boundary_type,
-            can_raise=False,
-            endpoint_type="AF"
-        )
-    for row in rows:
-        base = {"object_id": object_id, OSIsoftConstants.DKU_ERROR_KEY: ""}
-        base.update(row)
-        extention = client.unnest_row(base)
-        results.extend(extention)
+        if client is None or previous_server_url != server_url:
+            client = OSIsoftClient(server_url, auth_type, username, password, is_ssl_check_disabled=is_ssl_check_disabled)
+            previous_server_url = server_url
+        object_id = input_parameters_row.get(path_column)
+        item = None
+        if client.is_resource_path(object_id):
+            object_id = normalize_af_path(object_id)
+            item = client.get_item_from_path(object_id)
+        if item:
+            rows = client.get_row_from_item(
+                item,
+                data_type,
+                start_date=start_time,
+                end_date=end_time,
+                interval=interval,
+                sync_time=sync_time,
+                boundary_type=boundary_type,
+                can_raise=False
+            )
+        else:
+            rows = client.get_row_from_webid(
+                object_id,
+                data_type,
+                start_date=start_time,
+                end_date=end_time,
+                interval=interval,
+                sync_time=sync_time,
+                boundary_type=boundary_type,
+                can_raise=False,
+                endpoint_type="AF"
+            )
+        for row in rows:
+            base = {"object_id": object_id, OSIsoftConstants.DKU_ERROR_KEY: ""}
+            base.update(row)
+            extention = client.unnest_row(base)
+            results.extend(extention)
 
-output_names_stats = get_output_names_for_role('api_output')
-odf = pd.DataFrame(results)
-
-if odf.size > 0:
-    api_output = dataiku.Dataset(output_names_stats[0])
-    api_output.write_with_schema(odf)
+        unnested_items_rows = pd.DataFrame(results)
+        if first_dataframe:
+            output_dataset.write_schema_from_dataframe(unnested_items_rows)
+            first_dataframe = False
+        writer.write_dataframe(unnested_items_rows)
+        results = []
