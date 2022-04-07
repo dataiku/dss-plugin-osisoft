@@ -218,6 +218,7 @@
       "label": "Interpolate",
       "description": "Used to compute values for dates located between two existing data points",
       "type": "SELECT",
+      "visibilityCondition": false,
       "selectChoices": [
         {
           "value": "nearest",
@@ -270,6 +271,7 @@
       "label": "Extrapolate",
       "description": "Used to compute values for dates before or after the last known data point",
       "type": "SELECT",
+      "visibilityCondition": false,
       "selectChoices": [
         {
           "value": "clip",
@@ -295,6 +297,7 @@
       "label": "Impute categorical data",
       "description": "Used to fill in categorical values during interpolation and extrapolation",
       "type": "SELECT",
+      "visibilityCondition": false,
       "selectChoices": [
         {
           "value": "empty",

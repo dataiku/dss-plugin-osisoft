@@ -18,10 +18,10 @@ def get_resampling_params(recipe_config):
     def _p(param_name, default=None):
         return recipe_config.get(param_name, default)
 
-    interpolation_method = _p('interpolation_method')
+    interpolation_method = _p('interpolation_method', 'previous')
     extrapolation_method = _p('extrapolation_method')
-    constant_value = _p('constant_value')
-    category_imputation_method = _p('category_imputation_method', 'empty')
+    constant_value = _p('constant_value', 'clip')
+    category_imputation_method = _p('category_imputation_method', 'previous')
     category_constant_value = _p('category_constant_value', '')
     time_step = _p('time_step')
     time_unit = _p('time_unit')
