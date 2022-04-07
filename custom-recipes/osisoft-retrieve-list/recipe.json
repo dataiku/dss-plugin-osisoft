@@ -2,7 +2,7 @@
     "meta": {
         "label": "PI metrics downloader",
         "description": "Retrieve PI metrics from list of tags",
-        "icon": "icon-cogs"
+        "icon": "icon-osisoft icon-cogs"
     },
     "kind": "PYTHON",
     "selectableFromDataset": "input_dataset",

@@ -3,7 +3,7 @@
         "label": "OSIsoft credentials",
         "description": "",
         // icon: must be one of the FontAwesome 3.2.1 icons, complete list here at https://fontawesome.com/v3.2.1/icons/
-        "icon": "icon-cogs"
+        "icon": "icon-osisoft icon-cogs"
     },
     "defaultDefinableInline": true,
     "defaultDefinableAtProjectLevel": true,

@@ -2,7 +2,7 @@
     "meta" : {
         "label": "Attribute search",
         "description": "Search attributes in AF assets",
-        "icon": "icon-cogs"
+        "icon": "icon-osisoft icon-cogs"
     },
     "readable": true,
     "writable": true,

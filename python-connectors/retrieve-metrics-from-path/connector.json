@@ -1,8 +1,8 @@
 {
     "meta" : {
-        "label": "Data from AF path",
+        "label": "PIWebAPI toolbox",
         "description": "Retrieve metrics from an AF attribute using its path, tag or webid",
-        "icon": "icon-cogs"
+        "icon": "icon-osisoft icon-cogs"
     },
     "readable": true,
     "writable": true,

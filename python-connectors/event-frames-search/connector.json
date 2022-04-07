@@ -2,7 +2,7 @@
     "meta" : {
         "label": "Event Frames search",
         "description": "Browse PI event frames",
-        "icon": "icon-cogs"
+        "icon": "icon-osisoft icon-cogs"
     },
     "readable": true,
     "writable": true,
