@@ -86,7 +86,7 @@ class OSIsoftConnector(Connector):  # Browse
                     # boundary_type=self.boundary_type
                 ):
                     if limit.is_reached():
-                        break
+                        return
                     output_row = self.format_output(row, attribute)
                     yield output_row
         else:
