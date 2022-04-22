@@ -1,6 +1,6 @@
 {
     "meta": {
-        "label": "PI metrics downloader",
+        "label": "Assets metrics downloader",
         "description": "Retrieve PI metrics from list of tags",
         "icon": "icon-osisoft icon-cogs"
     },
