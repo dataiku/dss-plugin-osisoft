@@ -1,3 +1,6 @@
+import os
+
+
 class OSIsoftConnectorError(ValueError):
     pass
 
@@ -6,10 +9,14 @@ def get_credentials(config):
     credentials = config.get('credentials', {})
     auth_type = credentials.get("auth_type", "basic")
     osisoft_basic = credentials.get("osisoft_basic", {})
+    ssl_cert_path = credentials.get("ssl_cert_path")
+    if ssl_cert_path:
+        setup_ssl_certificate(ssl_cert_path)
     username = osisoft_basic.get("user")
     password = osisoft_basic.get("password")
     show_advanced_parameters = config.get('show_advanced_parameters', False)
     if show_advanced_parameters:
+        setup_ssl_certificate(config.get("ssl_cert_path"))
         default_server = credentials.get("default_server")
         overwrite_server_url = config.get("server_url")
         if not overwrite_server_url:
@@ -152,6 +159,13 @@ def get_schema_as_arrays(dataset_schema):
 
 def normalize_af_path(af_path):
     return "\\\\" + af_path.strip("\\")
+
+
+def setup_ssl_certificate(ssl_cert_path):
+    if ssl_cert_path:
+        if os.path.isfile(ssl_cert_path):
+            os.environ['REQUESTS_CA_BUNDLE'] = ssl_cert_path
+            os.environ['CURL_CA_BUNDLE'] = ssl_cert_path
 
 
 class RecordsLimit():
