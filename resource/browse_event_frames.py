@@ -10,7 +10,7 @@ def do(payload, config, plugin_config, inputs):
     elif config.get("credentials") == {}:
         return build_select_choices("Pick a credential")
 
-    auth_type, username, password, server_url, is_ssl_check_disabled = get_credentials(config)
+    auth_type, username, password, server_url, is_ssl_check_disabled, trusted_ssl_certificate = get_credentials(config)
 
     if not (auth_type and username and password):
         return build_select_choices("Pick a credential")
@@ -23,7 +23,7 @@ def do(payload, config, plugin_config, inputs):
 
     if not server_url:
         return build_select_choices("Fill in the server address")
-    client = OSIsoftClient(server_url, auth_type, username, password, is_ssl_check_disabled=is_ssl_check_disabled)
+    client = OSIsoftClient(server_url, auth_type, username, password, is_ssl_check_disabled=is_ssl_check_disabled, trusted_ssl_certificate=trusted_ssl_certificate)
 
     parameter_name = payload.get("parameterName")
 

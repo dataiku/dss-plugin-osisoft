@@ -19,7 +19,7 @@ dku_flow_variables = dataiku.get_flow_variables()
 logger.info("retrieve event frames recipe config={}".format(logger.filter_secrets(config)))
 
 osisoft_credentials = config.get("osisoft_credentials", {})
-auth_type, username, password, server_url, is_ssl_check_disabled = get_credentials(config)
+auth_type, username, password, server_url, is_ssl_check_disabled, trusted_ssl_certificate = get_credentials(config)
 
 use_server_url_column = config.get("use_server_url_column", False)
 if not server_url and not use_server_url_column:
@@ -57,7 +57,7 @@ with output_dataset.get_writer() as writer:
         event_frame_webid = input_parameters_row.get("WebId")
 
         if client is None or previous_server_url != server_url:
-            client = OSIsoftClient(server_url, auth_type, username, password, is_ssl_check_disabled=is_ssl_check_disabled)
+            client = OSIsoftClient(server_url, auth_type, username, password, is_ssl_check_disabled=is_ssl_check_disabled, trusted_ssl_certificate=trusted_ssl_certificate)
             previous_server_url = server_url
         object_id = input_parameters_row.get(path_column)
         item = None

@@ -15,9 +15,9 @@ class OSIsoftConnector(Connector):  # Search
 
         logger.info("Search v1.0.0 initialization with config={}, plugin_config={}".format(logger.filter_secrets(config), logger.filter_secrets(plugin_config)))
 
-        auth_type, username, password, server_url, is_ssl_check_disabled = get_credentials(config)
+        auth_type, username, password, server_url, is_ssl_check_disabled, trusted_ssl_certificate = get_credentials(config)
 
-        self.client = OSIsoftClient(server_url, auth_type, username, password, is_ssl_check_disabled=is_ssl_check_disabled)
+        self.client = OSIsoftClient(server_url, auth_type, username, password, is_ssl_check_disabled=is_ssl_check_disabled, trusted_ssl_certificate=trusted_ssl_certificate)
         self.object_id = config.get("object_id")
         self.data_type = config.get("data_type", "RecordedData")
         self.start_time = config.get("start_time")

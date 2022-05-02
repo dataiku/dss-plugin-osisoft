@@ -4,6 +4,7 @@ import copy
 import json
 from datetime import datetime
 from requests_ntlm import HttpNtlmAuth
+import tempfile
 # from requests_kerberos import HTTPKerberosAuth
 from osisoft_constants import OSIsoftConstants
 from osisoft_endpoints import OSIsoftEndpoints
@@ -20,12 +21,13 @@ class OSIsoftClientError(ValueError):
 
 class OSIsoftClient(object):
 
-    def __init__(self, server_url, auth_type, username, password, is_ssl_check_disabled=False):
+    def __init__(self, server_url, auth_type, username, password, is_ssl_check_disabled=False, trusted_ssl_certificate=None):
         self.auth = self.get_auth(auth_type, username, password)
         logger.info("Initialization server_url={}, is_ssl_check_disabled={}".format(server_url, is_ssl_check_disabled))
         self.endpoint = OSIsoftEndpoints(server_url)
         self.next_page = None
         self.is_ssl_check_disabled = is_ssl_check_disabled
+        self.trusted_ssl_certificate = trusted_ssl_certificate
 
     def get_auth(self, auth_type, username, password):
         if auth_type == "basic":
@@ -328,12 +330,20 @@ class OSIsoftClient(object):
     def get(self, url, headers, params, can_raise=True, error_source=None):
         logger.info("Trying to connect to {} with params {}".format(url, params))
         url = url + build_query_string(params)
+        verify = (not self.is_ssl_check_disabled)
+        if self.trusted_ssl_certificate:
+            temporary_ssl_certificate_file = tempfile.NamedTemporaryFile(prefix="dss_plugin_osisoft_ssl_cert")
+            logger.info("Storing SSL certificate in {}".format(temporary_ssl_certificate_file.name))
+            temporary_ssl_certificate_file.write(self.trusted_ssl_certificate.encode('utf-8'))
+            temporary_ssl_certificate_file.seek(0)
+            verify = temporary_ssl_certificate_file.name
+
         try:
             response = requests.get(
                 url=url,
                 auth=self.auth,
                 headers=headers,
-                verify=(not self.is_ssl_check_disabled)
+                verify=verify
             )
         except Exception as err:
             error_message = "Could not connect. Error: {}{}".format(formatted_error_source(error_source), err)
@@ -370,12 +380,19 @@ class OSIsoftClient(object):
 
     def post(self, url, headers, params, data, can_raise=True, error_source=None):
         url = url + build_query_string(params)
+        verify = (not self.is_ssl_check_disabled)
+        if self.trusted_ssl_certificate:
+            temporary_ssl_certificate_file = tempfile.NamedTemporaryFile(prefix="dss_plugin_osisoft_ssl_cert")
+            logger.info("Storing SSL certificate in {}".format(temporary_ssl_certificate_file.name))
+            temporary_ssl_certificate_file.writelines(self.trusted_ssl_certificate.encode('utf-8'))
+            temporary_ssl_certificate_file.seek(0)
+            verify = temporary_ssl_certificate_file.name
         response = requests.post(
             url=url,
             auth=self.auth,
             headers=headers,
             json=data,
-            verify=(not self.is_ssl_check_disabled)
+            verify=verify
         )
         self.assert_valid_response(response, can_raise=can_raise, error_source=error_source)
         return response

@@ -49,6 +49,13 @@
             "defaultValue": ""
         },
         {
+            "name": "trusted_ssl_certificate",
+            "label": "Trusted SSL certificate",
+            "type": "TEXTAREA",
+            "definition": "(optional)",
+            "defaultValue": ""
+        },
+        {
             "name": "osisoft_basic",
             "type": "CREDENTIAL_REQUEST",
             "label": "OSIsoft basic login",

@@ -10,6 +10,8 @@ def get_credentials(config):
     auth_type = credentials.get("auth_type", "basic")
     osisoft_basic = credentials.get("osisoft_basic", {})
     ssl_cert_path = credentials.get("ssl_cert_path")
+    trusted_ssl_certificate = credentials.get("trusted_ssl_certificate", "")
+
     if ssl_cert_path:
         setup_ssl_certificate(ssl_cert_path)
     username = osisoft_basic.get("user")
@@ -27,7 +29,7 @@ def get_credentials(config):
     else:
         server_url = credentials.get("default_server")
         is_ssl_check_disabled = False
-    return auth_type, username, password, server_url, is_ssl_check_disabled
+    return auth_type, username, password, server_url, is_ssl_check_disabled, trusted_ssl_certificate
 
 
 def get_interpolated_parameters(config):

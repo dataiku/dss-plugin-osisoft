@@ -16,9 +16,9 @@ class OSIsoftConnector(Connector):  # Browse
 
         logger.info("Browse v1.0.0 initialization with config={}, plugin_config={}".format(logger.filter_secrets(config), logger.filter_secrets(plugin_config)))
 
-        auth_type, username, password, server_url, is_ssl_check_disabled = get_credentials(config)
+        auth_type, username, password, server_url, is_ssl_check_disabled, trusted_ssl_certificate = get_credentials(config)
 
-        self.client = OSIsoftClient(server_url, auth_type, username, password, is_ssl_check_disabled=is_ssl_check_disabled)
+        self.client = OSIsoftClient(server_url, auth_type, username, password, is_ssl_check_disabled=is_ssl_check_disabled, trusted_ssl_certificate=trusted_ssl_certificate)
         self.start_time = config.get("start_time")
         self.end_time = config.get("end_time")
         is_interpolated_data = config.get("data_type", "").endswith("InterpolatedData")
