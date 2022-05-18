@@ -537,7 +537,7 @@ class OSIsoftClient(object):
         element_query_keys = {
             "element_name": "Name:'{}'",
             "search_root_path": "Root:'{}'",
-            "element_template": "TemplateName:'{}'",
+            "element_template": "Template:'{}'",
             "element_type": "Type:'{}'",
             "element_category": "CategoryName:'{}'"
         }
