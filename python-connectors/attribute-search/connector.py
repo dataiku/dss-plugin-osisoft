@@ -1,9 +1,11 @@
 import json
-import copy
 from dataiku.connector import Connector
-from osisoft_client import OSIsoftClient, OSIsoftWriter
+from osisoft_client import OSIsoftClient
 from safe_logger import SafeLogger
-from osisoft_plugin_common import OSIsoftConnectorError, RecordsLimit, get_credentials, assert_time_format
+from osisoft_plugin_common import (
+    OSIsoftConnectorError, RecordsLimit, get_credentials, assert_time_format,
+    remove_unwanted_columns, format_output, filter_columns_from_schema
+)
 from osisoft_constants import OSIsoftConstants
 
 logger = SafeLogger("OSIsoft plugin", ["user", "password"])
@@ -62,9 +64,15 @@ class OSIsoftConnector(Connector):  # Browse
 
     def get_read_schema(self):
         return {
-            "columns": OSIsoftConstants.SCHEMA_ATTRIBUTES_METRICS_RESPONSE
+            "columns": filter_columns_from_schema(
+                OSIsoftConstants.SCHEMA_ATTRIBUTES_METRICS_RESPONSE,
+                OSIsoftConstants.SCHEMA_ATTRIBUTES_METRICS_FILTER
+            )
         } if self.must_download_data else {
-            "columns": OSIsoftConstants.SCHEMA_ATTRIBUTES_RESPONSE
+            "columns": filter_columns_from_schema(
+                OSIsoftConstants.SCHEMA_ATTRIBUTES_RESPONSE,
+                OSIsoftConstants.SCHEMA_ATTRIBUTES_METRICS_FILTER
+            )
         }
 
     def generate_rows(self, dataset_schema=None, dataset_partitioning=None,
@@ -74,38 +82,36 @@ class OSIsoftConnector(Connector):  # Browse
             for attribute in self.client.search_attributes(
                     self.database_webid, search_root_path=self.search_root_path,
                     **self.config):
-                attribute_webid = attribute.get("WebId")
-                for row in self.client.get_row_from_webid(
-                    attribute_webid,
-                    self.data_type,
-                    start_date=self.start_time,
-                    end_date=self.end_time,
-                    interval=self.interval,
-                    sync_time=self.sync_time,
-                    endpoint_type="AF"
-                    # boundary_type=self.boundary_type
-                ):
-                    if limit.is_reached():
-                        return
-                    output_row = self.format_output(row, attribute)
-                    yield output_row
+                attribute_webid = attribute.pop("WebId")
+                attribute.pop("Id", None)
+                is_enumeration_value = attribute.get("Type") == "EnumerationValue"
+                remove_unwanted_columns(attribute)
+                if "Errors" in attribute:
+                    yield attribute
+                else:
+                    for row in self.client.get_row_from_webid(
+                        attribute_webid,
+                        self.data_type,
+                        start_date=self.start_time,
+                        end_date=self.end_time,
+                        interval=self.interval,
+                        sync_time=self.sync_time,
+                        endpoint_type="AF"
+                        # boundary_type=self.boundary_type
+                    ):
+                        if limit.is_reached():
+                            return
+                        output_row = format_output(row, attribute, is_enumeration_value=is_enumeration_value)
+                        yield output_row
         else:
             for row in self.client.search_attributes(
                     self.database_webid, search_root_path=self.search_root_path,
                     **self.config):
                 if limit.is_reached():
                     break
-                output_row = self.format_output(row)
+                remove_unwanted_columns(row)
+                output_row = format_output(row)
                 yield output_row
-
-    def format_output(self, input_row, reference_row=None):
-        output_row = copy.deepcopy(input_row)
-        if reference_row:
-            output_row.update(reference_row)
-        output_row.pop("Links", None)
-        if "Value" in output_row and isinstance(output_row.get("Value"), dict):
-            output_row.update(output_row.pop("Value"))
-        return output_row
 
     def get_writer(self, dataset_schema=None, dataset_partitioning=None,
                    partition_id=None):
