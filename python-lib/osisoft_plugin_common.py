@@ -1,4 +1,6 @@
 import os
+import copy
+from osisoft_constants import OSIsoftConstants
 
 
 class OSIsoftConnectorError(ValueError):
@@ -176,6 +178,30 @@ def setup_ssl_certificate(ssl_cert_path):
         if os.path.isfile(ssl_cert_path):
             os.environ['REQUESTS_CA_BUNDLE'] = ssl_cert_path
             os.environ['CURL_CA_BUNDLE'] = ssl_cert_path
+
+
+def remove_unwanted_columns(row):
+    for unwated_column in OSIsoftConstants.SCHEMA_ATTRIBUTES_METRICS_FILTER:
+        row.pop(unwated_column, None)
+
+
+def format_output(input_row, reference_row=None, is_enumeration_value=False):
+    output_row = copy.deepcopy(input_row)
+    if reference_row:
+        output_row.update(reference_row)
+    if is_enumeration_value:
+        value = output_row.pop("Value", {})
+        output_row["Value"] = value.get("Name", "")
+        output_row["Value_ID"] = value.get("Value", None)
+    return output_row
+
+
+def filter_columns_from_schema(schema_columns, columns_to_remove):
+    output_schema = []
+    for column in schema_columns:
+        if column.get("name") not in columns_to_remove:
+            output_schema.append(column)
+    return output_schema
 
 
 class RecordsLimit():

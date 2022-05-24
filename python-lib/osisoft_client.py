@@ -2,6 +2,7 @@ import requests
 import logging
 import copy
 import json
+# import pandas
 from datetime import datetime
 from requests_ntlm import HttpNtlmAuth
 # from requests_kerberos import HTTPKerberosAuth
@@ -121,6 +122,26 @@ class OSIsoftClient(object):
             items = json_response.get(OSIsoftConstants.API_ITEM_KEY, [json_response])
             for item in items:
                 yield self.loop_sub_items(item)
+
+    # def get_df_from_webid(self, webid, data_type, start_date=None, end_date=None,
+    #                       interval=None, sync_time=None, boundary_type=None,
+    #                       can_raise=True, endpoint_type="event_frames", reference_row=None):
+    #     if reference_row:
+    #         reference_df = pandas.DataFrame([reference_row])
+    #     else:
+    #         reference_df = pandas.DataFrame()
+    #     url = self.endpoint.get_data_from_webid_url(endpoint_type, data_type, webid)
+    #     has_more = True
+    #     while has_more:
+    #         json_response, has_more = self.get_paginated(
+    #             self.generic_get,
+    #             url, start_date=start_date, end_date=end_date, interval=interval, sync_time=sync_time, boundary_type=boundary_type, can_raise=can_raise
+    #         )
+    #         if OSIsoftConstants.DKU_ERROR_KEY in json_response:
+    #             yield json_response
+    #         items_df = pandas.io.json.json_normalize(json_response, record_path=OSIsoftConstants.API_ITEM_KEY)
+    #         for item in items_df.join(reference_df).ffill().to_dict(orient='records'):
+    #             yield item
 
     def get_link_from_item(self, item, data_type, start_date, end_date, interval=None, sync_time=None, boundary_type=None, can_raise=True):
         url = self.extract_link_with_key(item, data_type)
@@ -547,7 +568,7 @@ class OSIsoftClient(object):
         element_query_keys = {
             "element_name": "Name:'{}'",
             "search_root_path": "Root:'{}'",
-            "element_template": "TemplateName:'{}'",
+            "element_template": "Template:'{}'",
             "element_type": "Type:'{}'",
             "element_category": "CategoryName:'{}'"
         }
