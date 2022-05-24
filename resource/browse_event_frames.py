@@ -10,7 +10,10 @@ def do(payload, config, plugin_config, inputs):
     elif config.get("credentials") == {}:
         return build_select_choices("Pick a credential")
 
-    auth_type, username, password, server_url, is_ssl_check_disabled = get_credentials(config)
+    auth_type, username, password, server_url, is_ssl_check_disabled, credential_error = get_credentials(config, can_raise=False)
+
+    if credential_error:
+        return build_select_choices(credential_error)
 
     if not (auth_type and username and password):
         return build_select_choices("Pick a credential")

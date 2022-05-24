@@ -1,26 +1,43 @@
+import os
+
+
 class OSIsoftConnectorError(ValueError):
     pass
 
 
-def get_credentials(config):
+def get_credentials(config, can_raise=True):
+    error_message = None
     credentials = config.get('credentials', {})
     auth_type = credentials.get("auth_type", "basic")
     osisoft_basic = credentials.get("osisoft_basic", {})
+    ssl_cert_path = credentials.get("ssl_cert_path")
+    if ssl_cert_path:
+        setup_ssl_certificate(ssl_cert_path)
     username = osisoft_basic.get("user")
     password = osisoft_basic.get("password")
     show_advanced_parameters = config.get('show_advanced_parameters', False)
     if show_advanced_parameters:
+        setup_ssl_certificate(config.get("ssl_cert_path"))
         default_server = credentials.get("default_server")
         overwrite_server_url = config.get("server_url")
+        can_disable_ssl_check = credentials.get("can_disable_ssl_check", False)
+        is_ssl_check_disabled = config.get("is_ssl_check_disabled", False)
         if not overwrite_server_url:
             server_url = default_server
         else:
             server_url = overwrite_server_url
-        is_ssl_check_disabled = credentials.get("can_disable_ssl_check", False) and config.get("is_ssl_check_disabled", False)
+        if (not can_disable_ssl_check) and is_ssl_check_disabled:
+            error_message = "You cannot disable SSL check on this preset. Please refer to your DSS admin"
+        is_ssl_check_disabled = can_disable_ssl_check and is_ssl_check_disabled
     else:
         server_url = credentials.get("default_server")
         is_ssl_check_disabled = False
-    return auth_type, username, password, server_url, is_ssl_check_disabled
+    if can_raise and error_message:
+        raise OSIsoftConnectorError(error_message)
+    if can_raise:
+        return auth_type, username, password, server_url, is_ssl_check_disabled
+    else:
+        return auth_type, username, password, server_url, is_ssl_check_disabled, error_message
 
 
 def get_interpolated_parameters(config):
@@ -152,6 +169,13 @@ def get_schema_as_arrays(dataset_schema):
 
 def normalize_af_path(af_path):
     return "\\\\" + af_path.strip("\\")
+
+
+def setup_ssl_certificate(ssl_cert_path):
+    if ssl_cert_path:
+        if os.path.isfile(ssl_cert_path):
+            os.environ['REQUESTS_CA_BUNDLE'] = ssl_cert_path
+            os.environ['CURL_CA_BUNDLE'] = ssl_cert_path
 
 
 class RecordsLimit():

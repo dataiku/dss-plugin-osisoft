@@ -20,12 +20,13 @@ class OSIsoftClientError(ValueError):
 
 class OSIsoftClient(object):
 
-    def __init__(self, server_url, auth_type, username, password, is_ssl_check_disabled=False):
+    def __init__(self, server_url, auth_type, username, password, is_ssl_check_disabled=False, can_raise=True):
         self.auth = self.get_auth(auth_type, username, password)
         logger.info("Initialization server_url={}, is_ssl_check_disabled={}".format(server_url, is_ssl_check_disabled))
         self.endpoint = OSIsoftEndpoints(server_url)
         self.next_page = None
         self.is_ssl_check_disabled = is_ssl_check_disabled
+        self.can_raise = can_raise
 
     def get_auth(self, auth_type, username, password):
         if auth_type == "basic":
@@ -74,7 +75,7 @@ class OSIsoftClient(object):
                     yield ret
 
     def get_row_from_webid(self, webid, data_type, start_date=None, end_date=None,
-                           interval=None, sync_time=None, boundary_type=None,
+                           interval=None, sync_time=None, boundary_type=None, selected_fields=None, 
                            can_raise=True, endpoint_type="event_frames"):
 
         url = self.endpoint.get_data_from_webid_url(endpoint_type, data_type, webid)
@@ -82,7 +83,7 @@ class OSIsoftClient(object):
         while has_more:
             json_response, has_more = self.get_paginated(
                 self.generic_get,
-                url, start_date=start_date, end_date=end_date, interval=interval, sync_time=sync_time, boundary_type=boundary_type, can_raise=can_raise
+                url, start_date=start_date, end_date=end_date, interval=interval, sync_time=sync_time, boundary_type=boundary_type, selected_fields=selected_fields, can_raise=can_raise
             )
             if OSIsoftConstants.DKU_ERROR_KEY in json_response:
                 yield json_response
@@ -90,9 +91,9 @@ class OSIsoftClient(object):
             for item in items:
                 yield item
 
-    def generic_get(self, url, start_date=None, end_date=None, interval=None, sync_time=None, boundary_type=None, can_raise=None):
+    def generic_get(self, url, start_date=None, end_date=None, interval=None, sync_time=None, boundary_type=None, selected_fields=None, can_raise=None):
         headers = self.get_requests_headers()
-        params = self.get_requests_params(start_date, end_date, interval=interval, sync_time=sync_time, boundary_type=boundary_type)
+        params = self.get_requests_params(start_date, end_date, interval=interval, sync_time=sync_time, boundary_type=boundary_type, selected_fields=selected_fields)
         json_response = self.get(
             url=url,
             headers=headers,
@@ -326,6 +327,7 @@ class OSIsoftClient(object):
         return json_response
 
     def get(self, url, headers, params, can_raise=True, error_source=None):
+        error_message = None
         logger.info("Trying to connect to {} with params {}".format(url, params))
         url = url + build_query_string(params)
         try:
@@ -338,8 +340,10 @@ class OSIsoftClient(object):
         except Exception as err:
             error_message = "Could not connect. Error: {}{}".format(formatted_error_source(error_source), err)
             logger.error(error_message)
-            raise OSIsoftClientError(error_message)
-        error_message = self.assert_valid_response(response, can_raise=can_raise, error_source=error_source)
+            if can_raise:
+                raise OSIsoftClientError(error_message)
+        if not error_message:
+            error_message = self.assert_valid_response(response, can_raise=can_raise, error_source=error_source)
         if error_message:
             return {OSIsoftConstants.DKU_ERROR_KEY: error_message}
         json_response = response.json()
@@ -417,7 +421,7 @@ class OSIsoftClient(object):
             raise OSIsoftClientError("Incorrect dataset path for '{}'.".format(dataset_path))
         return tokens[0], tokens[1]
 
-    def get_requests_params(self, start_date=None, end_date=None, interval=None, sync_time=None, boundary_type=None):
+    def get_requests_params(self, start_date=None, end_date=None, interval=None, sync_time=None, boundary_type=None, selected_fields=None):
         params = {}
         if start_date:
             params.update({"starttime": start_date})
@@ -429,6 +433,8 @@ class OSIsoftClient(object):
             params.update({"syncTime": sync_time})
         if boundary_type:
             params.update({"syncTimeBoundaryType": boundary_type})
+        if selected_fields:
+            params.update({"selectedFields": selected_fields})
         return params
 
     def assert_valid_response(self, response, can_raise=True, error_source=None):
@@ -463,12 +469,16 @@ class OSIsoftClient(object):
         else:
             return unnest(base_row)
 
-    def get_asset_servers(self):
+    def get_asset_servers(self, can_raise=True):
         asset_servers = []
         asset_servers_url = self.endpoint.get_asset_servers_url()
         headers = self.get_requests_headers()
-        json_response = self.get(url=asset_servers_url, headers=headers, params={}, error_source="get_asset_servers")
-        items = json_response.get(OSIsoftConstants.API_ITEM_KEY)
+        json_response = self.get(url=asset_servers_url, headers=headers, params={}, error_source="get_asset_servers", can_raise=can_raise)
+        if "error" in json_response:
+            return [{
+                "label": json_response.get("error")
+            }]
+        items = json_response.get(OSIsoftConstants.API_ITEM_KEY, [])
         for item in items:
             asset_servers.append({
                 "label": item.get("Name"),

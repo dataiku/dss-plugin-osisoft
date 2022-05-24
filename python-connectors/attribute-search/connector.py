@@ -1,7 +1,7 @@
 import json
 import copy
 from dataiku.connector import Connector
-from osisoft_client import OSIsoftClient, OSIsoftWriter
+from osisoft_client import OSIsoftClient
 from safe_logger import SafeLogger
 from osisoft_plugin_common import OSIsoftConnectorError, RecordsLimit, get_credentials, assert_time_format
 from osisoft_constants import OSIsoftConstants
@@ -16,12 +16,9 @@ class OSIsoftConnector(Connector):  # Browse
 
         logger.info("Browse v1.0.0 initialization with config={}, plugin_config={}".format(logger.filter_secrets(config), logger.filter_secrets(plugin_config)))
 
-        # auth_type, username, password = get_credentials(config)
         auth_type, username, password, server_url, is_ssl_check_disabled = get_credentials(config)
-        # self.server_url = osisoft_credentials.get("server_url", "")
 
-        # is_ssl_check_disabled = config.get("is_ssl_check_disabled", False)
-        self.client = OSIsoftClient(server_url, auth_type, username, password, is_ssl_check_disabled=True)  #is_ssl_check_disabled)
+        self.client = OSIsoftClient(server_url, auth_type, username, password, is_ssl_check_disabled=is_ssl_check_disabled)
         self.start_time = config.get("start_time")
         self.end_time = config.get("end_time")
         is_interpolated_data = config.get("data_type", "").endswith("InterpolatedData")
@@ -29,7 +26,7 @@ class OSIsoftConnector(Connector):  # Browse
         self.sync_time = config.get("sync_time") if is_interpolated_data else None
         assert_time_format(self.start_time, error_source="start time")
         assert_time_format(self.end_time, error_source="end time")
-        self.attribute_name = config.get("attribute_name") # todo: check if next_element has an url first
+        self.attribute_name = config.get("attribute_name")  # todo: check if next_element has an url first
         self.element_name = config.get("element_name")
         database_endpoint = config.get("database_name")
         self.database_webid = self.extract_database_webid(database_endpoint)
