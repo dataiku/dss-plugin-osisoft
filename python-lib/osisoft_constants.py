@@ -76,11 +76,16 @@ class OSIsoftConstants(object):
         {"name": "Path", "type": "string"},
         {"name": "Timestamp", "type": "date"},
         {"name": "Value", "type": "string"},
+        {"name": "Value_ID", "type": "string"},
         {"name": "UnitsAbbreviation", "type": "string"},
-        {"name": "Type", "type": "string"},
-        {"name": "TypeQualifier", "type": "string"},
         {"name": "DefaultUnitsName", "type": "string"},
         {"name": "DefaultUnitsNameAbbreviation", "type": "string"},
+        {"name": "Good", "type": "boolean"},
+        {"name": "Questionable", "type": "boolean"},
+        {"name": "Substituted", "type": "boolean"},
+        {"name": "Annotated", "type": "boolean"},
+        {"name": "Type", "type": "string"},
+        {"name": "TypeQualifier", "type": "string"},
         {"name": "DisplayDigits", "type": "int"},
         {"name": "DataReferencePlugIn", "type": "string"},
         {"name": "ConfigString", "type": "string"},
@@ -89,13 +94,18 @@ class OSIsoftConstants(object):
         {"name": "IsHidden", "type": "boolean"},
         {"name": "IsManualDataEntry", "type": "boolean"},
         {"name": "HasChildren", "type": "boolean"},
-        {"name": "CategoryNames", "type": "string"},
+        {"name": "CategoryNames", "type": "string"}, 
         {"name": "Step", "type": "boolean"},
         {"name": "TraitName", "type": "string"},
         {"name": "Span", "type": "float"},
         {"name": "Zero", "type": "float"},
         {"name": "Id", "type": "string"},
         {"name": "WebId", "type": "string"}
+    ]
+    SCHEMA_ATTRIBUTES_METRICS_FILTER = [
+        "ConfigString", "DataReferencePlugIn", "DisplayDigits",
+        "HasChildren", "Id", "IsConfigurationItem", "IsExcluded",
+        "IsHidden", "IsManualDataEntry", "Links", "Span", "Step", "TraitName", "Zero"
     ]
     SCHEMA_EVENT_FRAMES_RESPONSE = [
         {"name": "Name", "type": "string"},
