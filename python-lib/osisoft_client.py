@@ -85,7 +85,14 @@ class OSIsoftClient(object):
         while has_more:
             json_response, has_more = self.get_paginated(
                 self.generic_get,
-                url, start_date=start_date, end_date=end_date, interval=interval, sync_time=sync_time, boundary_type=boundary_type, selected_fields=selected_fields, can_raise=can_raise
+                url,
+                start_date=start_date,
+                end_date=end_date,
+                interval=interval,
+                sync_time=sync_time,
+                boundary_type=boundary_type,
+                selected_fields=selected_fields,
+                can_raise=can_raise
             )
             if OSIsoftConstants.DKU_ERROR_KEY in json_response:
                 yield json_response
@@ -100,13 +107,27 @@ class OSIsoftClient(object):
         url = self.endpoint.get_data_from_webid_url(endpoint_type, data_type, webid)
         json_response, has_more = self.get_paginated(
             self.generic_get,
-            url, start_date=start_date, end_date=end_date, interval=interval, sync_time=sync_time, boundary_type=boundary_type, selected_fields=selected_fields, can_raise=can_raise
+            url,
+            start_date=start_date,
+            end_date=end_date,
+            interval=interval,
+            sync_time=sync_time,
+            boundary_type=boundary_type,
+            selected_fields=selected_fields,
+            can_raise=can_raise
         )
         return json_response
 
     def generic_get(self, url, start_date=None, end_date=None, interval=None, sync_time=None, boundary_type=None, selected_fields=None, can_raise=None):
         headers = self.get_requests_headers()
-        params = self.get_requests_params(start_date, end_date, interval=interval, sync_time=sync_time, boundary_type=boundary_type, selected_fields=selected_fields)
+        params = self.get_requests_params(
+            start_date,
+            end_date,
+            interval=interval,
+            sync_time=sync_time,
+            boundary_type=boundary_type,
+            selected_fields=selected_fields
+        )
         json_response = self.get(
             url=url,
             headers=headers,
@@ -429,7 +450,8 @@ class OSIsoftClient(object):
     def get_requests_headers(self):
         return {
             "Content-Type": "application/json",
-            "Accept": "application/json"
+            "Accept": "application/json",
+            "Accept-Encoding": "gzip, deflate, br"
         }
 
     def get_event_frames_url_from_dataset_path(self, dataset_path):
