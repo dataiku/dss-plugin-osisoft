@@ -1,4 +1,5 @@
 import json
+import time
 from dataiku.connector import Connector
 from osisoft_client import OSIsoftClient
 from safe_logger import SafeLogger
@@ -7,6 +8,8 @@ from osisoft_plugin_common import (
     remove_unwanted_columns, format_output, filter_columns_from_schema
 )
 from osisoft_constants import OSIsoftConstants
+from concurrent.futures import ThreadPoolExecutor
+
 
 logger = SafeLogger("OSIsoft plugin", ["user", "password"])
 
@@ -40,6 +43,7 @@ class OSIsoftConnector(Connector):  # Browse
         self.maximum_results = config.get("maximum_results", 1000)
         self.attribute_value_type = config.get("attribute_value_type")
         self.config = config
+        self.processing_future = None
 
     def extract_database_webid(self, database_endpoint):
         return database_endpoint.split("/")[-1]
@@ -76,31 +80,44 @@ class OSIsoftConnector(Connector):  # Browse
                       partition_id=None, records_limit=-1):
         limit = RecordsLimit(records_limit)
         if self.must_download_data:
-            for attribute in self.client.search_attributes(
-                    self.database_webid, search_root_path=self.search_root_path,
-                    **self.config):
-                attribute_webid = attribute.pop("WebId")
-                attribute.pop("Id", None)
-                is_enumeration_value = attribute.get("Type") == "EnumerationValue"
-                remove_unwanted_columns(attribute)
-                if "Errors" in attribute:
-                    yield attribute
-                else:
-                    for row in self.client.get_row_from_webid(
-                        attribute_webid,
-                        self.data_type,
-                        start_date=self.start_time,
-                        end_date=self.end_time,
-                        interval=self.interval,
-                        sync_time=self.sync_time,
-                        endpoint_type="AF",
-                        selected_fields="Links;Items.Timestamp;Items.Value"
-                        # boundary_type=self.boundary_type
-                    ):
-                        if limit.is_reached():
-                            return
-                        output_row = format_output(row, attribute, is_enumeration_value=is_enumeration_value)
-                        yield output_row
+            with ThreadPoolExecutor(max_workers=3) as download_executor:
+                with ThreadPoolExecutor(max_workers=3) as processing_executor:
+                    for attribute in self.client.search_attributes(
+                            self.database_webid, search_root_path=self.search_root_path,
+                            **self.config):
+                        attribute_webid = attribute.pop("WebId")
+                        attribute.pop("Id", None)
+                        is_enumeration_value = attribute.get("Type") == "EnumerationValue"
+                        remove_unwanted_columns(attribute)
+                        if "Errors" in attribute:
+                            yield attribute
+                        else:
+                            kwargs = {
+                                "start_date": self.start_time,
+                                "end_date": self.end_time,
+                                "interval": self.interval,
+                                "sync_time": self.sync_time,
+                                "endpoint_type": "AF",
+                                "selected_fields": "Links;Items.Timestamp;Items.Value"
+                            }
+                            download_executor.submit(
+                                self.parallelizable_get_row_from_webid,
+                                processing_executor,
+                                attribute,
+                                is_enumeration_value,
+                                attribute_webid,
+                                self.data_type,
+                                **kwargs
+                            )
+                            while not self.processing_future:
+                                time.sleep(1)
+                                # for a short while, processing_future will not be defined
+                                pass
+                            rows = self.processing_future.result()
+                            for row in rows:
+                                yield row
+                            if limit.is_reached(number_of_new_records=len(rows)):
+                                break
         else:
             for row in self.client.search_attributes(
                     self.database_webid, search_root_path=self.search_root_path,
@@ -110,6 +127,19 @@ class OSIsoftConnector(Connector):  # Browse
                 remove_unwanted_columns(row)
                 output_row = format_output(row)
                 yield output_row
+
+    def parallelizable_get_row_from_webid(self, processing_executor, attribute, is_enumeration_value, webid, data_type, **kwargs):
+        raw_items = self.client.get_raw_items_from_webid(webid, data_type, **kwargs)
+        self.processing_future = processing_executor.submit(self.raw_items_to_rows, raw_items, attribute, is_enumeration_value)
+
+    def raw_items_to_rows(self, raw_items, attribute, is_enumeration_value):
+        if OSIsoftConstants.DKU_ERROR_KEY in raw_items:
+            return raw_items
+        items = raw_items.get(OSIsoftConstants.API_ITEM_KEY, [])
+        output = []
+        for item in items:
+            output.append(format_output(item, attribute, is_enumeration_value=is_enumeration_value))
+        return output
 
     def get_writer(self, dataset_schema=None, dataset_partitioning=None,
                    partition_id=None):

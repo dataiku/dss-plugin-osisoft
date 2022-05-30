@@ -2,6 +2,7 @@ import requests
 import logging
 import copy
 import json
+import simplejson
 # import pandas
 from datetime import datetime
 from requests_ntlm import HttpNtlmAuth
@@ -76,7 +77,7 @@ class OSIsoftClient(object):
                     yield ret
 
     def get_row_from_webid(self, webid, data_type, start_date=None, end_date=None,
-                           interval=None, sync_time=None, boundary_type=None, selected_fields=None, 
+                           interval=None, sync_time=None, boundary_type=None, selected_fields=None,
                            can_raise=True, endpoint_type="event_frames"):
 
         url = self.endpoint.get_data_from_webid_url(endpoint_type, data_type, webid)
@@ -91,6 +92,17 @@ class OSIsoftClient(object):
             items = json_response.get(OSIsoftConstants.API_ITEM_KEY, [])
             for item in items:
                 yield item
+
+    def get_raw_items_from_webid(self, webid, data_type, start_date=None, end_date=None,
+                                 interval=None, sync_time=None, boundary_type=None, selected_fields=None,
+                                 can_raise=True, endpoint_type="event_frames"):
+
+        url = self.endpoint.get_data_from_webid_url(endpoint_type, data_type, webid)
+        json_response, has_more = self.get_paginated(
+            self.generic_get,
+            url, start_date=start_date, end_date=end_date, interval=interval, sync_time=sync_time, boundary_type=boundary_type, selected_fields=selected_fields, can_raise=can_raise
+        )
+        return json_response
 
     def generic_get(self, url, start_date=None, end_date=None, interval=None, sync_time=None, boundary_type=None, selected_fields=None, can_raise=None):
         headers = self.get_requests_headers()
@@ -367,7 +379,7 @@ class OSIsoftClient(object):
             error_message = self.assert_valid_response(response, can_raise=can_raise, error_source=error_source)
         if error_message:
             return {OSIsoftConstants.DKU_ERROR_KEY: error_message}
-        json_response = response.json()
+        json_response = simplejson.loads(response.content)
         return json_response
 
     def post_stream_value(self, webid, data):
@@ -462,7 +474,7 @@ class OSIsoftClient(object):
         if response.status_code >= 400:
             error_message = "Error {}{}".format(formatted_error_source(error_source), response.status_code)
             try:
-                json_response = response.json()
+                json_response = simplejson.loads(response.content)
                 if "Errors" in json_response:
                     error_message = error_message + " {}".format(json_response.get("Errors"))
                 if "Message" in json_response:

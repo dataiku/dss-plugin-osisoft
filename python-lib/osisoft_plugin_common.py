@@ -210,10 +210,10 @@ class RecordsLimit():
         self.records_limit = records_limit
         self.counter = 0
 
-    def is_reached(self):
+    def is_reached(self, number_of_new_records=None):
         if self.has_no_limit:
             return False
-        self.counter += 1
+        self.counter += number_of_new_records or 1
         return self.counter > self.records_limit
 
     def add_record(self):
