@@ -5,7 +5,7 @@ from osisoft_client import OSIsoftClient
 from safe_logger import SafeLogger
 from osisoft_plugin_common import (
     OSIsoftConnectorError, RecordsLimit, get_credentials, assert_time_format,
-    remove_unwanted_columns, format_output, filter_columns_from_schema
+    remove_unwanted_columns, format_output, filter_columns_from_schema, assert_attribute_validity
 )
 from osisoft_constants import OSIsoftConstants
 from concurrent.futures import ThreadPoolExecutor
@@ -85,6 +85,7 @@ class OSIsoftConnector(Connector):  # Browse
                     for attribute in self.client.search_attributes(
                             self.database_webid, search_root_path=self.search_root_path,
                             **self.config):
+                        assert_attribute_validity(logger, attribute, self.database_webid, self.config)
                         attribute_webid = attribute.pop("WebId")
                         attribute.pop("Id", None)
                         is_enumeration_value = attribute.get("Type") == "EnumerationValue"
