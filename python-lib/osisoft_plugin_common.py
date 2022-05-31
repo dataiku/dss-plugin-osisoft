@@ -204,16 +204,13 @@ def filter_columns_from_schema(schema_columns, columns_to_remove):
     return output_schema
 
 
-def assert_attribute_validity(logger, attribute, web_id, config):
-    items = attribute.get("Items", [])
-    if items:
-        first_item = items[0]
-        errors = first_item.get("Errors", [])
-        if errors:
-            first_error = errors[0]
-            error_message = first_error.get("Message", "")
-            logger.error("Error with attribute {} / {} / {}".format(attribute, web_id, logger.filter_secrets(config)))
-            raise OSIsoftConnectorError("Error: {}".format(error_message))
+def assert_row_validity(logger, item, web_id, config):
+    errors = item.get("Errors", [])
+    if errors:
+        first_error = errors[0]
+        error_message = first_error.get("Message", "")
+        logger.error("Error with attribute {} / {} / {}".format(item, web_id, logger.filter_secrets(config)))
+        raise OSIsoftConnectorError("Error: {}".format(error_message))
 
 
 class RecordsLimit():

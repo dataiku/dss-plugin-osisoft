@@ -5,7 +5,7 @@ from osisoft_client import OSIsoftClient
 from safe_logger import SafeLogger
 from osisoft_plugin_common import (
     OSIsoftConnectorError, RecordsLimit, get_credentials, assert_time_format,
-    remove_unwanted_columns, format_output, filter_columns_from_schema, assert_attribute_validity
+    remove_unwanted_columns, format_output, filter_columns_from_schema, assert_row_validity
 )
 from osisoft_constants import OSIsoftConstants
 from concurrent.futures import ThreadPoolExecutor
@@ -44,6 +44,7 @@ class OSIsoftConnector(Connector):  # Browse
         self.attribute_value_type = config.get("attribute_value_type")
         self.config = config
         self.processing_future = None
+        self.waste = 0
 
     def extract_database_webid(self, database_endpoint):
         return database_endpoint.split("/")[-1]
@@ -85,7 +86,6 @@ class OSIsoftConnector(Connector):  # Browse
                     for attribute in self.client.search_attributes(
                             self.database_webid, search_root_path=self.search_root_path,
                             **self.config):
-                        assert_attribute_validity(logger, attribute, self.database_webid, self.config)
                         attribute_webid = attribute.pop("WebId")
                         attribute.pop("Id", None)
                         is_enumeration_value = attribute.get("Type") == "EnumerationValue"
@@ -115,6 +115,10 @@ class OSIsoftConnector(Connector):  # Browse
                                 # for a short while, processing_future will not be defined
                                 pass
                             rows = self.processing_future.result()
+
+                            if len(rows) == 1:
+                                assert_row_validity(logger, rows[0], self.database_webid, self.config)
+
                             for row in rows:
                                 yield row
                             if limit.is_reached(number_of_new_records=len(rows)):
