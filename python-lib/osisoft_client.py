@@ -2,6 +2,7 @@ import requests
 import logging
 import copy
 import json
+import simplejson
 # import pandas
 from datetime import datetime
 from requests_ntlm import HttpNtlmAuth
@@ -367,7 +368,7 @@ class OSIsoftClient(object):
             error_message = self.assert_valid_response(response, can_raise=can_raise, error_source=error_source)
         if error_message:
             return {OSIsoftConstants.DKU_ERROR_KEY: error_message}
-        json_response = response.json()
+        json_response = simplejson.loads(response.content)
         return json_response
 
     def post_stream_value(self, webid, data):
@@ -417,7 +418,8 @@ class OSIsoftClient(object):
     def get_requests_headers(self):
         return {
             "Content-Type": "application/json",
-            "Accept": "application/json"
+            "Accept": "application/json",
+            "Accept-Encoding": "gzip, deflate, br"
         }
 
     def get_event_frames_url_from_dataset_path(self, dataset_path):
@@ -462,7 +464,7 @@ class OSIsoftClient(object):
         if response.status_code >= 400:
             error_message = "Error {}{}".format(formatted_error_source(error_source), response.status_code)
             try:
-                json_response = response.json()
+                json_response = simplejson.loads(response.content)
                 if "Errors" in json_response:
                     error_message = error_message + " {}".format(json_response.get("Errors"))
                 if "Message" in json_response:
