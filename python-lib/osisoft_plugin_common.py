@@ -204,6 +204,19 @@ def filter_columns_from_schema(schema_columns, columns_to_remove):
     return output_schema
 
 
+def is_filtered_out(item, filters=None):
+    if not filters:
+        return False
+    for filter_key in filters:
+        if filter_key not in item:
+            return True
+        filter_value = filters.get(filter_key)
+        item_value = item.get(filter_key)
+        if filter_value != item_value:
+            return True
+    return False
+
+
 class RecordsLimit():
     def __init__(self, records_limit=-1):
         self.has_no_limit = (records_limit == -1)
