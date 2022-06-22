@@ -9,7 +9,7 @@ from requests_ntlm import HttpNtlmAuth
 # from requests_kerberos import HTTPKerberosAuth
 from osisoft_constants import OSIsoftConstants
 from osisoft_endpoints import OSIsoftEndpoints
-from osisoft_plugin_common import build_requests_params
+from osisoft_plugin_common import build_requests_params, is_filtered_out
 from safe_logger import SafeLogger
 
 
@@ -509,17 +509,18 @@ class OSIsoftClient(object):
             })
         return asset_servers
 
-    def get_next_choices(self, next_url, next_key, params=None, use_name_as_link=False):
+    def get_next_choices(self, next_url, next_key, params=None, use_name_as_link=False, filter=None):
         params = params or {}
         next_choices = []
         headers = self.get_requests_headers()
         json_response = self.get(url=next_url, headers=headers, params=params, error_source="get_next_choices")
         items = json_response.get(OSIsoftConstants.API_ITEM_KEY)
         for item in items:
-            next_choices.append({
-                "label": item.get("Name"),
-                "value": item.get("Name") if use_name_as_link else item.get("Links").get(next_key)
-            })
+            if not is_filtered_out(item, filter):
+                next_choices.append({
+                    "label": item.get("Name"),
+                    "value": item.get("Name") if use_name_as_link else item.get("Links").get(next_key)
+                })
         return next_choices
 
     def get_next_choices_new(self, next_url, next_key, params=None, use_name_as_link=False):

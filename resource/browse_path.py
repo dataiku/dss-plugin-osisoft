@@ -69,7 +69,7 @@ def do(payload, config, plugin_config, inputs):
         if not next_links:
             return build_select_choices()
         next_url = next_links + "/elementtemplates"
-        choices.extend(client.get_next_choices(next_url, "Self", use_name_as_link=True))
+        choices.extend(client.get_next_choices(next_url, "Self", use_name_as_link=True, filter={'InstanceType': 'Element'}))
         return build_select_choices(choices)
 
     if parameter_name == "attribute_category":
