@@ -9,7 +9,7 @@ from requests_ntlm import HttpNtlmAuth
 # from requests_kerberos import HTTPKerberosAuth
 from osisoft_constants import OSIsoftConstants
 from osisoft_endpoints import OSIsoftEndpoints
-from osisoft_plugin_common import build_requests_params, is_filtered_out
+from osisoft_plugin_common import build_requests_params, is_filtered_out, is_server_throttling
 from safe_logger import SafeLogger
 
 
@@ -351,14 +351,16 @@ class OSIsoftClient(object):
     def get(self, url, headers, params, can_raise=True, error_source=None):
         error_message = None
         logger.info("Trying to connect to {} with params {}".format(url, params))
-        url = url + build_query_string(params)
+        url = build_query_string(url, params)
         try:
-            response = requests.get(
-                url=url,
-                auth=self.auth,
-                headers=headers,
-                verify=(not self.is_ssl_check_disabled)
-            )
+            response = None
+            while is_server_throttling(response):
+                response = requests.get(
+                    url=url,
+                    auth=self.auth,
+                    headers=headers,
+                    verify=(not self.is_ssl_check_disabled)
+                )
         except Exception as err:
             error_message = "Could not connect. Error: {}{}".format(formatted_error_source(error_source), err)
             logger.error(error_message)
@@ -395,7 +397,7 @@ class OSIsoftClient(object):
         return response
 
     def post(self, url, headers, params, data, can_raise=True, error_source=None):
-        url = url + build_query_string(params)
+        url = build_query_string(url, params)
         response = requests.post(
             url=url,
             auth=self.auth,
@@ -784,8 +786,9 @@ def formatted_error_source(error_source):
     return "({}) ".format(error_source) if error_source else ""
 
 
-def build_query_string(params):
+def build_query_string(url, params):
     # requests doesn't handle backslash in params, so we build the query string by hand
+    # Todo: extract existing query params from url
     params = params or {}
     tokens = []
     for key in params:
@@ -796,9 +799,9 @@ def build_query_string(params):
         else:
             tokens.append(key+"="+str(value))
     if len(tokens) > 0:
-        return "?" + "&".join(tokens)
+        return url + "?" + "&".join(tokens)
     else:
-        return ""
+        return url
 
 
 def unnest(row):
