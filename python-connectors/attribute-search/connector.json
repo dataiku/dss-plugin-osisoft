@@ -7,7 +7,7 @@
     "readable": true,
     "writable": true,
     "kind": "PYTHON",
-    "paramsPythonSetup": "browse_path.py",
+    "paramsPythonSetup": "browse_attributes.py",
     "params": [
         {
             "name": "credentials",
