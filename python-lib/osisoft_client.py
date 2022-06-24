@@ -3,10 +3,8 @@ import logging
 import copy
 import json
 import simplejson
-# import pandas
 from datetime import datetime
 from requests_ntlm import HttpNtlmAuth
-# from requests_kerberos import HTTPKerberosAuth
 from osisoft_constants import OSIsoftConstants
 from osisoft_endpoints import OSIsoftEndpoints
 from osisoft_plugin_common import build_requests_params, is_filtered_out, is_server_throttling
@@ -35,8 +33,6 @@ class OSIsoftClient(object):
             return (username, password)
         elif auth_type == "ntlm":
             return HttpNtlmAuth(username, password)
-        # elif auth_type == "kerberos":
-        #     return HTTPKerberosAuth()
         else:
             return None
 
@@ -77,7 +73,7 @@ class OSIsoftClient(object):
                     yield ret
 
     def get_row_from_webid(self, webid, data_type, start_date=None, end_date=None,
-                           interval=None, sync_time=None, boundary_type=None, selected_fields=None, 
+                           interval=None, sync_time=None, boundary_type=None, selected_fields=None,
                            can_raise=True, endpoint_type="event_frames"):
 
         url = self.endpoint.get_data_from_webid_url(endpoint_type, data_type, webid)
@@ -85,7 +81,14 @@ class OSIsoftClient(object):
         while has_more:
             json_response, has_more = self.get_paginated(
                 self.generic_get,
-                url, start_date=start_date, end_date=end_date, interval=interval, sync_time=sync_time, boundary_type=boundary_type, selected_fields=selected_fields, can_raise=can_raise
+                url,
+                start_date=start_date,
+                end_date=end_date,
+                interval=interval,
+                sync_time=sync_time,
+                boundary_type=boundary_type,
+                selected_fields=selected_fields,
+                can_raise=can_raise
             )
             if OSIsoftConstants.DKU_ERROR_KEY in json_response:
                 yield json_response
@@ -95,7 +98,14 @@ class OSIsoftClient(object):
 
     def generic_get(self, url, start_date=None, end_date=None, interval=None, sync_time=None, boundary_type=None, selected_fields=None, can_raise=None):
         headers = self.get_requests_headers()
-        params = self.get_requests_params(start_date, end_date, interval=interval, sync_time=sync_time, boundary_type=boundary_type, selected_fields=selected_fields)
+        params = self.get_requests_params(
+            start_date,
+            end_date,
+            interval=interval,
+            sync_time=sync_time,
+            boundary_type=boundary_type,
+            selected_fields=selected_fields
+        )
         json_response = self.get(
             url=url,
             headers=headers,
@@ -123,26 +133,6 @@ class OSIsoftClient(object):
             items = json_response.get(OSIsoftConstants.API_ITEM_KEY, [json_response])
             for item in items:
                 yield self.loop_sub_items(item)
-
-    # def get_df_from_webid(self, webid, data_type, start_date=None, end_date=None,
-    #                       interval=None, sync_time=None, boundary_type=None,
-    #                       can_raise=True, endpoint_type="event_frames", reference_row=None):
-    #     if reference_row:
-    #         reference_df = pandas.DataFrame([reference_row])
-    #     else:
-    #         reference_df = pandas.DataFrame()
-    #     url = self.endpoint.get_data_from_webid_url(endpoint_type, data_type, webid)
-    #     has_more = True
-    #     while has_more:
-    #         json_response, has_more = self.get_paginated(
-    #             self.generic_get,
-    #             url, start_date=start_date, end_date=end_date, interval=interval, sync_time=sync_time, boundary_type=boundary_type, can_raise=can_raise
-    #         )
-    #         if OSIsoftConstants.DKU_ERROR_KEY in json_response:
-    #             yield json_response
-    #         items_df = pandas.io.json.json_normalize(json_response, record_path=OSIsoftConstants.API_ITEM_KEY)
-    #         for item in items_df.join(reference_df).ffill().to_dict(orient='records'):
-    #             yield item
 
     def get_link_from_item(self, item, data_type, start_date, end_date, interval=None, sync_time=None, boundary_type=None, can_raise=True):
         url = self.extract_link_with_key(item, data_type)
@@ -186,7 +176,6 @@ class OSIsoftClient(object):
 
     def get_link_from_url(self, url, start_date=None, end_date=None, interval=None, sync_time=None):
         if not url:
-            # url = self.get_web_api_base_url()
             url = self.endpoint.get_base_url()
         headers = self.get_requests_headers()
         params = build_requests_params(start_time=start_date, end_time=end_date, interval=interval, sync_time=sync_time)
@@ -210,7 +199,7 @@ class OSIsoftClient(object):
 
     def get_items_from_af_query(self, query_name=None, query_category=None, query_template=None, query_attribute=None, start_date=None, end_date=None):
         #  https://{server_url}/piwebapi/search/query?q=name:*TX5*&scope=pi:osisoft-pi-serv
-        # https://dku-qa-osi.francecentral.cloudapp.azure.com/piwebapi/search/query?q=name:*TX*%20AND%20*51*&scope=pi:osisoft-pi-serv
+        # https://{server_url}/piwebapi/search/query?q=name:*TX*%20AND%20*51*&scope=pi:osisoft-pi-serv
         params = {}
         query_elements = []
         if query_name:
@@ -223,7 +212,6 @@ class OSIsoftClient(object):
             query_elements.append("attributename:({})".format(query_attribute))
         if query_elements:
             params.update({"q": " AND ".join(query_elements)})
-        # url = self.get_web_api_base_url() + "/search/query" #?q=name:{}".format(query_name)
         url = self.endpoint.get_search_query_url()
         headers = self.get_requests_headers()
         json_response = self.get(
@@ -240,7 +228,14 @@ class OSIsoftClient(object):
         while has_more:
             json_response, has_more = self.get_paginated(
                 self.get_event_frames_query,
-                event_frames_url, query_name, query_category, query_template, query_referenced_element, search_mode, start_date=start_date, end_date=end_date
+                event_frames_url,
+                query_name,
+                query_category,
+                query_template,
+                query_referenced_element,
+                search_mode,
+                start_date=start_date,
+                end_date=end_date
             )
             items = json_response.get(OSIsoftConstants.API_ITEM_KEY, [json_response])
             for item in items:
@@ -525,7 +520,7 @@ class OSIsoftClient(object):
                 })
         return next_choices
 
-    def get_next_choices_new(self, next_url, next_key, params=None, use_name_as_link=False):
+    def get_next_choices_as_json(self, next_url, next_key, params=None, use_name_as_link=False):
         params = params or {}
         next_choices = []
         headers = self.get_requests_headers()
@@ -657,8 +652,8 @@ class OSIsoftClient(object):
 
     def traverse_path(self, path):
         elements = path.split("\\")
-        elements.pop(0)
-        elements.pop(0)
+        elements.pop(0)  # Server name
+        elements.pop(0)  # Database name
         json_response = self.traverse(elements)
         return json_response
 
@@ -697,7 +692,6 @@ def format_output_row(row):
         items = row.get(OSIsoftConstants.API_ITEM_KEY, [])
         for item in items:
             initial_row = copy.deepcopy(row)
-            # print("initial_row={}".format(initial_row))
             initial_row.pop(OSIsoftConstants.API_ITEM_KEY, None)
             initial_row.update(item)
             initial_row.pop("Links", None)
@@ -711,17 +705,6 @@ def format_output_row(row):
         yield initial_row
     else:
         yield row
-
-# d={
-#   'a':1,'Links':'should not see that',
-#   'Items':[{'b':11,'Links':'should not see that','Items':[{'c':111, 'Value':{'v':1}},{'c':112}]},{'b':12,'Items':[{'c':121},{'c':122}]}]}
-# rows=format_output_row(d)
-# for row in rows:
-#     print(row)
-# {'a': 1, 'c': 111, 'b': 11, 'v': 1}
-# {'a': 1, 'c': 112, 'b': 11}
-# {'a': 1, 'c': 121, 'b': 12}
-# {'a': 1, 'c': 122, 'b': 12}
 
 
 class OSIsoftWriter(object):

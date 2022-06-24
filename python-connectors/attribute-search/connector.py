@@ -105,6 +105,9 @@ class OSIsoftConnector(Connector):  # Browse
             for row in self.client.search_attributes(
                     self.database_webid, search_root_path=self.search_root_path,
                     **self.config):
+                # category_names = row.get("CategoryNames")
+                # if not category_names:
+                #     continue
                 if limit.is_reached():
                     break
                 remove_unwanted_columns(row)
@@ -114,8 +117,6 @@ class OSIsoftConnector(Connector):  # Browse
     def get_writer(self, dataset_schema=None, dataset_partitioning=None,
                    partition_id=None):
         raise Exception("Unimplemented")
-        # column_names, _ = get_schema_as_arrays(dataset_schema)
-        # return OSIsoftWriter(self.client, self.object_id, column_names, value_url=True)
 
     def get_partitioning(self):
         raise OSIsoftConnectorError("Unimplemented")

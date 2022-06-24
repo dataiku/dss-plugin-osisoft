@@ -5,10 +5,9 @@ from urllib.parse import urlparse
 class OSIsoftEndpoints():
     def __init__(self, server_url):
         self.scheme, self.hostname, self.port = self.parse_server_url(server_url)
-        self.qa_testing = False
 
     def parse_server_url(self, server_url):
-        parsed = urlparse(server_url)  # Crap. Anything in house will be an improvement
+        parsed = urlparse(server_url)
         scheme = parsed.scheme
         if scheme:
             hostname = parsed.hostname
@@ -19,9 +18,6 @@ class OSIsoftEndpoints():
         return scheme, hostname, port
 
     def get_server_url(self):
-        if self.qa_testing:
-            return "https://bigsta.sh/api/dku-qa"
-
         port_number = ":{}".format(self.port) if self.port else ""
         return self.scheme + "://" + self.hostname + port_number
 

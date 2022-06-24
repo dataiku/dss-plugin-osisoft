@@ -84,22 +84,4 @@ def do(payload, config, plugin_config, inputs):
         choices.extend(client.get_next_choices(next_url, endpoint_name, params=params))
         return build_select_choices(choices)
 
-    # if parameter_name == "data_type":
-    #     event_frame_to_retrieve = config.get("event_frame_to_retrieve", [])
-    #     if not event_frame_to_retrieve:
-    #         return build_select_choices()
-    #     next_url = event_frame_to_retrieve[0]
-    #     choices = []
-    #     links = client.get_item_from_url(next_url).get('Links', {})
-    #     for link in links:
-    #         choices.append({
-    #             "label": link,
-    #             "value": links[link]
-    #         })
-    #     return build_select_choices(choices)
-
     return build_select_choices()
-# https://localhost/piwebapi/assetdatabases/{webid}/eventframes?startTime=*-10d
-# categoryName
-# templateName
-# severity None Information Warning Minor Major Critical
