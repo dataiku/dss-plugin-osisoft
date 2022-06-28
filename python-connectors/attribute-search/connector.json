@@ -306,9 +306,9 @@
                 {"value": "InterpolatedData", "label": "Interpolated"},
                 {"value": "PlotData", "label": "Plot"},
                 {"value": "RecordedData", "label": "Recorded"},
-                {"value": "SummaryData", "label": "SummaryData"},
+                {"value": "SummaryData", "label": "Summary"},
                 {"value": "Value", "label": "Value"},
-                {"value": "EndValue", "label": "EndValue"}
+                {"value": "EndValue", "label": "End value"}
             ],
             "defaultValue": "RecordedData"
         }

@@ -108,14 +108,14 @@
             ],
             "visibilityCondition": "model.database_name.length>=0"
         },
-        {
-            "name": "category_name",
-            "label": "Category",
-            "type": "SELECT",
-            "description": "",
-            "visibilityCondition": "model.database_name.length>=0",
-            "getChoicesFromPython": true
-        },
+        // {
+        //     "name": "category_name",
+        //     "label": "Category",
+        //     "type": "SELECT",
+        //     "description": "",
+        //     "visibilityCondition": "model.database_name.length>=0",
+        //     "getChoicesFromPython": true
+        // },
         {
             "name": "template_name",
             "label": "Template",
@@ -141,12 +141,12 @@
             "visibilityCondition": "((model.must_download_data) &&(model.database_name.length>=0))",
             "selectChoices": [
                 { "value": "None", "label": "None"},
-                { "value": "InterpolatedData", "label": "InterpolatedData"},
-                { "value": "RecordedData", "label": "RecordedData"},
-                { "value": "PlotData", "label": "PlotData"},
-                { "value": "SummaryData", "label": "SummaryData"},
+                { "value": "InterpolatedData", "label": "Interpolated"},
+                { "value": "RecordedData", "label": "Recorded"},
+                { "value": "PlotData", "label": "Plot"},
+                { "value": "SummaryData", "label": "Summary"},
                 { "value": "Value", "label": "Value"},
-                { "value": "EndValue", "label": "EndValue"}
+                { "value": "EndValue", "label": "End value"}
             ],
             "mandatory": true
         },
