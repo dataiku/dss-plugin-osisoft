@@ -21,11 +21,12 @@ class OSIsoftClientError(ValueError):
 class OSIsoftClient(object):
 
     def __init__(self, server_url, auth_type, username, password, is_ssl_check_disabled=False, can_raise=True):
-        self.auth = self.get_auth(auth_type, username, password)
+        self.session = requests.Session()
+        self.session.auth = self.get_auth(auth_type, username, password)
+        self.session.verify = (not is_ssl_check_disabled)
         logger.info("Initialization server_url={}, is_ssl_check_disabled={}".format(server_url, is_ssl_check_disabled))
         self.endpoint = OSIsoftEndpoints(server_url)
         self.next_page = None
-        self.is_ssl_check_disabled = is_ssl_check_disabled
         self.can_raise = can_raise
 
     def get_auth(self, auth_type, username, password):
@@ -350,11 +351,9 @@ class OSIsoftClient(object):
         try:
             response = None
             while is_server_throttling(response):
-                response = requests.get(
+                response = self.session.get(
                     url=url,
-                    auth=self.auth,
-                    headers=headers,
-                    verify=(not self.is_ssl_check_disabled)
+                    headers=headers
                 )
         except Exception as err:
             error_message = "Could not connect. Error: {}{}".format(formatted_error_source(error_source), err)
@@ -393,12 +392,10 @@ class OSIsoftClient(object):
 
     def post(self, url, headers, params, data, can_raise=True, error_source=None):
         url = build_query_string(url, params)
-        response = requests.post(
+        response = self.session.post(
             url=url,
-            auth=self.auth,
             headers=headers,
-            json=data,
-            verify=(not self.is_ssl_check_disabled)
+            json=data
         )
         self.assert_valid_response(response, can_raise=can_raise, error_source=error_source)
         return response
