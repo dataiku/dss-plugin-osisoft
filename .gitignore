@@ -232,4 +232,4 @@ gradle-app.setting
 .vscode/settings.json
 setup.cfg
 tests/allure_report
-
+prototypes
