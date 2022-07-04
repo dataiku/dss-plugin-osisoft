@@ -9,3 +9,15 @@ def test_run_osisoft_authentication_modes(user_dss_clients):
 
 def test_run_osisoft_ssl_certificate(user_dss_clients):
     dss_scenario.run(user_dss_clients, project_key=TEST_PROJECT_KEY, scenario_id="SSLCERTIFICATE")
+
+
+def test_run_osisoft_asset_search_and_download(user_dss_clients):
+    dss_scenario.run(user_dss_clients, project_key=TEST_PROJECT_KEY, scenario_id="ASSETSSEARCHDOWNLOAD")
+
+
+def test_run_osisoft_event_frame_search_and_download(user_dss_clients):
+    dss_scenario.run(user_dss_clients, project_key=TEST_PROJECT_KEY, scenario_id="EVENT_FRAME_SEARCH_DOWNLOAD")
+
+
+def test_run_osisoft_write_to_asset(user_dss_clients):
+    dss_scenario.run(user_dss_clients, project_key=TEST_PROJECT_KEY, scenario_id="WRITE_TO_ASSET_TEST")
