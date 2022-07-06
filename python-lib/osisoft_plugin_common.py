@@ -254,6 +254,21 @@ def decode_retry_after_header(response):
     return seconds_before_retry
 
 
+def is_child_attribute_path(path):
+    if not path:
+        return False
+    reversed_path = path[::-1]
+    has_one_pipe = False
+    for char in reversed_path:
+        if char == '|':
+            if has_one_pipe:
+                return True
+            has_one_pipe = True
+        if char == '\\':
+            return False
+    return False
+
+
 class RecordsLimit():
     def __init__(self, records_limit=-1):
         self.has_no_limit = (records_limit == -1)

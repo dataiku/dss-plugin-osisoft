@@ -4,7 +4,7 @@ from osisoft_client import OSIsoftClient
 from safe_logger import SafeLogger
 from osisoft_plugin_common import (
     OSIsoftConnectorError, RecordsLimit, get_credentials, assert_time_format,
-    remove_unwanted_columns, format_output, filter_columns_from_schema
+    remove_unwanted_columns, format_output, filter_columns_from_schema, is_child_attribute_path
 )
 from osisoft_constants import OSIsoftConstants
 
@@ -39,6 +39,7 @@ class OSIsoftConnector(Connector):  # Browse
         self.data_type = config.get("data_type")
         self.maximum_results = config.get("maximum_results", 1000)
         self.attribute_value_type = config.get("attribute_value_type")
+        self.must_filter_child_attributes = not (config.get("must_keep_child_attributes", False))
         self.config = config
 
     def extract_database_webid(self, database_endpoint):
@@ -105,11 +106,12 @@ class OSIsoftConnector(Connector):  # Browse
             for row in self.client.search_attributes(
                     self.database_webid, search_root_path=self.search_root_path,
                     **self.config):
-                # category_names = row.get("CategoryNames")
-                # if not category_names:
-                #     continue
                 if limit.is_reached():
                     break
+                if self.must_filter_child_attributes:
+                    path = row.get("Path", "")
+                    if is_child_attribute_path(path):
+                        continue
                 remove_unwanted_columns(row)
                 output_row = format_output(row)
                 yield output_row

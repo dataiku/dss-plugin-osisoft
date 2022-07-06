@@ -130,7 +130,7 @@
             "label": " ",
             "defaultValue": false,
             "visibilityCondition": "model.database_name.length>=0",
-            "description": "Retrieve data"
+            "description": "Retrieve metrics"
         },
         {
             "name": "data_type",

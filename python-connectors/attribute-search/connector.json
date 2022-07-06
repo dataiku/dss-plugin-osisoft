@@ -251,14 +251,21 @@
             ],
             "visibilityCondition": "model.database_name.length>=0"
         },
-
         {
             "name": "must_download_data",
             "type": "BOOLEAN",
             "label": " ",
             "defaultValue": false,
             "visibilityCondition": "model.database_name.length>=0",
-            "description": "Retrieve data"
+            "description": "Retrieve metrics"
+        },
+        {
+            "name": "must_keep_child_attributes",
+            "type": "BOOLEAN",
+            "label": " ",
+            "defaultValue": false,
+            "visibilityCondition": "model.database_name.length>=0 && !model.must_download_data",
+            "description": "Keep children attributes"
         },
         {
             "name": "start_time",
