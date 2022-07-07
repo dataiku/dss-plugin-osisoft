@@ -125,7 +125,7 @@
             "getChoicesFromPython": true
         },
         {
-            "name": "must_download_data",
+            "name": "must_retrieve_metrics",
             "type": "BOOLEAN",
             "label": " ",
             "defaultValue": false,
@@ -138,7 +138,7 @@
             "type": "SELECT",
             "description": "",
             "defaultValue": null,
-            "visibilityCondition": "((model.must_download_data) &&(model.database_name.length>=0))",
+            "visibilityCondition": "((model.must_retrieve_metrics) &&(model.database_name.length>=0))",
             "selectChoices": [
                 { "value": "None", "label": "None"},
                 { "value": "InterpolatedData", "label": "Interpolated"},
@@ -155,7 +155,7 @@
             "label": "Event frame to retrieve",
             "type": "MULTISELECT",
             "description": "",
-            "visibilityCondition": "((model.must_download_data) &&(model.database_name.length>=0))",
+            "visibilityCondition": "((model.must_retrieve_metrics) &&(model.database_name.length>=0))",
             "getChoicesFromPython": true
         }
     ]

@@ -35,7 +35,7 @@ class OSIsoftConnector(Connector):  # Browse
         self.search_root_path = None
         if config.get("specify_search_root_element", False):
             self.search_root_path = self.build_path_from_config(config)
-        self.must_download_data = config.get("must_download_data", False)
+        self.must_retrieve_metrics = config.get("must_retrieve_metrics", False)
         self.data_type = config.get("data_type")
         self.maximum_results = config.get("maximum_results", 1000)
         self.attribute_value_type = config.get("attribute_value_type")
@@ -66,7 +66,7 @@ class OSIsoftConnector(Connector):  # Browse
                 OSIsoftConstants.SCHEMA_ATTRIBUTES_METRICS_RESPONSE,
                 OSIsoftConstants.SCHEMA_ATTRIBUTES_METRICS_FILTER
             )
-        } if self.must_download_data else {
+        } if self.must_retrieve_metrics else {
             "columns": filter_columns_from_schema(
                 OSIsoftConstants.SCHEMA_ATTRIBUTES_RESPONSE,
                 OSIsoftConstants.SCHEMA_ATTRIBUTES_METRICS_FILTER
@@ -76,7 +76,7 @@ class OSIsoftConnector(Connector):  # Browse
     def generate_rows(self, dataset_schema=None, dataset_partitioning=None,
                       partition_id=None, records_limit=-1):
         limit = RecordsLimit(records_limit)
-        if self.must_download_data:
+        if self.must_retrieve_metrics:
             for attribute in self.client.search_attributes(
                     self.database_webid, search_root_path=self.search_root_path,
                     **self.config):

@@ -79,7 +79,7 @@ def do(payload, config, plugin_config, inputs):
             **config
         )
         endpoint_name = "Self"
-        if config.get("must_download_data"):
+        if config.get("must_retrieve_metrics"):
             endpoint_name = config.get("data_type", "Self")
         choices.extend(client.get_next_choices(next_url, endpoint_name, params=params))
         return build_select_choices(choices)
