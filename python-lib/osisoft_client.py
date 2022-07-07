@@ -37,42 +37,6 @@ class OSIsoftClient(object):
         else:
             return None
 
-    def get_streamset(self, object_id, data_type, start_date=None, end_date=None):
-        url = self.endpoint.get_streamset_url(object_id, data_type)
-        headers = self.get_requests_headers()
-        params = self.get_requests_params(start_date, end_date)
-        json_response = self.get(
-            url=url,
-            headers=headers,
-            params=params
-        )
-        return json_response
-
-    def get_links(self, url=None):
-        if not url:
-            url = self.endpoint.get_base_url()
-        headers = self.get_requests_headers()
-        json_response = self.get(
-            url=url,
-            headers=headers,
-            params={}
-        )
-        return json_response.get(OSIsoftConstants.LINKS, {})
-
-    def get_streamset_row(self, object_id, data_type, start_date=None, end_date=None):
-        has_more = True
-        data_type = "recorded"
-        while has_more:
-            json_response, has_more = self.get_paginated(
-                self.get_streamset,
-                object_id, data_type, start_date=start_date, end_date=end_date
-            )
-            items = json_response.get(OSIsoftConstants.API_ITEM_KEY, )
-            for item in items:
-                rets = self.loop_sub_items(item)
-                for ret in rets:
-                    yield ret
-
     def get_row_from_webid(self, webid, data_type, start_date=None, end_date=None,
                            interval=None, sync_time=None, boundary_type=None, selected_fields=None,
                            can_raise=True, endpoint_type="event_frames"):
@@ -187,90 +151,6 @@ class OSIsoftClient(object):
         )
         return json_response
 
-    def get_row_from_af_query(self, query_name, query_category, query_template, query_attribute, data_type, start_date=None, end_date=None):
-        has_more = True
-        while has_more:
-            json_response, has_more = self.get_paginated(
-                self.get_items_from_af_query,
-                query_name, query_category, query_template, query_attribute, start_date=start_date, end_date=end_date
-            )
-            items = json_response.get(OSIsoftConstants.API_ITEM_KEY, [json_response])
-            for item in items:
-                yield item
-
-    def get_items_from_af_query(self, query_name=None, query_category=None, query_template=None, query_attribute=None, start_date=None, end_date=None):
-        #  https://{server_url}/piwebapi/search/query?q=name:*TX5*&scope=pi:osisoft-pi-serv
-        # https://{server_url}/piwebapi/search/query?q=name:*TX*%20AND%20*51*&scope=pi:osisoft-pi-serv
-        params = {}
-        query_elements = []
-        if query_name:
-            query_elements.append("name:({})".format(query_name))
-        if query_category:
-            query_elements.append("afcategories:({})".format(query_category))
-        if query_template:
-            query_elements.append("afelementtemplate:({})".format(query_template))
-        if query_attribute:
-            query_elements.append("attributename:({})".format(query_attribute))
-        if query_elements:
-            params.update({"q": " AND ".join(query_elements)})
-        url = self.endpoint.get_search_query_url()
-        headers = self.get_requests_headers()
-        json_response = self.get(
-            url=url,
-            headers=headers,
-            params=params
-        )
-        return json_response
-
-    def get_row_from_event_frames_query(self, event_frames_url, query_name, query_category, query_template,
-                                        query_referenced_element, search_mode, data_type, start_date=None, end_date=None):
-        #  https://{server_url}/piwebapi/assetdatabases/{webid}/eventframes?nameFilter=*TX572*
-        has_more = True
-        while has_more:
-            json_response, has_more = self.get_paginated(
-                self.get_event_frames_query,
-                event_frames_url,
-                query_name,
-                query_category,
-                query_template,
-                query_referenced_element,
-                search_mode,
-                start_date=start_date,
-                end_date=end_date
-            )
-            items = json_response.get(OSIsoftConstants.API_ITEM_KEY, [json_response])
-            for item in items:
-                yield item
-
-    def get_event_frames_query(self, event_frames_url, query_name, query_category, query_template,
-                               query_referenced_element, search_mode, start_date=None, end_date=None):
-
-        params = build_requests_params(
-            start_time=start_date,
-            end_time=end_date,
-            name_filter=query_name,
-            category_name=query_category,
-            template_name=query_template,
-            referencedElementNameFilter=query_referenced_element,
-            search_mode=search_mode
-        )
-        headers = self.get_requests_headers()
-        json_response = self.get(
-            url=event_frames_url,
-            headers=headers,
-            params=params
-        )
-        return json_response
-
-    def get_page_from_url(self, url=None, start_date=None, end_date=None):
-        if not url:
-            url = self.endpoint.get_base_url()
-        params = build_requests_params(start_time=start_date, end_time=end_date)
-        json_response = self.get(url=url, headers=self.get_requests_headers(), params=params)
-        if OSIsoftConstants.API_ITEM_KEY in json_response:
-            return json_response.get(OSIsoftConstants.API_ITEM_KEY, [])
-        return [json_response]
-
     def get_paginated(self, calling_function, *args, **kwargs):
         if self.next_page:
             json_response = self.get(self.next_page, headers=self.get_requests_headers(), params={})
@@ -288,12 +168,6 @@ class OSIsoftClient(object):
             if not items:
                 has_more = False
         return json_response, has_more
-
-    def is_web_id(self, reference):
-        for possible_web_id_start in OSIsoftConstants.POSSIBLE_WEB_ID_STARTS:
-            if reference.startswith(possible_web_id_start):
-                return True
-        return False
 
     def is_resource_path(self, reference):
         if isinstance(reference, str):
@@ -416,28 +290,6 @@ class OSIsoftClient(object):
             "Accept-Encoding": "gzip, deflate, br"
         }
 
-    def get_event_frames_url_from_dataset_path(self, dataset_path):
-        dataset_url = self.get_dataset_url(dataset_path)
-        links = self.get_links(dataset_url)
-        event_frames_url = links.get("EventFrames")
-        return event_frames_url
-
-    def get_dataset_url(self, dataset_path):
-        asset_servers = self.get_asset_servers()
-        server_name, database_name = self.parse_dataset_path(dataset_path)
-        for asset_server in asset_servers:
-            if asset_server.get("label") == server_name:
-                databases = self.get_next_choices(asset_server.get("value"), "Self")
-                for database in databases:
-                    if database.get('label') == database_name:
-                        return database.get("value")
-
-    def parse_dataset_path(self, dataset_path):
-        tokens = dataset_path.strip("\\").split("\\")
-        if len(tokens) < 2:
-            raise OSIsoftClientError("Incorrect dataset path for '{}'.".format(dataset_path))
-        return tokens[0], tokens[1]
-
     def get_requests_params(self, start_date=None, end_date=None, interval=None, sync_time=None, boundary_type=None, selected_fields=None):
         params = {}
         if start_date:
@@ -527,19 +379,6 @@ class OSIsoftClient(object):
             next_choices.append({
                 "label": item.get("Name"),
                 "value": json.dumps({"url": item.get("Links").get(next_key), "label": item.get("Name")})
-            })
-        return next_choices
-
-    def get_all_next_choices(self, next_url, params=None):
-        params = params or {}
-        next_choices = []
-        headers = self.get_requests_headers()
-        json_response = self.get(url=next_url, headers=headers, params=params, error_source="get_all_next_choices")
-        items = json_response.get(OSIsoftConstants.API_ITEM_KEY)
-        for item in items:
-            next_choices.append({
-                "label": item.get("Name"),
-                "value": item.get("Links")
             })
         return next_choices
 
@@ -654,14 +493,6 @@ class OSIsoftClient(object):
         json_response = self.traverse(elements)
         return json_response
 
-    def extract_path_elements(self, path):
-        elements_attribut = path.split("|")
-        elements = elements_attribut[0].split("\\")
-        attribute = None
-        if len(elements_attribut) > 1:
-            attribute = elements_attribut[1]
-        return elements, attribute
-
     def unnest_row(self, row):
         rows_to_append = [row]
         if OSIsoftConstants.API_ITEM_KEY in row:
@@ -754,12 +585,12 @@ class OSIsoftWriter(object):
     def close(self):
         pass
 
-# https://eme/piwebapi/streams/{{webid}}}}/value
-# body:
-# {
-#   "Timestamp": "2015-04-03T18:46:10.39135 -7",
-#   "Value": 42.0,
-# }
+    # https://eme/piwebapi/streams/{{webid}}}}/value
+    # body:
+    # {
+    #   "Timestamp": "2015-04-03T18:46:10.39135 -7",
+    #   "Value": 42.0,
+    # }
 
 
 def formatted_error_source(error_source):

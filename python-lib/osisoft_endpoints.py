@@ -35,26 +35,6 @@ class OSIsoftEndpoints():
             OSIsoftConstants.ATTRIBUTES_PATH
         ])
 
-    def get_streamset_url(self, object_id, data_type):
-        # - https://localhost/piwebapi/streamsets/E0e5R4z/recorded?starttime=*-1h&endtime=*-30m)
-        # self.scheme + "//" + self.domain + "/piwebapi/" + "streamsets" + object_id + "/" + "recorded"
-        return "/".join([
-            self.get_server_url(),
-            OSIsoftConstants.WEB_API_PATH,
-            # OSIsoftConstants.STREAMSETS_PATH,
-            OSIsoftConstants.STREAM_PATH,
-            object_id,
-            data_type
-        ])
-
-    def get_search_query_url(self):
-        url = self.get_base_url() + "/search/query"
-        return url
-
-    def get_eventframe_url(self, webid):
-        url = self.get_base_url() + "assetdatabases/{webid}/eventframes".format(webid=webid)
-        return url
-
     def get_stream_value_url(self, webid):
         url = self.get_base_url() + "/streams/{webid}/value".format(webid=webid)
         return url

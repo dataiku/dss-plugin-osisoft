@@ -13,7 +13,7 @@ class OSIsoftConnector(Connector):  # Search
 
         Connector.__init__(self, config, plugin_config)
 
-        logger.info("Search v1.0.0 initialization with config={}, plugin_config={}".format(logger.filter_secrets(config), logger.filter_secrets(plugin_config)))
+        logger.info("PIWebAPI toolbox v1.0.0 initialization with config={}, plugin_config={}".format(logger.filter_secrets(config), logger.filter_secrets(plugin_config)))
 
         auth_type, username, password, server_url, is_ssl_check_disabled = get_credentials(config)
 
@@ -69,9 +69,6 @@ class OSIsoftConnector(Connector):  # Search
 
     def get_writer(self, dataset_schema=None, dataset_partitioning=None,
                    partition_id=None):
-        #  dataset_schema={'columns': [{'name': 'Value', 'type': 'float'}], 'userModified': True}
-        # columns = dataset_schema.get("columns", [])
-        # schema = get_schema_as_dict(dataset_schema)
         column_names, _ = get_schema_as_arrays(dataset_schema)
         return OSIsoftWriter(self.client, self.object_id, column_names)
 
