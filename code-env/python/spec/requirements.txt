@@ -1,9 +1,2 @@
-# requests-kerberos
 requests_ntlm==1.1.0
-# scipy==1.2.1
-# statsmodels==0.12.2
-#noken/naka of dignakai
-# pandas==0.23.4
-# numpy==1.16.4
-# future==0.18.2
 simplejson
