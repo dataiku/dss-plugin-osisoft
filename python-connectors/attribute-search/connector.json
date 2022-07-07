@@ -265,7 +265,7 @@
             "label": " ",
             "defaultValue": false,
             "visibilityCondition": "model.database_name.length>=0 && !model.must_retrieve_metrics",
-            "description": "Keep children attributes"
+            "description": "Keep child attributes"
         },
         {
             "name": "start_time",
