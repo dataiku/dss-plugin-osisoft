@@ -162,7 +162,8 @@ def escape(string_to_escape):
 
 
 def assert_time_format(date, error_source):
-    return
+    # https://docs.osisoft.com/bundle/pi-web-api-reference/page/help/topics/time-strings.html
+    pass
 
 
 def get_schema_as_arrays(dataset_schema):
