@@ -69,29 +69,28 @@ class OSIsoftConnector(Connector):
                         can_raise=False
                     )
                     for event_frame_metric in event_frame_metrics:
-                        ret = copy.deepcopy(event_frame)
-                        ret.pop("Links", None)
-                        ret.pop("Security", None)
-                        ret.update(event_frame_metric)
-                        # yield self.client.unnest_row(ret)
-                        if OSIsoftConstants.API_ITEM_KEY in ret:
-                            items = ret.pop(OSIsoftConstants.API_ITEM_KEY)
+                        event_frame_copy = copy.deepcopy(event_frame)
+                        event_frame_copy.pop("Links", None)
+                        event_frame_copy.pop("Security", None)
+                        event_frame_copy.update(event_frame_metric)
+                        if OSIsoftConstants.API_ITEM_KEY in event_frame_copy:
+                            items = event_frame_copy.pop(OSIsoftConstants.API_ITEM_KEY)
                             for item in items:
-                                rett = copy.deepcopy(ret)
-                                rett.update(item)
-                                rett.pop("Links", None)
-                                yield rett
+                                row = copy.deepcopy(event_frame_copy)
+                                row.update(item)
+                                row.pop("Links", None)
+                                yield row
                                 limit.add_record()
                         else:
-                            ret.pop("Links", None)
-                            yield ret
+                            event_frame_copy.pop("Links", None)
+                            yield event_frame_copy
                             limit.add_record()
                 else:
-                    ret = copy.deepcopy(event_frame)
-                    ret.pop(OSIsoftConstants.API_ITEM_KEY, None)
-                    ret.pop("Security", None)
-                    ret.pop("Links", None)
-                    yield ret
+                    event_frame_copy = copy.deepcopy(event_frame)
+                    event_frame_copy.pop(OSIsoftConstants.API_ITEM_KEY, None)
+                    event_frame_copy.pop("Security", None)
+                    event_frame_copy.pop("Links", None)
+                    yield event_frame_copy
                     limit.add_record()
                 if limit.is_reached():
                     break
