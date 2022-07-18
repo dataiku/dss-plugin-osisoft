@@ -61,9 +61,9 @@
                 {"value": "RecordedData", "label": "Recorded"},
                 {"value": "Elements", "label": "Elements"},
                 {"value": "Template", "label": "Template"},
-                {"value": "SummaryData", "label": "SummaryData"},
+                {"value": "SummaryData", "label": "Summary"},
                 {"value": "Value", "label": "Value"},
-                {"value": "EndValue", "label": "EndValue"},
+                {"value": "EndValue", "label": "End value"},
                 {"value": "Categories", "label": "Categories"},
                 {"value": "Attributes", "label": "Attributes"},
                 {"value": "EventFrames", "label": "Event frames"}

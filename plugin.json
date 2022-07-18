@@ -1,6 +1,6 @@
 {
     "id": "osisoft",
-    "version": "0.0.1",
+    "version": "0.0.2",
     "meta": {
         "label": "OSIsoft",
         "description": "Retrieve data from your OSIsoft PI servers",
@@ -8,6 +8,7 @@
         "icon": "icon-osisoft icon-cogs",
         "tags": ["Connector"],
         "url": "https://www.dataiku.com/product/plugins/osisoft",
-        "licenseInfo": "Apache Software License"
+        "licenseInfo": "Apache Software License",
+        "supportLevel": "NOT_SUPPORTED"
     }
 }

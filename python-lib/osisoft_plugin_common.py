@@ -162,7 +162,8 @@ def escape(string_to_escape):
 
 
 def assert_time_format(date, error_source):
-    return
+    # https://docs.osisoft.com/bundle/pi-web-api-reference/page/help/topics/time-strings.html
+    pass
 
 
 def get_schema_as_arrays(dataset_schema):
@@ -252,6 +253,21 @@ def decode_retry_after_header(response):
             logger.error("decode_retry_after_header error {}".format(err))
             seconds_before_retry = OSIsoftConstants.DEFAULT_WAIT_BEFORE_RETRY
     return seconds_before_retry
+
+
+def is_child_attribute_path(path):
+    if not path:
+        return False
+    reversed_path = path[::-1]
+    has_one_pipe = False
+    for char in reversed_path:
+        if char == '|':
+            if has_one_pipe:
+                return True
+            has_one_pipe = True
+        if char == '\\':
+            return False
+    return False
 
 
 class RecordsLimit():
