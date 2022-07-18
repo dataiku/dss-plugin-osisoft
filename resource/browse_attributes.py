@@ -11,7 +11,10 @@ def do(payload, config, plugin_config, inputs):
     elif config.get("credentials") == {}:
         return {"choices": [{"label": "Pick a credential"}]}
 
-    auth_type, username, password, server_url, is_ssl_check_disabled = get_credentials(config)
+    auth_type, username, password, server_url, is_ssl_check_disabled, credential_error = get_credentials(config, can_raise=False)
+
+    if credential_error:
+        return build_select_choices(credential_error)
 
     if not (auth_type and username and password):
         return build_select_choices("Pick a credential")
@@ -31,7 +34,7 @@ def do(payload, config, plugin_config, inputs):
 
     if parameter_name == "server_name":
         choices = []
-        choices.extend(client.get_asset_servers())
+        choices.extend(client.get_asset_servers(can_raise=False))
         return build_select_choices(choices)
 
     if parameter_name == "database_name":
@@ -48,8 +51,6 @@ def do(payload, config, plugin_config, inputs):
             "label": "<All>",
             "value": None
         }]
-        # if not config.get("specify_search_root_element", False):
-        #     return build_select_choices(choices)
         next_links = config.get("database_name")
         if not next_links:
             return build_select_choices()
@@ -66,7 +67,7 @@ def do(payload, config, plugin_config, inputs):
         if not next_links:
             return build_select_choices()
         next_url = next_links + "/elementtemplates"
-        choices.extend(client.get_next_choices(next_url, "Self", use_name_as_link=True))
+        choices.extend(client.get_next_choices(next_url, "Self", use_name_as_link=True, filter={'InstanceType': 'Element'}))
         return build_select_choices(choices)
 
     if parameter_name == "attribute_category":
@@ -74,8 +75,6 @@ def do(payload, config, plugin_config, inputs):
             "label": "<All>",
             "value": None
         }]
-        # if not config.get("specify_search_root_element", False):
-        #     return build_select_choices(choices)
         next_links = config.get("database_name")
         if not next_links:
             return build_select_choices()
@@ -87,7 +86,7 @@ def do(payload, config, plugin_config, inputs):
         choices = []
         next_url = config.get("database_name", None)
         if next_url:
-            choices.extend(client.get_next_choices_new(next_url+"/elements", "Elements"))
+            choices.extend(client.get_next_choices_as_json(next_url+"/elements", "Elements"))
             return build_select_choices(choices)
         else:
             return build_select_choices()
@@ -99,7 +98,7 @@ def do(payload, config, plugin_config, inputs):
             json_choice = json.loads(json_string)
             next_url = json_choice.get("url")
             if next_url:
-                choices.extend(client.get_next_choices_new(next_url, "Elements"))
+                choices.extend(client.get_next_choices_as_json(next_url, "Elements"))
                 return build_select_choices(choices)
             else:
                 return build_select_choices()
@@ -158,9 +157,6 @@ def do(payload, config, plugin_config, inputs):
 
     return build_select_choices()
 
-
-# https://dku-qa-osi.francecentral.cloudapp.azure.com/piwebapi/search/query?q=afcategories:*Westin*
-#  name, description, afcategories, afelementtemplate, attributename, attributedescription
 
 def get_lastest_config(config):
     latest_config = None

@@ -1,30 +1,51 @@
+import os
 import copy
+import time
 from osisoft_constants import OSIsoftConstants
+from safe_logger import SafeLogger
+from datetime import datetime
+
+
+logger = SafeLogger("osisoft plugin", ["Authorization", "sharepoint_username", "sharepoint_password", "client_secret"])
 
 
 class OSIsoftConnectorError(ValueError):
     pass
 
 
-def get_credentials(config):
+def get_credentials(config, can_raise=True):
+    error_message = None
     credentials = config.get('credentials', {})
     auth_type = credentials.get("auth_type", "basic")
     osisoft_basic = credentials.get("osisoft_basic", {})
+    ssl_cert_path = credentials.get("ssl_cert_path")
+    if ssl_cert_path:
+        setup_ssl_certificate(ssl_cert_path)
     username = osisoft_basic.get("user")
     password = osisoft_basic.get("password")
     show_advanced_parameters = config.get('show_advanced_parameters', False)
     if show_advanced_parameters:
+        setup_ssl_certificate(config.get("ssl_cert_path"))
         default_server = credentials.get("default_server")
         overwrite_server_url = config.get("server_url")
+        can_disable_ssl_check = credentials.get("can_disable_ssl_check", False)
+        is_ssl_check_disabled = config.get("is_ssl_check_disabled", False)
         if not overwrite_server_url:
             server_url = default_server
         else:
             server_url = overwrite_server_url
-        is_ssl_check_disabled = credentials.get("can_disable_ssl_check", False) and config.get("is_ssl_check_disabled", False)
+        if (not can_disable_ssl_check) and is_ssl_check_disabled:
+            error_message = "You cannot disable SSL check on this preset. Please refer to your DSS admin"
+        is_ssl_check_disabled = can_disable_ssl_check and is_ssl_check_disabled
     else:
         server_url = credentials.get("default_server")
         is_ssl_check_disabled = False
-    return auth_type, username, password, server_url, is_ssl_check_disabled
+    if can_raise and error_message:
+        raise OSIsoftConnectorError(error_message)
+    if can_raise:
+        return auth_type, username, password, server_url, is_ssl_check_disabled
+    else:
+        return auth_type, username, password, server_url, is_ssl_check_disabled, error_message
 
 
 def get_interpolated_parameters(config):
@@ -141,7 +162,8 @@ def escape(string_to_escape):
 
 
 def assert_time_format(date, error_source):
-    return
+    # https://docs.osisoft.com/bundle/pi-web-api-reference/page/help/topics/time-strings.html
+    pass
 
 
 def get_schema_as_arrays(dataset_schema):
@@ -156,6 +178,13 @@ def get_schema_as_arrays(dataset_schema):
 
 def normalize_af_path(af_path):
     return "\\\\" + af_path.strip("\\")
+
+
+def setup_ssl_certificate(ssl_cert_path):
+    if ssl_cert_path:
+        if os.path.isfile(ssl_cert_path):
+            os.environ['REQUESTS_CA_BUNDLE'] = ssl_cert_path
+            os.environ['CURL_CA_BUNDLE'] = ssl_cert_path
 
 
 def remove_unwanted_columns(row):
@@ -180,6 +209,65 @@ def filter_columns_from_schema(schema_columns, columns_to_remove):
         if column.get("name") not in columns_to_remove:
             output_schema.append(column)
     return output_schema
+
+
+def is_filtered_out(item, filters=None):
+    if not filters:
+        return False
+    for filter_key in filters:
+        if filter_key not in item:
+            return True
+        filter_value = filters.get(filter_key)
+        item_value = item.get(filter_key)
+        if filter_value != item_value:
+            return True
+    return False
+
+
+def is_server_throttling(response):
+    if response is None:
+        return True
+    if response.status_code in [429, 503]:
+        logger.warning("Error {}, headers = {}".format(response.status_code, response.headers))
+        seconds_before_retry = decode_retry_after_header(response)
+        logger.warning("Sleeping for {} seconds".format(seconds_before_retry))
+        time.sleep(seconds_before_retry)
+        return True
+    return False
+
+
+def decode_retry_after_header(response):
+    seconds_before_retry = OSIsoftConstants.DEFAULT_WAIT_BEFORE_RETRY
+    raw_header_value = response.headers.get("Retry-After", str(OSIsoftConstants.DEFAULT_WAIT_BEFORE_RETRY))
+    if raw_header_value.isdigit():
+        seconds_before_retry = int(raw_header_value)
+    else:
+        # Date format, "Wed, 21 Oct 2015 07:28:00 GMT"
+        try:
+            datetime_now = datetime.now()
+            datetime_header = datetime.strptime(raw_header_value, '%a, %d %b %Y %H:%M:%S GMT')
+            if datetime_header.timestamp() > datetime_now.timestamp():
+                # target date in the future
+                seconds_before_retry = (datetime_header - datetime_now).seconds
+        except Exception as err:
+            logger.error("decode_retry_after_header error {}".format(err))
+            seconds_before_retry = OSIsoftConstants.DEFAULT_WAIT_BEFORE_RETRY
+    return seconds_before_retry
+
+
+def is_child_attribute_path(path):
+    if not path:
+        return False
+    reversed_path = path[::-1]
+    has_one_pipe = False
+    for char in reversed_path:
+        if char == '|':
+            if has_one_pipe:
+                return True
+            has_one_pipe = True
+        if char == '\\':
+            return False
+    return False
 
 
 class RecordsLimit():

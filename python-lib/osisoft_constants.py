@@ -3,15 +3,36 @@ class OSIsoftConstants(object):
     API_VALUE_KEY = "Value"
     API_TIMESTAMP_KEY = "Timestamp"
     ATTRIBUTES_PATH = "attributes"
+    CHAR_TO_ESCAPE = {
+        " ", "%20",
+        "!", "%21",
+        '"', "%22",
+        "#", "%23",
+        "$", "%24",
+        "%", "%25",
+        "&", "%26",
+        "'", "%27",
+        "(", "%28",
+        ")", "%29",
+        "*", "%2A",
+        "+", "%2B",
+        ",", "%2C",
+        "-", "%2D",
+        ".", "%2E",
+        "/", "%2F",
+        ":", "%3A",
+        ";", "%3B",
+        "<", "%3C",
+        "=", "%3D",
+        ">", "%3E",
+        "?", "%3F",
+        "@", "%40"
+    }
+    DEFAULT_WAIT_BEFORE_RETRY = 60
     DKU_ERROR_KEY = "error"
     LINKS = "Links"
     POSSIBLE_WEB_ID_STARTS = ["F1", "I1", "P1", "L1", "D1"]
     RECORD_PATH = "recorded"
-    SEARCH_PATH = "search"
-    STREAM_PATH = "streams"
-    STREAMSETS_PATH = "streamsets"
-    WEB_API_PATH = "piwebapi"
-    # CHAR_TO_ESCAPE = '+ - && || ! ( ) { } [ ] ^ " ~ * ? : \\'
     SCHEMA_EVENT_FRAMES = [
         "Path",
         "Name",
@@ -105,7 +126,8 @@ class OSIsoftConstants(object):
     SCHEMA_ATTRIBUTES_METRICS_FILTER = [
         "ConfigString", "DataReferencePlugIn", "DisplayDigits",
         "HasChildren", "Id", "IsConfigurationItem", "IsExcluded",
-        "IsHidden", "IsManualDataEntry", "Links", "Span", "Step", "TraitName", "Zero"
+        "IsHidden", "IsManualDataEntry", "Links", "Span", "Step", "TraitName", "Zero",
+        "Good", "Questionable", "Substituted", "Annotated"
     ]
     SCHEMA_EVENT_FRAMES_RESPONSE = [
         {"name": "Name", "type": "string"},
@@ -160,31 +182,16 @@ class OSIsoftConstants(object):
         {"name": "Id", "type": "string"},
         {"name": "Errors", "type": "string"}
     ]
-    WRITE_HEADERS = {'X-Requested-With': 'XmlHttpRequest'}
-    CHAR_TO_ESCAPE = {
-        " ", "%20",
-        "!", "%21",
-        '"', "%22",
-        "#", "%23",
-        "$", "%24",
-        "%", "%25",
-        "&", "%26",
-        "'", "%27",
-        "(", "%28",
-        ")", "%29",
-        "*", "%2A",
-        "+", "%2B",
-        ",", "%2C",
-        "-", "%2D",
-        ".", "%2E",
-        "/", "%2F",
-        ":", "%3A",
-        ";", "%3B",
-        "<", "%3C",
-        "=", "%3D",
-        ">", "%3E",
-        "?", "%3F",
-        "@", "%40"
+    SEARCH_PATH = "search"
+    STREAM_PATH = "streams"
+    STREAMSETS_PATH = "streamsets"
+    PIWEBAPI_AF_ENDPOINTS = {
+        "InterpolatedData": "{base_url}/piwebapi/streams/{webid}/interpolated",
+        "RecordedData": "{base_url}/piwebapi/streams/{webid}/recorded",
+        "PlotData": "{base_url}/piwebapi/streams/{webid}/plot",
+        "SummaryData": "{base_url}/piwebapi/streams/{webid}/summary",
+        "Value": "{base_url}/piwebapi/streams/{webid}/value",
+        "EndValue": "{base_url}/piwebapi/streams/{webid}/end"
     }
     PIWEBAPI_ENDPOINTS = {
         "Attributes": "{base_url}/piwebapi/eventframes/{webid}/attributes",
@@ -203,11 +210,5 @@ class OSIsoftConstants(object):
         "Security": "{base_url}/piwebapi/eventframes/{webid}/security",
         "SecurityEntries": "{base_url}/piwebapi/eventframes/{webid}/securityentries"
       }
-    PIWEBAPI_AF_ENDPOINTS = {
-        "InterpolatedData": "{base_url}/piwebapi/streams/{webid}/interpolated",
-        "RecordedData": "{base_url}/piwebapi/streams/{webid}/recorded",
-        "PlotData": "{base_url}/piwebapi/streams/{webid}/plot",
-        "SummaryData": "{base_url}/piwebapi/streams/{webid}/summary",
-        "Value": "{base_url}/piwebapi/streams/{webid}/value",
-        "EndValue": "{base_url}/piwebapi/streams/{webid}/end"
-    }
+    WEB_API_PATH = "piwebapi"
+    WRITE_HEADERS = {'X-Requested-With': 'XmlHttpRequest'}

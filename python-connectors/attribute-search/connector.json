@@ -2,12 +2,12 @@
     "meta" : {
         "label": "Attribute search",
         "description": "Search attributes in AF assets",
-        "icon": "icon-cogs"
+        "icon": "icon-osisoft icon-cogs"
     },
     "readable": true,
     "writable": true,
     "kind": "PYTHON",
-    "paramsPythonSetup": "browse_path.py",
+    "paramsPythonSetup": "browse_attributes.py",
     "params": [
         {
             "name": "credentials",
@@ -37,6 +37,14 @@
             "type": "BOOLEAN",
             "description": "Disable SSL check",
             "defaultValue": false
+        },
+        {
+            "name": "ssl_cert_path",
+            "label": "Path to SSL certificate",
+            "type": "STRING",
+            "description": "(optional)",
+            "visibilityCondition": "model.show_advanced_parameters==true && model.is_ssl_check_disabled==false",
+            "mandatory": false
         },
         {
             "name": "server_name",
@@ -243,21 +251,28 @@
             ],
             "visibilityCondition": "model.database_name.length>=0"
         },
-
         {
-            "name": "must_download_data",
+            "name": "must_retrieve_metrics",
             "type": "BOOLEAN",
             "label": " ",
             "defaultValue": false,
             "visibilityCondition": "model.database_name.length>=0",
-            "description": "Retrieve data"
+            "description": "Retrieve metrics"
+        },
+        {
+            "name": "must_keep_child_attributes",
+            "type": "BOOLEAN",
+            "label": " ",
+            "defaultValue": false,
+            "visibilityCondition": "model.database_name.length>=0 && !model.must_retrieve_metrics",
+            "description": "Keep child attributes"
         },
         {
             "name": "start_time",
             "label": "Start time",
             "description": "Optional",
             "type": "STRING",
-            "visibilityCondition": "model.must_download_data",
+            "visibilityCondition": "model.must_retrieve_metrics",
             "defaultValue": ""
         },
         {
@@ -265,18 +280,18 @@
             "label": "End time",
             "description": "Optional",
             "type": "STRING",
-            "visibilityCondition": "model.must_download_data",
+            "visibilityCondition": "model.must_retrieve_metrics",
             "defaultValue": ""
         },
         {
             "type": "SEPARATOR",
             "description": "Interpolation",
-            "visibilityCondition": "((model.must_download_data) && (model.data_type.toLowerCase().endsWith('interpolateddata')))"
+            "visibilityCondition": "((model.must_retrieve_metrics) && (model.data_type.toLowerCase().endsWith('interpolateddata')))"
         },
         {
             "name": "interval",
             "label": "Interval",
-            "visibilityCondition": "((model.must_download_data) && (model.data_type.toLowerCase().endsWith('interpolateddata')))",
+            "visibilityCondition": "((model.must_retrieve_metrics) && (model.data_type.toLowerCase().endsWith('interpolateddata')))",
             "description": "Optional",
             "type": "STRING",
             "defaultValue": ""
@@ -284,7 +299,7 @@
         {
             "name": "sync_time",
             "label": "Sync time",
-            "visibilityCondition": "((model.must_download_data) && (model.data_type.toLowerCase().endsWith('interpolateddata')))",
+            "visibilityCondition": "((model.must_retrieve_metrics) && (model.data_type.toLowerCase().endsWith('interpolateddata')))",
             "description": "Optional",
             "type": "STRING",
             "defaultValue": ""
@@ -293,14 +308,14 @@
             "name": "data_type",
             "label": "Data type",
             "type": "SELECT",
-            "visibilityCondition": "model.must_download_data",
+            "visibilityCondition": "model.must_retrieve_metrics",
             "selectChoices":[
                 {"value": "InterpolatedData", "label": "Interpolated"},
                 {"value": "PlotData", "label": "Plot"},
                 {"value": "RecordedData", "label": "Recorded"},
-                {"value": "SummaryData", "label": "SummaryData"},
+                {"value": "SummaryData", "label": "Summary"},
                 {"value": "Value", "label": "Value"},
-                {"value": "EndValue", "label": "EndValue"}
+                {"value": "EndValue", "label": "End value"}
             ],
             "defaultValue": "RecordedData"
         }

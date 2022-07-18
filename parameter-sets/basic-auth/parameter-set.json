@@ -3,7 +3,7 @@
         "label": "OSIsoft credentials",
         "description": "",
         // icon: must be one of the FontAwesome 3.2.1 icons, complete list here at https://fontawesome.com/v3.2.1/icons/
-        "icon": "icon-cogs"
+        "icon": "icon-osisoft icon-cogs"
     },
     "defaultDefinableInline": true,
     "defaultDefinableAtProjectLevel": true,
@@ -42,12 +42,11 @@
             "defaultValue": false
         },
         {
-            "name": "trusted_ssl_certificate",
-            "label": "Trusted SSL certificate",
+            "name": "ssl_cert_path",
+            "label": "Path to SSL certificate",
             "type": "STRING",
-            "definition": "Placeholder for future use",
-            "visibilityCondition": false,
-            "defaultValue": false
+            "description": "(optional)",
+            "defaultValue": ""
         },
         {
             "name": "osisoft_basic",
