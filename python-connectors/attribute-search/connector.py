@@ -1,9 +1,11 @@
 import json
-import copy
 from dataiku.connector import Connector
 from osisoft_client import OSIsoftClient
 from safe_logger import SafeLogger
-from osisoft_plugin_common import OSIsoftConnectorError, RecordsLimit, get_credentials, assert_time_format
+from osisoft_plugin_common import (
+    OSIsoftConnectorError, RecordsLimit, get_credentials, assert_time_format,
+    remove_unwanted_columns, format_output, filter_columns_from_schema, is_child_attribute_path
+)
 from osisoft_constants import OSIsoftConstants
 
 logger = SafeLogger("OSIsoft plugin", ["user", "password"])
@@ -14,7 +16,7 @@ class OSIsoftConnector(Connector):  # Browse
     def __init__(self, config, plugin_config):
         Connector.__init__(self, config, plugin_config)  # pass the parameters to the base class
 
-        logger.info("Browse v1.0.0 initialization with config={}, plugin_config={}".format(logger.filter_secrets(config), logger.filter_secrets(plugin_config)))
+        logger.info("Attribute search v1.0.0 initialization with config={}, plugin_config={}".format(logger.filter_secrets(config), logger.filter_secrets(plugin_config)))
 
         auth_type, username, password, server_url, is_ssl_check_disabled = get_credentials(config)
 
@@ -33,10 +35,11 @@ class OSIsoftConnector(Connector):  # Browse
         self.search_root_path = None
         if config.get("specify_search_root_element", False):
             self.search_root_path = self.build_path_from_config(config)
-        self.must_download_data = config.get("must_download_data", False)
+        self.must_retrieve_metrics = config.get("must_retrieve_metrics", False)
         self.data_type = config.get("data_type")
         self.maximum_results = config.get("maximum_results", 1000)
         self.attribute_value_type = config.get("attribute_value_type")
+        self.must_filter_child_attributes = not (config.get("must_keep_child_attributes", False))
         self.config = config
 
     def extract_database_webid(self, database_endpoint):
@@ -59,56 +62,63 @@ class OSIsoftConnector(Connector):  # Browse
 
     def get_read_schema(self):
         return {
-            "columns": OSIsoftConstants.SCHEMA_ATTRIBUTES_METRICS_RESPONSE
-        } if self.must_download_data else {
-            "columns": OSIsoftConstants.SCHEMA_ATTRIBUTES_RESPONSE
+            "columns": filter_columns_from_schema(
+                OSIsoftConstants.SCHEMA_ATTRIBUTES_METRICS_RESPONSE,
+                OSIsoftConstants.SCHEMA_ATTRIBUTES_METRICS_FILTER
+            )
+        } if self.must_retrieve_metrics else {
+            "columns": filter_columns_from_schema(
+                OSIsoftConstants.SCHEMA_ATTRIBUTES_RESPONSE,
+                OSIsoftConstants.SCHEMA_ATTRIBUTES_METRICS_FILTER
+            )
         }
 
     def generate_rows(self, dataset_schema=None, dataset_partitioning=None,
                       partition_id=None, records_limit=-1):
         limit = RecordsLimit(records_limit)
-        if self.must_download_data:
+        if self.must_retrieve_metrics:
             for attribute in self.client.search_attributes(
                     self.database_webid, search_root_path=self.search_root_path,
                     **self.config):
-                attribute_webid = attribute.get("WebId")
-                for row in self.client.get_row_from_webid(
-                    attribute_webid,
-                    self.data_type,
-                    start_date=self.start_time,
-                    end_date=self.end_time,
-                    interval=self.interval,
-                    sync_time=self.sync_time,
-                    endpoint_type="AF"
-                    # boundary_type=self.boundary_type
-                ):
-                    if limit.is_reached():
-                        return
-                    output_row = self.format_output(row, attribute)
-                    yield output_row
+                attribute_webid = attribute.pop("WebId")
+                attribute.pop("Id", None)
+                is_enumeration_value = attribute.get("Type") == "EnumerationValue"
+                remove_unwanted_columns(attribute)
+                if "Errors" in attribute:
+                    yield attribute
+                else:
+                    for row in self.client.get_row_from_webid(
+                        attribute_webid,
+                        self.data_type,
+                        start_date=self.start_time,
+                        end_date=self.end_time,
+                        interval=self.interval,
+                        sync_time=self.sync_time,
+                        endpoint_type="AF",
+                        selected_fields="Links;Items.Timestamp;Items.Value"
+                        # boundary_type=self.boundary_type
+                    ):
+                        if limit.is_reached():
+                            return
+                        output_row = format_output(row, attribute, is_enumeration_value=is_enumeration_value)
+                        yield output_row
         else:
             for row in self.client.search_attributes(
                     self.database_webid, search_root_path=self.search_root_path,
                     **self.config):
                 if limit.is_reached():
                     break
-                output_row = self.format_output(row)
+                if self.must_filter_child_attributes:
+                    path = row.get("Path", "")
+                    if is_child_attribute_path(path):
+                        continue
+                remove_unwanted_columns(row)
+                output_row = format_output(row)
                 yield output_row
-
-    def format_output(self, input_row, reference_row=None):
-        output_row = copy.deepcopy(input_row)
-        if reference_row:
-            output_row.update(reference_row)
-        output_row.pop("Links", None)
-        if "Value" in output_row and isinstance(output_row.get("Value"), dict):
-            output_row.update(output_row.pop("Value"))
-        return output_row
 
     def get_writer(self, dataset_schema=None, dataset_partitioning=None,
                    partition_id=None):
         raise Exception("Unimplemented")
-        # column_names, _ = get_schema_as_arrays(dataset_schema)
-        # return OSIsoftWriter(self.client, self.object_id, column_names, value_url=True)
 
     def get_partitioning(self):
         raise OSIsoftConnectorError("Unimplemented")

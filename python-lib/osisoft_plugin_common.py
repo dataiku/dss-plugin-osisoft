@@ -1,4 +1,12 @@
 import os
+import copy
+import time
+from osisoft_constants import OSIsoftConstants
+from safe_logger import SafeLogger
+from datetime import datetime
+
+
+logger = SafeLogger("osisoft plugin", ["Authorization", "sharepoint_username", "sharepoint_password", "client_secret"])
 
 
 class OSIsoftConnectorError(ValueError):
@@ -154,7 +162,8 @@ def escape(string_to_escape):
 
 
 def assert_time_format(date, error_source):
-    return
+    # https://docs.osisoft.com/bundle/pi-web-api-reference/page/help/topics/time-strings.html
+    pass
 
 
 def get_schema_as_arrays(dataset_schema):
@@ -176,6 +185,89 @@ def setup_ssl_certificate(ssl_cert_path):
         if os.path.isfile(ssl_cert_path):
             os.environ['REQUESTS_CA_BUNDLE'] = ssl_cert_path
             os.environ['CURL_CA_BUNDLE'] = ssl_cert_path
+
+
+def remove_unwanted_columns(row):
+    for unwated_column in OSIsoftConstants.SCHEMA_ATTRIBUTES_METRICS_FILTER:
+        row.pop(unwated_column, None)
+
+
+def format_output(input_row, reference_row=None, is_enumeration_value=False):
+    output_row = copy.deepcopy(input_row)
+    if reference_row:
+        output_row.update(reference_row)
+    if is_enumeration_value:
+        value = output_row.pop("Value", {})
+        output_row["Value"] = value.get("Name", "")
+        output_row["Value_ID"] = value.get("Value", None)
+    return output_row
+
+
+def filter_columns_from_schema(schema_columns, columns_to_remove):
+    output_schema = []
+    for column in schema_columns:
+        if column.get("name") not in columns_to_remove:
+            output_schema.append(column)
+    return output_schema
+
+
+def is_filtered_out(item, filters=None):
+    if not filters:
+        return False
+    for filter_key in filters:
+        if filter_key not in item:
+            return True
+        filter_value = filters.get(filter_key)
+        item_value = item.get(filter_key)
+        if filter_value != item_value:
+            return True
+    return False
+
+
+def is_server_throttling(response):
+    if response is None:
+        return True
+    if response.status_code in [429, 503]:
+        logger.warning("Error {}, headers = {}".format(response.status_code, response.headers))
+        seconds_before_retry = decode_retry_after_header(response)
+        logger.warning("Sleeping for {} seconds".format(seconds_before_retry))
+        time.sleep(seconds_before_retry)
+        return True
+    return False
+
+
+def decode_retry_after_header(response):
+    seconds_before_retry = OSIsoftConstants.DEFAULT_WAIT_BEFORE_RETRY
+    raw_header_value = response.headers.get("Retry-After", str(OSIsoftConstants.DEFAULT_WAIT_BEFORE_RETRY))
+    if raw_header_value.isdigit():
+        seconds_before_retry = int(raw_header_value)
+    else:
+        # Date format, "Wed, 21 Oct 2015 07:28:00 GMT"
+        try:
+            datetime_now = datetime.now()
+            datetime_header = datetime.strptime(raw_header_value, '%a, %d %b %Y %H:%M:%S GMT')
+            if datetime_header.timestamp() > datetime_now.timestamp():
+                # target date in the future
+                seconds_before_retry = (datetime_header - datetime_now).seconds
+        except Exception as err:
+            logger.error("decode_retry_after_header error {}".format(err))
+            seconds_before_retry = OSIsoftConstants.DEFAULT_WAIT_BEFORE_RETRY
+    return seconds_before_retry
+
+
+def is_child_attribute_path(path):
+    if not path:
+        return False
+    reversed_path = path[::-1]
+    has_one_pipe = False
+    for char in reversed_path:
+        if char == '|':
+            if has_one_pipe:
+                return True
+            has_one_pipe = True
+        if char == '\\':
+            return False
+    return False
 
 
 class RecordsLimit():

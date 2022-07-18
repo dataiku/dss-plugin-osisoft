@@ -35,14 +35,14 @@ class OSIsoftConnector(Connector):
         self.database_endpoint = config.get("database_name")
         if not self.database_endpoint:
             raise OSIsoftConnectorError("No endpoint selected")
-        self.must_download_data = config.get("must_download_data")
+        self.must_retrieve_metrics = config.get("must_retrieve_metrics")
         self.data_type = config.get("data_type", "Recorded")
         self.config = config
 
     def get_read_schema(self):
         return {
             "columns": OSIsoftConstants.SCHEMA_EVENT_FRAMES_METRICS_RESPONSE
-        } if self.must_download_data else {
+        } if self.must_retrieve_metrics else {
             "columns": OSIsoftConstants.SCHEMA_EVENT_FRAMES_RESPONSE
         }
 
@@ -62,36 +62,35 @@ class OSIsoftConnector(Connector):
             json_response = self.client.get(url=self.database_endpoint + "/eventframes", headers=headers, params=params, error_source="generate_rows")
             event_frames = json_response.get(OSIsoftConstants.API_ITEM_KEY, [json_response])
             for event_frame in event_frames:
-                if self.must_download_data:
+                if self.must_retrieve_metrics:
                     event_frame_id = event_frame.get("WebId")
                     event_frame_metrics = self.client.get_row_from_webid(
                         event_frame_id, self.data_type,
                         can_raise=False
                     )
                     for event_frame_metric in event_frame_metrics:
-                        ret = copy.deepcopy(event_frame)
-                        ret.pop("Links", None)
-                        ret.pop("Security", None)
-                        ret.update(event_frame_metric)
-                        # yield self.client.unnest_row(ret)
-                        if OSIsoftConstants.API_ITEM_KEY in ret:
-                            items = ret.pop(OSIsoftConstants.API_ITEM_KEY)
+                        event_frame_copy = copy.deepcopy(event_frame)
+                        event_frame_copy.pop("Links", None)
+                        event_frame_copy.pop("Security", None)
+                        event_frame_copy.update(event_frame_metric)
+                        if OSIsoftConstants.API_ITEM_KEY in event_frame_copy:
+                            items = event_frame_copy.pop(OSIsoftConstants.API_ITEM_KEY)
                             for item in items:
-                                rett = copy.deepcopy(ret)
-                                rett.update(item)
-                                rett.pop("Links", None)
-                                yield rett
+                                row = copy.deepcopy(event_frame_copy)
+                                row.update(item)
+                                row.pop("Links", None)
+                                yield row
                                 limit.add_record()
                         else:
-                            ret.pop("Links", None)
-                            yield ret
+                            event_frame_copy.pop("Links", None)
+                            yield event_frame_copy
                             limit.add_record()
                 else:
-                    ret = copy.deepcopy(event_frame)
-                    ret.pop(OSIsoftConstants.API_ITEM_KEY, None)
-                    ret.pop("Security", None)
-                    ret.pop("Links", None)
-                    yield ret
+                    event_frame_copy = copy.deepcopy(event_frame)
+                    event_frame_copy.pop(OSIsoftConstants.API_ITEM_KEY, None)
+                    event_frame_copy.pop("Security", None)
+                    event_frame_copy.pop("Links", None)
+                    yield event_frame_copy
                     limit.add_record()
                 if limit.is_reached():
                     break
