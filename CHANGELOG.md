@@ -1,6 +1,6 @@
 # Changelog
 
-## [Version 1.0.0](https://github.com/dataiku/dss-plugin-osisoft/releases/tag/v1.0.0) - Initial release - 2022
+## [Version 1.0.0](https://github.com/dataiku/dss-plugin-osisoft/releases/tag/v1.0.0) - Initial release - 2022-08-04
 
 - OSIsoft PIWebAPI plugin initial release
 - PiWebAPI ToolBox custom dataset, for read/write access to any asset path / webid
