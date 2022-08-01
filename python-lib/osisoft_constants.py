@@ -2,6 +2,17 @@ class OSIsoftConstants(object):
     API_ITEM_KEY = "Items"
     API_VALUE_KEY = "Value"
     API_TIMESTAMP_KEY = "Timestamp"
+    ASSET_METRICS_EMPTY_TEMPLATE = {
+        "object_id": None,
+        "error": None,
+        "Timestamp": None,
+        "Value": None,
+        "UnitsAbbreviation": None,
+        "Annotated": None,
+        "Good": None,
+        "Questionable": None,
+        "Substituted": None
+    }
     ATTRIBUTES_PATH = "attributes"
     CHAR_TO_ESCAPE = {
         " ", "%20",
@@ -28,6 +39,17 @@ class OSIsoftConstants(object):
         "?", "%3F",
         "@", "%40"
     }
+    DEFAULT_ASSET_METRICS_SCHEMA = [
+        {'name': 'object_id', 'type': 'string'},
+        {'name': 'Timestamp', 'type': 'date'},
+        {'name': 'Value', 'type': 'string'},
+        {'name': 'UnitsAbbreviation', 'type': 'string'},
+        {'name': 'Annotated', 'type': 'boolean'},
+        {'name': 'Good', 'type': 'boolean'},
+        {'name': 'Questionable', 'type': 'boolean'},
+        {'name': 'Substituted', 'type': 'boolean'},
+        {'name': 'error', 'type': 'string'}
+    ]
     DEFAULT_WAIT_BEFORE_RETRY = 60
     DKU_ERROR_KEY = "error"
     LINKS = "Links"

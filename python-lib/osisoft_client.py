@@ -56,6 +56,7 @@ class OSIsoftClient(object):
                 can_raise=can_raise
             )
             if OSIsoftConstants.DKU_ERROR_KEY in json_response:
+                json_response['object_id'] = "{}".format(webid)
                 yield json_response
             items = json_response.get(OSIsoftConstants.API_ITEM_KEY, [])
             for item in items:
@@ -94,6 +95,7 @@ class OSIsoftClient(object):
                 can_raise=can_raise
             )
             if OSIsoftConstants.DKU_ERROR_KEY in json_response:
+                json_response['object_id'] = "{}".format(item)
                 yield json_response
             items = json_response.get(OSIsoftConstants.API_ITEM_KEY, [json_response])
             for item in items:
