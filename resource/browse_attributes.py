@@ -111,7 +111,7 @@ def do(payload, config, plugin_config, inputs):
         next_url = json_choice.get("url")
         if next_url:
             choices.extend(client.get_next_choices(
-                next_url.replace("/elements", "/attributes").replace("/piwebapi/attributes", "/piwebapi/elements"),
+                next_url.replace("/elements", "/attributes").replace("/{}/attributes".format(client.endpoint.get_web_api_path()), "/{}/elements".format(client.endpoint.get_web_api_path())),
                 "Self")
             )
             return build_select_choices(choices)
@@ -126,7 +126,7 @@ def do(payload, config, plugin_config, inputs):
         next_url = json_choice.get("url")
         if next_url:
             choices.extend(client.get_next_choices(
-                next_url.replace("/elements", "/eventframes").replace("/piwebapi/eventframes", "/piwebapi/elements"),
+                next_url.replace("/elements", "/eventframes").replace("/{}/eventframes".format(client.endpoint.get_web_api_path()), "/{}/elements".format(client.endpoint.get_web_api_path())),
                 "Self")
             )
             return build_select_choices(choices)
@@ -141,7 +141,7 @@ def do(payload, config, plugin_config, inputs):
         if url_candidate:
             next_url = config.get(
                 "attribute_1",
-                url_candidate.replace("/elements", "/attributes").replace("/piwebapi/attributes", "/piwebapi/elements")
+                url_candidate.replace("/elements", "/attributes").replace("/{}/attributes".format(client.endpoint.get_web_api_path()), "/{}/elements".format(client.endpoint.get_web_api_path()))
             )
         else:
             return build_select_choices()

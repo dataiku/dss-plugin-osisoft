@@ -4,36 +4,40 @@ from urllib.parse import urlparse
 
 class OSIsoftEndpoints():
     def __init__(self, server_url):
-        self.scheme, self.hostname, self.port = self.parse_server_url(server_url)
+        self.scheme, self.hostname, self.port, path = self.parse_server_url(server_url)
+        self.web_api_path = path or OSIsoftConstants.WEB_API_PATH
 
     def parse_server_url(self, server_url):
         parsed = urlparse(server_url)
-        scheme = parsed.scheme
-        if scheme:
-            hostname = parsed.hostname
-        else:
-            scheme = "https"
-            hostname = parsed.path.split("/")[0]
+        scheme = parsed.scheme or OSIsoftConstants.DEFAULT_SCHEME
+        hostname = parsed.hostname
         port = parsed.port
-        return scheme, hostname, port
+        path = parsed.path.strip('/')
+        if not hostname and path:
+            # urlparse parses one segment server names as being path with empty hostname
+            # In intranets its more likely to be a server name with custom DNS, so we fix it here
+            return scheme, path, port, ""
+        return scheme, hostname, port, path
 
     def get_server_url(self):
         port_number = ":{}".format(self.port) if self.port else ""
-        return self.scheme + "://" + self.hostname + port_number
+        return "{}://{}{}".format(self.scheme, self.hostname, port_number)
 
     def get_base_url(self):
         return "/".join([
             self.get_server_url(),
-            OSIsoftConstants.WEB_API_PATH
+            self.web_api_path
         ])
 
     def get_resource_path_url(self):
         #  piwebapi/attributes?path
         return "/".join([
-            self.get_server_url(),
-            OSIsoftConstants.WEB_API_PATH,
+            self.get_base_url(),
             OSIsoftConstants.ATTRIBUTES_PATH
         ])
+
+    def get_web_api_path(self):
+        return self.web_api_path
 
     def get_stream_value_url(self, webid):
         url = self.get_base_url() + "/streams/{webid}/value".format(webid=webid)
@@ -52,7 +56,7 @@ class OSIsoftEndpoints():
         if endpoint_type == "AF":
             url_template = OSIsoftConstants.PIWEBAPI_AF_ENDPOINTS.get(data_type, "RecordedData")
         url = url_template.format(
-            base_url=self.get_server_url(),
+            base_url=self.get_base_url(),
             webid=webid
         )
         return url

@@ -50,6 +50,7 @@ class OSIsoftConstants(object):
         {'name': 'Substituted', 'type': 'boolean'},
         {'name': 'error', 'type': 'string'}
     ]
+    DEFAULT_SCHEME = "https"
     DEFAULT_WAIT_BEFORE_RETRY = 60
     DKU_ERROR_KEY = "error"
     LINKS = "Links"
@@ -208,29 +209,29 @@ class OSIsoftConstants(object):
     STREAM_PATH = "streams"
     STREAMSETS_PATH = "streamsets"
     PIWEBAPI_AF_ENDPOINTS = {
-        "InterpolatedData": "{base_url}/piwebapi/streams/{webid}/interpolated",
-        "RecordedData": "{base_url}/piwebapi/streams/{webid}/recorded",
-        "PlotData": "{base_url}/piwebapi/streams/{webid}/plot",
-        "SummaryData": "{base_url}/piwebapi/streams/{webid}/summary",
-        "Value": "{base_url}/piwebapi/streams/{webid}/value",
-        "EndValue": "{base_url}/piwebapi/streams/{webid}/end"
+        "InterpolatedData": "{base_url}/streams/{webid}/interpolated",
+        "RecordedData": "{base_url}/streams/{webid}/recorded",
+        "PlotData": "{base_url}/streams/{webid}/plot",
+        "SummaryData": "{base_url}/streams/{webid}/summary",
+        "Value": "{base_url}/streams/{webid}/value",
+        "EndValue": "{base_url}/streams/{webid}/end"
     }
     PIWEBAPI_ENDPOINTS = {
-        "Attributes": "{base_url}/piwebapi/eventframes/{webid}/attributes",
-        "EventFrames": "{base_url}/piwebapi/eventframes/{webid}/eventframes",
-        "Database": "{base_url}/piwebapi/assetdatabases/{webid}",
-        "ReferencedElements": "{base_url}/piwebapi/eventframes/{webid}/referencedelements",
-        "PrimaryReferencedElement": "{base_url}/piwebapi/elements/{webid}",
-        "Template": "{base_url}/piwebapi/elementtemplates/{webid}",
-        "Categories": "{base_url}/piwebapi/eventframes/{webid}/categories",
-        "InterpolatedData": "{base_url}/piwebapi/streamsets/{webid}/interpolated",
-        "RecordedData": "{base_url}/piwebapi/streamsets/{webid}/recorded",
-        "PlotData": "{base_url}/piwebapi/streamsets/{webid}/plot",
-        "SummaryData": "{base_url}/piwebapi/streamsets/{webid}/summary",
-        "Value": "{base_url}/piwebapi/streamsets/{webid}/value",
-        "EndValue": "{base_url}/piwebapi/streamsets/{webid}/end",
-        "Security": "{base_url}/piwebapi/eventframes/{webid}/security",
-        "SecurityEntries": "{base_url}/piwebapi/eventframes/{webid}/securityentries"
+        "Attributes": "{base_url}/eventframes/{webid}/attributes",
+        "EventFrames": "{base_url}/eventframes/{webid}/eventframes",
+        "Database": "{base_url}/assetdatabases/{webid}",
+        "ReferencedElements": "{base_url}/eventframes/{webid}/referencedelements",
+        "PrimaryReferencedElement": "{base_url}/elements/{webid}",
+        "Template": "{base_url}/elementtemplates/{webid}",
+        "Categories": "{base_url}/eventframes/{webid}/categories",
+        "InterpolatedData": "{base_url}/streamsets/{webid}/interpolated",
+        "RecordedData": "{base_url}/streamsets/{webid}/recorded",
+        "PlotData": "{base_url}/streamsets/{webid}/plot",
+        "SummaryData": "{base_url}/streamsets/{webid}/summary",
+        "Value": "{base_url}/streamsets/{webid}/value",
+        "EndValue": "{base_url}/streamsets/{webid}/end",
+        "Security": "{base_url}/eventframes/{webid}/security",
+        "SecurityEntries": "{base_url}/eventframes/{webid}/securityentries"
       }
     WEB_API_PATH = "piwebapi"
     WRITE_HEADERS = {'X-Requested-With': 'XmlHttpRequest'}
