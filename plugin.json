@@ -1,6 +1,6 @@
 {
     "id": "osisoft",
-    "version": "1.0.0",
+    "version": "0.0.3",
     "meta": {
         "label": "OSIsoft",
         "description": "Retrieve data from your OSIsoft PI servers",
