@@ -281,10 +281,6 @@ class OSIsoftClient(object):
             "path": escape(resource_path)
         }
 
-    def get_server_url(self):
-        port_number = ":{}".format(self.port) if self.port else ""
-        return self.scheme + "://" + self.hostname + port_number
-
     def get_requests_headers(self):
         return {
             "Content-Type": "application/json",
@@ -319,13 +315,11 @@ class OSIsoftClient(object):
                     error_message = error_message + " {}".format(json_response.get("Message"))
             except Exception as err:
                 logger.error("{}".format(err))
-                pass
             logger.error(error_message)
             logger.error("response.content={}".format(response.content))
             if can_raise:
                 raise OSIsoftClientError(error_message)
             return error_message
-        return
 
     def loop_sub_items(self, base_row):
         base_row.pop("Links", None)
@@ -579,7 +573,6 @@ class OSIsoftWriter(object):
             self.client.post_value(self.path, data)
         else:
             self.client.post_stream_value(self.webid, data)
-        return
 
     def timestamp_convertion(self, timestamp):
         return timestamp
