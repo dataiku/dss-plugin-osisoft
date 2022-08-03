@@ -88,7 +88,7 @@ with output_dataset.get_writer() as writer:
             )
         for row in rows:
             base = {
-                "object_id": None,
+                "object_id": object_id,
                 OSIsoftConstants.DKU_ERROR_KEY: None,
                 "Timestamp": None,
                 "Value": None,
