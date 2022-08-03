@@ -7,6 +7,7 @@ from datetime import datetime
 from requests_ntlm import HttpNtlmAuth
 from osisoft_constants import OSIsoftConstants
 from osisoft_endpoints import OSIsoftEndpoints
+from osisoft_api_manager import OSIsoftAPIManager
 from osisoft_plugin_common import build_requests_params, is_filtered_out, is_server_throttling
 from safe_logger import SafeLogger
 
@@ -20,12 +21,13 @@ class OSIsoftClientError(ValueError):
 
 class OSIsoftClient(object):
 
-    def __init__(self, server_url, auth_type, username, password, is_ssl_check_disabled=False, can_raise=True):
+    def __init__(self, server_url, auth_type, username, password, is_ssl_check_disabled=False, can_raise=True, api_manager_url=None):
         self.session = requests.Session()
         self.session.auth = self.get_auth(auth_type, username, password)
         self.session.verify = (not is_ssl_check_disabled)
         logger.info("Initialization server_url={}, is_ssl_check_disabled={}".format(server_url, is_ssl_check_disabled))
         self.endpoint = OSIsoftEndpoints(server_url)
+        self.api_manager = OSIsoftAPIManager(self.endpoint, api_manager_url)
         self.next_page = None
         self.can_raise = can_raise
 
@@ -222,14 +224,15 @@ class OSIsoftClient(object):
 
     def get(self, url, headers, params, can_raise=True, error_source=None):
         error_message = None
-        logger.info("Trying to connect to {} with params {}".format(url, params))
         url = build_query_string(url, params)
+        url = self.api_manager.get_api_manager_url(url)
+        logger.info("Trying to connect to {}".format(url))
         try:
             response = None
             while is_server_throttling(response):
                 response = self.session.get(
                     url=url,
-                    headers=headers
+                    headers=headers,verify=False
                 )
         except Exception as err:
             error_message = "Could not connect. Error: {}{}".format(formatted_error_source(error_source), err)
@@ -268,6 +271,8 @@ class OSIsoftClient(object):
 
     def post(self, url, headers, params, data, can_raise=True, error_source=None):
         url = build_query_string(url, params)
+        url = self.api_manager.get_api_manager_url(url)
+        logger.info("Posting to {}".format(url))
         response = self.session.post(
             url=url,
             headers=headers,

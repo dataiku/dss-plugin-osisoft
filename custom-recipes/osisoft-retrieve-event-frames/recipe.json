@@ -86,6 +86,22 @@
             "mandatory": false
         },
         {
+            "name": "is_using_api_manager",
+            "label": "Use API manager",
+            "visibilityCondition": "model.show_advanced_parameters==true",
+            "type": "BOOLEAN",
+            "description": "",
+            "defaultValue": false
+        },
+        {
+            "name": "api_manager_url",
+            "label": "API manager's URL",
+            "type": "STRING",
+            "description": "",
+            "visibilityCondition": "model.show_advanced_parameters==true && model.is_using_api_manager==true",
+            "mandatory": false
+        },
+        {
             "type": "SEPARATOR",
             "description": "Source"
         },

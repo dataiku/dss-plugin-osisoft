@@ -1,6 +1,7 @@
 import os
 import copy
 import time
+from urllib.parse import urlparse
 from osisoft_constants import OSIsoftConstants
 from safe_logger import SafeLogger
 from datetime import datetime
@@ -19,12 +20,16 @@ def get_credentials(config, can_raise=True):
     auth_type = credentials.get("auth_type", "basic")
     osisoft_basic = credentials.get("osisoft_basic", {})
     ssl_cert_path = credentials.get("ssl_cert_path")
+    api_manager_url = None
     if ssl_cert_path:
         setup_ssl_certificate(ssl_cert_path)
     username = osisoft_basic.get("user")
     password = osisoft_basic.get("password")
     show_advanced_parameters = config.get('show_advanced_parameters', False)
     if show_advanced_parameters:
+        is_using_api_manager = config.get("is_using_api_manager", False)
+        if is_using_api_manager:
+            api_manager_url = config.get("api_manager_url", "")
         setup_ssl_certificate(config.get("ssl_cert_path"))
         default_server = credentials.get("default_server")
         overwrite_server_url = config.get("server_url")
@@ -43,9 +48,9 @@ def get_credentials(config, can_raise=True):
     if can_raise and error_message:
         raise OSIsoftConnectorError(error_message)
     if can_raise:
-        return auth_type, username, password, server_url, is_ssl_check_disabled
+        return auth_type, username, password, server_url, is_ssl_check_disabled, api_manager_url
     else:
-        return auth_type, username, password, server_url, is_ssl_check_disabled, error_message
+        return auth_type, username, password, server_url, is_ssl_check_disabled, api_manager_url, error_message
 
 
 def get_interpolated_parameters(config):
@@ -268,6 +273,21 @@ def is_child_attribute_path(path):
         if char == '\\':
             return False
     return False
+
+
+def parse_server_url( server_url):
+    if not server_url:
+        return None, None, None, None
+    parsed = urlparse(server_url)
+    scheme = parsed.scheme or OSIsoftConstants.DEFAULT_SCHEME
+    hostname = parsed.hostname
+    port = parsed.port
+    path = parsed.path.strip('/')
+    if not hostname and path:
+        # urlparse parses one segment server names as being path with empty hostname
+        # In intranets its more likely to be a server name with custom DNS, so we fix it here
+        return scheme, path, port, ""
+    return scheme, hostname, port, path
 
 
 class RecordsLimit():

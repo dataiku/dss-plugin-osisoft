@@ -20,9 +20,9 @@ class OSIsoftConnector(Connector):
             )
         )
 
-        auth_type, username, password, server_url, is_ssl_check_disabled = get_credentials(config)
+        auth_type, username, password, server_url, is_ssl_check_disabled, api_manager_url = get_credentials(config)
 
-        self.client = OSIsoftClient(server_url, auth_type, username, password, is_ssl_check_disabled=is_ssl_check_disabled)
+        self.client = OSIsoftClient(server_url, auth_type, username, password, is_ssl_check_disabled=is_ssl_check_disabled, api_manager_url=api_manager_url)
         self.object_id = config.get("event_frame_to_retrieve", None)
         self.data_type = config.get("data_type", "SummaryData")
         if self.object_id is None:
