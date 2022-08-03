@@ -87,14 +87,25 @@ with output_dataset.get_writer() as writer:
                 endpoint_type="AF"
             )
         for row in rows:
-            base = {"object_id": object_id, OSIsoftConstants.DKU_ERROR_KEY: ""}
+            base = {
+                "object_id": None,
+                OSIsoftConstants.DKU_ERROR_KEY: None,
+                "Timestamp": None,
+                "Value": None,
+                "UnitsAbbreviation": None,
+                "Annotated": None,
+                "Good": None,
+                "Questionable": None,
+                "Substituted": None
+            }
             base.update(row)
             extention = client.unnest_row(base)
             results.extend(extention)
 
         unnested_items_rows = pd.DataFrame(results)
         if first_dataframe:
-            output_dataset.write_schema_from_dataframe(unnested_items_rows)
+            default_columns = OSIsoftConstants.DEFAULT_ASSET_METRICS_SCHEMA
+            output_dataset.write_schema(default_columns)
             first_dataframe = False
         writer.write_dataframe(unnested_items_rows)
         results = []
