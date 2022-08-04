@@ -84,7 +84,7 @@ class OSIsoftConnector(Connector):  # Browse
                 attribute.pop("Id", None)
                 is_enumeration_value = attribute.get("Type") == "EnumerationValue"
                 remove_unwanted_columns(attribute)
-                if "Errors" in attribute:
+                if OSIsoftConstants.DKU_ERROR_KEY in attribute:
                     yield attribute
                 else:
                     for row in self.client.get_row_from_webid(

@@ -4,7 +4,7 @@ class OSIsoftConstants(object):
     API_TIMESTAMP_KEY = "Timestamp"
     ASSET_METRICS_EMPTY_TEMPLATE = {
         "object_id": None,
-        "error": None,
+        "Errors": None,
         "Timestamp": None,
         "Value": None,
         "UnitsAbbreviation": None,
@@ -48,11 +48,11 @@ class OSIsoftConstants(object):
         {'name': 'Good', 'type': 'boolean'},
         {'name': 'Questionable', 'type': 'boolean'},
         {'name': 'Substituted', 'type': 'boolean'},
-        {'name': 'error', 'type': 'string'}
+        {'name': 'Errors', 'type': 'object'}
     ]
     DEFAULT_SCHEME = "https"
     DEFAULT_WAIT_BEFORE_RETRY = 60
-    DKU_ERROR_KEY = "error"
+    DKU_ERROR_KEY = "Errors"
     LINKS = "Links"
     POSSIBLE_WEB_ID_STARTS = ["F1", "I1", "P1", "L1", "D1"]
     RECORD_PATH = "recorded"

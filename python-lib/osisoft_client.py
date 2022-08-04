@@ -309,8 +309,8 @@ class OSIsoftClient(object):
             error_message = "Error {}{}".format(formatted_error_source(error_source), response.status_code)
             try:
                 json_response = simplejson.loads(response.content)
-                if "Errors" in json_response:
-                    error_message = error_message + " {}".format(json_response.get("Errors"))
+                if OSIsoftConstants.DKU_ERROR_KEY in json_response:
+                    error_message = error_message + " {}".format(json_response.get(OSIsoftConstants.DKU_ERROR_KEY))
                 if "Message" in json_response:
                     error_message = error_message + " {}".format(json_response.get("Message"))
             except Exception as err:
@@ -339,9 +339,9 @@ class OSIsoftClient(object):
         asset_servers_url = self.endpoint.get_asset_servers_url()
         headers = self.get_requests_headers()
         json_response = self.get(url=asset_servers_url, headers=headers, params={}, error_source="get_asset_servers", can_raise=can_raise)
-        if "error" in json_response:
+        if OSIsoftConstants.DKU_ERROR_KEY in json_response:
             return [{
-                "label": json_response.get("error")
+                "label": json_response.get(OSIsoftConstants.DKU_ERROR_KEY)
             }]
         items = json_response.get(OSIsoftConstants.API_ITEM_KEY, [])
         for item in items:
