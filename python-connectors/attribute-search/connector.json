@@ -47,6 +47,14 @@
             "mandatory": false
         },
         {
+            "name": "is_debug_mode",
+            "label": " ",
+            "visibilityCondition": "model.show_advanced_parameters==true",
+            "type": "BOOLEAN",
+            "description": "Verbose logging",
+            "defaultValue": false
+        },
+        {
             "name": "server_name",
             "label": "Server name",
             "type": "SELECT",

@@ -48,6 +48,10 @@ def get_credentials(config, can_raise=True):
         return auth_type, username, password, server_url, is_ssl_check_disabled, error_message
 
 
+def check_debug_mode(config):
+    return config.get('show_advanced_parameters', False) and config.get('is_debug_mode', False)
+
+
 def get_interpolated_parameters(config):
     data_type = config.get("data_type")
     interval = None

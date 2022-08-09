@@ -4,7 +4,8 @@ from osisoft_client import OSIsoftClient
 from safe_logger import SafeLogger
 from osisoft_plugin_common import (
     OSIsoftConnectorError, RecordsLimit, get_credentials, assert_time_format,
-    remove_unwanted_columns, format_output, filter_columns_from_schema, is_child_attribute_path
+    remove_unwanted_columns, format_output, filter_columns_from_schema, is_child_attribute_path,
+    check_debug_mode
 )
 from osisoft_constants import OSIsoftConstants
 
@@ -19,8 +20,9 @@ class OSIsoftConnector(Connector):  # Browse
         logger.info("Attribute search v1.0.0 initialization with config={}, plugin_config={}".format(logger.filter_secrets(config), logger.filter_secrets(plugin_config)))
 
         auth_type, username, password, server_url, is_ssl_check_disabled = get_credentials(config)
+        is_debug_mode = check_debug_mode(config)
 
-        self.client = OSIsoftClient(server_url, auth_type, username, password, is_ssl_check_disabled=is_ssl_check_disabled)
+        self.client = OSIsoftClient(server_url, auth_type, username, password, is_ssl_check_disabled=is_ssl_check_disabled, is_debug_mode=is_debug_mode)
         self.start_time = config.get("start_time")
         self.end_time = config.get("end_time")
         is_interpolated_data = config.get("data_type", "").endswith("InterpolatedData")

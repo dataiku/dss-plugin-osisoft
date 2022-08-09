@@ -20,7 +20,7 @@ class OSIsoftClientError(ValueError):
 
 class OSIsoftClient(object):
 
-    def __init__(self, server_url, auth_type, username, password, is_ssl_check_disabled=False, can_raise=True):
+    def __init__(self, server_url, auth_type, username, password, is_ssl_check_disabled=False, can_raise=True, is_debug_mode=False):
         self.session = requests.Session()
         self.session.auth = self.get_auth(auth_type, username, password)
         self.session.verify = (not is_ssl_check_disabled)
@@ -28,6 +28,7 @@ class OSIsoftClient(object):
         self.endpoint = OSIsoftEndpoints(server_url)
         self.next_page = None
         self.can_raise = can_raise
+        self.is_debug_mode = is_debug_mode
 
     def get_auth(self, auth_type, username, password):
         if auth_type == "basic":
@@ -222,8 +223,8 @@ class OSIsoftClient(object):
 
     def get(self, url, headers, params, can_raise=True, error_source=None):
         error_message = None
-        logger.info("Trying to connect to {} with params {}".format(url, params))
         url = build_query_string(url, params)
+        logger.info("Trying to connect to {}".format(url))
         try:
             response = None
             while is_server_throttling(response):
@@ -231,6 +232,8 @@ class OSIsoftClient(object):
                     url=url,
                     headers=headers
                 )
+                if self.is_debug_mode:
+                    logger.info("response={}".format(response.content)[:1000])
         except Exception as err:
             error_message = "Could not connect. Error: {}{}".format(formatted_error_source(error_source), err)
             logger.error(error_message)
