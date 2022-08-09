@@ -359,6 +359,10 @@ class OSIsoftClient(object):
         next_choices = []
         headers = self.get_requests_headers()
         json_response = self.get(url=next_url, headers=headers, params=params, error_source="get_next_choices")
+        if OSIsoftConstants.DKU_ERROR_KEY in json_response:
+            return [{
+                "label": json_response.get(OSIsoftConstants.DKU_ERROR_KEY)
+            }]
         items = json_response.get(OSIsoftConstants.API_ITEM_KEY)
         for item in items:
             if not is_filtered_out(item, filter):
@@ -373,6 +377,10 @@ class OSIsoftClient(object):
         next_choices = []
         headers = self.get_requests_headers()
         json_response = self.get(url=next_url, headers=headers, params=params, error_source="get_next_choices")
+        if OSIsoftConstants.DKU_ERROR_KEY in json_response:
+            return [{
+                "label": json_response.get(OSIsoftConstants.DKU_ERROR_KEY)
+            }]
         items = json_response.get(OSIsoftConstants.API_ITEM_KEY)
         for item in items:
             next_choices.append({
