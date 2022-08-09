@@ -7,7 +7,7 @@
         "author": "Dataiku (Alex Bourret)",
         "icon": "icon-osisoft icon-cogs",
         "tags": ["Connector"],
-        "url": "https://www.dataiku.com/product/plugins/osisoft",
+        "url": "https://doc.dataiku.com/dss/latest/connecting/osisoft.html",
         "licenseInfo": "Apache Software License",
         "supportLevel": "NOT_SUPPORTED"
     }
