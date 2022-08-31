@@ -97,7 +97,7 @@ class OSIsoftConnector(Connector):  # Browse
                         interval=self.interval,
                         sync_time=self.sync_time,
                         endpoint_type="AF",
-                        selected_fields="Links;Items.Timestamp;Items.Value"
+                        selected_fields="Links%3BItems.Timestamp%3BItems.Value"
                         # boundary_type=self.boundary_type
                     ):
                         if limit.is_reached():
