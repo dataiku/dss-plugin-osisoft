@@ -11,7 +11,7 @@ from osisoft_plugin_common import build_requests_params, is_filtered_out, is_ser
 from safe_logger import SafeLogger
 
 
-logger = SafeLogger("OSIsoftClient", ["username", "password"])
+logger = SafeLogger("PI System", ["username", "password"])
 
 
 class OSIsoftClientError(ValueError):

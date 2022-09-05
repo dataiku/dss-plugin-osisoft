@@ -1,8 +1,8 @@
-# OSIsoft Plugin
+# PI System Plugin
 
-This Dataiku DSS plugin provides a read connector to retrieve data from your OSIsoft PI servers.
+This Dataiku DSS plugin provides a read connector to retrieve data from your PI System servers.
 
-Documentation: https://www.dataiku.com/product/plugins/osisoft/
+Documentation: https://www.dataiku.com/product/plugins/pi-system/
 
 
 ### Licence

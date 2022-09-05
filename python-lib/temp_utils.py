@@ -8,13 +8,13 @@ import pwd
 import tempfile
 
 logger = logging.getLogger(__name__)
-logging.basicConfig(level=logging.INFO, format='Plugin: OSIsoft | %(levelname)s - %(message)s')
+logging.basicConfig(level=logging.INFO, format='Plugin: PI System | %(levelname)s - %(message)s')
 
 
 class CustomTmpFile(object):
 
     def __init__(self, sub_directory=None):
-        self.cache_relative_dir = '.tmp/dss/plugins/osisoft'
+        self.cache_relative_dir = '.tmp/dss/plugins/pi-system'
         if sub_directory:
             self.cache_relative_dir += '/{}'.format(sub_directory)
         self.tmp_output_dir = None

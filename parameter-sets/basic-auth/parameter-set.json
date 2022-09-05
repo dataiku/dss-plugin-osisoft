@@ -1,8 +1,8 @@
 {
     "meta" : {
-        "label": "OSIsoft credentials",
+        "label": "PI System credentials",
         "description": "",
-        "icon": "icon-osisoft icon-cogs"
+        "icon": "icon-pi-system icon-cogs"
     },
     "defaultDefinableInline": true,
     "defaultDefinableAtProjectLevel": true,
@@ -27,7 +27,7 @@
             "name": "default_server",
             "label": "Default server",
             "type": "STRING",
-            "description": "my.osisoft.server.com"
+            "description": "my.pi-system.server.com"
         },
         {
             "name": "can_disable_ssl_check",
@@ -46,7 +46,7 @@
         {
             "name": "osisoft_basic",
             "type": "CREDENTIAL_REQUEST",
-            "label": "OSIsoft basic login",
+            "label": "PI System basic login",
             "credentialRequestSettings": {
                 "type": "BASIC"
             }

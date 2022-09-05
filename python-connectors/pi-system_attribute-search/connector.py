@@ -9,7 +9,7 @@ from osisoft_plugin_common import (
 )
 from osisoft_constants import OSIsoftConstants
 
-logger = SafeLogger("OSIsoft plugin", ["user", "password"])
+logger = SafeLogger("PI System plugin", ["user", "password"])
 
 
 class OSIsoftConnector(Connector):  # Browse

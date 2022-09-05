@@ -1,15 +1,15 @@
 {
     "meta": {
-        "label": "Event frames downloader",
-        "description": "Retrieve attribute values from list of event frames",
-        "icon": "icon-osisoft icon-cogs"
+        "label": "Assets metrics downloader",
+        "description": "Retrieve PI metrics from list of tags",
+        "icon": "icon-pi-system icon-cogs"
     },
     "kind": "PYTHON",
     "selectableFromDataset": "input_dataset",
     "inputRoles": [
         {
             "name": "input_dataset",
-            "label": "Dataset containing event frames",
+            "label": "Dataset containing paths or tags",
             "description": "",
             "arity": "UNARY",
             "required": true,
@@ -91,7 +91,7 @@
         },
         {
             "name": "path_column",
-            "label": "Column containing WebIds",
+            "label": "Paths' column",
             "description": "",
             "type": "COLUMN",
             "columnRole": "input_dataset"
@@ -99,7 +99,7 @@
         {
             "type": "SEPARATOR",
             "description": "Time",
-            "visibilityCondition": "false && ['InterpolatedData', 'RecordedData', 'PlotData', 'EventFrames'].includes(model.data_type)"
+            "visibilityCondition": "['InterpolatedData', 'RecordedData', 'PlotData', 'EventFrames'].includes(model.data_type)"
         },
         {
             "name": "use_start_time_column",
@@ -118,7 +118,7 @@
             "columnRole": "input_dataset"
         },
         {
-            "visibilityCondition": "false && model.use_start_time_column==false && (['InterpolatedData', 'RecordedData', 'PlotData', 'EventFrames'].includes(model.data_type))",
+            "visibilityCondition": "model.use_start_time_column==false && (['InterpolatedData', 'RecordedData', 'PlotData', 'EventFrames'].includes(model.data_type))",
             "name": "start_time",
             "label": "Start time",
             "description": "Optional",
@@ -142,7 +142,7 @@
             "columnRole": "input_dataset"
         },
         {
-            "visibilityCondition": "false && model.use_end_time_column==false && (['InterpolatedData', 'RecordedData', 'PlotData', 'EventFrames'].includes(model.data_type))",
+            "visibilityCondition": "model.use_end_time_column==false && (['InterpolatedData', 'RecordedData', 'PlotData', 'EventFrames'].includes(model.data_type))",
             "name": "end_time",
             "label": "End time",
             "description": "Optional",
@@ -191,13 +191,19 @@
             "label": "Data type",
             "type": "SELECT",
             "selectChoices":[
+                {"value": "InterpolatedData", "label": "Interpolated"},
                 {"value": "PlotData", "label": "Plot"},
                 {"value": "RecordedData", "label": "Recorded"},
+                {"value": "Elements", "label": "Elements"},
+                {"value": "Template", "label": "Template"},
                 {"value": "SummaryData", "label": "SummaryData"},
                 {"value": "Value", "label": "Value"},
-                {"value": "EndValue", "label": "EndValue"}
+                {"value": "EndValue", "label": "EndValue"},
+                {"value": "Categories", "label": "Categories"},
+                {"value": "Attributes", "label": "Attributes"},
+                {"value": "EventFrames", "label": "Event frames"}
             ],
-            "defaultValue": "SummaryData"
+            "defaultValue": "RecordedData"
         }
     ],
     "resourceKeys": []

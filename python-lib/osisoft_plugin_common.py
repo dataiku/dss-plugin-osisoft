@@ -6,7 +6,7 @@ from safe_logger import SafeLogger
 from datetime import datetime
 
 
-logger = SafeLogger("osisoft plugin", ["Authorization", "sharepoint_username", "sharepoint_password", "client_secret"])
+logger = SafeLogger("pi-system plugin", ["Authorization", "sharepoint_username", "sharepoint_password", "client_secret"])
 
 
 class OSIsoftConnectorError(ValueError):

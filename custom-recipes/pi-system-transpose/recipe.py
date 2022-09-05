@@ -7,7 +7,7 @@ import os
 from temp_utils import CustomTmpFile
 
 
-logger = SafeLogger("osisoft plugin", forbiden_keys=["token", "password"])
+logger = SafeLogger("pi-system plugin", forbiden_keys=["token", "password"])
 
 
 current_timestamps_cache = []

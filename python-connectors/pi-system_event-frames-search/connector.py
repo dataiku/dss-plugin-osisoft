@@ -6,7 +6,7 @@ from safe_logger import SafeLogger
 from osisoft_plugin_common import OSIsoftConnectorError, RecordsLimit, get_credentials, build_requests_params, assert_time_format
 
 
-logger = SafeLogger("OSIsoft plugin", ["user", "password"])
+logger = SafeLogger("PI System plugin", ["user", "password"])
 
 
 class OSIsoftConnector(Connector):
