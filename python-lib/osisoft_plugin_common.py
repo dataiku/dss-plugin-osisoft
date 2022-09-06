@@ -9,7 +9,7 @@ from datetime import datetime
 logger = SafeLogger("pi-system plugin", ["Authorization", "sharepoint_username", "sharepoint_password", "client_secret"])
 
 
-class OSIsoftConnectorError(ValueError):
+class PISystemConnectorError(ValueError):
     pass
 
 
@@ -41,7 +41,7 @@ def get_credentials(config, can_raise=True):
         server_url = credentials.get("default_server")
         is_ssl_check_disabled = False
     if can_raise and error_message:
-        raise OSIsoftConnectorError(error_message)
+        raise PISystemConnectorError(error_message)
     if can_raise:
         return auth_type, username, password, server_url, is_ssl_check_disabled
     else:

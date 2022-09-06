@@ -14,7 +14,7 @@ from safe_logger import SafeLogger
 logger = SafeLogger("PI System", ["username", "password"])
 
 
-class OSIsoftClientError(ValueError):
+class PISystemClientError(ValueError):
     pass
 
 
@@ -107,7 +107,7 @@ class OSIsoftClient(object):
         if not url:
             error_message = "This object does not have {} data type".format(data_type)
             if can_raise:
-                raise OSIsoftClientError(error_message)
+                raise PISystemClientError(error_message)
             return {OSIsoftConstants.DKU_ERROR_KEY: error_message}
         headers = self.get_requests_headers()
         params = build_requests_params(start_time=start_date, end_time=end_date, interval=interval, sync_time=sync_time, sync_time_boundary_type=boundary_type)
@@ -238,7 +238,7 @@ class OSIsoftClient(object):
             error_message = "Could not connect. Error: {}{}".format(formatted_error_source(error_source), err)
             logger.error(error_message)
             if can_raise:
-                raise OSIsoftClientError(error_message)
+                raise PISystemClientError(error_message)
         if not error_message:
             error_message = self.assert_valid_response(response, can_raise=can_raise, error_source=error_source)
         if error_message:
@@ -321,7 +321,7 @@ class OSIsoftClient(object):
             logger.error(error_message)
             logger.error("response.content={}".format(response.content))
             if can_raise:
-                raise OSIsoftClientError(error_message)
+                raise PISystemClientError(error_message)
             return error_message
 
     def loop_sub_items(self, base_row):
@@ -564,7 +564,7 @@ class OSIsoftWriter(object):
         if "Value" in column_names:
             value_rank = column_names.index("Value")
         else:
-            raise OSIsoftClientError("The 'Value' column cannot be found in the input dataset")
+            raise PISystemClientError("The 'Value' column cannot be found in the input dataset")
         return timestamp_rank, value_rank
 
     def write_row(self, row):
