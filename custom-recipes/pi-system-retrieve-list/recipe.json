@@ -91,7 +91,7 @@
         },
         {
             "name": "path_column",
-            "label": "Paths' column",
+            "label": "Path column",
             "description": "",
             "type": "COLUMN",
             "columnRole": "input_dataset"
