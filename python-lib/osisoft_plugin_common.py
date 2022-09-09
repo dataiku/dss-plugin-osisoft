@@ -104,7 +104,11 @@ def build_requests_params(**kwargs):
     for kwarg in kwargs:
         requests_param_key = requests_params_options.get(kwarg)
         if requests_param_key and kwargs.get(kwarg):
-            requests_params.update({requests_param_key: "{}".format(kwargs.get(kwarg))})
+            value = kwargs.get(kwarg)
+            if type(value) is list:
+                requests_params.update({requests_param_key: value})
+            else:
+                requests_params.update({requests_param_key: "{}".format(value)})
     search_mode = kwargs.get("search_mode")
     if search_mode and (kwargs.get("start_time") or kwargs.get("end_time")):
         requests_params.update({"searchMode": "{}".format(search_mode)})
