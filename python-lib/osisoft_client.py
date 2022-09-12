@@ -81,7 +81,7 @@ class OSIsoftClient(object):
         )
         return json_response
 
-    def get_row_from_item(self, item, data_type, start_date=None, end_date=None, interval=None, sync_time=None, boundary_type=None, can_raise=True):
+    def get_row_from_item(self, item, data_type, start_date=None, end_date=None, interval=None, sync_time=None, boundary_type=None, can_raise=True, object_id=None):
         has_more = True
         while has_more:
             json_response, has_more = self.get_paginated(
@@ -96,7 +96,7 @@ class OSIsoftClient(object):
                 can_raise=can_raise
             )
             if OSIsoftConstants.DKU_ERROR_KEY in json_response:
-                json_response['object_id'] = "{}".format(item)
+                json_response['object_id'] = "{}".format(object_id)
                 yield json_response
             items = json_response.get(OSIsoftConstants.API_ITEM_KEY, [json_response])
             for item in items:

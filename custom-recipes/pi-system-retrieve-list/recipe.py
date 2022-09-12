@@ -3,7 +3,7 @@ import dataiku
 from dataiku.customrecipe import get_input_names_for_role, get_recipe_config, get_output_names_for_role
 import pandas as pd
 from safe_logger import SafeLogger
-from osisoft_plugin_common import get_credentials, get_interpolated_parameters, normalize_af_path
+from osisoft_plugin_common import get_credentials, get_interpolated_parameters, normalize_af_path, get_combined_description, get_base_for_data_type
 from osisoft_client import OSIsoftClient
 from osisoft_constants import OSIsoftConstants
 
@@ -38,7 +38,6 @@ end_time_column = config.get("end_time_column")
 server_url_column = config.get("server_url_column")
 interval, sync_time, boundary_type = get_interpolated_parameters(config)
 
-
 input_parameters_dataset = dataiku.Dataset(input_dataset[0])
 output_dataset = dataiku.Dataset(output_names_stats[0])
 input_parameters_dataframe = input_parameters_dataset.get_dataframe()
@@ -71,7 +70,8 @@ with output_dataset.get_writer() as writer:
                 interval=interval,
                 sync_time=sync_time,
                 boundary_type=boundary_type,
-                can_raise=False
+                can_raise=False,
+                object_id = object_id
             )
         else:
             rows = client.get_row_from_webid(
@@ -86,25 +86,24 @@ with output_dataset.get_writer() as writer:
                 endpoint_type="AF"
             )
         for row in rows:
-            base = {
-                "object_id": object_id,
-                OSIsoftConstants.DKU_ERROR_KEY: None,
-                "Timestamp": None,
-                "Value": None,
-                "UnitsAbbreviation": None,
-                "Annotated": None,
-                "Good": None,
-                "Questionable": None,
-                "Substituted": None
-            }
-            base.update(row)
-            extention = client.unnest_row(base)
-            results.extend(extention)
+            if type(row) == list:
+                for line in row:
+                    base = get_base_for_data_type(data_type, object_id)
+                    base.update(line)
+                    extention = client.unnest_row(base)
+                    results.extend(extention)
+            else:
+                base = get_base_for_data_type(data_type, object_id)
+                base.update(row)
+                extention = client.unnest_row(base)
+                results.extend(extention)
 
         unnested_items_rows = pd.DataFrame(results)
         if first_dataframe:
-            default_columns = OSIsoftConstants.DEFAULT_ASSET_METRICS_SCHEMA
-            output_dataset.write_schema(default_columns)
+            default_columns = OSIsoftConstants.RECIPE_SCHEMA_PER_DATA_TYPE.get(data_type)
+            combined_columns_description = get_combined_description(default_columns, unnested_items_rows)
+            output_dataset.write_schema(combined_columns_description)
             first_dataframe = False
-        writer.write_dataframe(unnested_items_rows)
+        if not unnested_items_rows.empty:
+            writer.write_dataframe(unnested_items_rows)
         results = []

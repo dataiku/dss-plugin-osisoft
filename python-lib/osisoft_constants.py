@@ -13,6 +13,7 @@ class OSIsoftConstants(object):
         "Questionable": None,
         "Substituted": None
     }
+    BASE_PER_DATA_TYPE = {}
     ATTRIBUTES_PATH = "attributes"
     CHAR_TO_ESCAPE = {
         " ", "%20",
@@ -41,6 +42,9 @@ class OSIsoftConstants(object):
     }
     DEFAULT_ASSET_METRICS_SCHEMA = [
         {'name': 'object_id', 'type': 'string'},
+        {'name': 'WebId', 'type': 'string'},
+        {'name': 'Name', 'type': 'string'},
+        {'name': 'Path', 'type': 'string'},
         {'name': 'Timestamp', 'type': 'date'},
         {'name': 'Value', 'type': 'string'},
         {'name': 'UnitsAbbreviation', 'type': 'string'},
@@ -50,11 +54,152 @@ class OSIsoftConstants(object):
         {'name': 'Substituted', 'type': 'boolean'},
         {'name': 'Errors', 'type': 'object'}
     ]
+    DEFAULT_SCHEMA = []
+    ELEMENTS_SCHEMA = [
+        {'name': 'object_id', 'type': 'string'},
+        {'name': 'WebId', 'type': 'string'},
+        {'name': 'Id', 'type': 'string'},
+        {'name': 'Name', 'type': 'string'},
+        {'name': 'Description', 'type': 'string'},
+        {'name': 'Path', 'type': 'string'},
+        {'name': 'TemplateName', 'type': 'string'},
+        {'name': 'HasChildren', 'type': 'boolean'},
+        {'name': 'CategoryNames', 'type': 'object'},
+        {'name': 'ExtendedProperties', 'type': 'object'},
+        {'name': 'Errors', 'type': 'object'}
+    ]
+    TEMPLATE_SCHEMA = [
+        {'name': 'object_id', 'type': 'string'},
+        {'name': 'WebId', 'type': 'string'},
+        {'name': 'Id', 'type': 'string'},
+        {'name': 'Name', 'type': 'string'},
+        {'name': 'Description', 'type': 'string'},
+        {'name': 'Path', 'type': 'string'},
+        {'name': 'Type', 'type': 'string'},
+        {'name': 'TypeQualifier', 'type': 'string'},
+        {'name': 'DefaultUnitsName', 'type': 'string'},
+        {'name': 'DefaultUnitsNameAbbreviation', 'type': 'string'},
+        {'name': 'DefaultValue', 'type': 'string'},
+        {'name': 'DataReferencePlugIn', 'type': 'string'},
+        {'name': 'ConfigString', 'type': 'string'},
+        {'name': 'IsConfigurationItem', 'type': 'boolean'},
+        {'name': 'IsExcluded', 'type': 'boolean'},
+        {'name': 'IsHidden', 'type': 'boolean'},
+        {'name': 'IsManualDataEntry', 'type': 'boolean'},
+        {'name': 'HasChildren', 'type': 'boolean'},
+        {'name': 'AllowElementToExtend', 'type': 'boolean'},
+        {'name': 'BaseTemplate', 'type': 'string'},
+        {'name': 'InstanceType', 'type': 'string'},
+        {'name': 'NamingPattern', 'type': 'string'},
+        {'name': 'CategoryNames', 'type': 'object'},
+        {'name': 'TraitName', 'type': 'string'},
+        {'name': 'ExtendedProperties', 'type': 'object'},
+        {'name': 'ProcessBook.AFDisplayBuilder.UTCChanged', 'type': 'object'},
+        {'name': 'ProcessBook.AFModeler.Graphic', 'type': 'object'},
+        {'name': 'Severity', 'type': 'string'},
+        {'name': 'CanBeAcknowledged', 'type': 'boolean'},
+        {'name': 'Errors', 'type': 'object'}
+    ]
+    SUMMARY_DATA_SCHEMA = [
+        {'name': 'object_id', 'type': 'string'},
+        {'name': 'WebId', 'type': 'string'},
+        {'name': 'Name', 'type': 'string'},
+        {'name': 'Path', 'type': 'string'},
+        {'name': 'Type', 'type': 'string'},
+        {'name': 'Value_Timestamp', 'type': 'date'},
+        {'name': 'Value_Value', 'type': 'string'},
+        {'name': 'Value_UnitsAbbreviation', 'type': 'string'},
+        {'name': 'Value_Annotated', 'type': 'boolean'},
+        {'name': 'Value_Good', 'type': 'boolean'},
+        {'name': 'Value_Questionable', 'type': 'boolean'},
+        {'name': 'Value_Substituted', 'type': 'boolean'},
+        {'name': 'Timestamp', 'type': 'date'},
+        {'name': 'Value', 'type': 'string'},
+        {'name': 'UnitsAbbreviation', 'type': 'string'},
+        {'name': 'Annotated', 'type': 'boolean'},
+        {'name': 'Good', 'type': 'boolean'},
+        {'name': 'Questionable', 'type': 'boolean'},
+        {'name': 'Substituted', 'type': 'boolean'},
+        {'name': 'Errors', 'type': 'object'}
+    ]
+    CATEGORIES_SCHEMA = [
+        {'name': 'object_id', 'type': 'string'},
+        {'name': 'WebId', 'type': 'string'},
+        {'name': 'Name', 'type': 'string'},
+        {'name': 'Description', 'type': 'string'},
+        {'name': 'Path', 'type': 'string'},
+        {'name': 'Id', 'type': 'string'},
+        {'name': 'Errors', 'type': 'object'}
+    ]
+    ATTRIBUTES_SCHEMA = [
+        {'name': 'object_id', 'type': 'string'},
+        {'name': 'WebId', 'type': 'string'},
+        {'name': 'Id', 'type': 'string'},
+        {'name': 'Name', 'type': 'string'},
+        {'name': 'Description', 'type': 'string'},
+        {'name': 'Path', 'type': 'string'},
+        {'name': 'Type', 'type': 'string'},
+        {'name': 'TypeQualifier', 'type': 'string'},
+        {'name': 'DefaultUnitsName', 'type': 'string'},
+        {'name': 'DefaultUnitsNameAbbreviation', 'type': 'string'},
+        {'name': 'DisplayDigits', 'type': 'string'},
+        {'name': 'DataReferencePlugIn', 'type': 'string'},
+        {'name': 'ConfigString', 'type': 'string'},
+        {'name': 'IsConfigurationItem', 'type': 'boolean'},
+        {'name': 'IsExcluded', 'type': 'boolean'},
+        {'name': 'IsHidden', 'type': 'boolean'},
+        {'name': 'IsManualDataEntry', 'type': 'boolean'},
+        {'name': 'HasChildren', 'type': 'boolean'},
+        {'name': 'CategoryNames', 'type': 'object'},
+        {'name': 'Step', 'type': 'boolean'},
+        {'name': 'TraitName', 'type': 'string'},
+        {'name': 'Span', 'type': 'string'},
+        {'name': 'Zero', 'type': 'string'},
+        {'name': 'Errors', 'type': 'object'}
+    ]
+    EVENT_FRAMES_SCHEMA = [
+        {'name': 'object_id', 'type': 'string'},
+        {'name': 'WebId', 'type': 'string'},
+        {'name': 'Id', 'type': 'string'},
+        {'name': 'Name', 'type': 'string'},
+        {'name': 'Description', 'type': 'string'},
+        {'name': 'Path', 'type': 'string'},
+        {'name': 'TemplateName', 'type': 'string'},
+        {'name': 'HasChildren', 'type': 'boolean'},
+        {'name': 'CategoryNames', 'type': 'object'},
+        {'name': 'ExtendedProperties', 'type': 'object'},
+        {'name': 'StartTime', 'type': 'date'},
+        {'name': 'EndTime', 'type': 'date'},
+        {'name': 'Severity', 'type': 'string'},
+        {'name': 'AcknowledgedBy', 'type': 'string'},
+        {'name': 'AcknowledgedDate', 'type': 'date'},
+        {'name': 'CanBeAcknowledged', 'type': 'boolean'},
+        {'name': 'IsAcknowledged', 'type': 'boolean'},
+        {'name': 'IsAnnotated', 'type': 'boolean'},
+        {'name': 'IsLocked', 'type': 'boolean'},
+        {'name': 'AreValuesCaptured', 'type': 'boolean'},
+        {'name': 'RefElementWebIds', 'type': 'object'},
+        {'name': 'Security', 'type': 'object'},
+        {'name': 'Errors', 'type': 'object'}
+    ]
     DEFAULT_SCHEME = "https"
     DEFAULT_WAIT_BEFORE_RETRY = 60
     DKU_ERROR_KEY = "Errors"
     LINKS = "Links"
     POSSIBLE_WEB_ID_STARTS = ["F1", "I1", "P1", "L1", "D1"]
+    RECIPE_SCHEMA_PER_DATA_TYPE = {
+        "InterpolatedData": DEFAULT_ASSET_METRICS_SCHEMA,
+        "PlotData": DEFAULT_ASSET_METRICS_SCHEMA,
+        "RecordedData": DEFAULT_ASSET_METRICS_SCHEMA,
+        "Elements": ELEMENTS_SCHEMA,
+        "Template": TEMPLATE_SCHEMA,
+        "SummaryData": SUMMARY_DATA_SCHEMA,
+        "Value": SUMMARY_DATA_SCHEMA,
+        "EndValue": SUMMARY_DATA_SCHEMA,
+        "Categories": CATEGORIES_SCHEMA,
+        "Attributes": ATTRIBUTES_SCHEMA,
+        "EventFrames": EVENT_FRAMES_SCHEMA
+    }
     RECORD_PATH = "recorded"
     SCHEMA_EVENT_FRAMES = [
         "Path",
@@ -232,6 +377,6 @@ class OSIsoftConstants(object):
         "EndValue": "{base_url}/streamsets/{webid}/end",
         "Security": "{base_url}/eventframes/{webid}/security",
         "SecurityEntries": "{base_url}/eventframes/{webid}/securityentries"
-      }
+    }
     WEB_API_PATH = "piwebapi"
     WRITE_HEADERS = {'X-Requested-With': 'XmlHttpRequest'}
