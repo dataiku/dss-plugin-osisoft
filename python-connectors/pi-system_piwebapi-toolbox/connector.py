@@ -1,10 +1,10 @@
 from dataiku.connector import Connector
 from osisoft_client import OSIsoftClient, OSIsoftWriter
 from safe_logger import SafeLogger
-from osisoft_plugin_common import OSIsoftConnectorError, RecordsLimit, get_credentials, assert_time_format, get_schema_as_arrays, normalize_af_path
+from osisoft_plugin_common import PISystemConnectorError, RecordsLimit, get_credentials, assert_time_format, get_schema_as_arrays, normalize_af_path
 
 
-logger = SafeLogger("OSIsoft plugin", ["user", "password"])
+logger = SafeLogger("PI System plugin", ["user", "password"])
 
 
 class OSIsoftConnector(Connector):  # Search
@@ -73,13 +73,13 @@ class OSIsoftConnector(Connector):  # Search
         return OSIsoftWriter(self.client, self.object_id, column_names)
 
     def get_partitioning(self):
-        raise OSIsoftConnectorError("Unimplemented")
+        raise PISystemConnectorError("Unimplemented")
 
     def list_partitions(self, partitioning):
         return []
 
     def partition_exists(self, partitioning, partition_id):
-        raise OSIsoftConnectorError("Unimplemented")
+        raise PISystemConnectorError("Unimplemented")
 
     def get_records_count(self, partitioning=None, partition_id=None):
-        raise OSIsoftConnectorError("Unimplemented")
+        raise PISystemConnectorError("Unimplemented")

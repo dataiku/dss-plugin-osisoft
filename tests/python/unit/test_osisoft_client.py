@@ -1,6 +1,5 @@
 from osisoft_client import format_output_row
 from osisoft_plugin_common import is_child_attribute_path
-import pytest
 
 
 class TestCommonMethods:

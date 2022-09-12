@@ -11,16 +11,16 @@ from osisoft_plugin_common import build_requests_params, is_filtered_out, is_ser
 from safe_logger import SafeLogger
 
 
-logger = SafeLogger("OSIsoftClient", ["username", "password"])
+logger = SafeLogger("PI System", ["username", "password"])
 
 
-class OSIsoftClientError(ValueError):
+class PISystemClientError(ValueError):
     pass
 
 
 class OSIsoftClient(object):
 
-    def __init__(self, server_url, auth_type, username, password, is_ssl_check_disabled=False, can_raise=True):
+    def __init__(self, server_url, auth_type, username, password, is_ssl_check_disabled=False, can_raise=True, is_debug_mode=False):
         self.session = requests.Session()
         self.session.auth = self.get_auth(auth_type, username, password)
         self.session.verify = (not is_ssl_check_disabled)
@@ -28,6 +28,7 @@ class OSIsoftClient(object):
         self.endpoint = OSIsoftEndpoints(server_url)
         self.next_page = None
         self.can_raise = can_raise
+        self.is_debug_mode = is_debug_mode
 
     def get_auth(self, auth_type, username, password):
         if auth_type == "basic":
@@ -80,7 +81,7 @@ class OSIsoftClient(object):
         )
         return json_response
 
-    def get_row_from_item(self, item, data_type, start_date=None, end_date=None, interval=None, sync_time=None, boundary_type=None, can_raise=True):
+    def get_row_from_item(self, item, data_type, start_date=None, end_date=None, interval=None, sync_time=None, boundary_type=None, can_raise=True, object_id=None):
         has_more = True
         while has_more:
             json_response, has_more = self.get_paginated(
@@ -95,7 +96,7 @@ class OSIsoftClient(object):
                 can_raise=can_raise
             )
             if OSIsoftConstants.DKU_ERROR_KEY in json_response:
-                json_response['object_id'] = "{}".format(item)
+                json_response['object_id'] = "{}".format(object_id)
                 yield json_response
             items = json_response.get(OSIsoftConstants.API_ITEM_KEY, [json_response])
             for item in items:
@@ -106,7 +107,7 @@ class OSIsoftClient(object):
         if not url:
             error_message = "This object does not have {} data type".format(data_type)
             if can_raise:
-                raise OSIsoftClientError(error_message)
+                raise PISystemClientError(error_message)
             return {OSIsoftConstants.DKU_ERROR_KEY: error_message}
         headers = self.get_requests_headers()
         params = build_requests_params(start_time=start_date, end_time=end_date, interval=interval, sync_time=sync_time, sync_time_boundary_type=boundary_type)
@@ -222,8 +223,8 @@ class OSIsoftClient(object):
 
     def get(self, url, headers, params, can_raise=True, error_source=None):
         error_message = None
-        logger.info("Trying to connect to {} with params {}".format(url, params))
         url = build_query_string(url, params)
+        logger.info("Trying to connect to {}".format(url))
         try:
             response = None
             while is_server_throttling(response):
@@ -231,11 +232,13 @@ class OSIsoftClient(object):
                     url=url,
                     headers=headers
                 )
+                if self.is_debug_mode:
+                    logger.info("response={}".format(response.content)[:1000])
         except Exception as err:
             error_message = "Could not connect. Error: {}{}".format(formatted_error_source(error_source), err)
             logger.error(error_message)
             if can_raise:
-                raise OSIsoftClientError(error_message)
+                raise PISystemClientError(error_message)
         if not error_message:
             error_message = self.assert_valid_response(response, can_raise=can_raise, error_source=error_source)
         if error_message:
@@ -309,8 +312,8 @@ class OSIsoftClient(object):
             error_message = "Error {}{}".format(formatted_error_source(error_source), response.status_code)
             try:
                 json_response = simplejson.loads(response.content)
-                if "Errors" in json_response:
-                    error_message = error_message + " {}".format(json_response.get("Errors"))
+                if OSIsoftConstants.DKU_ERROR_KEY in json_response:
+                    error_message = error_message + " {}".format(json_response.get(OSIsoftConstants.DKU_ERROR_KEY))
                 if "Message" in json_response:
                     error_message = error_message + " {}".format(json_response.get("Message"))
             except Exception as err:
@@ -318,7 +321,7 @@ class OSIsoftClient(object):
             logger.error(error_message)
             logger.error("response.content={}".format(response.content))
             if can_raise:
-                raise OSIsoftClientError(error_message)
+                raise PISystemClientError(error_message)
             return error_message
 
     def loop_sub_items(self, base_row):
@@ -339,9 +342,9 @@ class OSIsoftClient(object):
         asset_servers_url = self.endpoint.get_asset_servers_url()
         headers = self.get_requests_headers()
         json_response = self.get(url=asset_servers_url, headers=headers, params={}, error_source="get_asset_servers", can_raise=can_raise)
-        if "error" in json_response:
+        if OSIsoftConstants.DKU_ERROR_KEY in json_response:
             return [{
-                "label": json_response.get("error")
+                "label": json_response.get(OSIsoftConstants.DKU_ERROR_KEY)
             }]
         items = json_response.get(OSIsoftConstants.API_ITEM_KEY, [])
         for item in items:
@@ -356,6 +359,10 @@ class OSIsoftClient(object):
         next_choices = []
         headers = self.get_requests_headers()
         json_response = self.get(url=next_url, headers=headers, params=params, error_source="get_next_choices")
+        if OSIsoftConstants.DKU_ERROR_KEY in json_response:
+            return [{
+                "label": json_response.get(OSIsoftConstants.DKU_ERROR_KEY)
+            }]
         items = json_response.get(OSIsoftConstants.API_ITEM_KEY)
         for item in items:
             if not is_filtered_out(item, filter):
@@ -370,6 +377,10 @@ class OSIsoftClient(object):
         next_choices = []
         headers = self.get_requests_headers()
         json_response = self.get(url=next_url, headers=headers, params=params, error_source="get_next_choices")
+        if OSIsoftConstants.DKU_ERROR_KEY in json_response:
+            return [{
+                "label": json_response.get(OSIsoftConstants.DKU_ERROR_KEY)
+            }]
         items = json_response.get(OSIsoftConstants.API_ITEM_KEY)
         for item in items:
             next_choices.append({
@@ -553,7 +564,7 @@ class OSIsoftWriter(object):
         if "Value" in column_names:
             value_rank = column_names.index("Value")
         else:
-            raise OSIsoftClientError("The 'Value' column cannot be found in the input dataset")
+            raise PISystemClientError("The 'Value' column cannot be found in the input dataset")
         return timestamp_rank, value_rank
 
     def write_row(self, row):

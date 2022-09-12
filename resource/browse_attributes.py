@@ -1,6 +1,6 @@
 import json
 from osisoft_client import OSIsoftClient
-from osisoft_plugin_common import get_credentials, build_select_choices
+from osisoft_plugin_common import get_credentials, build_select_choices, check_debug_mode
 
 
 def do(payload, config, plugin_config, inputs):
@@ -28,7 +28,9 @@ def do(payload, config, plugin_config, inputs):
     if not server_url:
         return build_select_choices("Fill in the server address")
 
-    client = OSIsoftClient(server_url, auth_type, username, password, is_ssl_check_disabled=is_ssl_check_disabled)
+    is_debug_mode = check_debug_mode(config)
+
+    client = OSIsoftClient(server_url, auth_type, username, password, is_ssl_check_disabled=is_ssl_check_disabled, is_debug_mode=is_debug_mode)
 
     parameter_name = payload.get("parameterName")
 

@@ -1,13 +1,13 @@
 {
-    "id": "osisoft",
-    "version": "1.0.0",
+    "id": "pi-system",
+    "version": "0.0.1",
     "meta": {
-        "label": "OSIsoft",
-        "description": "Retrieve data from your OSIsoft PI servers",
+        "label": "PI System",
+        "description": "Retrieve data from your OSIsoft PI System servers",
         "author": "Dataiku (Alex Bourret)",
-        "icon": "icon-osisoft icon-cogs",
+        "icon": "icon-pi-system icon-cogs",
         "tags": ["Connector"],
-        "url": "https://www.dataiku.com/product/plugins/osisoft",
+        "url": "https://doc.dataiku.com/dss/latest/connecting/pi-system.html",
         "licenseInfo": "Apache Software License",
         "supportLevel": "NOT_SUPPORTED"
     }

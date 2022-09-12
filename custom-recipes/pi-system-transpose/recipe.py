@@ -7,7 +7,7 @@ import os
 from temp_utils import CustomTmpFile
 
 
-logger = SafeLogger("osisoft plugin", forbiden_keys=["token", "password"])
+logger = SafeLogger("pi-system plugin", forbiden_keys=["token", "password"])
 
 
 current_timestamps_cache = []
@@ -36,7 +36,7 @@ def get_latest_data_at_timestamp(file_handles, timestamp):
     for attribute_path in file_handles:
         next_cached_timestamp = next_timestamps_cache[cache_index]
         previous_line = None
-        while not next_cached_timestamp or (next_cached_timestamp < timestamp):
+        while not next_cached_timestamp or (next_cached_timestamp <= timestamp):
             current_timestamps_cache[cache_index] = next_timestamps_cache[cache_index]
             current_values_cache[cache_index] = next_values_cache[cache_index]
             line = file_handles[attribute_path].readline()

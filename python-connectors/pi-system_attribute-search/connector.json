@@ -2,7 +2,7 @@
     "meta" : {
         "label": "Attribute search",
         "description": "Search attributes in AF assets",
-        "icon": "icon-osisoft icon-cogs"
+        "icon": "icon-pi-system icon-cogs"
     },
     "readable": true,
     "writable": true,
@@ -45,6 +45,14 @@
             "description": "(optional)",
             "visibilityCondition": "model.show_advanced_parameters==true && model.is_ssl_check_disabled==false",
             "mandatory": false
+        },
+        {
+            "name": "is_debug_mode",
+            "label": " ",
+            "visibilityCondition": "model.show_advanced_parameters==true",
+            "type": "BOOLEAN",
+            "description": "Verbose logging",
+            "defaultValue": false
         },
         {
             "name": "server_name",

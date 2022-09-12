@@ -3,12 +3,13 @@ from dataiku.connector import Connector
 from osisoft_client import OSIsoftClient
 from safe_logger import SafeLogger
 from osisoft_plugin_common import (
-    OSIsoftConnectorError, RecordsLimit, get_credentials, assert_time_format,
-    remove_unwanted_columns, format_output, filter_columns_from_schema, is_child_attribute_path
+    PISystemConnectorError, RecordsLimit, get_credentials, assert_time_format,
+    remove_unwanted_columns, format_output, filter_columns_from_schema, is_child_attribute_path,
+    check_debug_mode
 )
 from osisoft_constants import OSIsoftConstants
 
-logger = SafeLogger("OSIsoft plugin", ["user", "password"])
+logger = SafeLogger("PI System plugin", ["user", "password"])
 
 
 class OSIsoftConnector(Connector):  # Browse
@@ -19,8 +20,9 @@ class OSIsoftConnector(Connector):  # Browse
         logger.info("Attribute search v1.0.0 initialization with config={}, plugin_config={}".format(logger.filter_secrets(config), logger.filter_secrets(plugin_config)))
 
         auth_type, username, password, server_url, is_ssl_check_disabled = get_credentials(config)
+        is_debug_mode = check_debug_mode(config)
 
-        self.client = OSIsoftClient(server_url, auth_type, username, password, is_ssl_check_disabled=is_ssl_check_disabled)
+        self.client = OSIsoftClient(server_url, auth_type, username, password, is_ssl_check_disabled=is_ssl_check_disabled, is_debug_mode=is_debug_mode)
         self.start_time = config.get("start_time")
         self.end_time = config.get("end_time")
         is_interpolated_data = config.get("data_type", "").endswith("InterpolatedData")
@@ -84,7 +86,7 @@ class OSIsoftConnector(Connector):  # Browse
                 attribute.pop("Id", None)
                 is_enumeration_value = attribute.get("Type") == "EnumerationValue"
                 remove_unwanted_columns(attribute)
-                if "Errors" in attribute:
+                if OSIsoftConstants.DKU_ERROR_KEY in attribute:
                     yield attribute
                 else:
                     for row in self.client.get_row_from_webid(
@@ -95,7 +97,7 @@ class OSIsoftConnector(Connector):  # Browse
                         interval=self.interval,
                         sync_time=self.sync_time,
                         endpoint_type="AF",
-                        selected_fields="Links;Items.Timestamp;Items.Value"
+                        selected_fields="Links%3BItems.Timestamp%3BItems.Value"
                         # boundary_type=self.boundary_type
                     ):
                         if limit.is_reached():
@@ -121,13 +123,13 @@ class OSIsoftConnector(Connector):  # Browse
         raise Exception("Unimplemented")
 
     def get_partitioning(self):
-        raise OSIsoftConnectorError("Unimplemented")
+        raise PISystemConnectorError("Unimplemented")
 
     def list_partitions(self, partitioning):
         return []
 
     def partition_exists(self, partitioning, partition_id):
-        raise OSIsoftConnectorError("Unimplemented")
+        raise PISystemConnectorError("Unimplemented")
 
     def get_records_count(self, partitioning=None, partition_id=None):
         """
@@ -136,4 +138,4 @@ class OSIsoftConnector(Connector):  # Browse
         Implementation is only required if the corresponding flag is set to True
         in the connector definition
         """
-        raise OSIsoftConnectorError("Unimplemented")
+        raise PISystemConnectorError("Unimplemented")

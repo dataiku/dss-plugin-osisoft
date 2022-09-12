@@ -2,7 +2,7 @@
     "meta": {
         "label": "Assets metrics downloader",
         "description": "Retrieve PI metrics from list of tags",
-        "icon": "icon-osisoft icon-cogs"
+        "icon": "icon-pi-system icon-cogs"
     },
     "kind": "PYTHON",
     "selectableFromDataset": "input_dataset",
@@ -91,7 +91,7 @@
         },
         {
             "name": "path_column",
-            "label": "Paths' column",
+            "label": "Path column",
             "description": "",
             "type": "COLUMN",
             "columnRole": "input_dataset"
