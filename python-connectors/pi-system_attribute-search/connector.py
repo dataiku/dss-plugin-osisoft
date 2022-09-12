@@ -3,13 +3,13 @@ from dataiku.connector import Connector
 from osisoft_client import OSIsoftClient
 from safe_logger import SafeLogger
 from osisoft_plugin_common import (
-    OSIsoftConnectorError, RecordsLimit, get_credentials, assert_time_format,
+    PISystemConnectorError, RecordsLimit, get_credentials, assert_time_format,
     remove_unwanted_columns, format_output, filter_columns_from_schema, is_child_attribute_path,
     check_debug_mode
 )
 from osisoft_constants import OSIsoftConstants
 
-logger = SafeLogger("OSIsoft plugin", ["user", "password"])
+logger = SafeLogger("PI System plugin", ["user", "password"])
 
 
 class OSIsoftConnector(Connector):  # Browse
@@ -123,13 +123,13 @@ class OSIsoftConnector(Connector):  # Browse
         raise Exception("Unimplemented")
 
     def get_partitioning(self):
-        raise OSIsoftConnectorError("Unimplemented")
+        raise PISystemConnectorError("Unimplemented")
 
     def list_partitions(self, partitioning):
         return []
 
     def partition_exists(self, partitioning, partition_id):
-        raise OSIsoftConnectorError("Unimplemented")
+        raise PISystemConnectorError("Unimplemented")
 
     def get_records_count(self, partitioning=None, partition_id=None):
         """
@@ -138,4 +138,4 @@ class OSIsoftConnector(Connector):  # Browse
         Implementation is only required if the corresponding flag is set to True
         in the connector definition
         """
-        raise OSIsoftConnectorError("Unimplemented")
+        raise PISystemConnectorError("Unimplemented")

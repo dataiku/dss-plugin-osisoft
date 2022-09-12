@@ -45,7 +45,7 @@
           },
           {
             "name": "groupby_column",
-            "label": "Paths column",
+            "label": "Path column",
             "description": "Column containing the attributes' path",
             "type": "COLUMN",
             "allowedColumnTypes": [

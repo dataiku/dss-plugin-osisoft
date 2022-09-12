@@ -3,10 +3,10 @@ from dataiku.connector import Connector
 from osisoft_client import OSIsoftClient
 from osisoft_constants import OSIsoftConstants
 from safe_logger import SafeLogger
-from osisoft_plugin_common import OSIsoftConnectorError, RecordsLimit, get_credentials, build_requests_params, assert_time_format
+from osisoft_plugin_common import PISystemConnectorError, RecordsLimit, get_credentials, build_requests_params, assert_time_format
 
 
-logger = SafeLogger("OSIsoft plugin", ["user", "password"])
+logger = SafeLogger("PI System plugin", ["user", "password"])
 
 
 class OSIsoftConnector(Connector):
@@ -34,7 +34,7 @@ class OSIsoftConnector(Connector):
         assert_time_format(self.end_time, error_source="end time")
         self.database_endpoint = config.get("database_name")
         if not self.database_endpoint:
-            raise OSIsoftConnectorError("No endpoint selected")
+            raise PISystemConnectorError("No endpoint selected")
         self.must_retrieve_metrics = config.get("must_retrieve_metrics")
         self.data_type = config.get("data_type", "Recorded")
         self.config = config
@@ -97,16 +97,16 @@ class OSIsoftConnector(Connector):
 
     def get_writer(self, dataset_schema=None, dataset_partitioning=None,
                    partition_id=None):
-        raise OSIsoftConnectorError("Unimplemented")
+        raise PISystemConnectorError("Unimplemented")
 
     def get_partitioning(self):
-        raise OSIsoftConnectorError("Unimplemented")
+        raise PISystemConnectorError("Unimplemented")
 
     def list_partitions(self, partitioning):
         return []
 
     def partition_exists(self, partitioning, partition_id):
-        raise OSIsoftConnectorError("Unimplemented")
+        raise PISystemConnectorError("Unimplemented")
 
     def get_records_count(self, partitioning=None, partition_id=None):
         """
@@ -115,4 +115,4 @@ class OSIsoftConnector(Connector):
         Implementation is only required if the corresponding flag is set to True
         in the connector definition
         """
-        raise OSIsoftConnectorError("Unimplemented")
+        raise PISystemConnectorError("Unimplemented")

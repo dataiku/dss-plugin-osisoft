@@ -6,10 +6,10 @@ from safe_logger import SafeLogger
 from datetime import datetime
 
 
-logger = SafeLogger("osisoft plugin", ["Authorization", "sharepoint_username", "sharepoint_password", "client_secret"])
+logger = SafeLogger("pi-system plugin", ["Authorization", "sharepoint_username", "sharepoint_password", "client_secret"])
 
 
-class OSIsoftConnectorError(ValueError):
+class PISystemConnectorError(ValueError):
     pass
 
 
@@ -41,7 +41,7 @@ def get_credentials(config, can_raise=True):
         server_url = credentials.get("default_server")
         is_ssl_check_disabled = False
     if can_raise and error_message:
-        raise OSIsoftConnectorError(error_message)
+        raise PISystemConnectorError(error_message)
     if can_raise:
         return auth_type, username, password, server_url, is_ssl_check_disabled
     else:
@@ -104,7 +104,11 @@ def build_requests_params(**kwargs):
     for kwarg in kwargs:
         requests_param_key = requests_params_options.get(kwarg)
         if requests_param_key and kwargs.get(kwarg):
-            requests_params.update({requests_param_key: "{}".format(kwargs.get(kwarg))})
+            value = kwargs.get(kwarg)
+            if type(value) is list:
+                requests_params.update({requests_param_key: value})
+            else:
+                requests_params.update({requests_param_key: "{}".format(value)})
     search_mode = kwargs.get("search_mode")
     if search_mode and (kwargs.get("start_time") or kwargs.get("end_time")):
         requests_params.update({"searchMode": "{}".format(search_mode)})
@@ -272,6 +276,33 @@ def is_child_attribute_path(path):
         if char == '\\':
             return False
     return False
+
+
+def get_combined_description(default_columns, actual_columns):
+    default_column_names = []
+    output_columns = []
+    for default_column in default_columns:
+        default_column_name = default_column.get("name")
+        default_column_names.append(default_column_name)
+        output_columns.append(default_column)
+    for actual_column in actual_columns:
+        if actual_column not in default_column_names:
+            output_columns.append({
+                "name": actual_column,
+                "type": "string"
+            })
+    return output_columns
+
+
+def get_base_for_data_type(data_type, object_id):
+    schema = OSIsoftConstants.RECIPE_SCHEMA_PER_DATA_TYPE.get(data_type)
+    base = {}
+    for item in schema:
+        item_name = item.get("name")
+        base[item_name] = None
+    base['object_id'] = object_id
+    ret = copy.deepcopy(base)
+    return ret
 
 
 class RecordsLimit():

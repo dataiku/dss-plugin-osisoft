@@ -2,7 +2,7 @@
     "meta": {
         "label": "Event frames downloader",
         "description": "Retrieve attribute values from list of event frames",
-        "icon": "icon-osisoft icon-cogs"
+        "icon": "icon-pi-system icon-cogs"
     },
     "kind": "PYTHON",
     "selectableFromDataset": "input_dataset",

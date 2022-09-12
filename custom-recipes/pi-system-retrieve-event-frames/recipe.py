@@ -9,7 +9,7 @@ from osisoft_constants import OSIsoftConstants
 from osisoft_client import OSIsoftClient
 
 
-logger = SafeLogger("osisoft plugin", forbiden_keys=["token", "password"])
+logger = SafeLogger("pi-system plugin", forbiden_keys=["token", "password"])
 
 input_dataset = get_input_names_for_role('input_dataset')
 output_names_stats = get_output_names_for_role('api_output')
@@ -18,7 +18,6 @@ dku_flow_variables = dataiku.get_flow_variables()
 
 logger.info("retrieve event frames recipe config={}".format(logger.filter_secrets(config)))
 
-osisoft_credentials = config.get("osisoft_credentials", {})
 auth_type, username, password, server_url, is_ssl_check_disabled = get_credentials(config)
 
 use_server_url_column = config.get("use_server_url_column", False)
