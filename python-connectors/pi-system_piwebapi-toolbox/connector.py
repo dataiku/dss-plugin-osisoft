@@ -33,9 +33,6 @@ class OSIsoftConnector(Connector):  # Search
 
     def get_read_schema(self):
         return None
-        # return {
-        #     "columns": OSIsoftConstants.SCHEMA_ATTRIBUTES_RESPONSE
-        # }
 
     def generate_rows(self, dataset_schema=None, dataset_partitioning=None,
                       partition_id=None, records_limit=-1):
