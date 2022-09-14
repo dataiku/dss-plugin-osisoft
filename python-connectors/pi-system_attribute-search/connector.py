@@ -39,7 +39,6 @@ class OSIsoftConnector(Connector):  # Browse
             self.search_root_path = self.build_path_from_config(config)
         self.must_retrieve_metrics = config.get("must_retrieve_metrics", False)
         self.data_type = config.get("data_type")
-        self.maximum_results = config.get("maximum_results", 1000)
         self.attribute_value_type = config.get("attribute_value_type")
         self.must_filter_child_attributes = not (config.get("must_keep_child_attributes", False))
         self.config = config

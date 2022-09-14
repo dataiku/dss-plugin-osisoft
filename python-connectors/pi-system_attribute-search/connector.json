@@ -117,14 +117,6 @@
             "visibilityCondition": "model.database_name.length>=0"
         },
         {
-            "name": "maximum_results",
-            "label": "Maximum results",
-            "type": "INT",
-            "defaultValue": 1000,
-            "visibilityCondition": "model.database_name.length>=0"
-        },
-
-        {
             "type": "SEPARATOR",
             "label": "Element Criteria",
             "visibilityCondition": "model.database_name.length>=0"
