@@ -114,7 +114,8 @@ class OSIsoftClient(object):
         json_response = self.get(
             url=url,
             headers=headers,
-            params=params
+            params=params,
+            can_raise=can_raise
         )
         return json_response
 
@@ -626,7 +627,7 @@ def unnest(row):
         value_object = row.pop("Value", {})
         if isinstance(value_object, dict):
             for key in value_object:
-                row["Value_{}".format(key)] = value_object.get(key)
+                row["{}".format(key)] = value_object.get(key)
     return row
 
 
