@@ -1,0 +1,323 @@
+{
+    "meta" : {
+        "label": "Attribute search",
+        "description": "Search attributes in AF assets",
+        "icon": "icon-pi-system icon-cogs"
+    },
+    "readable": true,
+    "writable": true,
+    "kind": "PYTHON",
+    "paramsPythonSetup": "browse_attributes.py",
+    "params": [
+        {
+            "name": "credentials",
+            "label": "User preset",
+            "type": "PRESET",
+            "parameterSetId": "basic-auth"
+        },
+        {
+            "name": "show_advanced_parameters",
+            "label": " ",
+            "type": "BOOLEAN",
+            "description": "Show advanced parameters",
+            "defaultValue": false
+        },
+        {
+            "name": "server_url",
+            "label": "Server URL",
+            "visibilityCondition": "model.show_advanced_parameters==true",
+            "type": "STRING",
+            "description": "https://my_server:8082",
+            "defaultValue": ""
+        },
+        {
+            "name": "is_ssl_check_disabled",
+            "label": " ",
+            "visibilityCondition": "model.show_advanced_parameters==true",
+            "type": "BOOLEAN",
+            "description": "Disable SSL check",
+            "defaultValue": false
+        },
+        {
+            "name": "ssl_cert_path",
+            "label": "Path to SSL certificate",
+            "type": "STRING",
+            "description": "(optional)",
+            "visibilityCondition": "model.show_advanced_parameters==true && model.is_ssl_check_disabled==false",
+            "mandatory": false
+        },
+        {
+            "name": "is_debug_mode",
+            "label": " ",
+            "visibilityCondition": "model.show_advanced_parameters==true",
+            "type": "BOOLEAN",
+            "description": "Verbose logging",
+            "defaultValue": false
+        },
+        {
+            "name": "server_name",
+            "label": "Server name",
+            "type": "SELECT",
+            "description": "",
+            "getChoicesFromPython": true
+        },
+        {
+            "name": "database_name",
+            "label": "Database name",
+            "type": "SELECT",
+            "description": "",
+            "visibilityCondition": "model.server_name.length>=0",
+            "getChoicesFromPython": true
+        },
+
+        {
+            "type": "SEPARATOR",
+            "label": "Where",
+            "visibilityCondition": "model.database_name.length>=0"
+        },
+        {
+            "name": "attribute_name",
+            "label": "Attribute name",
+            "type": "STRING",
+            "defaultValue": "",
+            "visibilityCondition": "model.database_name.length>=0"
+        },
+        {
+            "name": "attribute_description",
+            "label": "Attribute description",
+            "type": "STRING",
+            "defaultValue": "",
+            "visibilityCondition": "model.database_name.length>=0"
+        },
+        {
+            "name": "attribute_category",
+            "label": "Attribute category",
+            "type": "SELECT",
+            "getChoicesFromPython": true,
+            "visibilityCondition": "model.database_name.length>=0"
+        },
+        {
+            "name": "attribute_value_type",
+            "label": "Attribute value type",
+            "type": "SELECT",
+            "selectChoices":[
+                {"label": "<Anything>"},
+                {"value": "Boolean", "label": "Boolean"},
+                {"value": "Byte", "label": "Byte"},
+                {"value": "DateTime", "label": "DateTime"},
+                {"value": "Double", "label": "Double"},
+                {"value": "Guid", "label": "Guid"},
+                {"value": "Int16", "label": "Int16"},
+                {"value": "Int32", "label": "Int32"},
+                {"value": "Int64", "label": "Int64"},
+                {"value": "Single", "label": "Single"},
+                {"value": "String", "label": "String"},
+                {"value": "Object", "label": "Object"}
+            ],
+            "visibilityCondition": "model.database_name.length>=0"
+        },
+        {
+            "type": "SEPARATOR",
+            "label": "Element Criteria",
+            "visibilityCondition": "model.database_name.length>=0"
+        },
+        {
+            "name": "specify_search_root_element",
+            "label": " ",
+            "description": "Specify search root element",
+            "type": "BOOLEAN",
+            "defaultValue": false,
+            "visibilityCondition": "model.database_name.length>=0"
+        },
+
+        {
+            "name": "element_1",
+            "label": "Elements",
+            "type": "SELECT",
+            "description": "",
+            "visibilityCondition": "model.database_name.length>=0  && model.specify_search_root_element",
+            "getChoicesFromPython": true
+        },
+        {
+            "name": "element_2",
+            "label": " ",
+            "type": "SELECT",
+            "description": "",
+            "visibilityCondition": "model.element_1.length>=0  && model.specify_search_root_element",
+            "getChoicesFromPython": true
+        },
+        {
+            "name": "element_3",
+            "label": " ",
+            "type": "SELECT",
+            "description": "",
+            "visibilityCondition": "model.element_2.length>=0  && model.specify_search_root_element",
+            "getChoicesFromPython": true
+        },
+        {
+            "name": "element_4",
+            "label": " ",
+            "type": "SELECT",
+            "description": "",
+            "visibilityCondition": "model.element_3.length>=0  && model.specify_search_root_element",
+            "getChoicesFromPython": true
+        },
+        {
+            "name": "element_5",
+            "label": " ",
+            "type": "SELECT",
+            "description": "",
+            "visibilityCondition": "model.element_4.length>=0  && model.specify_search_root_element",
+            "getChoicesFromPython": true
+        },
+        {
+            "name": "element_6",
+            "label": " ",
+            "type": "SELECT",
+            "description": "",
+            "visibilityCondition": "model.element_5.length>=0  && model.specify_search_root_element",
+            "getChoicesFromPython": true
+        },
+        {
+            "name": "element_7",
+            "label": " ",
+            "type": "SELECT",
+            "description": "",
+            "visibilityCondition": "model.element_6.length>=0  && model.specify_search_root_element",
+            "getChoicesFromPython": true
+        },
+        {
+            "name": "element_8",
+            "label": " ",
+            "type": "SELECT",
+            "description": "",
+            "visibilityCondition": "model.element_7.length>=0  && model.specify_search_root_element",
+            "getChoicesFromPython": true
+        },
+        {
+            "name": "element_9",
+            "label": " ",
+            "type": "SELECT",
+            "description": "",
+            "visibilityCondition": "model.element_8.length>=0  && model.specify_search_root_element",
+            "getChoicesFromPython": true
+        },
+        {
+            "name": "element_10",
+            "label": " ",
+            "type": "SELECT",
+            "description": "",
+            "visibilityCondition": "model.element_9.length>=0  && model.specify_search_root_element",
+            "getChoicesFromPython": true
+        },
+        {
+            "name": "element_name",
+            "label": "Name",
+            "type": "STRING",
+            "description": "",
+            "defaultValue": "*",
+            "visibilityCondition": "model.database_name.length>=0"
+        },
+        {
+            "name": "element_category",
+            "label": "Category",
+            "type": "SELECT",
+            "description": "",
+            "visibilityCondition": "model.database_name.length>=0",
+            "getChoicesFromPython": true
+        },
+        {
+            "name": "element_template",
+            "label": "Template",
+            "type": "SELECT",
+            "description": "",
+            "visibilityCondition": "model.database_name.length>=0",
+            "getChoicesFromPython": true
+        },
+        {
+            "name": "element_type",
+            "label": "Type",
+            "type": "SELECT",
+            "defaultValue": "",
+            "selectChoices":[
+                {"value": "Any", "label": "Any"},
+                {"value": "Boundary", "label": "Boundary"},
+                {"value": "Flow", "label": "Flow"},
+                {"value": "Measurement", "label": "Measurement"},
+                {"value": "Node", "label": "Node"},
+                {"value": "None", "label": "None"},
+                {"value": "Other", "label": "Other"},
+                {"value": "Transfer", "label": "Transfer"}
+            ],
+            "visibilityCondition": "model.database_name.length>=0"
+        },
+        {
+            "name": "must_retrieve_metrics",
+            "type": "BOOLEAN",
+            "label": " ",
+            "defaultValue": false,
+            "visibilityCondition": "model.database_name.length>=0",
+            "description": "Retrieve metrics"
+        },
+        {
+            "name": "must_keep_child_attributes",
+            "type": "BOOLEAN",
+            "label": " ",
+            "defaultValue": false,
+            "visibilityCondition": "model.database_name.length>=0 && !model.must_retrieve_metrics",
+            "description": "Keep child attributes"
+        },
+        {
+            "name": "start_time",
+            "label": "Start time",
+            "description": "Optional",
+            "type": "STRING",
+            "visibilityCondition": "model.must_retrieve_metrics",
+            "defaultValue": ""
+        },
+        {
+            "name": "end_time",
+            "label": "End time",
+            "description": "Optional",
+            "type": "STRING",
+            "visibilityCondition": "model.must_retrieve_metrics",
+            "defaultValue": ""
+        },
+        {
+            "type": "SEPARATOR",
+            "description": "Interpolation",
+            "visibilityCondition": "((model.must_retrieve_metrics) && (model.data_type.toLowerCase().endsWith('interpolateddata')))"
+        },
+        {
+            "name": "interval",
+            "label": "Interval",
+            "visibilityCondition": "((model.must_retrieve_metrics) && (model.data_type.toLowerCase().endsWith('interpolateddata')))",
+            "description": "Optional",
+            "type": "STRING",
+            "defaultValue": ""
+        },
+        {
+            "name": "sync_time",
+            "label": "Sync time",
+            "visibilityCondition": "((model.must_retrieve_metrics) && (model.data_type.toLowerCase().endsWith('interpolateddata')))",
+            "description": "Optional",
+            "type": "STRING",
+            "defaultValue": ""
+        },
+        {
+            "name": "data_type",
+            "label": "Data type",
+            "type": "SELECT",
+            "visibilityCondition": "model.must_retrieve_metrics",
+            "selectChoices":[
+                {"value": "InterpolatedData", "label": "Interpolated"},
+                {"value": "PlotData", "label": "Plot"},
+                {"value": "RecordedData", "label": "Recorded"},
+                {"value": "SummaryData", "label": "Summary"},
+                {"value": "Value", "label": "Value"},
+                {"value": "EndValue", "label": "End value"}
+            ],
+            "defaultValue": "RecordedData"
+        }
+    ]
+}

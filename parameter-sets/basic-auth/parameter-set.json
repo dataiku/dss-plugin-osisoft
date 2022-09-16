@@ -1,0 +1,55 @@
+{
+    "meta" : {
+        "label": "PI System credentials",
+        "description": "",
+        "icon": "icon-pi-system icon-cogs"
+    },
+    "defaultDefinableInline": true,
+    "defaultDefinableAtProjectLevel": true,
+    "params": [
+        {
+            "name": "auth_type",
+            "label": "Authentication type",
+            "type": "SELECT",
+            "selectChoices": [
+                {
+                    "value": "basic",
+                    "label": "Basic"
+                },
+                {
+                    "value": "ntlm",
+                    "label": "NTLM"
+                }
+            ],
+            "defaultValue": "basic"
+        },
+        {
+            "name": "default_server",
+            "label": "Default server",
+            "type": "STRING",
+            "description": "my.pi-system.server.com"
+        },
+        {
+            "name": "can_disable_ssl_check",
+            "label": "Allows SSL checks disabled",
+            "type": "BOOLEAN",
+            "definition": "",
+            "defaultValue": false
+        },
+        {
+            "name": "ssl_cert_path",
+            "label": "Path to SSL certificate",
+            "type": "STRING",
+            "description": "(optional)",
+            "defaultValue": ""
+        },
+        {
+            "name": "osisoft_basic",
+            "type": "CREDENTIAL_REQUEST",
+            "label": "PI System basic login",
+            "credentialRequestSettings": {
+                "type": "BASIC"
+            }
+        }
+    ]
+}

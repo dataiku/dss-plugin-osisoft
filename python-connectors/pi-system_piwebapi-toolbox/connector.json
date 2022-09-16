@@ -1,0 +1,111 @@
+{
+    "meta" : {
+        "label": "PIWebAPI toolbox",
+        "description": "Retrieve metrics from an AF attribute using its path, tag or webid",
+        "icon": "icon-pi-system icon-cogs"
+    },
+    "readable": true,
+    "writable": true,
+    "params": [
+        {
+            "name": "credentials",
+            "label": "User preset",
+            "type": "PRESET",
+            "parameterSetId": "basic-auth"
+        },
+        {
+            "name": "show_advanced_parameters",
+            "label": "Show advanced parameters",
+            "type": "BOOLEAN",
+            "definition": "",
+            "defaultValue": false
+        },
+        {
+            "name": "server_url",
+            "label": "Server URL",
+            "visibilityCondition": "model.show_advanced_parameters==true",
+            "type": "STRING",
+            "definition": "https://my_server:8082",
+            "defaultValue": ""
+        },
+        {
+            "name": "is_ssl_check_disabled",
+            "label": "Disable SSL check",
+            "visibilityCondition": "model.show_advanced_parameters==true",
+            "type": "BOOLEAN",
+            "definition": "",
+            "defaultValue": false
+        },
+        {
+            "name": "ssl_cert_path",
+            "label": "Path to SSL certificate",
+            "type": "STRING",
+            "description": "(optional)",
+            "visibilityCondition": "model.show_advanced_parameters==true && model.is_ssl_check_disabled==false",
+            "mandatory": false
+        },
+        {
+            "name": "object_id",
+            "label": "Object path / Tag",
+            "description": "\\\\server\\database\\element|attribute",
+            "type": "STRING",
+            "defaultValue": ""
+        },
+        {
+            "name": "data_type",
+            "label": "Data type",
+            "type": "SELECT",
+            "selectChoices":[
+                {"value": "InterpolatedData", "label": "Interpolated"},
+                {"value": "PlotData", "label": "Plot"},
+                {"value": "RecordedData", "label": "Recorded"},
+                {"value": "Elements", "label": "Elements"},
+                {"value": "Template", "label": "Template"},
+                {"value": "SummaryData", "label": "Summary"},
+                {"value": "Value", "label": "Value"},
+                {"value": "EndValue", "label": "End value"},
+                {"value": "Categories", "label": "Categories"},
+                {"value": "Attributes", "label": "Attributes"},
+                {"value": "EventFrames", "label": "Event frames"}
+            ],
+            "defaultValue": "RecordedData"
+        },
+        {
+            "name": "start_time",
+            "label": "Start time",
+            "description": "Optional",
+            "type": "STRING",
+            "defaultValue": "",
+            "visibilityCondition": "(['InterpolatedData', 'RecordedData', 'PlotData', 'EventFrames'].includes(model.data_type))"
+        },
+        {
+            "name": "end_time",
+            "label": "End time",
+            "description": "Optional",
+            "type": "STRING",
+            "defaultValue": "",
+            "visibilityCondition": "(['InterpolatedData', 'RecordedData', 'PlotData', 'EventFrames'].includes(model.data_type))"
+        },
+        {
+            "type": "SEPARATOR",
+            "description": "Interpolation",
+            "visibilityCondition": "(model.data_type.toLowerCase().endsWith('interpolateddata'))"
+        },
+        {
+            "name": "interval",
+            "label": "Interval",
+            "visibilityCondition": "(model.data_type.toLowerCase().endsWith('interpolateddata'))",
+            "description": "Optional",
+            "type": "STRING",
+            "defaultValue": ""
+        },
+        {
+            "name": "sync_time",
+            "label": "Sync time",
+            "visibilityCondition": "(model.data_type.toLowerCase().endsWith('interpolateddata'))",
+            "description": "Optional",
+            "type": "STRING",
+            "defaultValue": ""
+        }
+    ]
+}

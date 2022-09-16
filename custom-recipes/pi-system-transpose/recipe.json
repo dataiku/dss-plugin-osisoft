@@ -1,0 +1,87 @@
+{
+    "meta": {
+        "label": "Transpose & Synchronize",
+        "description": "Transpose PI metrics and synchronize them to one single attribute",
+        "icon": "icon-dku-timeseries-resample icon-DKU_timeseries_resample"
+    },
+    "kind": "PYTHON",
+    "selectableFromDataset": "input_dataset",
+    "inputRoles": [
+        {
+            "name": "input_dataset",
+            "label": "Dataset containing paths or tags",
+            "description": "",
+            "arity": "UNARY",
+            "required": true,
+            "acceptsDataset": true
+        }
+    ],
+
+    "outputRoles": [
+        {
+            "name": "api_output",
+            "label": "Main output displayed name",
+            "description": "",
+            "arity": "UNARY",
+            "required": true,
+            "acceptsDataset": true
+        }
+    ],
+    "params": [
+        {
+            "type": "SEPARATOR",
+            "name": "separator_input",
+            "label": "Input parameters"
+          },
+          {
+            "name": "datetime_column",
+            "label": "Time column",
+            "type": "COLUMN",
+            "columnRole": "input_dataset",
+            "allowedColumnTypes": [
+              "date"
+            ],
+            "mandatory": true
+          },
+          {
+            "name": "groupby_column",
+            "label": "Path column",
+            "description": "Column containing the attributes' path",
+            "type": "COLUMN",
+            "allowedColumnTypes": [
+              "tinyint",
+              "smallint",
+              "int",
+              "bigint",
+              "string",
+              "boolean"
+            ],
+            "columnRole": "input_dataset",
+            "mandatory": false
+          },
+          {
+            "name": "value_column",
+            "label": "Value column",
+            "description": "",
+            "type": "COLUMN",
+            "allowedColumnTypes": [
+              "tinyint",
+              "smallint",
+              "int",
+              "bigint",
+              "string",
+              "boolean"
+            ],
+            "columnRole": "input_dataset",
+            "mandatory": false
+          },
+          {
+            "name": "synchronize_on_identifier",
+            "label": "Full path to reference attribute",
+            "description": "\\\\server\\database\\elements..|attribute",
+            "type": "STRING",
+            "mandatory": false
+          }
+    ],
+    "resourceKeys": []
+}
