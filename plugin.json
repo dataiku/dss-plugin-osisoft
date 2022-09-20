@@ -7,7 +7,7 @@
         "author": "Dataiku (Alex Bourret)",
         "icon": "icon-pi-system icon-cogs",
         "tags": ["Connector"],
-        "url": "https://doc.dataiku.com/dss/latest/connecting/pi-system.html",
+        "url": "https://www.dataiku.com/product/plugins/pi-system/",
         "licenseInfo": "Apache Software License",
         "supportLevel": "NOT_SUPPORTED"
     }
