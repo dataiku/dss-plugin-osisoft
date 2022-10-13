@@ -13,7 +13,7 @@ class OSIsoftConnector(Connector):  # Search
 
         Connector.__init__(self, config, plugin_config)
 
-        logger.info("PIWebAPI toolbox v1.0.0 initialization with config={}, plugin_config={}".format(logger.filter_secrets(config), logger.filter_secrets(plugin_config)))
+        logger.info("PIWebAPI toolbox v1.0.1 initialization with config={}, plugin_config={}".format(logger.filter_secrets(config), logger.filter_secrets(plugin_config)))
 
         auth_type, username, password, server_url, is_ssl_check_disabled = get_credentials(config)
 

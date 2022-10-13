@@ -15,7 +15,7 @@ class OSIsoftConnector(Connector):
     def __init__(self, config, plugin_config):
         Connector.__init__(self, config, plugin_config)  # pass the parameters to the base class
 
-        logger.info("Event frame search v1.0.0 initialization with config={}, plugin_config={}".format(
+        logger.info("Event frame search v1.0.1 initialization with config={}, plugin_config={}".format(
                 logger.filter_secrets(config),
                 logger.filter_secrets(plugin_config)
             )
