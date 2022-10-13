@@ -48,6 +48,16 @@ def get_credentials(config, can_raise=True):
         return auth_type, username, password, server_url, is_ssl_check_disabled, error_message
 
 
+def get_advanced_parameters(config):
+    show_advanced_parameters = config.get('show_advanced_parameters', False)
+    batch_size = 500
+    use_batch_mode = False
+    if show_advanced_parameters:
+        use_batch_mode = config.get("use_batch_mode", False)
+        batch_size = config.get("batch_size", 500)
+    return use_batch_mode, batch_size
+
+
 def check_debug_mode(config):
     return config.get('show_advanced_parameters', False) and config.get('is_debug_mode', False)
 

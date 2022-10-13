@@ -47,6 +47,23 @@
             "mandatory": false
         },
         {
+            "name": "use_batch_mode",
+            "label": " ",
+            "type": "BOOLEAN",
+            "description": "Use batch mode",
+            "visibilityCondition": "model.show_advanced_parameters==true",
+            "defaultValue": false
+        },
+        {
+            "name": "batch_size",
+            "label": " ",
+            "type": "INT",
+            "description": "Batch size",
+            "visibilityCondition": "model.show_advanced_parameters==true && model.use_batch_mode==true",
+            "minI": 1,
+            "defaultValue": 500
+        },
+        {
             "name": "server_name",
             "label": "Server name",
             "type": "SELECT",

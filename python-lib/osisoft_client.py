@@ -63,6 +63,60 @@ class OSIsoftClient(object):
             for item in items:
                 yield item
 
+    def get_rows_from_webids(self, webids, data_type, start_date=None, end_date=None,
+                           interval=None, sync_time=None, boundary_type=None, selected_fields=None,
+                           can_raise=True, endpoint_type="event_frames", batch_size=500):
+        batch = []
+        number_processed_webids = 0
+        number_of_webids_to_process = len(webids)
+        for webid in webids:
+            url = self.endpoint.get_data_from_webid_url(endpoint_type, data_type, webid.get("WebId"))
+            requests_kwargs = self.generic_get_kwargs()
+            requests_kwargs['url'] = url
+            batch.append(requests_kwargs)
+            number_processed_webids += 1
+            if (len(batch) >= batch_size) or (number_processed_webids == number_of_webids_to_process):
+                json_responses = self.process_batch(batch)
+                for json_response in json_responses:
+                    if OSIsoftConstants.DKU_ERROR_KEY in json_response:
+                        json_response['object_id'] = "{}".format(webid.get("WebId"))
+                        yield json_response
+                    items = json_response.get(OSIsoftConstants.API_ITEM_KEY, [])
+                    for item in items:
+                        yield item
+                batch = []
+
+    def process_batch(self, batch):
+        batch_endpoint = self.endpoint.get_batch_endpoint()
+        batch_body = {}
+        index = 0
+        for row in batch:
+            batch_body["{}".format(index)] = {
+                "Method": "GET",
+                "Resource": "{}".format(row.get("url"))
+            }
+            index += 1
+        response = self.post_value(url=batch_endpoint, data=batch_body)
+        json_response = simplejson.loads(response.content)
+        for index in range(0, len(batch)):
+            batch_section = json_response.get("{}".format(index), {})
+            yield batch_section.get("Content", {})
+
+    def generic_get_kwargs(self, start_date=None, end_date=None, interval=None, sync_time=None, boundary_type=None, selected_fields=None, can_raise=None):
+        headers = self.get_requests_headers()
+        params = self.get_requests_params(
+            start_date,
+            end_date,
+            interval=interval,
+            sync_time=sync_time,
+            boundary_type=boundary_type,
+            selected_fields=selected_fields
+        )
+        return {
+            "headers": headers,
+            "params": params
+        }
+
     def generic_get(self, url, start_date=None, end_date=None, interval=None, sync_time=None, boundary_type=None, selected_fields=None, can_raise=None):
         headers = self.get_requests_headers()
         params = self.get_requests_params(
@@ -260,7 +314,8 @@ class OSIsoftClient(object):
         return response
 
     def post_value(self, url, data):
-        headers = OSIsoftConstants.WRITE_HEADERS
+        headers = self.get_requests_headers()
+        headers.update(OSIsoftConstants.WRITE_HEADERS)
         params = {}
         response = self.post(
             url=url,

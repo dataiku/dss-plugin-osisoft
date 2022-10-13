@@ -1,9 +1,10 @@
 import copy
+import datetime
 from dataiku.connector import Connector
 from osisoft_client import OSIsoftClient
 from osisoft_constants import OSIsoftConstants
 from safe_logger import SafeLogger
-from osisoft_plugin_common import PISystemConnectorError, RecordsLimit, get_credentials, build_requests_params, assert_time_format
+from osisoft_plugin_common import PISystemConnectorError, RecordsLimit, get_credentials, build_requests_params, assert_time_format, get_advanced_parameters
 
 
 logger = SafeLogger("PI System plugin", ["user", "password"])
@@ -38,6 +39,7 @@ class OSIsoftConnector(Connector):
         self.must_retrieve_metrics = config.get("must_retrieve_metrics")
         self.data_type = config.get("data_type", "Recorded")
         self.config = config
+        self.use_batch_mode, self.batch_size = get_advanced_parameters(config)
 
     def get_read_schema(self):
         return {
@@ -49,6 +51,8 @@ class OSIsoftConnector(Connector):
     def generate_rows(self, dataset_schema=None, dataset_partitioning=None,
                       partition_id=None, records_limit=-1):
         limit = RecordsLimit(records_limit)
+        use_batch_mode = self.use_batch_mode and (records_limit == -1 or records_limit >= 500)
+        start_time = datetime.datetime.now()
         if self.object_id:
             for event_frame in self.client.get_row_from_urls(self.object_id, self.data_type, start_date=self.start_time, end_date=self.end_time):
                 if limit.is_reached():
@@ -61,39 +65,60 @@ class OSIsoftConnector(Connector):
             headers = self.client.get_requests_headers()
             json_response = self.client.get(url=self.database_endpoint + "/eventframes", headers=headers, params=params, error_source="generate_rows")
             event_frames = json_response.get(OSIsoftConstants.API_ITEM_KEY, [json_response])
-            for event_frame in event_frames:
-                if self.must_retrieve_metrics:
-                    event_frame_id = event_frame.get("WebId")
-                    event_frame_metrics = self.client.get_row_from_webid(
-                        event_frame_id, self.data_type,
-                        can_raise=False
-                    )
-                    for event_frame_metric in event_frame_metrics:
-                        event_frame_copy = copy.deepcopy(event_frame)
-                        event_frame_copy.pop("Links", None)
-                        event_frame_copy.pop("Security", None)
-                        event_frame_copy.update(event_frame_metric)
-                        if OSIsoftConstants.API_ITEM_KEY in event_frame_copy:
-                            items = event_frame_copy.pop(OSIsoftConstants.API_ITEM_KEY)
-                            for item in items:
-                                row = copy.deepcopy(event_frame_copy)
-                                row.update(item)
-                                row.pop("Links", None)
-                                yield row
-                                limit.add_record()
-                        else:
-                            event_frame_copy.pop("Links", None)
-                            yield event_frame_copy
+            if self.must_retrieve_metrics:
+                if use_batch_mode:
+                    batch_rows = self.client.get_rows_from_webids(
+                            event_frames, self.data_type,
+                            can_raise=False,
+                            batch_size=self.batch_size
+                        )
+                    for batch_row in batch_rows:
+                        items = batch_row.pop("Items", [])
+                        for item in items:
+                            batch_row.update(item)
+                            yield batch_row
                             limit.add_record()
+                            if limit.is_reached():
+                                break
                 else:
+                    for event_frame in event_frames:
+                        event_frame_id = event_frame.get("WebId")
+                        event_frame_metrics = self.client.get_row_from_webid(
+                            event_frame_id, self.data_type,
+                            can_raise=False
+                        )
+                        for event_frame_metric in event_frame_metrics:
+                            event_frame_copy = copy.deepcopy(event_frame)
+                            event_frame_copy.pop("Links", None)
+                            event_frame_copy.pop("Security", None)
+                            event_frame_copy.update(event_frame_metric)
+                            if OSIsoftConstants.API_ITEM_KEY in event_frame_copy:
+                                items = event_frame_copy.pop(OSIsoftConstants.API_ITEM_KEY)
+                                for item in items:
+                                    row = copy.deepcopy(event_frame_copy)
+                                    row.update(item)
+                                    row.pop("Links", None)
+                                    yield row
+                                    limit.add_record()
+                            else:
+                                event_frame_copy.pop("Links", None)
+                                yield event_frame_copy
+                                limit.add_record()
+                        if limit.is_reached():
+                            break
+            else:
+                for event_frame in event_frames:
                     event_frame_copy = copy.deepcopy(event_frame)
                     event_frame_copy.pop(OSIsoftConstants.API_ITEM_KEY, None)
                     event_frame_copy.pop("Security", None)
                     event_frame_copy.pop("Links", None)
                     yield event_frame_copy
                     limit.add_record()
-                if limit.is_reached():
-                    break
+                    if limit.is_reached():
+                        break
+        end_time = datetime.datetime.now()
+        duration = end_time - start_time
+        logger.info("generate_rows overall duration = {}s".format(duration.microseconds/1000000 + duration.seconds))
 
     def get_writer(self, dataset_schema=None, dataset_partitioning=None,
                    partition_id=None):

@@ -60,3 +60,6 @@ class OSIsoftEndpoints():
             webid=webid
         )
         return url
+
+    def get_batch_endpoint(self):
+        return self.get_base_url() + "/batch/"
