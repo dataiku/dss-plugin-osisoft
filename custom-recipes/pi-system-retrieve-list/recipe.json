@@ -1,7 +1,7 @@
 {
     "meta": {
-        "label": "Assets metrics downloader",
-        "description": "Retrieve PI metrics from list of tags",
+        "label": "Assets values downloader",
+        "description": "Retrieve PI values from list of tags",
         "icon": "icon-pi-system icon-cogs"
     },
     "kind": "PYTHON",

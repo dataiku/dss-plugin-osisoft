@@ -1,7 +1,7 @@
 {
     "meta": {
         "label": "Transpose & Synchronize",
-        "description": "Transpose PI metrics and synchronize them to one single attribute",
+        "description": "Transpose PI values and synchronize them to one single attribute",
         "icon": "icon-dku-timeseries-resample icon-DKU_timeseries_resample"
     },
     "kind": "PYTHON",

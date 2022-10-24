@@ -257,7 +257,7 @@
             "label": " ",
             "defaultValue": false,
             "visibilityCondition": "model.database_name.length>=0",
-            "description": "Retrieve metrics"
+            "description": "Retrieve values"
         },
         {
             "name": "must_keep_child_attributes",
