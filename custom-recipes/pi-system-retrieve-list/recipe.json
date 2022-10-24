@@ -151,6 +151,11 @@
         },
         {
             "type": "SEPARATOR",
+            "description": "Date / time can either be ISO 8601 or OSIsoft Time String format (see documentation)",
+            "visibilityCondition": "['InterpolatedData', 'RecordedData', 'PlotData', 'EventFrames'].includes(model.data_type)"
+        },
+        {
+            "type": "SEPARATOR",
             "description": "Interpolation",
             "visibilityCondition": "['InterpolatedData'].includes(model.data_type)"
         },

@@ -268,6 +268,12 @@
             "description": "Keep child attributes"
         },
         {
+            "type": "SEPARATOR",
+            "label": " ",
+            "description": "Date / time can either be ISO 8601 or OSIsoft Time String format (see documentation)",
+            "visibilityCondition": "model.must_retrieve_metrics"
+        },
+        {
             "name": "start_time",
             "label": "Start time",
             "description": "Optional",

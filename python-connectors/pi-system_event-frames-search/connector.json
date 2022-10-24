@@ -79,6 +79,12 @@
             "getChoicesFromPython": true
         },
         {
+            "type": "SEPARATOR",
+            "label": " ",
+            "description": "Date / time can either be ISO 8601 or OSIsoft Time String format (see documentation)",
+            "visibilityCondition": "model.database_name.length>0"
+        },
+        {
             "name": "start_time",
             "label": "Start time",
             "visibilityCondition": "model.database_name.length>0",

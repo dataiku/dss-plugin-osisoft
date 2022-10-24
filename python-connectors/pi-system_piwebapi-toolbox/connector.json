@@ -71,6 +71,12 @@
             "defaultValue": "RecordedData"
         },
         {
+            "type": "SEPARATOR",
+            "label": " ",
+            "description": "Date / time can either be ISO 8601 or OSIsoft Time String format (see documentation)",
+            "visibilityCondition": "(['InterpolatedData', 'RecordedData', 'PlotData', 'EventFrames'].includes(model.data_type))"
+        },
+        {
             "name": "start_time",
             "label": "Start time",
             "description": "Optional",
