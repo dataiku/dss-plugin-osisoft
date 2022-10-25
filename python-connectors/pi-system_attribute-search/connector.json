@@ -118,7 +118,8 @@
         },
         {
             "type": "SEPARATOR",
-            "label": "Element Criteria",
+            "label": " ",
+            "description": "Element Criteria",
             "visibilityCondition": "model.database_name.length>=0"
         },
         {

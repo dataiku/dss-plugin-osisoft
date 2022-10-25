@@ -102,6 +102,11 @@
             "visibilityCondition": "['InterpolatedData', 'RecordedData', 'PlotData', 'EventFrames'].includes(model.data_type)"
         },
         {
+            "type": "SEPARATOR",
+            "description": "Date / time can either be ISO 8601 or OSIsoft Time String format (see documentation)",
+            "visibilityCondition": "['InterpolatedData', 'RecordedData', 'PlotData', 'EventFrames'].includes(model.data_type)"
+        },
+        {
             "name": "use_start_time_column",
             "label": "Use start time value per row",
             "description": "Description here",
@@ -148,11 +153,6 @@
             "description": "Optional",
             "type": "STRING",
             "defaultValue": ""
-        },
-        {
-            "type": "SEPARATOR",
-            "description": "Date / time can either be ISO 8601 or OSIsoft Time String format (see documentation)",
-            "visibilityCondition": "['InterpolatedData', 'RecordedData', 'PlotData', 'EventFrames'].includes(model.data_type)"
         },
         {
             "type": "SEPARATOR",
