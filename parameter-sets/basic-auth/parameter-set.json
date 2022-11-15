@@ -25,15 +25,22 @@
         },
         {
             "name": "default_server",
-            "label": "Default server",
+            "label": "Server URL",
             "type": "STRING",
             "description": "my.pi-system.server.com"
         },
         {
-            "name": "can_disable_ssl_check",
-            "label": "Allows SSL checks disabled",
+            "name": "can_override_server_url",
+            "label": "Users can override server URL",
             "type": "BOOLEAN",
-            "definition": "",
+            "description": "Unsafe !",
+            "defaultValue": false
+        },
+        {
+            "name": "can_disable_ssl_check",
+            "label": "Users can disable SSL checks",
+            "type": "BOOLEAN",
+            "description": "Unsafe !",
             "defaultValue": false
         },
         {

@@ -24,22 +24,25 @@ def get_credentials(config, can_raise=True):
     username = osisoft_basic.get("user")
     password = osisoft_basic.get("password")
     show_advanced_parameters = config.get('show_advanced_parameters', False)
+    server_url = credentials.get("default_server")
+    is_ssl_check_disabled = False
     if show_advanced_parameters:
         setup_ssl_certificate(config.get("ssl_cert_path"))
         default_server = credentials.get("default_server")
         overwrite_server_url = config.get("server_url")
         can_disable_ssl_check = credentials.get("can_disable_ssl_check", False)
+        can_override_server_url = credentials.get("can_override_server_url", False)
         is_ssl_check_disabled = config.get("is_ssl_check_disabled", False)
         if not overwrite_server_url:
             server_url = default_server
         else:
-            server_url = overwrite_server_url
+            if not can_override_server_url:
+                error_message = "You cannot override the server URL on this preset. Please refer to your Dataiku admin"
+            else:
+                server_url = overwrite_server_url
         if (not can_disable_ssl_check) and is_ssl_check_disabled:
-            error_message = "You cannot disable SSL check on this preset. Please refer to your DSS admin"
+            error_message = "You cannot disable SSL check on this preset. Please refer to your Dataiku admin"
         is_ssl_check_disabled = can_disable_ssl_check and is_ssl_check_disabled
-    else:
-        server_url = credentials.get("default_server")
-        is_ssl_check_disabled = False
     if can_raise and error_message:
         raise PISystemConnectorError(error_message)
     if can_raise:
