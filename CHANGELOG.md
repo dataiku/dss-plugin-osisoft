@@ -1,8 +1,9 @@
 # Changelog
 
-## [Version 1.0.1](https://github.com/dataiku/dss-plugin-pi-server/releases/tag/v1.0.1) - Initial release - 2022-10-14
+## [Version 1.0.1](https://github.com/dataiku/dss-plugin-pi-server/releases/tag/v1.0.1) - Feature release - 2022-11-15
 
 - Add batch mode for metric retrieval with the event frames dataset
+- Disable by default server URL override
 
 ## [Version 1.0.0](https://github.com/dataiku/dss-plugin-pi-server/releases/tag/v1.0.0) - Initial release - 2022-08-04
 
