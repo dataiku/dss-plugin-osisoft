@@ -4,8 +4,8 @@
         "description": "",
         "icon": "icon-pi-system icon-cogs"
     },
-    "defaultDefinableInline": true,
-    "defaultDefinableAtProjectLevel": true,
+    "defaultDefinableInline": false,
+    "defaultDefinableAtProjectLevel": false,
     "params": [
         {
             "name": "auth_type",
