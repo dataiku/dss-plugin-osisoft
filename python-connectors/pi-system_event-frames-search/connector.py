@@ -63,59 +63,77 @@ class OSIsoftConnector(Connector):
                 **self.config
             )
             headers = self.client.get_requests_headers()
-            json_response = self.client.get(url=self.database_endpoint + "/eventframes", headers=headers, params=params, error_source="generate_rows")
-            event_frames = json_response.get(OSIsoftConstants.API_ITEM_KEY, [json_response])
-            if self.must_retrieve_metrics:
-                if use_batch_mode:
-                    batch_rows = self.client.get_rows_from_webids(
-                            event_frames, self.data_type,
-                            can_raise=False,
-                            batch_size=self.batch_size
-                        )
-                    for batch_row in batch_rows:
-                        items = batch_row.pop("Items", [])
-                        for item in items:
-                            batch_row.update(item)
-                            yield batch_row
-                            limit.add_record()
+            next_page_url = self.database_endpoint + "/eventframes"
+            is_first = True
+            while next_page_url:
+                if is_first:
+                    json_response = self.client.get(
+                        next_page_url,
+                        headers=headers, params=params, error_source="generate_rows"
+                    )
+                else:
+                    json_response = self.client.get(
+                        next_page_url,
+                        headers=None, params=None, error_source="generate_rows"
+                    )
+                is_first = False
+                next_page_url = json_response.get("Links", {}).get("Next", None)
+                event_frames = json_response.get(OSIsoftConstants.API_ITEM_KEY, [json_response])
+                if self.must_retrieve_metrics:
+                    if use_batch_mode:
+                        batch_rows = self.client.get_rows_from_webids(
+                                event_frames, self.data_type,
+                                can_raise=False,
+                                batch_size=self.batch_size
+                            )
+                        for batch_row in batch_rows:
+                            value = batch_row.pop("Value", {})
+                            if not value:
+                                items = batch_row.pop("Items", [])
+                                for item in items:
+                                    batch_row.update(item)
+                                    yield batch_row
+                                    if limit.is_reached():
+                                        break
+                            else:
+                                batch_row.update(value)
+                                yield batch_row
+                    else:
+                        for event_frame in event_frames:
+                            event_frame_id = event_frame.get("WebId")
+                            event_frame_metrics = self.client.get_row_from_webid(
+                                event_frame_id, self.data_type,
+                                can_raise=False
+                            )
+                            for event_frame_metric in event_frame_metrics:
+                                event_frame_copy = copy.deepcopy(event_frame)
+                                event_frame_copy.pop("Links", None)
+                                event_frame_copy.pop("Security", None)
+                                event_frame_copy.update(event_frame_metric)
+                                if OSIsoftConstants.API_ITEM_KEY in event_frame_copy:
+                                    items = event_frame_copy.pop(OSIsoftConstants.API_ITEM_KEY)
+                                    for item in items:
+                                        row = copy.deepcopy(event_frame_copy)
+                                        row.update(item)
+                                        row.pop("Links", None)
+                                        yield row
+                                        limit.add_record()
+                                else:
+                                    event_frame_copy.pop("Links", None)
+                                    yield event_frame_copy
+                                    limit.add_record()
                             if limit.is_reached():
-                                break
+                                return
                 else:
                     for event_frame in event_frames:
-                        event_frame_id = event_frame.get("WebId")
-                        event_frame_metrics = self.client.get_row_from_webid(
-                            event_frame_id, self.data_type,
-                            can_raise=False
-                        )
-                        for event_frame_metric in event_frame_metrics:
-                            event_frame_copy = copy.deepcopy(event_frame)
-                            event_frame_copy.pop("Links", None)
-                            event_frame_copy.pop("Security", None)
-                            event_frame_copy.update(event_frame_metric)
-                            if OSIsoftConstants.API_ITEM_KEY in event_frame_copy:
-                                items = event_frame_copy.pop(OSIsoftConstants.API_ITEM_KEY)
-                                for item in items:
-                                    row = copy.deepcopy(event_frame_copy)
-                                    row.update(item)
-                                    row.pop("Links", None)
-                                    yield row
-                                    limit.add_record()
-                            else:
-                                event_frame_copy.pop("Links", None)
-                                yield event_frame_copy
-                                limit.add_record()
+                        event_frame_copy = copy.deepcopy(event_frame)
+                        event_frame_copy.pop(OSIsoftConstants.API_ITEM_KEY, None)
+                        event_frame_copy.pop("Security", None)
+                        event_frame_copy.pop("Links", None)
+                        yield event_frame_copy
+                        limit.add_record()
                         if limit.is_reached():
                             break
-            else:
-                for event_frame in event_frames:
-                    event_frame_copy = copy.deepcopy(event_frame)
-                    event_frame_copy.pop(OSIsoftConstants.API_ITEM_KEY, None)
-                    event_frame_copy.pop("Security", None)
-                    event_frame_copy.pop("Links", None)
-                    yield event_frame_copy
-                    limit.add_record()
-                    if limit.is_reached():
-                        break
         end_time = datetime.datetime.now()
         duration = end_time - start_time
         logger.info("generate_rows overall duration = {}s".format(duration.microseconds/1000000 + duration.seconds))
