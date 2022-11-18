@@ -4,7 +4,7 @@ import copy
 from dataiku.customrecipe import get_input_names_for_role, get_recipe_config, get_output_names_for_role
 import pandas as pd
 from safe_logger import SafeLogger
-from osisoft_plugin_common import get_credentials, get_interpolated_parameters
+from osisoft_plugin_common import get_credentials, get_interpolated_parameters, get_advanced_parameters
 from osisoft_constants import OSIsoftConstants
 from osisoft_client import OSIsoftClient
 
@@ -36,6 +36,7 @@ start_time_column = config.get("start_time_column")
 use_end_time_column = config.get("use_end_time_column", False)
 end_time_column = config.get("end_time_column")
 server_url_column = config.get("server_url_column")
+use_batch_mode, batch_size = get_advanced_parameters(config)
 interval, sync_time, boundary_type = get_interpolated_parameters(config)
 
 input_parameters_dataset = dataiku.Dataset(input_dataset[0])
@@ -49,7 +50,11 @@ previous_server_url = ""
 with output_dataset.get_writer() as writer:
     first_dataframe = True
     absolute_index = 0
+    batch_buffer_size = 0
+    buffer = []
+    nb_rows_to_process = input_parameters_dataframe.shape[0]
     for index, input_parameters_row in input_parameters_dataframe.iterrows():
+        absolute_index += 1
         server_url = input_parameters_row.get(server_url_column, server_url) if use_server_url_column else server_url
         start_time = input_parameters_row.get(start_time_column, start_time) if use_start_time_column else start_time
         end_time = input_parameters_row.get(end_time_column, end_time) if use_end_time_column else end_time
@@ -73,6 +78,19 @@ with output_dataset.get_writer() as writer:
                 boundary_type=boundary_type,
                 can_raise=False
             )
+        elif use_batch_mode:
+            buffer.append(object_id)
+            batch_buffer_size += 1
+            if (batch_buffer_size >= batch_size) or (absolute_index == nb_rows_to_process):
+                rows = client.get_rows_from_webids(
+                    buffer, data_type,
+                    can_raise=False,
+                    batch_size=batch_size
+                )
+                batch_buffer_size = 0
+                buffer = []
+            else:
+                continue
         else:
             rows = client.get_row_from_webid(
                 object_id,
