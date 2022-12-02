@@ -5,6 +5,7 @@ from osisoft_client import OSIsoftClient
 from osisoft_constants import OSIsoftConstants
 from safe_logger import SafeLogger
 from osisoft_plugin_common import PISystemConnectorError, RecordsLimit, get_credentials, build_requests_params, assert_time_format, get_advanced_parameters
+# from osisoft_pagination import Pagination
 
 
 logger = SafeLogger("PI System plugin", ["user", "password"])
@@ -15,7 +16,8 @@ class OSIsoftConnector(Connector):
     def __init__(self, config, plugin_config):
         Connector.__init__(self, config, plugin_config)  # pass the parameters to the base class
 
-        logger.info("Event frame search v1.0.1 initialization with config={}, plugin_config={}".format(
+        logger.info("Event frame search v{} initialization with config={}, plugin_config={}".format(
+                OSIsoftConstants.PLUGIN_VERSION,
                 logger.filter_secrets(config),
                 logger.filter_secrets(plugin_config)
             )
@@ -63,8 +65,10 @@ class OSIsoftConnector(Connector):
                 **self.config
             )
             headers = self.client.get_requests_headers()
+            # pagination = Pagination(self.client.get, self.client.get, self.database_endpoint + "/eventframes", headers=headers, params=params, error_source="generate_rows")
             next_page_url = self.database_endpoint + "/eventframes"
             is_first = True
+            # while pagination.has_content():
             while next_page_url:
                 if is_first:
                     json_response = self.client.get(
@@ -76,6 +80,7 @@ class OSIsoftConnector(Connector):
                         next_page_url,
                         headers=None, params=None, error_source="generate_rows"
                     )
+                # json_response = pagination.get_page()
                 is_first = False
                 next_page_url = json_response.get("Links", {}).get("Next", None)
                 event_frames = json_response.get(OSIsoftConstants.API_ITEM_KEY, [json_response])

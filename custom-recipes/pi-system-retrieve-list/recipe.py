@@ -10,13 +10,15 @@ from osisoft_constants import OSIsoftConstants
 
 logger = SafeLogger("pi-system plugin", forbiden_keys=["token", "password"])
 
-
+logger.info("PIWebAPI Assets values downloader recipe v{}".format(
+    OSIsoftConstants.PLUGIN_VERSION
+))
 input_dataset = get_input_names_for_role('input_dataset')
 output_names_stats = get_output_names_for_role('api_output')
 config = get_recipe_config()
 dku_flow_variables = dataiku.get_flow_variables()
 
-logger.info("retrieve-list recipe config={}".format(logger.filter_secrets(config)))
+logger.info("Initialization with config config={}".format(logger.filter_secrets(config)))
 
 auth_type, username, password, server_url, is_ssl_check_disabled = get_credentials(config)
 
