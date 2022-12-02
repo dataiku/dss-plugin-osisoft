@@ -5,11 +5,15 @@ import pandas as pd
 from safe_logger import SafeLogger
 import os
 from temp_utils import CustomTmpFile
+from osisoft_constants import OSIsoftConstants
+import dateutil.parser
 
 
 logger = SafeLogger("pi-system plugin", forbiden_keys=["token", "password"])
 
-
+logger.info("PIWebAPI Transpose & Synchronize recipe v{}".format(
+    OSIsoftConstants.PLUGIN_VERSION
+))
 current_timestamps_cache = []
 current_values_cache = []
 next_timestamps_cache = []
@@ -28,6 +32,15 @@ def parse_timestamp_and_value(line):
     if value.endswith('\n'):
         value = value[:-1]
     return date, value
+
+
+def not_a_valid_datetime(datetime):
+    try:
+        dateutil.parser.isoparse(datetime)
+        return False
+    except:
+        pass
+    return True
 
 
 def get_latest_data_at_timestamp(file_handles, timestamp):
@@ -66,7 +79,7 @@ dku_flow_variables = dataiku.get_flow_variables()
 output_names_stats = get_output_names_for_role('api_output')
 output_dataset = dataiku.Dataset(output_names_stats[0])
 
-logger.info("retrieve-list recipe config={}".format(logger.filter_secrets(config)))
+logger.info("Initialization with config={}".format(logger.filter_secrets(config)))
 
 synchronize_on_identifier = config.get("synchronize_on_identifier")
 groupby_column = config.get("groupby_column")
@@ -90,6 +103,8 @@ file_counter = 0
 logger.info("Caching all attributes in {}".format(temp_location.name))
 for index, input_parameters_row in input_parameters_dataframe.iterrows():
     datetime = input_parameters_row.get(datetime_column)
+    if not_a_valid_datetime(datetime):
+        continue
     groupby_parameter = input_parameters_row.get(groupby_column)
     value = input_parameters_row.get(value_column)
 
