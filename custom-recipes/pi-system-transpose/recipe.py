@@ -34,13 +34,31 @@ def parse_timestamp_and_value(line):
     return date, value
 
 
-def not_a_valid_datetime(datetime):
+def get_datetime_from_string(datetime):
     try:
-        dateutil.parser.isoparse(datetime)
-        return False
+        time_stamp = dateutil.parser.isoparse(datetime)
+        return time_stamp
     except:
         pass
-    return True
+    return None
+
+
+def get_datetime_from_pandas(datetime):
+    try:
+        time_stamp = datetime.strftime('%Y-%m-%dT%H:%M:%SZ')
+        return time_stamp
+    except:
+        pass
+    return None
+
+
+def get_datetime_from_row(row, datetime_column):
+    raw_datetime = row[datetime_column]
+    if type(raw_datetime) == str:
+        formated_datetime = get_datetime_from_string(raw_datetime)
+    else:
+        formated_datetime = get_datetime_from_pandas(raw_datetime)
+    return formated_datetime
 
 
 def get_latest_data_at_timestamp(file_handles, timestamp):
@@ -102,8 +120,8 @@ file_counter = 0
 # Cache each attribute
 logger.info("Caching all attributes in {}".format(temp_location.name))
 for index, input_parameters_row in input_parameters_dataframe.iterrows():
-    datetime = input_parameters_row.get(datetime_column)
-    if not_a_valid_datetime(datetime):
+    datetime = get_datetime_from_row(input_parameters_row, datetime_column)
+    if not datetime:
         continue
     groupby_parameter = input_parameters_row.get(groupby_column)
     value = input_parameters_row.get(value_column)
