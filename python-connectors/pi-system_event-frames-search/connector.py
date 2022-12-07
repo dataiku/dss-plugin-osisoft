@@ -96,11 +96,16 @@ class OSIsoftConnector(Connector):
                             if not value:
                                 items = batch_row.pop("Items", [])
                                 for item in items:
+                                    batch_row.pop("Links", None)
                                     batch_row.update(item)
+                                    if isinstance(batch_row.get("Value"), dict):
+                                        value = batch_row.pop("Value", {})
+                                        batch_row.update(value)
                                     yield batch_row
                                     if limit.is_reached():
                                         break
                             else:
+                                batch_row.pop("Links", None)
                                 batch_row.update(value)
                                 yield batch_row
                     else:
@@ -121,10 +126,15 @@ class OSIsoftConnector(Connector):
                                         row = copy.deepcopy(event_frame_copy)
                                         row.update(item)
                                         row.pop("Links", None)
+                                        if isinstance(row.get("Value"), dict):
+                                            value = row.pop("Value", {})
+                                            row.update(value)
                                         yield row
                                         limit.add_record()
                                 else:
                                     event_frame_copy.pop("Links", None)
+                                    value = event_frame_copy.pop("Value", {})
+                                    event_frame_copy.update(value)
                                     yield event_frame_copy
                                     limit.add_record()
                             if limit.is_reached():
