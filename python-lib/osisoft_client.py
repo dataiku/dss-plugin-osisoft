@@ -292,7 +292,8 @@ class OSIsoftClient(object):
                     headers=headers
                 )
                 if self.is_debug_mode:
-                    logger.info("response={}".format(response.content)[:1000])
+                    logger.info("get response.content={}".format(response.content)[:1000])
+                    logger.info("get response.status={}".format(response.status_code))
         except Exception as err:
             error_message = "Could not connect. Error: {}{}".format(formatted_error_source(error_source), err)
             logger.error(error_message)
@@ -331,11 +332,15 @@ class OSIsoftClient(object):
 
     def post(self, url, headers, params, data, can_raise=True, error_source=None):
         url = build_query_string(url, params)
+        logger.info("Trying to post to {}".format(url))
         response = self.session.post(
             url=url,
             headers=headers,
             json=data
         )
+        if self.is_debug_mode:
+            logger.info("post response.content={}".format(response.content)[:1000])
+            logger.info("post response.status={}".format(response.status_code))
         self.assert_valid_response(response, can_raise=can_raise, error_source=error_source)
         return response
 
