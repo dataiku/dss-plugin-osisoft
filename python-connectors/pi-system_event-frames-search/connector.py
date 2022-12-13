@@ -4,7 +4,10 @@ from dataiku.connector import Connector
 from osisoft_client import OSIsoftClient
 from osisoft_constants import OSIsoftConstants
 from safe_logger import SafeLogger
-from osisoft_plugin_common import PISystemConnectorError, RecordsLimit, get_credentials, build_requests_params, assert_time_format, get_advanced_parameters
+from osisoft_plugin_common import (
+    PISystemConnectorError, RecordsLimit, get_credentials,
+    build_requests_params, assert_time_format, get_advanced_parameters, check_debug_mode
+)
 # from osisoft_pagination import Pagination
 
 
@@ -24,8 +27,8 @@ class OSIsoftConnector(Connector):
         )
 
         auth_type, username, password, server_url, is_ssl_check_disabled = get_credentials(config)
-
-        self.client = OSIsoftClient(server_url, auth_type, username, password, is_ssl_check_disabled=is_ssl_check_disabled)
+        is_debug_mode = check_debug_mode(config)
+        self.client = OSIsoftClient(server_url, auth_type, username, password, is_ssl_check_disabled=is_ssl_check_disabled, is_debug_mode=is_debug_mode)
         self.object_id = config.get("event_frame_to_retrieve", None)
         self.data_type = config.get("data_type", "SummaryData")
         if self.object_id is None:
@@ -65,7 +68,10 @@ class OSIsoftConnector(Connector):
                 **self.config
             )
             headers = self.client.get_requests_headers()
-            # pagination = Pagination(self.client.get, self.client.get, self.database_endpoint + "/eventframes", headers=headers, params=params, error_source="generate_rows")
+            # pagination = Pagination(
+            #     self.client.get, self.client.get, self.database_endpoint + "/eventframes",
+            #     headers=headers, params=params, error_source="generate_rows"
+            # )
             next_page_url = self.database_endpoint + "/eventframes"
             is_first = True
             # while pagination.has_content():
