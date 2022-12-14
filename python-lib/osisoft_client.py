@@ -29,6 +29,7 @@ class OSIsoftClient(object):
         self.next_page = None
         self.can_raise = can_raise
         self.is_debug_mode = is_debug_mode
+        self.debug_level = None
 
     def get_auth(self, auth_type, username, password):
         if auth_type == "basic":
@@ -339,10 +340,17 @@ class OSIsoftClient(object):
             json=data
         )
         if self.is_debug_mode:
-            logger.info("post response.content={}".format(response.content)[:1000])
+            logger.info("post response.content={}".format(response.content)[:self.get_debug_level()])
             logger.info("post response.status={}".format(response.status_code))
         self.assert_valid_response(response, can_raise=can_raise, error_source=error_source)
         return response
+
+    def get_debug_level(self):
+        if self.debug_level == 5000:
+            self.debug_level = 1000
+        if not self.debug_level:
+            self.debug_level = 5000
+        return self.debug_level
 
     def get_resource_path_params(self, resource_path):
         return {
