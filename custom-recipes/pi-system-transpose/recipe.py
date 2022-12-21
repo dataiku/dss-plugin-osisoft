@@ -72,7 +72,7 @@ def get_latest_data_at_timestamp(file_handles, timestamp):
             current_values_cache[cache_index] = next_values_cache[cache_index]
             line = file_handles[attribute_path].readline()
             if not line:
-                current_values_cache[cache_index] = "NaN"
+                current_values_cache[cache_index] = next_values_cache[cache_index]
                 break
             if previous_line and line == previous_line:
                 logger.error("Loop ! attribute_path={}, line={}".format(attribute_path, line))
@@ -88,6 +88,15 @@ def get_latest_data_at_timestamp(file_handles, timestamp):
         cache_index = cache_index + 1
 
     return ret
+
+
+def clean_cache(groupby_list):
+    logger.info("Polling done, cleaning the cache files")
+    # Close and delete all cache files
+    for groupby_parameter in groupby_list:
+        groupby_list[groupby_parameter].close()
+        os.remove(groupby_list[groupby_parameter].name)
+    logger.info("Cleaning done, all done.")
 
 
 input_dataset = get_input_names_for_role('input_dataset')
@@ -106,6 +115,8 @@ value_column = config.get("value_column")
 
 if not groupby_column:
     raise ValueError("There is no parameter column selected.")
+if not synchronize_on_identifier:
+    raise ValueError("There is no full path to reference attribute selected. For transposing the dataset, use the pivot recipe.")
 
 input_parameters_dataset = dataiku.Dataset(input_dataset[0])
 input_parameters_dataframe = input_parameters_dataset.get_dataframe()
@@ -137,7 +148,7 @@ for index, input_parameters_row in input_parameters_dataframe.iterrows():
 
 logger.info("Cached all {} attributes".format(file_counter))
 
-# Reopen cache files from write to read
+# Reopen cache files from write mode to read mode
 file_counter = 0
 for groupby_parameter in groupby_list:
     groupby_list[groupby_parameter].close()
@@ -148,7 +159,15 @@ for groupby_parameter in groupby_list:
     next_values_cache.append(None)
     file_counter = file_counter + 1
 
-reference_file = groupby_list.pop(synchronize_on_identifier)
+if len(current_timestamps_cache) == 0:
+    clean_cache(groupby_list)
+    raise ValueError("No timestamp was found in column '{}'".format(datetime_column))
+reference_file = groupby_list.pop(synchronize_on_identifier, None)
+if not reference_file:
+    clean_cache(groupby_list)
+    raise ValueError("The full path to reference attribute '{}' was not found in the path column '{}'".format(
+        synchronize_on_identifier, groupby_column
+    ))
 current_timestamps_cache.pop(0)
 current_values_cache.pop(0)
 next_timestamps_cache.pop(0)
@@ -174,10 +193,4 @@ with output_dataset.get_writer() as writer:
             first_dataframe = False
         writer.write_dataframe(unnested_items_rows)
 
-logger.info("Polling done, cleaning the cache files")
-# Close and delete all cache files
-for groupby_parameter in groupby_list:
-    groupby_list[groupby_parameter].close()
-    os.remove(groupby_list[groupby_parameter].name)
-
-logger.info("Cleaning done, all done.")
+clean_cache(groupby_list)
