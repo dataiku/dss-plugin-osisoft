@@ -7,6 +7,7 @@
 - Fix pagination for Event Frames Search connector
 - Fix Transpose & Synchronize recipe with rows containing no timestamp
 - Fix nested value object when batch mode is not activated on Event Frames Search connector
+- Fix presence of NaNs in last line produced by Transpose & Synchronize recipe
 
 ## [Version 1.0.0](https://github.com/dataiku/dss-plugin-pi-server/releases/tag/v1.0.0) - Initial release - 2022-08-04
 
