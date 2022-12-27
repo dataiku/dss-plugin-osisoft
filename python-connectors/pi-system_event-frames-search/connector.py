@@ -8,7 +8,6 @@ from osisoft_plugin_common import (
     PISystemConnectorError, RecordsLimit, get_credentials,
     build_requests_params, assert_time_format, get_advanced_parameters, check_debug_mode
 )
-from osisoft_plugin_common import PISystemConnectorError, RecordsLimit, get_credentials, build_requests_params, assert_time_format, get_advanced_parameters
 
 
 logger = SafeLogger("PI System plugin", ["user", "password"])
