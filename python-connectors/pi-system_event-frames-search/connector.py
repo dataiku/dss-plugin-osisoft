@@ -8,7 +8,7 @@ from osisoft_plugin_common import (
     PISystemConnectorError, RecordsLimit, get_credentials,
     build_requests_params, assert_time_format, get_advanced_parameters, check_debug_mode
 )
-# from osisoft_pagination import Pagination
+from osisoft_plugin_common import PISystemConnectorError, RecordsLimit, get_credentials, build_requests_params, assert_time_format, get_advanced_parameters
 
 
 logger = SafeLogger("PI System plugin", ["user", "password"])
@@ -68,13 +68,8 @@ class OSIsoftConnector(Connector):
                 **self.config
             )
             headers = self.client.get_requests_headers()
-            # pagination = Pagination(
-            #     self.client.get, self.client.get, self.database_endpoint + "/eventframes",
-            #     headers=headers, params=params, error_source="generate_rows"
-            # )
             next_page_url = self.database_endpoint + "/eventframes"
             is_first = True
-            # while pagination.has_content():
             while next_page_url:
                 if is_first:
                     json_response = self.client.get(
@@ -86,7 +81,6 @@ class OSIsoftConnector(Connector):
                         next_page_url,
                         headers=None, params=None, error_source="generate_rows"
                     )
-                # json_response = pagination.get_page()
                 is_first = False
                 next_page_url = json_response.get("Links", {}).get("Next", None)
                 event_frames = json_response.get(OSIsoftConstants.API_ITEM_KEY, [json_response])
