@@ -61,31 +61,30 @@ def get_datetime_from_row(row, datetime_column):
     return formated_datetime
 
 
-def get_latest_data_at_timestamp(file_handles, timestamp):
-    cache_index = 0
+def get_latest_data_at_timestamp(file_handles, seek_timestamp):
+    attribute_index = 0
     ret = {}
     for attribute_path in file_handles:
-        next_cached_timestamp = next_timestamps_cache[cache_index]
+        next_cached_timestamp = next_timestamps_cache[attribute_index]
         previous_line = None
-        while not next_cached_timestamp or (next_cached_timestamp <= timestamp):
-            current_timestamps_cache[cache_index] = next_timestamps_cache[cache_index]
-            current_values_cache[cache_index] = next_values_cache[cache_index]
+        while not next_cached_timestamp or (next_cached_timestamp <= seek_timestamp):
+            current_timestamps_cache[attribute_index] = next_timestamps_cache[attribute_index]
+            current_values_cache[attribute_index] = next_values_cache[attribute_index]
             line = file_handles[attribute_path].readline()
             if not line:
-                current_values_cache[cache_index] = next_values_cache[cache_index]
                 break
             if previous_line and line == previous_line:
                 logger.error("Loop ! attribute_path={}, line={}".format(attribute_path, line))
                 break
             previous_line = line
             attribute_timestamp, attribute_value = parse_timestamp_and_value(line)
-            next_timestamps_cache[cache_index] = attribute_timestamp
-            next_values_cache[cache_index] = attribute_value
-            next_cached_timestamp = next_timestamps_cache[cache_index]
+            next_timestamps_cache[attribute_index] = attribute_timestamp
+            next_values_cache[attribute_index] = attribute_value
+            next_cached_timestamp = next_timestamps_cache[attribute_index]
         ret.update({
-            attribute_path: current_values_cache[cache_index]
+            attribute_path: current_values_cache[attribute_index]
         })
-        cache_index = cache_index + 1
+        attribute_index = attribute_index + 1
 
     return ret
 
