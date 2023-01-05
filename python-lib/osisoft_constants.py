@@ -358,6 +358,7 @@ class OSIsoftConstants(object):
         {"name": "Annotated", "type": "string"},
         {"name": "WebId", "type": "string"},
         {"name": "Id", "type": "string"},
+        {"name": "event_frame_webid", "type": "string"},
         {"name": "Errors", "type": "string"}
     ]
     SEARCH_PATH = "search"

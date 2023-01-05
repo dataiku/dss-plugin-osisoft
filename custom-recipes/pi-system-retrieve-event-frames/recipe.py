@@ -114,7 +114,7 @@ with output_dataset.get_writer() as writer:
             base_row.pop("Links", None)
             items_column = base_row.pop(OSIsoftConstants.API_ITEM_KEY, [])
             for item in items_column:
-                item_row = {"event_frame_webid": event_frame_webid}
+                item_row = {} if use_batch_mode else {"event_frame_webid": event_frame_webid}
                 value = item.get("Value", {})
                 if isinstance(value, dict):
                     item.pop("Value")
@@ -123,7 +123,8 @@ with output_dataset.get_writer() as writer:
                 item_row.update(item)
                 unnested_items_rows.append(item_row)
             if (not item) and ("Value" in base_row):
-                item_row = {"event_frame_webid": event_frame_webid}
+                # item_row = {"event_frame_webid": event_frame_webid}
+                item_row = {} if use_batch_mode else {"event_frame_webid": event_frame_webid}
                 value = base_row.get("Value", {})
                 if isinstance(value, dict):
                     base_row.pop("Value")

@@ -70,6 +70,7 @@ class OSIsoftClient(object):
         batch = []
         number_processed_webids = 0
         number_of_webids_to_process = len(input_rows)
+        web_ids = []
         for input_row in input_rows:
             if isinstance(input_row, dict):
                 webid = input_row.get("WebId")
@@ -78,17 +79,23 @@ class OSIsoftClient(object):
             url = self.endpoint.get_data_from_webid_url(endpoint_type, data_type, webid)
             requests_kwargs = self.generic_get_kwargs()
             requests_kwargs['url'] = url
+            web_ids.append(webid)
             batch.append(requests_kwargs)
             number_processed_webids += 1
             if (len(batch) >= batch_size) or (number_processed_webids == number_of_webids_to_process):
                 json_responses = self.process_batch(batch)
+                response_index = 0
                 for json_response in json_responses:
+                    webid = web_ids[response_index]
                     if OSIsoftConstants.DKU_ERROR_KEY in json_response:
-                        json_response['object_id'] = "{}".format(webid)
+                        json_response['event_frame_webid'] = "{}".format(webid)
                         yield json_response
                     items = json_response.get(OSIsoftConstants.API_ITEM_KEY, [])
                     for item in items:
+                        item['event_frame_webid'] = "{}".format(webid)
                         yield item
+                    response_index += 1
+                web_ids = []
                 batch = []
 
     def process_batch(self, batch):
