@@ -128,12 +128,14 @@ class OSIsoftConnector(Connector):
                                         if isinstance(row.get("Value"), dict):
                                             value = row.pop("Value", {})
                                             row.update(value)
+                                        row["event_frame_webid"] = event_frame_id
                                         yield row
                                         limit.add_record()
                                 else:
                                     event_frame_copy.pop("Links", None)
                                     value = event_frame_copy.pop("Value", {})
                                     event_frame_copy.update(value)
+                                    event_frame_copy["event_frame_webid"] = event_frame_id
                                     yield event_frame_copy
                                     limit.add_record()
                             if limit.is_reached():
