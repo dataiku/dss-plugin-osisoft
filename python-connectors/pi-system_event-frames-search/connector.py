@@ -91,9 +91,9 @@ class OSIsoftConnector(Connector):
                                 batch_size=self.batch_size
                             )
                         for batch_row in batch_rows:
-                            value = batch_row.pop("Value", {})
+                            value = batch_row.pop(OSIsoftConstants.API_VALUE_KEY, {})
                             if not value:
-                                items = batch_row.pop("Items", [])
+                                items = batch_row.pop(OSIsoftConstants.API_ITEM_KEY, [])
                                 for item in items:
                                     batch_row.pop("Links", None)
                                     batch_row.update(item)
