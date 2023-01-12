@@ -67,6 +67,8 @@ def get_latest_data_at_timestamp(file_handles, seek_timestamp):
     for attribute_path in file_handles:
         next_cached_timestamp = next_timestamps_cache[attribute_index]
         previous_line = None
+        # Continue along file till just passed the seek_timestamp - current_timestamps_cache & 
+        # current_values_cache should then have the values we read for the attribute at the timestamp we want
         while not next_cached_timestamp or (next_cached_timestamp <= seek_timestamp):
             current_timestamps_cache[attribute_index] = next_timestamps_cache[attribute_index]
             current_values_cache[attribute_index] = next_values_cache[attribute_index]
