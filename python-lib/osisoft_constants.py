@@ -358,6 +358,7 @@ class OSIsoftConstants(object):
         {"name": "Annotated", "type": "string"},
         {"name": "WebId", "type": "string"},
         {"name": "Id", "type": "string"},
+        {"name": "event_frame_webid", "type": "string"},
         {"name": "Errors", "type": "string"}
     ]
     SEARCH_PATH = "search"
@@ -388,5 +389,6 @@ class OSIsoftConstants(object):
         "Security": "{base_url}/eventframes/{webid}/security",
         "SecurityEntries": "{base_url}/eventframes/{webid}/securityentries"
     }
+    PLUGIN_VERSION = "1.0.1"
     WEB_API_PATH = "piwebapi"
     WRITE_HEADERS = {'X-Requested-With': 'XmlHttpRequest'}

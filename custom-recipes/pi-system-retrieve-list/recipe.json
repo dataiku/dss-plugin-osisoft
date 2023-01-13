@@ -1,7 +1,7 @@
 {
     "meta": {
-        "label": "Assets metrics downloader",
-        "description": "Retrieve PI metrics from list of tags",
+        "label": "Assets values downloader",
+        "description": "Retrieve PI values from list of tags",
         "icon": "icon-pi-system icon-cogs"
     },
     "kind": "PYTHON",
@@ -86,6 +86,14 @@
             "mandatory": false
         },
         {
+            "name": "is_debug_mode",
+            "label": "Verbose logging",
+            "visibilityCondition": "model.show_advanced_parameters==true",
+            "type": "BOOLEAN",
+            "description": "",
+            "defaultValue": false
+        },
+        {
             "type": "SEPARATOR",
             "description": "Source"
         },
@@ -99,6 +107,11 @@
         {
             "type": "SEPARATOR",
             "description": "Time",
+            "visibilityCondition": "['InterpolatedData', 'RecordedData', 'PlotData', 'EventFrames'].includes(model.data_type)"
+        },
+        {
+            "type": "SEPARATOR",
+            "description": "Date / time can either be ISO 8601 or OSIsoft Time String format (see documentation)",
             "visibilityCondition": "['InterpolatedData', 'RecordedData', 'PlotData', 'EventFrames'].includes(model.data_type)"
         },
         {

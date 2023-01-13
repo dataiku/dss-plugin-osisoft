@@ -47,6 +47,31 @@
             "mandatory": false
         },
         {
+            "name": "is_debug_mode",
+            "label": " ",
+            "visibilityCondition": "model.show_advanced_parameters==true",
+            "type": "BOOLEAN",
+            "description": "Verbose logging",
+            "defaultValue": false
+        },
+        {
+            "name": "use_batch_mode",
+            "label": " ",
+            "type": "BOOLEAN",
+            "description": "Use batch mode",
+            "visibilityCondition": "model.show_advanced_parameters==true && model.must_retrieve_metrics==true",
+            "defaultValue": false
+        },
+        {
+            "name": "batch_size",
+            "label": " ",
+            "type": "INT",
+            "description": "Batch size",
+            "visibilityCondition": "model.show_advanced_parameters==true && model.use_batch_mode==true && model.must_retrieve_metrics==true",
+            "minI": 1,
+            "defaultValue": 500
+        },
+        {
             "name": "server_name",
             "label": "Server name",
             "type": "SELECT",
@@ -60,6 +85,12 @@
             "description": "",
             "visibilityCondition": "model.server_name.length>=0",
             "getChoicesFromPython": true
+        },
+        {
+            "type": "SEPARATOR",
+            "label": " ",
+            "description": "Date / time can either be ISO 8601 or OSIsoft Time String format (see documentation)",
+            "visibilityCondition": "model.database_name.length>0"
         },
         {
             "name": "start_time",
@@ -122,7 +153,7 @@
             "label": " ",
             "defaultValue": false,
             "visibilityCondition": "model.database_name.length>=0",
-            "description": "Retrieve metrics"
+            "description": "Retrieve values"
         },
         {
             "name": "data_type",

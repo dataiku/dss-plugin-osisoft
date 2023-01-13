@@ -47,6 +47,10 @@ class OSIsoftEndpoints():
         url = self.get_base_url() + "/assetservers"
         return url
 
+    def get_event_frames_url(self):
+        url = self.get_base_url() + "/eventframes"
+        return url
+
     def get_attribute_url(self):
         url = self.get_base_url() + "/attributes/search"
         return url
@@ -60,3 +64,6 @@ class OSIsoftEndpoints():
             webid=webid
         )
         return url
+
+    def get_batch_endpoint(self):
+        return self.get_base_url() + "/batch/"

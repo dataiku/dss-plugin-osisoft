@@ -118,7 +118,8 @@
         },
         {
             "type": "SEPARATOR",
-            "label": "Element Criteria",
+            "label": " ",
+            "description": "Element Criteria",
             "visibilityCondition": "model.database_name.length>=0"
         },
         {
@@ -257,7 +258,7 @@
             "label": " ",
             "defaultValue": false,
             "visibilityCondition": "model.database_name.length>=0",
-            "description": "Retrieve metrics"
+            "description": "Retrieve values"
         },
         {
             "name": "must_keep_child_attributes",
@@ -266,6 +267,12 @@
             "defaultValue": false,
             "visibilityCondition": "model.database_name.length>=0 && !model.must_retrieve_metrics",
             "description": "Keep child attributes"
+        },
+        {
+            "type": "SEPARATOR",
+            "label": " ",
+            "description": "Date / time can either be ISO 8601 or OSIsoft Time String format (see documentation)",
+            "visibilityCondition": "model.must_retrieve_metrics"
         },
         {
             "name": "start_time",
