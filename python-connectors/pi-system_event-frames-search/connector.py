@@ -4,7 +4,10 @@ from dataiku.connector import Connector
 from osisoft_client import OSIsoftClient
 from osisoft_constants import OSIsoftConstants
 from safe_logger import SafeLogger
-from osisoft_plugin_common import PISystemConnectorError, RecordsLimit, get_credentials, build_requests_params, assert_time_format, get_advanced_parameters
+from osisoft_plugin_common import (
+    PISystemConnectorError, RecordsLimit, get_credentials,
+    build_requests_params, assert_time_format, get_advanced_parameters, check_debug_mode
+)
 
 
 logger = SafeLogger("PI System plugin", ["user", "password"])
@@ -15,15 +18,16 @@ class OSIsoftConnector(Connector):
     def __init__(self, config, plugin_config):
         Connector.__init__(self, config, plugin_config)  # pass the parameters to the base class
 
-        logger.info("Event frame search v1.0.1 initialization with config={}, plugin_config={}".format(
+        logger.info("Event frame search v{} initialization with config={}, plugin_config={}".format(
+                OSIsoftConstants.PLUGIN_VERSION,
                 logger.filter_secrets(config),
                 logger.filter_secrets(plugin_config)
             )
         )
 
         auth_type, username, password, server_url, is_ssl_check_disabled = get_credentials(config)
-
-        self.client = OSIsoftClient(server_url, auth_type, username, password, is_ssl_check_disabled=is_ssl_check_disabled)
+        is_debug_mode = check_debug_mode(config)
+        self.client = OSIsoftClient(server_url, auth_type, username, password, is_ssl_check_disabled=is_ssl_check_disabled, is_debug_mode=is_debug_mode)
         self.object_id = config.get("event_frame_to_retrieve", None)
         self.data_type = config.get("data_type", "SummaryData")
         if self.object_id is None:
@@ -55,9 +59,9 @@ class OSIsoftConnector(Connector):
         start_time = datetime.datetime.now()
         if self.object_id:
             for event_frame in self.client.get_row_from_urls(self.object_id, self.data_type, start_date=self.start_time, end_date=self.end_time):
-                if limit.is_reached():
-                    break
                 yield event_frame
+                if limit.is_reached():
+                    return
         else:
             params = build_requests_params(
                 **self.config
@@ -87,17 +91,24 @@ class OSIsoftConnector(Connector):
                                 batch_size=self.batch_size
                             )
                         for batch_row in batch_rows:
-                            value = batch_row.pop("Value", {})
+                            value = batch_row.pop(OSIsoftConstants.API_VALUE_KEY, {})
                             if not value:
-                                items = batch_row.pop("Items", [])
+                                items = batch_row.pop(OSIsoftConstants.API_ITEM_KEY, [])
                                 for item in items:
+                                    batch_row.pop("Links", None)
                                     batch_row.update(item)
+                                    if isinstance(batch_row.get("Value"), dict):
+                                        value = batch_row.pop("Value", {})
+                                        batch_row.update(value)
                                     yield batch_row
                                     if limit.is_reached():
-                                        break
+                                        return
                             else:
+                                batch_row.pop("Links", None)
                                 batch_row.update(value)
                                 yield batch_row
+                                if limit.is_reached():
+                                    return
                     else:
                         for event_frame in event_frames:
                             event_frame_id = event_frame.get("WebId")
@@ -116,14 +127,21 @@ class OSIsoftConnector(Connector):
                                         row = copy.deepcopy(event_frame_copy)
                                         row.update(item)
                                         row.pop("Links", None)
+                                        if isinstance(row.get("Value"), dict):
+                                            value = row.pop("Value", {})
+                                            row.update(value)
+                                        row["event_frame_webid"] = event_frame_id
                                         yield row
-                                        limit.add_record()
+                                        if limit.is_reached():
+                                            return
                                 else:
                                     event_frame_copy.pop("Links", None)
+                                    value = event_frame_copy.pop("Value", {})
+                                    event_frame_copy.update(value)
+                                    event_frame_copy["event_frame_webid"] = event_frame_id
                                     yield event_frame_copy
-                                    limit.add_record()
-                            if limit.is_reached():
-                                return
+                                    if limit.is_reached():
+                                        return
                 else:
                     for event_frame in event_frames:
                         event_frame_copy = copy.deepcopy(event_frame)
@@ -131,9 +149,8 @@ class OSIsoftConnector(Connector):
                         event_frame_copy.pop("Security", None)
                         event_frame_copy.pop("Links", None)
                         yield event_frame_copy
-                        limit.add_record()
                         if limit.is_reached():
-                            break
+                            return
         end_time = datetime.datetime.now()
         duration = end_time - start_time
         logger.info("generate_rows overall duration = {}s".format(duration.microseconds/1000000 + duration.seconds))

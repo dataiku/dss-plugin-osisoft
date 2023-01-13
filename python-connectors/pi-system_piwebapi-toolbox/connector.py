@@ -2,6 +2,7 @@ from dataiku.connector import Connector
 from osisoft_client import OSIsoftClient, OSIsoftWriter
 from safe_logger import SafeLogger
 from osisoft_plugin_common import PISystemConnectorError, RecordsLimit, get_credentials, assert_time_format, get_schema_as_arrays, normalize_af_path
+from osisoft_constants import OSIsoftConstants
 
 
 logger = SafeLogger("PI System plugin", ["user", "password"])
@@ -13,7 +14,9 @@ class OSIsoftConnector(Connector):  # Search
 
         Connector.__init__(self, config, plugin_config)
 
-        logger.info("PIWebAPI toolbox v1.0.1 initialization with config={}, plugin_config={}".format(logger.filter_secrets(config), logger.filter_secrets(plugin_config)))
+        logger.info("PIWebAPI toolbox v{} initialization with config={}, plugin_config={}".format(
+            OSIsoftConstants.PLUGIN_VERSION, logger.filter_secrets(config), logger.filter_secrets(plugin_config)
+        ))
 
         auth_type, username, password, server_url, is_ssl_check_disabled = get_credentials(config)
 

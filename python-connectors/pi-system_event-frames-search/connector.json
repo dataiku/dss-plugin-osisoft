@@ -47,11 +47,19 @@
             "mandatory": false
         },
         {
+            "name": "is_debug_mode",
+            "label": " ",
+            "visibilityCondition": "model.show_advanced_parameters==true",
+            "type": "BOOLEAN",
+            "description": "Verbose logging",
+            "defaultValue": false
+        },
+        {
             "name": "use_batch_mode",
             "label": " ",
             "type": "BOOLEAN",
             "description": "Use batch mode",
-            "visibilityCondition": "model.show_advanced_parameters==true",
+            "visibilityCondition": "model.show_advanced_parameters==true && model.must_retrieve_metrics==true",
             "defaultValue": false
         },
         {
@@ -59,7 +67,7 @@
             "label": " ",
             "type": "INT",
             "description": "Batch size",
-            "visibilityCondition": "model.show_advanced_parameters==true && model.use_batch_mode==true",
+            "visibilityCondition": "model.show_advanced_parameters==true && model.use_batch_mode==true && model.must_retrieve_metrics==true",
             "minI": 1,
             "defaultValue": 500
         },

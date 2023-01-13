@@ -80,7 +80,7 @@
             "label": "Full path to reference attribute",
             "description": "\\\\server\\database\\elements..|attribute",
             "type": "STRING",
-            "mandatory": false
+            "mandatory": true
           }
     ],
     "resourceKeys": []

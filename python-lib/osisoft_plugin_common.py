@@ -329,6 +329,3 @@ class RecordsLimit():
             return False
         self.counter += 1
         return self.counter > self.records_limit
-
-    def add_record(self):
-        self.counter += 1
