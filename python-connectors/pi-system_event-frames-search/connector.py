@@ -59,9 +59,9 @@ class OSIsoftConnector(Connector):
         start_time = datetime.datetime.now()
         if self.object_id:
             for event_frame in self.client.get_row_from_urls(self.object_id, self.data_type, start_date=self.start_time, end_date=self.end_time):
-                if limit.is_reached():
-                    break
                 yield event_frame
+                if limit.is_reached():
+                    return
         else:
             params = build_requests_params(
                 **self.config
@@ -91,9 +91,9 @@ class OSIsoftConnector(Connector):
                                 batch_size=self.batch_size
                             )
                         for batch_row in batch_rows:
-                            value = batch_row.pop("Value", {})
+                            value = batch_row.pop(OSIsoftConstants.API_VALUE_KEY, {})
                             if not value:
-                                items = batch_row.pop("Items", [])
+                                items = batch_row.pop(OSIsoftConstants.API_ITEM_KEY, [])
                                 for item in items:
                                     batch_row.pop("Links", None)
                                     batch_row.update(item)
@@ -102,11 +102,13 @@ class OSIsoftConnector(Connector):
                                         batch_row.update(value)
                                     yield batch_row
                                     if limit.is_reached():
-                                        break
+                                        return
                             else:
                                 batch_row.pop("Links", None)
                                 batch_row.update(value)
                                 yield batch_row
+                                if limit.is_reached():
+                                    return
                     else:
                         for event_frame in event_frames:
                             event_frame_id = event_frame.get("WebId")
@@ -128,16 +130,18 @@ class OSIsoftConnector(Connector):
                                         if isinstance(row.get("Value"), dict):
                                             value = row.pop("Value", {})
                                             row.update(value)
+                                        row["event_frame_webid"] = event_frame_id
                                         yield row
-                                        limit.add_record()
+                                        if limit.is_reached():
+                                            return
                                 else:
                                     event_frame_copy.pop("Links", None)
                                     value = event_frame_copy.pop("Value", {})
                                     event_frame_copy.update(value)
+                                    event_frame_copy["event_frame_webid"] = event_frame_id
                                     yield event_frame_copy
-                                    limit.add_record()
-                            if limit.is_reached():
-                                return
+                                    if limit.is_reached():
+                                        return
                 else:
                     for event_frame in event_frames:
                         event_frame_copy = copy.deepcopy(event_frame)
@@ -145,9 +149,8 @@ class OSIsoftConnector(Connector):
                         event_frame_copy.pop("Security", None)
                         event_frame_copy.pop("Links", None)
                         yield event_frame_copy
-                        limit.add_record()
                         if limit.is_reached():
-                            break
+                            return
         end_time = datetime.datetime.now()
         duration = end_time - start_time
         logger.info("generate_rows overall duration = {}s".format(duration.microseconds/1000000 + duration.seconds))
