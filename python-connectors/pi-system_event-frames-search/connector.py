@@ -149,7 +149,6 @@ class OSIsoftConnector(Connector):
                         event_frame_copy.pop("Security", None)
                         event_frame_copy.pop("Links", None)
                         yield event_frame_copy
-                        limit.add_record()
                         if limit.is_reached():
                             return
         end_time = datetime.datetime.now()
