@@ -29,6 +29,7 @@ class OSIsoftClient(object):
         self.next_page = None
         self.can_raise = can_raise
         self.is_debug_mode = is_debug_mode
+        self.debug_level = None
 
     def get_auth(self, auth_type, username, password):
         if auth_type == "basic":
@@ -66,9 +67,10 @@ class OSIsoftClient(object):
     def get_rows_from_webids(self, input_rows, data_type, start_date=None, end_date=None,
                            interval=None, sync_time=None, boundary_type=None, selected_fields=None,
                            can_raise=True, endpoint_type="event_frames", batch_size=500):
-        batch = []
+        batch_requests_parameters = []
         number_processed_webids = 0
         number_of_webids_to_process = len(input_rows)
+        web_ids = []
         for input_row in input_rows:
             if isinstance(input_row, dict):
                 webid = input_row.get("WebId")
@@ -77,32 +79,38 @@ class OSIsoftClient(object):
             url = self.endpoint.get_data_from_webid_url(endpoint_type, data_type, webid)
             requests_kwargs = self.generic_get_kwargs()
             requests_kwargs['url'] = url
-            batch.append(requests_kwargs)
+            web_ids.append(webid)
+            batch_requests_parameters.append(requests_kwargs)
             number_processed_webids += 1
-            if (len(batch) >= batch_size) or (number_processed_webids == number_of_webids_to_process):
-                json_responses = self.process_batch(batch)
+            if (len(batch_requests_parameters) >= batch_size) or (number_processed_webids == number_of_webids_to_process):
+                json_responses = self._batch_requests(batch_requests_parameters)
+                batch_requests_parameters = []
+                response_index = 0
                 for json_response in json_responses:
+                    webid = web_ids[response_index]
                     if OSIsoftConstants.DKU_ERROR_KEY in json_response:
-                        json_response['object_id'] = "{}".format(webid)
+                        json_response['event_frame_webid'] = "{}".format(webid)
                         yield json_response
                     items = json_response.get(OSIsoftConstants.API_ITEM_KEY, [])
                     for item in items:
+                        item['event_frame_webid'] = "{}".format(webid)
                         yield item
-                batch = []
+                    response_index += 1
+                web_ids = []
 
-    def process_batch(self, batch):
+    def _batch_requests(self, batch_requests_parameters):
         batch_endpoint = self.endpoint.get_batch_endpoint()
         batch_body = {}
         index = 0
-        for row in batch:
+        for row_request_parameters in batch_requests_parameters:
             batch_body["{}".format(index)] = {
                 "Method": "GET",
-                "Resource": "{}".format(row.get("url"))
+                "Resource": "{}".format(row_request_parameters.get("url"))
             }
             index += 1
         response = self.post_value(url=batch_endpoint, data=batch_body)
         json_response = simplejson.loads(response.content)
-        for index in range(0, len(batch)):
+        for index in range(0, len(batch_requests_parameters)):
             batch_section = json_response.get("{}".format(index), {})
             yield batch_section.get("Content", {})
 
@@ -292,7 +300,8 @@ class OSIsoftClient(object):
                     headers=headers
                 )
                 if self.is_debug_mode:
-                    logger.info("response={}".format(response.content)[:1000])
+                    logger.info("get response.content={}".format(response.content)[:1000])
+                    logger.info("get response.status={}".format(response.status_code))
         except Exception as err:
             error_message = "Could not connect. Error: {}{}".format(formatted_error_source(error_source), err)
             logger.error(error_message)
@@ -331,13 +340,24 @@ class OSIsoftClient(object):
 
     def post(self, url, headers, params, data, can_raise=True, error_source=None):
         url = build_query_string(url, params)
+        logger.info("Trying to post to {}".format(url))
         response = self.session.post(
             url=url,
             headers=headers,
             json=data
         )
+        if self.is_debug_mode:
+            logger.info("post response.content={}".format(response.content)[:self.get_debug_level()])
+            logger.info("post response.status={}".format(response.status_code))
         self.assert_valid_response(response, can_raise=can_raise, error_source=error_source)
         return response
+
+    def get_debug_level(self):
+        if self.debug_level == 5000:
+            self.debug_level = 1000
+        if not self.debug_level:
+            self.debug_level = 5000
+        return self.debug_level
 
     def get_resource_path_params(self, resource_path):
         return {

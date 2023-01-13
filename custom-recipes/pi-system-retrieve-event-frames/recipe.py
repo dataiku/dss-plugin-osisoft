@@ -4,7 +4,7 @@ import copy
 from dataiku.customrecipe import get_input_names_for_role, get_recipe_config, get_output_names_for_role
 import pandas as pd
 from safe_logger import SafeLogger
-from osisoft_plugin_common import get_credentials, get_interpolated_parameters, get_advanced_parameters
+from osisoft_plugin_common import get_credentials, get_interpolated_parameters, get_advanced_parameters, check_debug_mode
 from osisoft_constants import OSIsoftConstants
 from osisoft_client import OSIsoftClient
 
@@ -22,6 +22,7 @@ dku_flow_variables = dataiku.get_flow_variables()
 logger.info("Initialization with config={}".format(logger.filter_secrets(config)))
 
 auth_type, username, password, server_url, is_ssl_check_disabled = get_credentials(config)
+is_debug_mode = check_debug_mode(config)
 
 use_server_url_column = config.get("use_server_url_column", False)
 if not server_url and not use_server_url_column:
@@ -64,7 +65,7 @@ with output_dataset.get_writer() as writer:
         event_frame_webid = input_parameters_row.get("WebId")
 
         if client is None or previous_server_url != server_url:
-            client = OSIsoftClient(server_url, auth_type, username, password, is_ssl_check_disabled=is_ssl_check_disabled)
+            client = OSIsoftClient(server_url, auth_type, username, password, is_ssl_check_disabled=is_ssl_check_disabled, is_debug_mode=is_debug_mode)
             previous_server_url = server_url
         object_id = input_parameters_row.get(path_column)
         item = None
@@ -113,7 +114,7 @@ with output_dataset.get_writer() as writer:
             base_row.pop("Links", None)
             items_column = base_row.pop(OSIsoftConstants.API_ITEM_KEY, [])
             for item in items_column:
-                item_row = {"event_frame_webid": event_frame_webid}
+                item_row = {} if use_batch_mode else {"event_frame_webid": event_frame_webid}
                 value = item.get("Value", {})
                 if isinstance(value, dict):
                     item.pop("Value")
@@ -122,7 +123,7 @@ with output_dataset.get_writer() as writer:
                 item_row.update(item)
                 unnested_items_rows.append(item_row)
             if (not item) and ("Value" in base_row):
-                item_row = {"event_frame_webid": event_frame_webid}
+                item_row = {} if use_batch_mode else {"event_frame_webid": event_frame_webid}
                 value = base_row.get("Value", {})
                 if isinstance(value, dict):
                     base_row.pop("Value")
