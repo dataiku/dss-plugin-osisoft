@@ -192,6 +192,7 @@ class OSIsoftConstants(object):
         {'name': 'Security', 'type': 'object'},
         {'name': 'Errors', 'type': 'object'}
     ]
+    DEFAULT_MAXCOUNT = 1000
     DEFAULT_SCHEME = "https"
     DEFAULT_WAIT_BEFORE_RETRY = 60
     DKU_ERROR_KEY = "Errors"

@@ -8,6 +8,7 @@ from requests_ntlm import HttpNtlmAuth
 from osisoft_constants import OSIsoftConstants
 from osisoft_endpoints import OSIsoftEndpoints
 from osisoft_plugin_common import build_requests_params, is_filtered_out, is_server_throttling
+from osisoft_pagination import OffsetPagination
 from safe_logger import SafeLogger
 
 
@@ -186,9 +187,10 @@ class OSIsoftClient(object):
         return json_response
 
     def get_row_from_url(self, url=None, start_date=None, end_date=None, interval=None, sync_time=None):
+        pagination = OffsetPagination()
         has_more = True
         while has_more:
-            json_response, has_more = self.get_paginated(
+            json_response, has_more = pagination.get_offset_paginated(
                 self.get_link_from_url,
                 url, start_date=start_date, end_date=end_date, interval=interval, sync_time=sync_time
             )
@@ -209,11 +211,18 @@ class OSIsoftClient(object):
             for row in rows:
                 yield row
 
-    def get_link_from_url(self, url, start_date=None, end_date=None, interval=None, sync_time=None):
+    def get_link_from_url(self, url, start_date=None, end_date=None, interval=None, sync_time=None, start_index=None, max_count=None):
         if not url:
             url = self.endpoint.get_base_url()
         headers = self.get_requests_headers()
-        params = build_requests_params(start_time=start_date, end_time=end_date, interval=interval, sync_time=sync_time)
+        params = build_requests_params(
+            start_time=start_date,
+            end_time=end_date,
+            interval=interval,
+            sync_time=sync_time,
+            start_index=start_index,
+            max_count=max_count
+        )
         json_response = self.get(
             url=url,
             headers=headers,
@@ -433,6 +442,23 @@ class OSIsoftClient(object):
                 "value": item.get("Links").get("Databases")
             })
         return asset_servers
+
+    def get_data_servers(self, can_raise=True):
+        data_servers = []
+        data_servers_url = self.endpoint.get_data_servers_url()
+        headers = self.get_requests_headers()
+        json_response = self.get(url=data_servers_url, headers=headers, params={}, error_source="get_data_servers", can_raise=can_raise)
+        if OSIsoftConstants.DKU_ERROR_KEY in json_response:
+            return [{
+                "label": json_response.get(OSIsoftConstants.DKU_ERROR_KEY)
+            }]
+        items = json_response.get(OSIsoftConstants.API_ITEM_KEY, [])
+        for item in items:
+            data_servers.append({
+                "label": item.get("Name"),
+                "value": item.get("Links", {}).get("Points")
+            })
+        return data_servers
 
     def get_next_choices(self, next_url, next_key, params=None, use_name_as_link=False, filter=None):
         params = params or {}

@@ -47,6 +47,10 @@ class OSIsoftEndpoints():
         url = self.get_base_url() + "/assetservers"
         return url
 
+    def get_data_servers_url(self):
+        url = self.get_base_url() + "/dataservers"
+        return url
+
     def get_event_frames_url(self):
         url = self.get_base_url() + "/eventframes"
         return url

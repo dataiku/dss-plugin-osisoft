@@ -106,7 +106,9 @@ def build_requests_params(**kwargs):
         "template_name": "templateName",
         "referenced_element_name_filter": "referencedElementNameFilter",
         "referenced_element_template": "referencedElementTemplate",
-        "severity_levels": "severity"
+        "severity_levels": "severity",
+        "max_count": "maxCount",
+        "start_index": "startIndex"
     }
     requests_params = build_query_requests_params(
         query_name=kwargs.get("query_name"),
