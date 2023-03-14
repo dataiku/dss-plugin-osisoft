@@ -370,7 +370,7 @@ class OSIsoftClient(object):
 
     def get_resource_path_params(self, resource_path):
         return {
-            "path": escape(resource_path)
+            "path": resource_path
         }
 
     def get_requests_headers(self):
