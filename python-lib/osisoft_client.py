@@ -7,7 +7,7 @@ from datetime import datetime
 from requests_ntlm import HttpNtlmAuth
 from osisoft_constants import OSIsoftConstants
 from osisoft_endpoints import OSIsoftEndpoints
-from osisoft_plugin_common import build_requests_params, is_filtered_out, is_server_throttling
+from osisoft_plugin_common import build_requests_params, is_filtered_out, is_server_throttling, RecordsLimit
 from osisoft_pagination import OffsetPagination
 from safe_logger import SafeLogger
 
@@ -301,6 +301,7 @@ class OSIsoftClient(object):
         error_message = None
         url = build_query_string(url, params)
         logger.info("Trying to connect to {}".format(url))
+        limit = RecordsLimit(OSIsoftConstants.MAXIMUM_RETRIES_ON_THROTTLING)
         try:
             response = None
             while is_server_throttling(response):
@@ -311,6 +312,9 @@ class OSIsoftClient(object):
                 if self.is_debug_mode:
                     logger.info("get response.content={}".format(response.content)[:1000])
                     logger.info("get response.status={}".format(response.status_code))
+                if limit.is_reached():
+                    error_message = "The maximum number of retries has been reached."
+                    break
         except Exception as err:
             error_message = "Could not connect. Error: {}{}".format(formatted_error_source(error_source), err)
             logger.error(error_message)

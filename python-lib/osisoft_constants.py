@@ -197,6 +197,7 @@ class OSIsoftConstants(object):
     DEFAULT_WAIT_BEFORE_RETRY = 60
     DKU_ERROR_KEY = "Errors"
     LINKS = "Links"
+    MAXIMUM_RETRIES_ON_THROTTLING = 5
     POSSIBLE_WEB_ID_STARTS = ["F1", "I1", "P1", "L1", "D1"]
     RECIPE_SCHEMA_PER_DATA_TYPE = {
         "InterpolatedData": DEFAULT_ASSET_METRICS_SCHEMA,
