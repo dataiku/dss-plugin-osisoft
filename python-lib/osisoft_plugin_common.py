@@ -250,7 +250,7 @@ def is_filtered_out(item, filters=None):
 def is_server_throttling(response):
     if response is None:
         return True
-    if response.status_code in [429, 503]:
+    if response.status_code in [409, 429, 503]:
         logger.warning("Error {}, headers = {}".format(response.status_code, response.headers))
         seconds_before_retry = decode_retry_after_header(response)
         logger.warning("Sleeping for {} seconds".format(seconds_before_retry))
