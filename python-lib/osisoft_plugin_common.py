@@ -144,8 +144,10 @@ def build_query_requests_params(query_name=None, query_category=None, query_temp
         query_elements.append("afelementtemplate:({})".format(query_template))
     if query_attribute:
         query_elements.append("attributename:({})".format(query_attribute))
-    params.update({"q": " AND ".join(query_elements)})
-    return params
+    if query_elements:
+        return params.update({"q": " AND ".join(query_elements)})
+    else:
+        return {}
 
 
 char_to_escape = {
@@ -318,6 +320,18 @@ def get_base_for_data_type(data_type, object_id):
     base['object_id'] = object_id
     ret = copy.deepcopy(base)
     return ret
+
+
+def get_max_count(config):
+    # some data_type requests only returns a maximum of 1k items
+    # This can be increased by using maxCount
+    DATA_TYPES_REQUIRING_MAXCOUNT = ["InterpolatedData", "PlotData", "RecordedData"]
+    DEFAULT_MAXCOUNT = None  # TODO replace with 0 when we can confirm it is equivalement to max authorized
+    max_count = None
+    data_type = config.get("data_type", None)
+    if data_type in DATA_TYPES_REQUIRING_MAXCOUNT:
+        max_count = config.get("max_count", DEFAULT_MAXCOUNT)
+    return max_count
 
 
 class RecordsLimit():

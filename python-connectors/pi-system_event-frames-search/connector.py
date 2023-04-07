@@ -6,7 +6,8 @@ from osisoft_constants import OSIsoftConstants
 from safe_logger import SafeLogger
 from osisoft_plugin_common import (
     PISystemConnectorError, RecordsLimit, get_credentials,
-    build_requests_params, assert_time_format, get_advanced_parameters, check_debug_mode
+    build_requests_params, assert_time_format, get_advanced_parameters, check_debug_mode,
+    get_max_count
 )
 
 
@@ -42,6 +43,7 @@ class OSIsoftConnector(Connector):
             raise PISystemConnectorError("No endpoint selected")
         self.must_retrieve_metrics = config.get("must_retrieve_metrics")
         self.data_type = config.get("data_type", "Recorded")
+        self.max_count = get_max_count(config)
         self.config = config
         self.use_batch_mode, self.batch_size = get_advanced_parameters(config)
 
@@ -58,7 +60,9 @@ class OSIsoftConnector(Connector):
         use_batch_mode = self.use_batch_mode and (records_limit == -1 or records_limit >= 500)
         start_time = datetime.datetime.now()
         if self.object_id:
-            for event_frame in self.client.get_row_from_urls(self.object_id, self.data_type, start_date=self.start_time, end_date=self.end_time):
+            for event_frame in self.client.get_row_from_urls(
+                        self.object_id, self.data_type, start_date=self.start_time,
+                        end_date=self.end_time, max_count=self.max_count):
                 yield event_frame
                 if limit.is_reached():
                     return
@@ -88,7 +92,8 @@ class OSIsoftConnector(Connector):
                         batch_rows = self.client.get_rows_from_webids(
                                 event_frames, self.data_type,
                                 can_raise=False,
-                                batch_size=self.batch_size
+                                batch_size=self.batch_size,
+                                max_count=self.max_count
                             )
                         for batch_row in batch_rows:
                             value = batch_row.pop(OSIsoftConstants.API_VALUE_KEY, {})
@@ -113,7 +118,7 @@ class OSIsoftConnector(Connector):
                         for event_frame in event_frames:
                             event_frame_id = event_frame.get("WebId")
                             event_frame_metrics = self.client.get_row_from_webid(
-                                event_frame_id, self.data_type,
+                                event_frame_id, self.data_type, max_count=self.max_count,
                                 can_raise=False
                             )
                             for event_frame_metric in event_frame_metrics:

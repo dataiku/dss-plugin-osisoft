@@ -1,7 +1,9 @@
 from dataiku.connector import Connector
 from osisoft_client import OSIsoftClient, OSIsoftWriter
 from safe_logger import SafeLogger
-from osisoft_plugin_common import PISystemConnectorError, RecordsLimit, get_credentials, assert_time_format, get_schema_as_arrays, normalize_af_path
+from osisoft_plugin_common import (
+    PISystemConnectorError, RecordsLimit, get_credentials, assert_time_format, get_schema_as_arrays, normalize_af_path, get_max_count
+)
 from osisoft_constants import OSIsoftConstants
 
 
@@ -33,6 +35,7 @@ class OSIsoftConnector(Connector):  # Search
         if self.client.is_resource_path(self.object_id):
             self.object_id = normalize_af_path(self.object_id)
             self.item = self.client.get_item_from_path(self.object_id)
+        self.max_count = get_max_count(config)
 
     def get_read_schema(self):
         return None
@@ -48,7 +51,8 @@ class OSIsoftConnector(Connector):  # Search
                 start_date=self.start_time,
                 end_date=self.end_time,
                 interval=self.interval,
-                sync_time=self.sync_time
+                sync_time=self.sync_time,
+                max_count=self.max_count
             ):
                 if limit.is_reached():
                     break
@@ -61,7 +65,7 @@ class OSIsoftConnector(Connector):  # Search
                 end_date=self.end_time,
                 interval=self.interval,
                 sync_time=self.sync_time,
-                endpoint_type="AF"
+                endpoint_type="AF", max_count=self.max_count
             ):
                 if limit.is_reached():
                     break

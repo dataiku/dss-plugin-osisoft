@@ -71,6 +71,14 @@
             "defaultValue": "RecordedData"
         },
         {
+            "name": "max_count",
+            "label": "Max count",
+            "visibilityCondition": "['InterpolatedData', 'RecordedData', 'PlotData'].includes(model.data_type)",
+            "description": "",
+            "type": "INT",
+            "defaultValue": 1000
+        },
+        {
             "type": "SEPARATOR",
             "label": " ",
             "description": "Date / time can either be ISO 8601 or OSIsoft Time String format (see documentation)",

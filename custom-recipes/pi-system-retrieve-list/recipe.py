@@ -5,7 +5,8 @@ import pandas as pd
 from safe_logger import SafeLogger
 from osisoft_plugin_common import (
     get_credentials, get_interpolated_parameters, normalize_af_path,
-    get_combined_description, get_base_for_data_type, check_debug_mode
+    get_combined_description, get_base_for_data_type, check_debug_mode,
+    get_max_count
 )
 from osisoft_client import OSIsoftClient
 from osisoft_constants import OSIsoftConstants
@@ -25,6 +26,7 @@ logger.info("Initialization with config config={}".format(logger.filter_secrets(
 
 auth_type, username, password, server_url, is_ssl_check_disabled = get_credentials(config)
 is_debug_mode = check_debug_mode(config)
+max_count = get_max_count(config)
 
 use_server_url_column = config.get("use_server_url_column", False)
 if not server_url and not use_server_url_column:
@@ -76,6 +78,7 @@ with output_dataset.get_writer() as writer:
                 interval=interval,
                 sync_time=sync_time,
                 boundary_type=boundary_type,
+                max_count=max_count,
                 can_raise=False,
                 object_id=object_id
             )
@@ -88,6 +91,7 @@ with output_dataset.get_writer() as writer:
                 interval=interval,
                 sync_time=sync_time,
                 boundary_type=boundary_type,
+                max_count=max_count,
                 can_raise=False,
                 endpoint_type="AF"
             )
