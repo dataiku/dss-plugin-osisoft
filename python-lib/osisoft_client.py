@@ -21,7 +21,7 @@ class PISystemClientError(ValueError):
 
 class OSIsoftClient(object):
 
-    def __init__(self, server_url, auth_type, username, password, is_ssl_check_disabled=False, can_raise=True, is_debug_mode=False):
+    def __init__(self, server_url, auth_type, username, password, is_ssl_check_disabled=False, can_raise=True, is_debug_mode=False, network_timer=None):
         self.session = requests.Session()
         self.session.auth = self.get_auth(auth_type, username, password)
         self.session.verify = (not is_ssl_check_disabled)
@@ -31,6 +31,7 @@ class OSIsoftClient(object):
         self.can_raise = can_raise
         self.is_debug_mode = is_debug_mode
         self.debug_level = None
+        self.network_timer = network_timer
 
     def get_auth(self, auth_type, username, password):
         if auth_type == "basic":
@@ -305,10 +306,14 @@ class OSIsoftClient(object):
         try:
             response = None
             while is_server_throttling(response):
+                if self.network_timer:
+                    self.network_timer.start(url)
                 response = self.session.get(
                     url=url,
                     headers=headers
                 )
+                if self.network_timer:
+                    self.network_timer.stop()
                 if self.is_debug_mode:
                     logger.info("get response.content={}".format(response.content)[:1000])
                     logger.info("get response.status={}".format(response.status_code))
@@ -354,11 +359,15 @@ class OSIsoftClient(object):
     def post(self, url, headers, params, data, can_raise=True, error_source=None):
         url = build_query_string(url, params)
         logger.info("Trying to post to {}".format(url))
+        if self.network_timer:
+            self.network_timer.start(url)
         response = self.session.post(
             url=url,
             headers=headers,
             json=data
         )
+        if self.network_timer:
+            self.network_timer.stop()
         if self.is_debug_mode:
             logger.info("post response.content={}".format(response.content)[:self.get_debug_level()])
             logger.info("post response.status={}".format(response.status_code))
