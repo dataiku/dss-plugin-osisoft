@@ -391,6 +391,6 @@ class OSIsoftConstants(object):
         "Security": "{base_url}/eventframes/{webid}/security",
         "SecurityEntries": "{base_url}/eventframes/{webid}/securityentries"
     }
-    PLUGIN_VERSION = "1.2.0-beta.2"
+    PLUGIN_VERSION = "1.2.0-beta.3"
     WEB_API_PATH = "piwebapi"
     WRITE_HEADERS = {'X-Requested-With': 'XmlHttpRequest'}
