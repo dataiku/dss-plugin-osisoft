@@ -43,7 +43,7 @@ class OSIsoftClient(object):
 
     def get_row_from_webid(self, webid, data_type, start_date=None, end_date=None,
                            interval=None, sync_time=None, boundary_type=None, selected_fields=None,
-                           can_raise=True, endpoint_type="event_frames"):
+                           can_raise=True, endpoint_type="event_frames", max_count=None):
 
         url = self.endpoint.get_data_from_webid_url(endpoint_type, data_type, webid)
         has_more = True
@@ -57,6 +57,7 @@ class OSIsoftClient(object):
                 sync_time=sync_time,
                 boundary_type=boundary_type,
                 selected_fields=selected_fields,
+                max_count=max_count,
                 can_raise=can_raise
             )
             if OSIsoftConstants.DKU_ERROR_KEY in json_response:
@@ -67,8 +68,8 @@ class OSIsoftClient(object):
                 yield item
 
     def get_rows_from_webids(self, input_rows, data_type, start_date=None, end_date=None,
-                           interval=None, sync_time=None, boundary_type=None, selected_fields=None,
-                           can_raise=True, endpoint_type="event_frames", batch_size=500):
+                             interval=None, sync_time=None, boundary_type=None, selected_fields=None, max_count=None,
+                             can_raise=True, endpoint_type="event_frames", batch_size=500):
         batch_requests_parameters = []
         number_processed_webids = 0
         number_of_webids_to_process = len(input_rows)
@@ -79,7 +80,7 @@ class OSIsoftClient(object):
             else:
                 webid = input_row
             url = self.endpoint.get_data_from_webid_url(endpoint_type, data_type, webid)
-            requests_kwargs = self.generic_get_kwargs()
+            requests_kwargs = self.generic_get_kwargs(max_count=max_count)
             requests_kwargs['url'] = url
             web_ids.append(webid)
             batch_requests_parameters.append(requests_kwargs)
@@ -116,7 +117,7 @@ class OSIsoftClient(object):
             batch_section = json_response.get("{}".format(index), {})
             yield batch_section.get("Content", {})
 
-    def generic_get_kwargs(self, start_date=None, end_date=None, interval=None, sync_time=None, boundary_type=None, selected_fields=None, can_raise=None):
+    def generic_get_kwargs(self, start_date=None, end_date=None, interval=None, sync_time=None, boundary_type=None, selected_fields=None, max_count=None, can_raise=None):
         headers = self.get_requests_headers()
         params = self.get_requests_params(
             start_date,
@@ -124,14 +125,15 @@ class OSIsoftClient(object):
             interval=interval,
             sync_time=sync_time,
             boundary_type=boundary_type,
-            selected_fields=selected_fields
+            selected_fields=selected_fields,
+            max_count=max_count
         )
         return {
             "headers": headers,
             "params": params
         }
 
-    def generic_get(self, url, start_date=None, end_date=None, interval=None, sync_time=None, boundary_type=None, selected_fields=None, can_raise=None):
+    def generic_get(self, url, start_date=None, end_date=None, interval=None, sync_time=None, boundary_type=None, selected_fields=None, max_count=None, can_raise=None):
         headers = self.get_requests_headers()
         params = self.get_requests_params(
             start_date,
@@ -139,7 +141,8 @@ class OSIsoftClient(object):
             interval=interval,
             sync_time=sync_time,
             boundary_type=boundary_type,
-            selected_fields=selected_fields
+            selected_fields=selected_fields,
+            max_count=max_count
         )
         json_response = self.get(
             url=url,
@@ -149,7 +152,8 @@ class OSIsoftClient(object):
         )
         return json_response
 
-    def get_row_from_item(self, item, data_type, start_date=None, end_date=None, interval=None, sync_time=None, boundary_type=None, can_raise=True, object_id=None):
+    def get_row_from_item(self, item, data_type, start_date=None, end_date=None, interval=None,
+                          sync_time=None, boundary_type=None, can_raise=True, object_id=None, max_count=None):
         has_more = True
         while has_more:
             json_response, has_more = self.get_paginated(
@@ -161,6 +165,7 @@ class OSIsoftClient(object):
                 interval=interval,
                 sync_time=sync_time,
                 boundary_type=boundary_type,
+                max_count=max_count,
                 can_raise=can_raise
             )
             if OSIsoftConstants.DKU_ERROR_KEY in json_response:
@@ -170,7 +175,7 @@ class OSIsoftClient(object):
             for item in items:
                 yield self.loop_sub_items(item)
 
-    def get_link_from_item(self, item, data_type, start_date, end_date, interval=None, sync_time=None, boundary_type=None, can_raise=True):
+    def get_link_from_item(self, item, data_type, start_date, end_date, interval=None, sync_time=None, boundary_type=None, max_count=None, can_raise=True):
         url = self.extract_link_with_key(item, data_type)
         if not url:
             error_message = "This object does not have {} data type".format(data_type)
@@ -178,7 +183,10 @@ class OSIsoftClient(object):
                 raise PISystemClientError(error_message)
             return {OSIsoftConstants.DKU_ERROR_KEY: error_message}
         headers = self.get_requests_headers()
-        params = build_requests_params(start_time=start_date, end_time=end_date, interval=interval, sync_time=sync_time, sync_time_boundary_type=boundary_type)
+        params = build_requests_params(
+            start_time=start_date, end_time=end_date, interval=interval,
+            sync_time=sync_time, sync_time_boundary_type=boundary_type, max_count=max_count
+        )
         json_response = self.get(
             url=url,
             headers=headers,
@@ -187,13 +195,13 @@ class OSIsoftClient(object):
         )
         return json_response
 
-    def get_row_from_url(self, url=None, start_date=None, end_date=None, interval=None, sync_time=None):
+    def get_row_from_url(self, url=None, start_date=None, end_date=None, interval=None, sync_time=None, max_count=None):
         pagination = OffsetPagination()
         has_more = True
         while has_more:
             json_response, has_more = pagination.get_offset_paginated(
                 self.get_link_from_url,
-                url, start_date=start_date, end_date=end_date, interval=interval, sync_time=sync_time
+                url, start_date=start_date, end_date=end_date, interval=interval, sync_time=sync_time, max_count=max_count
             )
             items = json_response.get(OSIsoftConstants.API_ITEM_KEY, [json_response])
             for item in items:
@@ -204,11 +212,11 @@ class OSIsoftClient(object):
                 else:
                     yield item
 
-    def get_row_from_urls(self, links=None, data_type=None, start_date=None, end_date=None, interval=None, sync_time=None):
+    def get_row_from_urls(self, links=None, data_type=None, start_date=None, end_date=None, interval=None, sync_time=None, max_count=None):
         links = links or []
         for link in links:
             url = link
-            rows = self.get_row_from_url(url, start_date=start_date, end_date=end_date, interval=interval, sync_time=sync_time)
+            rows = self.get_row_from_url(url, start_date=start_date, end_date=end_date, interval=interval, sync_time=sync_time, max_count=max_count)
             for row in rows:
                 yield row
 
@@ -393,7 +401,7 @@ class OSIsoftClient(object):
             "Accept-Encoding": "gzip, deflate, br"
         }
 
-    def get_requests_params(self, start_date=None, end_date=None, interval=None, sync_time=None, boundary_type=None, selected_fields=None):
+    def get_requests_params(self, start_date=None, end_date=None, interval=None, sync_time=None, boundary_type=None, selected_fields=None, max_count=None):
         params = {}
         if start_date:
             params.update({"starttime": start_date})
@@ -407,6 +415,8 @@ class OSIsoftClient(object):
             params.update({"syncTimeBoundaryType": boundary_type})
         if selected_fields:
             params.update({"selectedFields": selected_fields})
+        if max_count is not None:
+            params.update({"maxCount": max_count})
         return params
 
     def assert_valid_response(self, response, can_raise=True, error_source=None):

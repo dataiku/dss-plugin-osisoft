@@ -223,6 +223,14 @@
                 {"value": "EndValue", "label": "EndValue"}
             ],
             "defaultValue": "SummaryData"
+        },
+        {
+            "name": "max_count",
+            "label": "Max count",
+            "visibilityCondition": "['InterpolatedData', 'RecordedData', 'PlotData'].includes(model.data_type)",
+            "description": "",
+            "type": "INT",
+            "defaultValue": 1000
         }
     ],
     "resourceKeys": []

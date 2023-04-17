@@ -5,6 +5,7 @@
 - Add Tag Search custom dataset
 - Fix Toolbox issue with tags and paths containing spaces
 - Fix Toolbox result consistency when using web IDs.
+- Add option to change max count value
 
 ## [Version 1.0.1](https://github.com/dataiku/dss-plugin-pi-server/releases/tag/v1.0.1) - Feature release - 2023-01-05
 
