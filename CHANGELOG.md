@@ -1,5 +1,9 @@
 # Changelog
 
+## [Version 1.0.2](https://github.com/dataiku/dss-plugin-pi-server/releases/tag/v1.0.2) - Bugfix release - 2023-04-25
+
+- Updated code-env descriptor for DSS 12
+
 ## [Version 1.0.1](https://github.com/dataiku/dss-plugin-pi-server/releases/tag/v1.0.1) - Feature release - 2023-01-05
 
 - Add batch mode for metric retrieval with the event frames
