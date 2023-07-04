@@ -6,7 +6,8 @@ from safe_logger import SafeLogger
 from osisoft_plugin_common import (
     get_credentials, get_interpolated_parameters, normalize_af_path,
     get_combined_description, get_base_for_data_type, check_debug_mode,
-    PerformanceTimer, get_max_count
+    PerformanceTimer, get_max_count, check_must_convert_object_to_string,
+    convert_schema_objects_to_string
 )
 from osisoft_client import OSIsoftClient
 from osisoft_constants import OSIsoftConstants
@@ -27,6 +28,7 @@ logger.info("Initialization with config config={}".format(logger.filter_secrets(
 auth_type, username, password, server_url, is_ssl_check_disabled = get_credentials(config)
 is_debug_mode = check_debug_mode(config)
 max_count = get_max_count(config)
+must_convert_object_to_string = check_must_convert_object_to_string(config)
 
 use_server_url_column = config.get("use_server_url_column", False)
 if not server_url and not use_server_url_column:
@@ -119,6 +121,8 @@ with output_dataset.get_writer() as writer:
         unnested_items_rows = pd.DataFrame(results)
         if first_dataframe:
             default_columns = OSIsoftConstants.RECIPE_SCHEMA_PER_DATA_TYPE.get(data_type)
+            if must_convert_object_to_string:
+                default_columns = convert_schema_objects_to_string(default_columns)
             combined_columns_description = get_combined_description(default_columns, unnested_items_rows)
             output_dataset.write_schema(combined_columns_description)
             first_dataframe = False

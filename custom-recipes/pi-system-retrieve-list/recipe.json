@@ -86,6 +86,14 @@
             "mandatory": false
         },
         {
+            "name": "must_convert_object_to_string",
+            "label": "Convert objects to string",
+            "visibilityCondition": "model.show_advanced_parameters==true",
+            "type": "BOOLEAN",
+            "description": "(for direct output to databases)",
+            "defaultValue": false
+        },
+        {
             "name": "is_debug_mode",
             "label": "Verbose logging",
             "visibilityCondition": "model.show_advanced_parameters==true",

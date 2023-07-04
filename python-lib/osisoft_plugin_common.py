@@ -65,6 +65,23 @@ def check_debug_mode(config):
     return config.get('show_advanced_parameters', False) and config.get('is_debug_mode', False)
 
 
+def check_must_convert_object_to_string(config):
+    return config.get('show_advanced_parameters', False) and config.get('must_convert_object_to_string', False)
+
+
+def convert_schema_objects_to_string(input_schema):
+    schema = copy.deepcopy(input_schema)
+    if type(schema) == list:
+        columns = schema
+    else:
+        columns = schema.get("columns", [])
+    for column in columns:
+        column_type = column.get("type")
+        if column_type == "object":
+            column["type"] = "string"
+    return schema
+
+
 def get_interpolated_parameters(config):
     data_type = config.get("data_type")
     interval = None
