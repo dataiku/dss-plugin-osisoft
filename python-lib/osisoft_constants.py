@@ -269,7 +269,8 @@ class OSIsoftConstants(object):
         {"name": "Span", "type": "float"},
         {"name": "Zero", "type": "float"},
         {"name": "Id", "type": "string"},
-        {"name": "WebId", "type": "string"}
+        {"name": "WebId", "type": "string"},
+        {"name": "Errors", "type": "string"}
     ]
     SCHEMA_ATTRIBUTES_METRICS_RESPONSE = [
         {"name": "Name", "type": "string"},
@@ -301,7 +302,8 @@ class OSIsoftConstants(object):
         {"name": "Span", "type": "float"},
         {"name": "Zero", "type": "float"},
         {"name": "Id", "type": "string"},
-        {"name": "WebId", "type": "string"}
+        {"name": "WebId", "type": "string"},
+        {"name": "Errors", "type": "string"}
     ]
     SCHEMA_ATTRIBUTES_METRICS_FILTER = [
         "ConfigString", "DataReferencePlugIn", "DisplayDigits",
