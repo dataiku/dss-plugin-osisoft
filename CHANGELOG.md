@@ -8,6 +8,7 @@
 - Add option to change max count value
 - Add performance timers
 - Add option to parse object columns as string
+- Transpose & Synchronization recipe output made DB friendly
 
 ## [Version 1.0.1](https://github.com/dataiku/dss-plugin-pi-server/releases/tag/v1.0.1) - Feature release - 2023-01-05
 
