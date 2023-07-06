@@ -7,6 +7,7 @@ import os
 from temp_utils import CustomTmpFile
 from osisoft_constants import OSIsoftConstants
 import dateutil.parser
+from column_name import normalise_name
 
 
 logger = SafeLogger("pi-system plugin", forbiden_keys=["token", "password"])
@@ -114,6 +115,11 @@ groupby_column = config.get("groupby_column")
 datetime_column = config.get("datetime_column")
 value_column = config.get("value_column")
 
+should_make_column_names_db_compatible = config.get("should_make_column_names_db_compatible")
+if should_make_column_names_db_compatible:
+    column_name_max_length = config.get("column_name_max_length", 31)
+    synchronize_on_identifier = normalise_name(synchronize_on_identifier, column_name_max_length)
+
 if not groupby_column:
     raise ValueError("There is no parameter column selected.")
 if not synchronize_on_identifier:
@@ -136,6 +142,8 @@ for index, input_parameters_row in input_parameters_dataframe.iterrows():
     if not datetime:
         continue
     groupby_parameter = input_parameters_row.get(groupby_column)
+    if should_make_column_names_db_compatible:
+        groupby_parameter = normalise_name(groupby_parameter, column_name_max_length)
     value = input_parameters_row.get(value_column)
 
     if groupby_parameter in groupby_list:

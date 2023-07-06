@@ -1,7 +1,7 @@
 {
     "meta": {
         "label": "Transpose & Synchronize",
-        "description": "Transpose PI values and synchronize them to one single attribute",
+        "description": "Transpose PI values and synchronize them to one single attribute\n ⚠️ This recipe uses temporary cache on the user's filesystem",
         "icon": "icon-dku-timeseries-resample icon-DKU_timeseries_resample"
     },
     "kind": "PYTHON",
@@ -81,6 +81,21 @@
             "description": "\\\\server\\database\\elements..|attribute",
             "type": "STRING",
             "mandatory": true
+          },
+          {
+            "name": "should_make_column_names_db_compatible",
+            "label": "Normalize columns names",
+            "description": "Making output columns names more DB friendly",
+            "type": "BOOLEAN",
+            "defaultValue": false
+          },
+          {
+            "name": "column_name_max_length",
+            "label": "Column name max length",
+            "description": "",
+            "type": "INT",
+            "defaultValue": 31,
+            "visibilityCondition": "model.should_make_column_names_db_compatible"
           }
     ],
     "resourceKeys": []
