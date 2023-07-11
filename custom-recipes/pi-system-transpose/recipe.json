@@ -83,11 +83,23 @@
             "mandatory": true
           },
           {
-            "name": "should_make_column_names_db_compatible",
-            "label": "Normalize columns names",
-            "description": "Making output columns names more DB friendly",
+            "name": "show_advanced_parameters",
+            "label": "Show advanced parameters",
+            "description": "",
             "type": "BOOLEAN",
             "defaultValue": false
+          },
+          {
+            "name": "columns_names_normalization",
+            "label": "Columns names normalization",
+            "description": "Making output columns names more DB friendly",
+            "type": "SELECT",
+            "selectChoices": [
+              {"value": "raw", "label": "None"},
+              {"value": "hashed", "label": "Use hash"}
+            ],
+            "defaultValue": "raw",
+            "visibilityCondition": "model.show_advanced_parameters"
           },
           {
             "name": "column_name_max_length",
@@ -95,7 +107,7 @@
             "description": "",
             "type": "INT",
             "defaultValue": 31,
-            "visibilityCondition": "model.should_make_column_names_db_compatible"
+            "visibilityCondition": "model.show_advanced_parameters && model.columns_names_normalization=='hashed'"
           }
     ],
     "resourceKeys": []

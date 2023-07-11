@@ -115,7 +115,7 @@ groupby_column = config.get("groupby_column")
 datetime_column = config.get("datetime_column")
 value_column = config.get("value_column")
 
-should_make_column_names_db_compatible = config.get("should_make_column_names_db_compatible")
+should_make_column_names_db_compatible = config.get("show_advanced_parameters", False) and (config.get("columns_names_normalization", "raw") == "hashed")
 if should_make_column_names_db_compatible:
     column_name_max_length = config.get("column_name_max_length", 31)
     synchronize_on_identifier = normalise_name(synchronize_on_identifier, column_name_max_length)
