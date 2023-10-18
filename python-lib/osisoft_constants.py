@@ -368,6 +368,8 @@ class OSIsoftConstants(object):
     SEARCH_PATH = "search"
     STREAM_PATH = "streams"
     STREAMSETS_PATH = "streamsets"
+    TIMESTAMP_COLUMN_NAME = "Timestamp"
+    TIMESTAMP_COLUMN_SUFFIX = "_ts"
     PIWEBAPI_AF_ENDPOINTS = {
         "InterpolatedData": "{base_url}/streams/{webid}/interpolated",
         "RecordedData": "{base_url}/streams/{webid}/recorded",
@@ -393,6 +395,7 @@ class OSIsoftConstants(object):
         "Security": "{base_url}/eventframes/{webid}/security",
         "SecurityEntries": "{base_url}/eventframes/{webid}/securityentries"
     }
-    PLUGIN_VERSION = "1.2.0-beta.5"
+    PLUGIN_VERSION = "1.2.0-beta.6"
+    VALUE_COLUMN_SUFFIX = "_val"
     WEB_API_PATH = "piwebapi"
     WRITE_HEADERS = {'X-Requested-With': 'XmlHttpRequest'}

@@ -49,6 +49,17 @@ def shrink_name(name_to_shrink, max_length):
     return "{}{}".format(hash, kept_section_of_name)
 
 
+def keep_number_of_elements(path_to_shrink, number_of_elements=None):
+    tokens = path_to_shrink.split("|")
+    attribute_name = tokens[-1:][0]
+    if not number_of_elements or number_of_elements == 1:
+        return attribute_name
+    elements = tokens[:-1][0].split("\\")
+    backward_number = 1 - number_of_elements
+    output = elements[backward_number:] + [attribute_name]
+    return "_".join(output)
+
+
 def normalise_string(input_string):
     if not input_string:
         return None
@@ -62,5 +73,9 @@ def normalise_string(input_string):
     return output_string
 
 
-def normalise_name(input_name, max_length):
-    return shrink_name(normalise_string(input_name), max_length)
+def normalise_name(input_name, max_length=None, number_of_elements=None):
+    if max_length is not None:
+        return shrink_name(normalise_string(input_name), max_length)
+    else:
+        attribute_name = keep_number_of_elements(input_name, number_of_elements=number_of_elements)
+        return normalise_string(attribute_name)

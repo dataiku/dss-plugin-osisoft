@@ -65,6 +65,7 @@ def get_datetime_from_row(row, datetime_column):
 def get_latest_data_at_timestamp(file_handles, seek_timestamp):
     attribute_index = 0
     ret = {}
+    last_valid_timestamp = None
     for attribute_path in file_handles:
         next_cached_timestamp = next_timestamps_cache[attribute_index]
         previous_line = None
@@ -81,15 +82,32 @@ def get_latest_data_at_timestamp(file_handles, seek_timestamp):
                 break
             previous_line = line
             attribute_timestamp, attribute_value = parse_timestamp_and_value(line)
+            last_valid_timestamp = next_timestamps_cache[attribute_index]
             next_timestamps_cache[attribute_index] = attribute_timestamp
             next_values_cache[attribute_index] = attribute_value
             next_cached_timestamp = next_timestamps_cache[attribute_index]
-        ret.update({
-            attribute_path: current_values_cache[attribute_index]
-        })
+        if should_add_timestamps_columns:
+            ret.update({
+                "{}{}".format(attribute_path, OSIsoftConstants.TIMESTAMP_COLUMN_SUFFIX): last_valid_timestamp,
+                "{}{}".format(attribute_path, OSIsoftConstants.VALUE_COLUMN_SUFFIX): current_values_cache[attribute_index]
+            })
+        else:
+            ret.update({
+                attribute_path: current_values_cache[attribute_index]
+            })
         attribute_index = attribute_index + 1
 
     return ret
+
+
+def reorder_dataframe(unnested_items_rows, first_elements):
+    columns = unnested_items_rows.columns.tolist()
+    for first_element in first_elements:
+        if first_element in columns:
+            columns.remove(first_element)
+            columns.insert(0, first_element)
+    unnested_items_rows = unnested_items_rows[columns]
+    return unnested_items_rows
 
 
 def clean_cache(groupby_list):
@@ -114,11 +132,27 @@ synchronize_on_identifier = config.get("synchronize_on_identifier")
 groupby_column = config.get("groupby_column")
 datetime_column = config.get("datetime_column")
 value_column = config.get("value_column")
+column_name_suffix_margin = max([
+    len(OSIsoftConstants.VALUE_COLUMN_SUFFIX),
+    len(OSIsoftConstants.TIMESTAMP_COLUMN_SUFFIX)
+])
 
-should_make_column_names_db_compatible = config.get("show_advanced_parameters", False) and (config.get("columns_names_normalization", "raw") == "hashed")
+columns_names_normalization = config.get("columns_names_normalization", "raw")
+should_make_column_names_db_compatible = config.get("show_advanced_parameters", False) and (columns_names_normalization in ["hashed", "elements"])
+column_name_max_length = number_of_elements = None
+should_add_timestamps_columns = config.get("show_advanced_parameters", False) and config.get("should_add_timestamps_columns", False)
 if should_make_column_names_db_compatible:
-    column_name_max_length = config.get("column_name_max_length", 31)
-    synchronize_on_identifier = normalise_name(synchronize_on_identifier, column_name_max_length)
+    if columns_names_normalization == "hashed":
+        column_name_max_length = config.get("column_name_max_length", 31)
+        if should_add_timestamps_columns:
+            column_name_max_length -= column_name_suffix_margin
+        if column_name_max_length < 10:
+            column_name_max_length = 10
+    elif columns_names_normalization == "elements":
+        number_of_elements = config.get("number_of_elements", 1)
+        if number_of_elements < 1:
+            number_of_elements = 1
+    synchronize_on_identifier = normalise_name(synchronize_on_identifier, max_length=column_name_max_length, number_of_elements=number_of_elements)
 
 if not groupby_column:
     raise ValueError("There is no parameter column selected.")
@@ -143,7 +177,7 @@ for index, input_parameters_row in input_parameters_dataframe.iterrows():
         continue
     groupby_parameter = input_parameters_row.get(groupby_column)
     if should_make_column_names_db_compatible:
-        groupby_parameter = normalise_name(groupby_parameter, column_name_max_length)
+        groupby_parameter = normalise_name(groupby_parameter, max_length=column_name_max_length, number_of_elements=number_of_elements)
     value = input_parameters_row.get(value_column)
 
     if groupby_parameter in groupby_list:
@@ -192,11 +226,12 @@ with output_dataset.get_writer() as writer:
         timestamp, value = parse_timestamp_and_value(line)
         dictionary = get_latest_data_at_timestamp(groupby_list, timestamp)
         dictionary.update({
-            synchronize_on_identifier: value,
-            "timestamp": timestamp
+            OSIsoftConstants.TIMESTAMP_COLUMN_NAME: timestamp,
+            synchronize_on_identifier: value
         })
         unnested_items_rows.append(dictionary)
         unnested_items_rows = pd.DataFrame(unnested_items_rows)
+        unnested_items_rows = reorder_dataframe(unnested_items_rows, [synchronize_on_identifier, OSIsoftConstants.TIMESTAMP_COLUMN_NAME])
         if first_dataframe:
             output_dataset.write_schema_from_dataframe(unnested_items_rows)
             first_dataframe = False

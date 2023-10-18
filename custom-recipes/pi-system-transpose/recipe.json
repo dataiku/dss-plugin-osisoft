@@ -90,12 +90,21 @@
             "defaultValue": false
           },
           {
+            "name": "should_add_timestamps_columns",
+            "label": "Add timestamps columns",
+            "description": "Adds one column per attributes with last value's timestamp",
+            "type": "BOOLEAN",
+            "defaultValue": false,
+            "visibilityCondition": "model.show_advanced_parameters"
+          },
+          {
             "name": "columns_names_normalization",
             "label": "Columns names normalization",
             "description": "Making output columns names more DB friendly",
             "type": "SELECT",
             "selectChoices": [
               {"value": "raw", "label": "None"},
+              {"value": "elements", "label": "Keep a number path elements"},
               {"value": "hashed", "label": "Use hash"}
             ],
             "defaultValue": "raw",
@@ -107,7 +116,17 @@
             "description": "",
             "type": "INT",
             "defaultValue": 31,
+            "minI": 10,
             "visibilityCondition": "model.show_advanced_parameters && model.columns_names_normalization=='hashed'"
+          },
+          {
+            "name": "number_of_elements",
+            "label": "Number of path elements",
+            "description": "",
+            "type": "INT",
+            "defaultValue": 1,
+            "minI": 1,
+            "visibilityCondition": "model.show_advanced_parameters && model.columns_names_normalization=='elements'"
           }
     ],
     "resourceKeys": []
