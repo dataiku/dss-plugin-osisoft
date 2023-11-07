@@ -156,6 +156,13 @@
             "description": "Retrieve values"
         },
         {
+            "name": "search_full_hierarchy",
+            "label": " ",
+            "description": "Search full hierarchy",
+            "visibilityCondition": "((model.must_retrieve_metrics) &&(model.database_name.length>=0))",
+            "type": "BOOLEAN"
+        },
+        {
             "name": "data_type",
             "label": "Data type",
             "type": "SELECT",

@@ -44,6 +44,7 @@ start_time_column = config.get("start_time_column")
 use_end_time_column = config.get("use_end_time_column", False)
 end_time_column = config.get("end_time_column")
 server_url_column = config.get("server_url_column")
+search_full_hierarchy = config.get("search_full_hierarchy", None)
 use_batch_mode, batch_size = get_advanced_parameters(config)
 interval, sync_time, boundary_type = get_interpolated_parameters(config)
 
@@ -92,6 +93,7 @@ with output_dataset.get_writer() as writer:
                 interval=interval,
                 sync_time=sync_time,
                 boundary_type=boundary_type,
+                search_full_hierarchy=search_full_hierarchy,
                 can_raise=False,
                 max_count=max_count
             )
@@ -117,6 +119,7 @@ with output_dataset.get_writer() as writer:
                 interval=interval,
                 sync_time=sync_time,
                 boundary_type=boundary_type,
+                search_full_hierarchy=search_full_hierarchy,
                 max_count=max_count,
                 can_raise=False
             )

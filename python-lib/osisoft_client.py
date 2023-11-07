@@ -43,7 +43,7 @@ class OSIsoftClient(object):
 
     def get_row_from_webid(self, webid, data_type, start_date=None, end_date=None,
                            interval=None, sync_time=None, boundary_type=None, selected_fields=None,
-                           can_raise=True, endpoint_type="event_frames", max_count=None):
+                           can_raise=True, endpoint_type="event_frames", search_full_hierarchy=None, max_count=None):
 
         url = self.endpoint.get_data_from_webid_url(endpoint_type, data_type, webid)
         has_more = True
@@ -57,6 +57,7 @@ class OSIsoftClient(object):
                 sync_time=sync_time,
                 boundary_type=boundary_type,
                 selected_fields=selected_fields,
+                search_full_hierarchy=search_full_hierarchy,
                 max_count=max_count,
                 can_raise=can_raise
             )
@@ -68,8 +69,8 @@ class OSIsoftClient(object):
                 yield item
 
     def get_rows_from_webids(self, input_rows, data_type, start_date=None, end_date=None,
-                             interval=None, sync_time=None, boundary_type=None, selected_fields=None, max_count=None,
-                             can_raise=True, endpoint_type="event_frames", batch_size=500):
+                             interval=None, sync_time=None, boundary_type=None, selected_fields=None, search_full_hierarchy=None,
+                             max_count=None, can_raise=True, endpoint_type="event_frames", batch_size=500):
         batch_requests_parameters = []
         number_processed_webids = 0
         number_of_webids_to_process = len(input_rows)
@@ -80,7 +81,7 @@ class OSIsoftClient(object):
             else:
                 webid = input_row
             url = self.endpoint.get_data_from_webid_url(endpoint_type, data_type, webid)
-            requests_kwargs = self.generic_get_kwargs(max_count=max_count)
+            requests_kwargs = self.generic_get_kwargs(search_full_hierarchy=search_full_hierarchy, max_count=max_count)
             requests_kwargs['url'] = url
             web_ids.append(webid)
             batch_requests_parameters.append(requests_kwargs)
@@ -117,7 +118,8 @@ class OSIsoftClient(object):
             batch_section = json_response.get("{}".format(index), {})
             yield batch_section.get("Content", {})
 
-    def generic_get_kwargs(self, start_date=None, end_date=None, interval=None, sync_time=None, boundary_type=None, selected_fields=None, max_count=None, can_raise=None):
+    def generic_get_kwargs(self, start_date=None, end_date=None, interval=None, sync_time=None,
+                           boundary_type=None, selected_fields=None, search_full_hierarchy=None,max_count=None, can_raise=None):
         headers = self.get_requests_headers()
         params = self.get_requests_params(
             start_date,
@@ -126,6 +128,7 @@ class OSIsoftClient(object):
             sync_time=sync_time,
             boundary_type=boundary_type,
             selected_fields=selected_fields,
+            search_full_hierarchy=search_full_hierarchy,
             max_count=max_count
         )
         return {
@@ -133,7 +136,8 @@ class OSIsoftClient(object):
             "params": params
         }
 
-    def generic_get(self, url, start_date=None, end_date=None, interval=None, sync_time=None, boundary_type=None, selected_fields=None, max_count=None, can_raise=None):
+    def generic_get(self, url, start_date=None, end_date=None, interval=None, sync_time=None,
+                    boundary_type=None, selected_fields=None, search_full_hierarchy=None, max_count=None, can_raise=None):
         headers = self.get_requests_headers()
         params = self.get_requests_params(
             start_date,
@@ -142,6 +146,7 @@ class OSIsoftClient(object):
             sync_time=sync_time,
             boundary_type=boundary_type,
             selected_fields=selected_fields,
+            search_full_hierarchy=search_full_hierarchy,
             max_count=max_count
         )
         json_response = self.get(
@@ -153,7 +158,8 @@ class OSIsoftClient(object):
         return json_response
 
     def get_row_from_item(self, item, data_type, start_date=None, end_date=None, interval=None,
-                          sync_time=None, boundary_type=None, can_raise=True, object_id=None, max_count=None):
+                          sync_time=None, boundary_type=None, can_raise=True, object_id=None,
+                          search_full_hierarchy=None, max_count=None):
         has_more = True
         while has_more:
             json_response, has_more = self.get_paginated(
@@ -166,6 +172,7 @@ class OSIsoftClient(object):
                 sync_time=sync_time,
                 boundary_type=boundary_type,
                 max_count=max_count,
+                search_full_hierarchy=search_full_hierarchy,
                 can_raise=can_raise
             )
             if OSIsoftConstants.DKU_ERROR_KEY in json_response:
@@ -404,7 +411,8 @@ class OSIsoftClient(object):
             "Accept-Encoding": "gzip, deflate, br"
         }
 
-    def get_requests_params(self, start_date=None, end_date=None, interval=None, sync_time=None, boundary_type=None, selected_fields=None, max_count=None):
+    def get_requests_params(self, start_date=None, end_date=None, interval=None, sync_time=None,
+                            boundary_type=None, selected_fields=None, search_full_hierarchy=None, max_count=None):
         params = {}
         if start_date:
             params.update({"starttime": start_date})
@@ -418,6 +426,8 @@ class OSIsoftClient(object):
             params.update({"syncTimeBoundaryType": boundary_type})
         if selected_fields:
             params.update({"selectedFields": selected_fields})
+        if search_full_hierarchy:
+            params.update({"searchFullHierarchy": True})
         if max_count is not None:
             params.update({"maxCount": max_count})
         return params
