@@ -291,7 +291,10 @@ class OSIsoftClient(object):
             error_source="get_item_from_path"
         )
         if OSIsoftConstants.DKU_ERROR_KEY in json_response:
-            json_response = self.traverse_path(item_path)
+            try:
+                json_response = self.traverse_path(item_path)
+            except Exception as err:
+                logger.warning("Error while traversing path {}:{}".format(item_path, err))
         return json_response
 
     def get_item_from_url(self, url):
