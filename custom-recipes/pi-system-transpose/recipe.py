@@ -62,9 +62,9 @@ def get_datetime_from_row(row, datetime_column):
     return formated_datetime
 
 
-def get_latest_data_at_timestamp(file_handles, seek_timestamp):
+def get_latest_values_at_timestamp(file_handles, seek_timestamp):
     attribute_index = 0
-    ret = {}
+    values = {}
     last_valid_timestamp = None
     for attribute_path in file_handles:
         next_cached_timestamp = next_timestamps_cache[attribute_index]
@@ -87,17 +87,16 @@ def get_latest_data_at_timestamp(file_handles, seek_timestamp):
             next_values_cache[attribute_index] = attribute_value
             next_cached_timestamp = next_timestamps_cache[attribute_index]
         if should_add_timestamps_columns:
-            ret.update({
+            values.update({
                 "{}{}".format(attribute_path, OSIsoftConstants.TIMESTAMP_COLUMN_SUFFIX): last_valid_timestamp,
                 "{}{}".format(attribute_path, OSIsoftConstants.VALUE_COLUMN_SUFFIX): current_values_cache[attribute_index]
             })
         else:
-            ret.update({
+            values.update({
                 attribute_path: current_values_cache[attribute_index]
             })
         attribute_index = attribute_index + 1
-
-    return ret
+    return values
 
 
 def reorder_dataframe(unnested_items_rows, first_elements):
@@ -224,7 +223,7 @@ with output_dataset.get_writer() as writer:
     for line in reference_file:
         unnested_items_rows = []
         timestamp, value = parse_timestamp_and_value(line)
-        dictionary = get_latest_data_at_timestamp(groupby_list, timestamp)
+        dictionary = get_latest_values_at_timestamp(groupby_list, timestamp)
         dictionary.update({
             OSIsoftConstants.TIMESTAMP_COLUMN_NAME: timestamp,
             synchronize_on_identifier: value
