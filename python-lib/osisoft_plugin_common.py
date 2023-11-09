@@ -351,6 +351,21 @@ def get_max_count(config):
     return max_count
 
 
+def epoch_to_iso(epoch):
+    return datetime.utcfromtimestamp(epoch).strftime("%Y-%m-%dT%H:%M:%S.%fZ")
+
+
+def iso_to_epoch(iso_timestamp):
+    import dateutil.parser as dp
+    epoch_timestamp = None
+    try:
+        parsed_t = dp.parse(iso_timestamp)
+        epoch_timestamp = parsed_t.timestamp()
+    except Exception as err:
+        return None
+    return epoch_timestamp
+
+
 class RecordsLimit():
     def __init__(self, records_limit=-1):
         self.has_no_limit = (records_limit == -1)
