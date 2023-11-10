@@ -75,15 +75,22 @@ class OSIsoftClient(object):
         number_processed_webids = 0
         number_of_webids_to_process = len(input_rows)
         web_ids = []
+        event_start_times = []
+        event_end_times = []
         for input_row in input_rows:
+            event_start_time = event_end_time = None
             if isinstance(input_row, dict):
                 webid = input_row.get("WebId")
+                event_start_time = input_row.get("StartTime")
+                event_end_time = input_row.get("EndTime")
             else:
                 webid = input_row
             url = self.endpoint.get_data_from_webid_url(endpoint_type, data_type, webid)
             requests_kwargs = self.generic_get_kwargs(search_full_hierarchy=search_full_hierarchy, max_count=max_count)
-            requests_kwargs['url'] = url
+            requests_kwargs['url'] = build_query_string(url, requests_kwargs.get("params"))
             web_ids.append(webid)
+            event_start_times.append(event_start_time)
+            event_end_times.append(event_end_time)
             batch_requests_parameters.append(requests_kwargs)
             number_processed_webids += 1
             if (len(batch_requests_parameters) >= batch_size) or (number_processed_webids == number_of_webids_to_process):
@@ -92,11 +99,17 @@ class OSIsoftClient(object):
                 response_index = 0
                 for json_response in json_responses:
                     webid = web_ids[response_index]
+                    event_start_time = event_start_times[response_index]
+                    event_end_time = event_end_times[response_index]
                     if OSIsoftConstants.DKU_ERROR_KEY in json_response:
                         json_response['event_frame_webid'] = "{}".format(webid)
                         yield json_response
                     items = json_response.get(OSIsoftConstants.API_ITEM_KEY, [])
                     for item in items:
+                        if event_start_time:
+                            item['StartTime'] = event_start_time
+                        if event_end_time:
+                            item['EndTime'] = event_end_time
                         item['event_frame_webid'] = "{}".format(webid)
                         yield item
                     response_index += 1
@@ -119,7 +132,7 @@ class OSIsoftClient(object):
             yield batch_section.get("Content", {})
 
     def generic_get_kwargs(self, start_date=None, end_date=None, interval=None, sync_time=None,
-                           boundary_type=None, selected_fields=None, search_full_hierarchy=None,max_count=None, can_raise=None):
+                           boundary_type=None, selected_fields=None, search_full_hierarchy=None, max_count=None, can_raise=None):
         headers = self.get_requests_headers()
         params = self.get_requests_params(
             start_date,

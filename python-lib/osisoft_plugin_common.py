@@ -71,7 +71,7 @@ def check_must_convert_object_to_string(config):
 
 def convert_schema_objects_to_string(input_schema):
     schema = copy.deepcopy(input_schema)
-    if type(schema) == list:
+    if type(schema) is list:
         columns = schema
     else:
         columns = schema.get("columns", [])
@@ -349,6 +349,16 @@ def get_max_count(config):
     if data_type in DATA_TYPES_REQUIRING_MAXCOUNT:
         max_count = config.get("max_count", DEFAULT_MAXCOUNT)
     return max_count
+
+
+def reorder_dataframe(unnested_items_rows, first_elements):
+    columns = unnested_items_rows.columns.tolist()
+    for first_element in first_elements:
+        if first_element in columns:
+            columns.remove(first_element)
+            columns.insert(0, first_element)
+    unnested_items_rows = unnested_items_rows[columns]
+    return unnested_items_rows
 
 
 class RecordsLimit():

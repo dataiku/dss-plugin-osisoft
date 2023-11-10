@@ -6,7 +6,7 @@ import pandas as pd
 from safe_logger import SafeLogger
 from osisoft_plugin_common import (
     get_credentials, get_interpolated_parameters,
-    get_advanced_parameters, check_debug_mode, PerformanceTimer, get_max_count
+    get_advanced_parameters, check_debug_mode, PerformanceTimer, get_max_count, reorder_dataframe
 )
 from osisoft_constants import OSIsoftConstants
 from osisoft_client import OSIsoftClient
@@ -72,6 +72,8 @@ with output_dataset.get_writer() as writer:
         start_time = input_parameters_row.get(start_time_column, start_time) if use_start_time_column else start_time
         end_time = input_parameters_row.get(end_time_column, end_time) if use_end_time_column else end_time
         event_frame_webid = input_parameters_row.get("WebId")
+        event_start_time = input_parameters_row.get("StartTime", "")
+        event_end_time = input_parameters_row.get("EndTime", "")
 
         if client is None or previous_server_url != server_url:
             client = OSIsoftClient(
@@ -98,11 +100,12 @@ with output_dataset.get_writer() as writer:
                 max_count=max_count
             )
         elif use_batch_mode:
-            buffer.append(object_id)
+            buffer.append({"WebId": object_id, "StartTime": event_start_time, "EndTime": event_end_time})
             batch_buffer_size += 1
             if (batch_buffer_size >= batch_size) or (absolute_index == nb_rows_to_process):
                 rows = client.get_rows_from_webids(
                     buffer, data_type, max_count,
+                    search_full_hierarchy=search_full_hierarchy,
                     can_raise=False,
                     batch_size=batch_size
                 )
@@ -127,6 +130,10 @@ with output_dataset.get_writer() as writer:
         row_count = 0
         for row in rows:
             row_count += 1
+            if not use_batch_mode and event_start_time:
+                row["StartTime"] = event_start_time
+            if not use_batch_mode and event_end_time:
+                row["EndTime"] = event_end_time
             base_row = copy.deepcopy(row)
             base_row.pop("Links", None)
             items_column = base_row.pop(OSIsoftConstants.API_ITEM_KEY, [])
@@ -148,6 +155,7 @@ with output_dataset.get_writer() as writer:
                 item_row.update(base_row)
                 unnested_items_rows.append(item_row)
         unnested_items_rows = pd.DataFrame(unnested_items_rows)
+        unnested_items_rows = reorder_dataframe(unnested_items_rows, ["Errors", "UnitsAbbreviation", "Value", "Timestamp", "EndTime", "StartTime", "Name", "Path"])
         if first_dataframe:
             output_dataset.write_schema_from_dataframe(unnested_items_rows)
             first_dataframe = False
