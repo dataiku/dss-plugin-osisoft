@@ -93,18 +93,38 @@
             "visibilityCondition": "model.database_name.length>0"
         },
         {
+            "name": "search_mode",
+            "label": "Search",
+            "type": "SELECT",
+            "selectChoices": [
+                { "value": "Overlapped", "label": "Active Between"},
+                { "value": "EndInclusive", "label": "Ending Between"},
+                { "value": "StartInclusive", "label": "Starting Between"},
+                { "value": "InProgress", "label": "Starting Between and In Progress"},
+                { "value": "Inclusive", "label": "Entirely Between"},
+                { "value": "ForwardFromEndTime", "label": "Ending After"},
+                { "value": "BackwardFromEndTime", "label": "Ending Before"},
+                { "value": "ForwardFromStartTime", "label": "Starting After"},
+                { "value": "ForwardInProgress", "label": "Starting After and In Progress"},
+                { "value": "BackwardFromStartTime", "label": "Starting Before"},
+                { "value": "BackwardInProgress", "label": "Starting Before and In Progress"}
+            ],
+            "defaultValue": "Overlapped",
+            "visibilityCondition": "model.database_name.length>0"
+        },
+        {
             "name": "start_time",
-            "label": "Start time",
+            "label": " ",
             "visibilityCondition": "model.database_name.length>0",
-            "description": "Optional",
+            "description": "Start time",
             "type": "STRING",
             "defaultValue": ""
         },
         {
             "name": "end_time",
-            "label": "End time",
-            "visibilityCondition": "model.database_name.length>0",
-            "description": "Optional",
+            "label": " ",
+            "visibilityCondition": "model.database_name.length>0 && ['Overlapped', 'EndInclusive', 'StartInclusive', 'InProgress', 'Inclusive'].indexOf(model.search_mode) >= 0",
+            "description": "End time",
             "type": "STRING",
             "defaultValue": ""
         },

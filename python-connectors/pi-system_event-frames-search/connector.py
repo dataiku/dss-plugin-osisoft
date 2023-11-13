@@ -41,6 +41,7 @@ class OSIsoftConnector(Connector):
             self.object_id = config.get("next_element", None)
         self.start_time = config.get("start_time")
         self.end_time = config.get("end_time")
+        self.search_mode = config.get("search_mode", None)
         self.output_type = config.get("output_type")
         assert_time_format(self.start_time, error_source="start time")
         assert_time_format(self.end_time, error_source="end time")
@@ -85,6 +86,7 @@ class OSIsoftConnector(Connector):
             next_page_url = self.database_endpoint + "/eventframes"
             is_first = True
             while next_page_url:
+                print("ALX:url={}, h={}, p={}".format(next_page_url, headers, params))
                 if is_first:
                     json_response = self.client.get(
                         next_page_url,

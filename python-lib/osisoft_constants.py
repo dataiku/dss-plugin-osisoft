@@ -101,6 +101,14 @@ class OSIsoftConstants(object):
         {'name': 'CanBeAcknowledged', 'type': 'boolean'},
         {'name': 'Errors', 'type': 'object'}
     ]
+    SEARCHMODES_ENDTIME_INCOMPATIBLE = [
+        "ForwardFromEndTime",
+        "BackwardFromEndTime",
+        "ForwardFromStartTime",
+        "ForwardInProgress",
+        "BackwardFromStartTime",
+        "BackwardInProgress"
+    ]
     SUMMARY_DATA_SCHEMA = [
         {'name': 'object_id', 'type': 'string'},
         {'name': 'WebId', 'type': 'string'},
