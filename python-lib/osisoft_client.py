@@ -195,7 +195,9 @@ class OSIsoftClient(object):
             for item in items:
                 yield self.loop_sub_items(item)
 
-    def get_link_from_item(self, item, data_type, start_date, end_date, interval=None, sync_time=None, boundary_type=None, max_count=None, can_raise=True):
+    def get_link_from_item(self, item, data_type, start_date, end_date, interval=None,
+                           sync_time=None, boundary_type=None, search_full_hierarchy=None,
+                           max_count=None, can_raise=True):
         url = self.extract_link_with_key(item, data_type)
         if not url:
             error_message = "This object does not have {} data type".format(data_type)
