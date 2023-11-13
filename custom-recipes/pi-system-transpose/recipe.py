@@ -8,6 +8,7 @@ from temp_utils import CustomTmpFile
 from osisoft_constants import OSIsoftConstants
 import dateutil.parser
 from column_name import normalise_name
+from osisoft_plugin_common import reorder_dataframe
 
 
 logger = SafeLogger("pi-system plugin", forbiden_keys=["token", "password"])
@@ -55,7 +56,7 @@ def get_datetime_from_pandas(datetime):
 
 def get_datetime_from_row(row, datetime_column):
     raw_datetime = row[datetime_column]
-    if type(raw_datetime) == str:
+    if type(raw_datetime) is str:
         formated_datetime = get_datetime_from_string(raw_datetime)
     else:
         formated_datetime = get_datetime_from_pandas(raw_datetime)
@@ -97,16 +98,6 @@ def get_latest_values_at_timestamp(file_handles, seek_timestamp):
             })
         attribute_index = attribute_index + 1
     return values
-
-
-def reorder_dataframe(unnested_items_rows, first_elements):
-    columns = unnested_items_rows.columns.tolist()
-    for first_element in first_elements:
-        if first_element in columns:
-            columns.remove(first_element)
-            columns.insert(0, first_element)
-    unnested_items_rows = unnested_items_rows[columns]
-    return unnested_items_rows
 
 
 def clean_cache(groupby_list):

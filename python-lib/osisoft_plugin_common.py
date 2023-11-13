@@ -71,7 +71,7 @@ def check_must_convert_object_to_string(config):
 
 def convert_schema_objects_to_string(input_schema):
     schema = copy.deepcopy(input_schema)
-    if type(schema) == list:
+    if type(schema) is list:
         columns = schema
     else:
         columns = schema.get("columns", [])
@@ -144,6 +144,8 @@ def build_requests_params(**kwargs):
     search_mode = kwargs.get("search_mode")
     if search_mode and (kwargs.get("start_time") or kwargs.get("end_time")):
         requests_params.update({"searchMode": "{}".format(search_mode)})
+    if search_mode in OSIsoftConstants.SEARCHMODES_ENDTIME_INCOMPATIBLE:
+        requests_params.pop("endtime")
     resource_path = kwargs.get("resource_path")
     if resource_path:
         requests_params.update({"path": escape(resource_path)})
@@ -364,6 +366,16 @@ def iso_to_epoch(iso_timestamp):
     except Exception as err:
         return None
     return epoch_timestamp
+
+
+def reorder_dataframe(unnested_items_rows, first_elements):
+    columns = unnested_items_rows.columns.tolist()
+    for first_element in first_elements:
+        if first_element in columns:
+            columns.remove(first_element)
+            columns.insert(0, first_element)
+    unnested_items_rows = unnested_items_rows[columns]
+    return unnested_items_rows
 
 
 class RecordsLimit():

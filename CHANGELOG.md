@@ -10,6 +10,7 @@
 - Add option to parse object columns as string
 - Transpose & Synchronization recipe output made DB friendly
 - Add Event Frames Search Full Hierarchy
+- Add time span search modes to Event Frame search connector
 
 ## [Version 1.0.1](https://github.com/dataiku/dss-plugin-pi-server/releases/tag/v1.0.1) - Feature release - 2023-01-05
 

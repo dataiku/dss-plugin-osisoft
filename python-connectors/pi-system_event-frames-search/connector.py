@@ -41,6 +41,7 @@ class OSIsoftConnector(Connector):
             self.object_id = config.get("next_element", None)
         self.start_time = config.get("start_time")
         self.end_time = config.get("end_time")
+        self.search_mode = config.get("search_mode", None)
         self.output_type = config.get("output_type")
         assert_time_format(self.start_time, error_source="start time")
         assert_time_format(self.end_time, error_source="end time")
