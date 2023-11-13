@@ -86,7 +86,6 @@ class OSIsoftConnector(Connector):
             next_page_url = self.database_endpoint + "/eventframes"
             is_first = True
             while next_page_url:
-                print("ALX:url={}, h={}, p={}".format(next_page_url, headers, params))
                 if is_first:
                     json_response = self.client.get(
                         next_page_url,
