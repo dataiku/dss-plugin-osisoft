@@ -304,7 +304,7 @@ class OSIsoftConstants(object):
         {"name": "IsHidden", "type": "boolean"},
         {"name": "IsManualDataEntry", "type": "boolean"},
         {"name": "HasChildren", "type": "boolean"},
-        {"name": "CategoryNames", "type": "string"}, 
+        {"name": "CategoryNames", "type": "string"},
         {"name": "Step", "type": "boolean"},
         {"name": "TraitName", "type": "string"},
         {"name": "Span", "type": "float"},

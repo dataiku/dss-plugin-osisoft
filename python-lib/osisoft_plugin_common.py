@@ -4,6 +4,7 @@ import time
 from osisoft_constants import OSIsoftConstants
 from safe_logger import SafeLogger
 from datetime import datetime
+import dateutil.parser as date_parser
 
 
 logger = SafeLogger("pi-system plugin", ["Authorization", "sharepoint_username", "sharepoint_password", "client_secret"])
@@ -358,12 +359,11 @@ def epoch_to_iso(epoch):
 
 
 def iso_to_epoch(iso_timestamp):
-    import dateutil.parser as dp
     epoch_timestamp = None
     try:
-        parsed_t = dp.parse(iso_timestamp)
-        epoch_timestamp = parsed_t.timestamp()
-    except Exception as err:
+        parsed_timestamp = date_parser.parse(iso_timestamp)
+        epoch_timestamp = parsed_timestamp.timestamp()
+    except Exception:
         return None
     return epoch_timestamp
 
