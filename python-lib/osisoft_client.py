@@ -7,7 +7,7 @@ from datetime import datetime
 from requests_ntlm import HttpNtlmAuth
 from osisoft_constants import OSIsoftConstants
 from osisoft_endpoints import OSIsoftEndpoints
-from osisoft_plugin_common import build_requests_params, is_filtered_out, is_server_throttling, RecordsLimit
+from osisoft_plugin_common import assert_server_url_ok, build_requests_params, is_filtered_out, is_server_throttling, RecordsLimit
 from osisoft_pagination import OffsetPagination
 from safe_logger import SafeLogger
 
@@ -22,6 +22,8 @@ class PISystemClientError(ValueError):
 class OSIsoftClient(object):
 
     def __init__(self, server_url, auth_type, username, password, is_ssl_check_disabled=False, can_raise=True, is_debug_mode=False, network_timer=None):
+        if can_raise:
+            assert_server_url_ok(server_url)
         self.session = requests.Session()
         self.session.auth = self.get_auth(auth_type, username, password)
         self.session.verify = (not is_ssl_check_disabled)

@@ -210,6 +210,11 @@ def assert_time_format(date, error_source):
     pass
 
 
+def assert_server_url_ok(server_url):
+    if not server_url:
+        raise ValueError("The server URL is not set")
+
+
 def get_schema_as_arrays(dataset_schema):
     columns = dataset_schema.get("columns", [])
     column_names = []
