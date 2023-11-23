@@ -170,12 +170,12 @@ def build_query_requests_params(query_name=None, query_category=None, query_temp
 
 
 char_to_escape = {
+        "%": "%25",
         " ": "%20",
         "!": "%21",
         '"': "%22",
         "#": "%23",
         "$": "%24",
-        "%": "%25",
         "&": "%26",
         "'": "%27",
         "(": "%28",
