@@ -382,28 +382,41 @@ class RecordsLimit():
 
 
 class PerformanceTimer():
+    """
+    Mesures the time between the calls of the start and stop methods
+    If start / stop are called several times,
+        - adds up all start / stop intervals
+        - count the number of intervals
+        - compute the average event time
+        - provides a lists of the NUMBER_OF_SLOWEST_EVENTS_KEPT longest events by event id, for instance url    
+    """
+    NUMBER_OF_SLOWEST_EVENTS_KEPT = 5
+
     def __init__(self):
         self.slowest_events = []
         self.slowest_times = []
         self.total_duration = 0
         self.number_events = 0
-        self.current_event = None
+        self.current_event_id = None
 
     def start(self, event_id=None):
+        """
+        Args:
+            event_id (str, optional): name of the event to measure, to be used later on to list the longest events
+        """
         self.start_time = float(time.time())
         self.number_events += 1
-        self.current_event = event_id
+        self.current_event_id = event_id
 
     def stop(self):
-        self.stop_time = float(time.time())
-        duration = self.stop_time - self.start_time
+        duration = float(time.time()) - self.start_time
         self.total_duration += duration
-        if self.current_event:
-            self.add_to_record(duration)
+        if self.current_event_id:
+            self._add_to_summary(duration)
 
-    def add_to_record(self, duration):
+    def _add_to_summary(self, duration):
         if not self.slowest_events:
-            self.slowest_events.append(self.current_event)
+            self.slowest_events.append(self.current_event_id)
             self.slowest_times.append(duration)
         else:
             index = 0
@@ -411,17 +424,21 @@ class PerformanceTimer():
             for slowest_time in self.slowest_times:
                 if duration > slowest_time:
                     self.slowest_times.insert(index, duration)
-                    self.slowest_events.insert(index, self.current_event)
+                    self.slowest_events.insert(index, self.current_event_id)
                     was_inserted = True
                     break
                 index += 1
             if not was_inserted:
                 self.slowest_times.append(duration)
-                self.slowest_events.append(self.current_event)
-            self.slowest_times = self.slowest_times[:5]
-            self.slowest_events = self.slowest_events[:5]
+                self.slowest_events.append(self.current_event_id)
+            self.slowest_times = self.slowest_times[:self.NUMBER_OF_SLOWEST_EVENTS_KEPT]
+            self.slowest_events = self.slowest_events[:self.NUMBER_OF_SLOWEST_EVENTS_KEPT]
 
     def get_report(self):
+        """
+        Returns:
+            dict: JSON containing total_duration, number_of_events, average_time, worst_performers list
+        """
         report = {
             "total_duration": self.total_duration,
             "number_of_events": self.number_events,
