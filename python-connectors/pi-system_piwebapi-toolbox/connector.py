@@ -65,7 +65,8 @@ class OSIsoftConnector(Connector):  # Search
                 end_date=self.end_time,
                 interval=self.interval,
                 sync_time=self.sync_time,
-                endpoint_type="AF", max_count=self.max_count
+                endpoint_type="AF",
+                max_count=self.max_count
             ):
                 if limit.is_reached():
                     break

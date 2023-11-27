@@ -41,6 +41,7 @@ class OSIsoftConnector(Connector):
             self.object_id = config.get("next_element", None)
         self.start_time = config.get("start_time")
         self.end_time = config.get("end_time")
+        self.search_mode = config.get("search_mode", None)
         self.output_type = config.get("output_type")
         assert_time_format(self.start_time, error_source="start time")
         assert_time_format(self.end_time, error_source="end time")
@@ -48,6 +49,9 @@ class OSIsoftConnector(Connector):
         if not self.database_endpoint:
             raise PISystemConnectorError("No endpoint selected")
         self.must_retrieve_metrics = config.get("must_retrieve_metrics")
+        self.search_full_hierarchy = None
+        if self.must_retrieve_metrics:
+            self.search_full_hierarchy = config.get("search_full_hierarchy", None)
         self.data_type = config.get("data_type", "Recorded")
         self.max_count = get_max_count(config)
         self.config = config
@@ -99,6 +103,7 @@ class OSIsoftConnector(Connector):
                     if use_batch_mode:
                         batch_rows = self.client.get_rows_from_webids(
                                 event_frames, self.data_type,
+                                search_full_hierarchy=self.search_full_hierarchy,
                                 can_raise=False,
                                 batch_size=self.batch_size,
                                 max_count=self.max_count
@@ -130,7 +135,8 @@ class OSIsoftConnector(Connector):
                         for event_frame in event_frames:
                             event_frame_id = event_frame.get("WebId")
                             event_frame_metrics = self.client.get_row_from_webid(
-                                event_frame_id, self.data_type, max_count=self.max_count,
+                                event_frame_id, self.data_type,
+                                search_full_hierarchy=self.search_full_hierarchy, max_count=self.max_count,
                                 can_raise=False
                             )
                             for event_frame_metric in event_frame_metrics:
