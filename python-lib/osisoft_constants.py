@@ -101,6 +101,14 @@ class OSIsoftConstants(object):
         {'name': 'CanBeAcknowledged', 'type': 'boolean'},
         {'name': 'Errors', 'type': 'object'}
     ]
+    SEARCHMODES_ENDTIME_INCOMPATIBLE = [
+        "ForwardFromEndTime",
+        "BackwardFromEndTime",
+        "ForwardFromStartTime",
+        "ForwardInProgress",
+        "BackwardFromStartTime",
+        "BackwardInProgress"
+    ]
     SUMMARY_DATA_SCHEMA = [
         {'name': 'object_id', 'type': 'string'},
         {'name': 'WebId', 'type': 'string'},
@@ -395,7 +403,7 @@ class OSIsoftConstants(object):
         "Security": "{base_url}/eventframes/{webid}/security",
         "SecurityEntries": "{base_url}/eventframes/{webid}/securityentries"
     }
-    PLUGIN_VERSION = "1.2.0-beta.7"
+    PLUGIN_VERSION = "1.2.0-beta.8"
     VALUE_COLUMN_SUFFIX = "_val"
     WEB_API_PATH = "piwebapi"
     WRITE_HEADERS = {'X-Requested-With': 'XmlHttpRequest'}
