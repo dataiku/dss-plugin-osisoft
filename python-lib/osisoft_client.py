@@ -7,7 +7,7 @@ from datetime import datetime
 from requests_ntlm import HttpNtlmAuth
 from osisoft_constants import OSIsoftConstants
 from osisoft_endpoints import OSIsoftEndpoints
-from osisoft_plugin_common import build_requests_params, is_filtered_out, is_server_throttling, RecordsLimit
+from osisoft_plugin_common import assert_server_url_ok, build_requests_params, is_filtered_out, is_server_throttling, escape, RecordsLimit
 from osisoft_pagination import OffsetPagination
 from safe_logger import SafeLogger
 
@@ -22,6 +22,8 @@ class PISystemClientError(ValueError):
 class OSIsoftClient(object):
 
     def __init__(self, server_url, auth_type, username, password, is_ssl_check_disabled=False, can_raise=True, is_debug_mode=False, network_timer=None):
+        if can_raise:
+            assert_server_url_ok(server_url)
         self.session = requests.Session()
         self.session.auth = self.get_auth(auth_type, username, password)
         self.session.verify = (not is_ssl_check_disabled)
@@ -195,7 +197,9 @@ class OSIsoftClient(object):
             for item in items:
                 yield self.loop_sub_items(item)
 
-    def get_link_from_item(self, item, data_type, start_date, end_date, interval=None, sync_time=None, boundary_type=None, max_count=None, can_raise=True):
+    def get_link_from_item(self, item, data_type, start_date, end_date, interval=None,
+                           sync_time=None, boundary_type=None, search_full_hierarchy=None,
+                           max_count=None, can_raise=True):
         url = self.extract_link_with_key(item, data_type)
         if not url:
             error_message = "This object does not have {} data type".format(data_type)
@@ -414,7 +418,7 @@ class OSIsoftClient(object):
 
     def get_resource_path_params(self, resource_path):
         return {
-            "path": resource_path
+            "path": escape(resource_path)
         }
 
     def get_requests_headers(self):
@@ -783,39 +787,3 @@ def unnest(row):
             for key in value_object:
                 row["{}".format(key)] = value_object.get(key)
     return row
-
-
-char_to_escape = {
-        " ": "%20",
-        "!": "%21",
-        '"': "%22",
-        "#": "%23",
-        "$": "%24",
-        "%": "%25",
-        "&": "%26",
-        "'": "%27",
-        "(": "%28",
-        ")": "%29",
-        "*": "%2A",
-        "+": "%2B",
-        ",": "%2C",
-        "-": "%2D",
-        ".": "%2E",
-        "/": "%2F",
-        ":": "%3A",
-        ";": "%3B",
-        "<": "%3C",
-        "=": "%3D",
-        ">": "%3E",
-        "?": "%3F",
-        "@": "%40",
-        "[": "%5B",
-        "]": "%5D"
-    }
-
-
-def escape(string_to_escape):
-    for char in char_to_escape:
-        string_to_escape = string_to_escape.replace(char, char_to_escape.get(char))
-    string_to_escape = string_to_escape.replace("\\", "%5C")
-    return string_to_escape
