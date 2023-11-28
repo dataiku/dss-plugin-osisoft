@@ -151,7 +151,9 @@ class OSIsoftClient(object):
                     logger.info("Successfuly retrieved second half of {} to {}".format(half_time_iso, epoch_to_iso(end_timestamp)))
                 else:
                     logger.error("Error: {}".format(err))
-                    raise Exception("Error: {}".format(err))
+                    if can_raise:
+                        raise Exception("Error: {}".format(err))
+                    yield {'object_id': "{}".format(object_id), 'Errors': "{}".format(err)}
             logger.info("Successfuly retrieved time range {} to {}".format(start_date, end_date))
             if counter == max_count:
                 logger.warning("Number of replies equals maxCount. Shifting startDate and trying one more time.")
