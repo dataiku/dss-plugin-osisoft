@@ -33,3 +33,11 @@ def test_run_pisystem_check_sc_116617(user_dss_clients):
 
 def test_run_pisystem_byond_maxcount(user_dss_clients):
     dss_scenario.run(user_dss_clients, project_key=TEST_PROJECT_KEY, scenario_id="BEYONDMAXCOUNT")
+
+
+def test_run_pisystem_assets_values_download_with_404(user_dss_clients):
+    dss_scenario.run(user_dss_clients, project_key=TEST_PROJECT_KEY, scenario_id="ASSETS_VALUES_DOWNLOAD_WITH_404")
+
+
+def test_run_pisystem_tag_with_spaces(user_dss_clients):
+    dss_scenario.run(user_dss_clients, project_key=TEST_PROJECT_KEY, scenario_id="TAG_WITH_SPACES")

@@ -229,7 +229,7 @@
         {
             "name": "max_count",
             "label": "Max count",
-            "visibilityCondition": "false && ['InterpolatedData', 'RecordedData', 'PlotData'].includes(model.data_type)",
+            "visibilityCondition": "false && ['RecordedData'].includes(model.data_type)",
             "description": "",
             "type": "INT",
             "defaultValue": 1000

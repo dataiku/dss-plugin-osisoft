@@ -221,7 +221,7 @@ with output_dataset.get_writer() as writer:
         })
         unnested_items_rows.append(dictionary)
         unnested_items_rows = pd.DataFrame(unnested_items_rows)
-        unnested_items_rows = reorder_dataframe(unnested_items_rows, [synchronize_on_identifier, OSIsoftConstants.TIMESTAMP_COLUMN_NAME])
+        unnested_items_rows = reorder_dataframe(unnested_items_rows, [OSIsoftConstants.TIMESTAMP_COLUMN_NAME, synchronize_on_identifier])
         if first_dataframe:
             output_dataset.write_schema_from_dataframe(unnested_items_rows)
             first_dataframe = False
