@@ -37,8 +37,8 @@ def parse_timestamp_and_value(line):
 
 def get_datetime_from_string(datetime):
     try:
-        time_stamp = dateutil.parser.isoparse(datetime)
-        return time_stamp
+        _ = dateutil.parser.isoparse(datetime)
+        return datetime
     except:
         pass
     return None
