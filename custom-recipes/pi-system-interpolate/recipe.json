@@ -1,0 +1,55 @@
+{
+    "meta": {
+        "label": "Interpolate",
+        "description": "Interpolate the transposes PI values",
+        "icon": "icon-dku-timeseries-resample icon-DKU_timeseries_resample"
+    },
+    "kind": "PYTHON",
+    "selectableFromDataset": "input_dataset",
+    "inputRoles": [
+        {
+            "name": "input_dataset",
+            "label": "Dataset containing transposed values",
+            "description": "",
+            "arity": "UNARY",
+            "required": true,
+            "acceptsDataset": true
+        }
+    ],
+
+    "outputRoles": [
+        {
+            "name": "api_output",
+            "label": "Main output displayed name",
+            "description": "",
+            "arity": "UNARY",
+            "required": true,
+            "acceptsDataset": true
+        }
+    ],
+    "params": [
+        {
+            "type": "SEPARATOR",
+            "name": "separator_input",
+            "label": "Input parameters"
+          },
+          {
+            "name": "datetime_column",
+            "label": "Time column",
+            "type": "COLUMN",
+            "columnRole": "input_dataset",
+            "allowedColumnTypes": [
+              "date"
+            ],
+            "mandatory": true
+          },
+          {
+            "name": "show_advanced_parameters",
+            "label": "Show advanced parameters",
+            "description": "",
+            "type": "BOOLEAN",
+            "defaultValue": false
+          }
+    ],
+    "resourceKeys": []
+}

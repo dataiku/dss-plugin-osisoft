@@ -1,14 +1,13 @@
 # -*- coding: utf-8 -*-
 import dataiku
 from dataiku.customrecipe import get_input_names_for_role, get_recipe_config, get_output_names_for_role
-import pandas as pd
+import pandas
 from safe_logger import SafeLogger
 import os
 from temp_utils import CustomTmpFile
 from osisoft_constants import OSIsoftConstants
-import dateutil.parser
 from column_name import normalise_name
-from osisoft_plugin_common import reorder_dataframe
+from osisoft_plugin_common import reorder_dataframe, get_datetime_from_row
 
 
 logger = SafeLogger("pi-system plugin", forbiden_keys=["token", "password"])
@@ -34,33 +33,6 @@ def parse_timestamp_and_value(line):
     if value.endswith('\n'):
         value = value[:-1]
     return date, value
-
-
-def get_datetime_from_string(datetime):
-    try:
-        time_stamp = dateutil.parser.isoparse(datetime)
-        return time_stamp
-    except:
-        pass
-    return None
-
-
-def get_datetime_from_pandas(datetime):
-    try:
-        time_stamp = datetime.strftime('%Y-%m-%dT%H:%M:%SZ')
-        return time_stamp
-    except:
-        pass
-    return None
-
-
-def get_datetime_from_row(row, datetime_column):
-    raw_datetime = row[datetime_column]
-    if type(raw_datetime) is str:
-        formated_datetime = get_datetime_from_string(raw_datetime)
-    else:
-        formated_datetime = get_datetime_from_pandas(raw_datetime)
-    return formated_datetime
 
 
 def get_latest_values_at_timestamp(file_handles, seek_timestamp):
@@ -220,7 +192,7 @@ with output_dataset.get_writer() as writer:
             synchronize_on_identifier: value
         })
         unnested_items_rows.append(dictionary)
-        unnested_items_rows = pd.DataFrame(unnested_items_rows)
+        unnested_items_rows = pandas.DataFrame(unnested_items_rows)
         unnested_items_rows = reorder_dataframe(unnested_items_rows, [OSIsoftConstants.TIMESTAMP_COLUMN_NAME, synchronize_on_identifier])
         if first_dataframe:
             output_dataset.write_schema_from_dataframe(unnested_items_rows)
