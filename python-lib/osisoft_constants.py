@@ -204,6 +204,7 @@ class OSIsoftConstants(object):
     DEFAULT_SCHEME = "https"
     DEFAULT_WAIT_BEFORE_RETRY = 60
     DKU_ERROR_KEY = "Errors"
+    INTERPOLATED_COLUMN_SUFFIX = "_ip"
     LINKS = "Links"
     MAXIMUM_RETRIES_ON_THROTTLING = 5
     POSSIBLE_WEB_ID_STARTS = ["F1", "I1", "P1", "L1", "D1"]
@@ -376,6 +377,7 @@ class OSIsoftConstants(object):
     SEARCH_PATH = "search"
     STREAM_PATH = "streams"
     STREAMSETS_PATH = "streamsets"
+    TIME_FORMAT = "%Y-%m-%dT%H:%M:%SZ"
     TIMESTAMP_COLUMN_NAME = "Timestamp"
     TIMESTAMP_COLUMN_SUFFIX = "_ts"
     PIWEBAPI_AF_ENDPOINTS = {

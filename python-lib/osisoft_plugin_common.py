@@ -373,6 +373,33 @@ def iso_to_epoch(iso_timestamp):
     return epoch_timestamp
 
 
+def get_datetime_from_row(row, datetime_column):
+    raw_datetime = row[datetime_column]
+    if type(raw_datetime) is str:
+        formated_datetime = get_datetime_from_string(raw_datetime)
+    else:
+        formated_datetime = get_datetime_from_pandas(raw_datetime)
+    return formated_datetime
+
+
+def get_datetime_from_string(datetime):
+    try:
+        _ = date_parser.isoparse(datetime)
+        return datetime
+    except Exception:
+        pass
+    return None
+
+
+def get_datetime_from_pandas(datetime):
+    try:
+        time_stamp = datetime.strftime(OSIsoftConstants.TIME_FORMAT)
+        return time_stamp
+    except Exception:
+        pass
+    return None
+
+
 def reorder_dataframe(unnested_items_rows, first_elements):
     columns = unnested_items_rows.columns.tolist()
     for first_element in reversed(first_elements):
