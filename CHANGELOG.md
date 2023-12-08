@@ -1,5 +1,18 @@
 # Changelog
 
+## [Version 1.2.0](https://github.com/dataiku/dss-plugin-pi-server/releases/tag/v1.2.0) - Feature and bug release - 2023-03-14
+
+- Add Tag Search custom dataset
+- Fix Toolbox issue with tags and paths containing spaces
+- Fix Toolbox result consistency when using web IDs.
+- Add option to change max count value
+- Add performance timers
+- Add option to parse object columns as string
+- Transpose & Synchronization recipe output made DB friendly
+- Add Event Frames Search Full Hierarchy
+- Add time span search modes to Event Frame search connector
+- Fix write issue when Value column contains empty cells
+
 ## [Version 1.0.1](https://github.com/dataiku/dss-plugin-pi-server/releases/tag/v1.0.1) - Feature release - 2023-01-05
 
 - Add batch mode for metric retrieval with the event frames
