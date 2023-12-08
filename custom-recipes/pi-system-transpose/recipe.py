@@ -39,7 +39,7 @@ def get_datetime_from_string(datetime):
     try:
         _ = dateutil.parser.isoparse(datetime)
         return datetime
-    except:
+    except Exception:
         pass
     return None
 
@@ -48,14 +48,14 @@ def get_datetime_from_pandas(datetime):
     try:
         time_stamp = datetime.strftime('%Y-%m-%dT%H:%M:%SZ')
         return time_stamp
-    except:
+    except Exception:
         pass
     return None
 
 
 def get_datetime_from_row(row, datetime_column):
     raw_datetime = row[datetime_column]
-    if type(raw_datetime) == str:
+    if isinstance(raw_datetime, str):
         formated_datetime = get_datetime_from_string(raw_datetime)
     else:
         formated_datetime = get_datetime_from_pandas(raw_datetime)
