@@ -33,25 +33,25 @@ def get_hash(input_string):
 def shrink_name(name_to_shrink, max_length):
     if not name_to_shrink:
         return None
-    name_to_shrink_length = len(name_to_shrink)
-    if name_to_shrink_length <= max_length:
+    if len(name_to_shrink) <= max_length:
         return name_to_shrink
-    hash_length = name_to_shrink_length  # for now
-    counter = 1
-    kept_string_length = max_length - counter
-    while hash_length + kept_string_length > max_length:
-        kept_string_length = max_length - counter
+    kept_string_length = max_length - 2  # start here as no point in hashing just one char
+    while True:
         kept_section_of_name = name_to_shrink[-kept_string_length:]
         section_of_name_to_hash = name_to_shrink[:-kept_string_length]
         hash = "{}_".format(get_hash(section_of_name_to_hash))
         hash_length = len(hash)
-        counter += 1
-    return "{}{}".format(hash, kept_section_of_name)
+        if hash_length + kept_string_length <= max_length:
+            return "{}{}".format(hash, kept_section_of_name)
+        kept_string_length -= 1
+        # unlikely - would need to have a super long attribute path, but ensures termination
+        if kept_string_length == 0 or hash_length >= max_length:
+            return hash[:max_length]
 
 
 def keep_number_of_elements(path_to_shrink, number_of_elements=None):
     tokens = path_to_shrink.split("|")
-    attribute_name = tokens[-1:][0]
+    attribute_name = "_".join(tokens[1:])
     if not number_of_elements or number_of_elements == 1:
         return attribute_name
     elements = tokens[:-1][0].split("\\")
@@ -66,6 +66,7 @@ def normalise_string(input_string):
     output_string = ""
     for char in input_string:
         ord_char = ord(char)
+        # Allowed chars are a-z, A-Z, 1-9, _
         if (96 < ord_char < 123) or (64 < ord_char < 91) or (47 < ord_char < 58) or ord_char == 95:
             output_string += char
         else:

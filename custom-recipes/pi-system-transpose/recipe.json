@@ -1,7 +1,7 @@
 {
     "meta": {
         "label": "Transpose & Synchronize",
-        "description": "Transpose PI values and synchronize them to one single attribute\n ⚠️ This recipe uses temporary cache on the user's filesystem",
+        "description": "Transpose PI values and synchronize them to one single attribute\n ⚠️ This recipe uses temporary cache on the DSS server's filesystem",
         "icon": "icon-dku-timeseries-resample icon-DKU_timeseries_resample"
     },
     "kind": "PYTHON",
@@ -104,7 +104,7 @@
             "type": "SELECT",
             "selectChoices": [
               {"value": "raw", "label": "None"},
-              {"value": "elements", "label": "Keep a number path elements"},
+              {"value": "elements", "label": "Keep a number of path elements"},
               {"value": "hashed", "label": "Use hash"}
             ],
             "defaultValue": "raw",
