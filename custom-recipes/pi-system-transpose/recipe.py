@@ -98,16 +98,6 @@ def get_latest_values_at_timestamp(file_handles, seek_timestamp):
     return values
 
 
-def reorder_dataframe(unnested_items_rows, first_elements):
-    columns = unnested_items_rows.columns.tolist()
-    for first_element in first_elements:
-        if first_element in columns:
-            columns.remove(first_element)
-            columns.insert(0, first_element)
-    unnested_items_rows = unnested_items_rows[columns]
-    return unnested_items_rows
-
-
 def clean_cache(paths_to_file_handles):
     logger.info("Polling done, cleaning the cache files")
     # Close and delete all cache files
@@ -235,7 +225,7 @@ with output_dataset.get_writer() as writer:
         })
         unnested_items_rows.append(output_columns_dictionary)
         unnested_items_rows = pd.DataFrame(unnested_items_rows)
-        unnested_items_rows = reorder_dataframe(unnested_items_rows, [OSIsoftConstants.TIMESTAMP_COLUMN_NAME, synchronize_on_identifier])
+        unnested_items_rows = reorder_dataframe(unnested_items_rows, [OSIsoftConstants.TIMESTAMP_COLUMN_NAME, reference_attribute_path])
         if first_dataframe:
             output_dataset.write_schema_from_dataframe(unnested_items_rows)
             first_dataframe = False
