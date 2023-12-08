@@ -107,7 +107,7 @@ def do(payload, config, plugin_config, inputs):
 
     if parameter_name == "attribute_1":
         choices = []
-        json_string = get_lastest_config(config)
+        json_string = get_latest_config(config)
         json_string = json_string or "{}"
         json_choice = json.loads(json_string)
         next_url = json_choice.get("url")
@@ -122,7 +122,7 @@ def do(payload, config, plugin_config, inputs):
 
     if parameter_name == "analysis_1":
         choices = []
-        json_string = get_lastest_config(config)
+        json_string = get_latest_config(config)
         json_string = json_string or "{}"
         json_choice = json.loads(json_string)
         next_url = json_choice.get("url")
@@ -136,7 +136,7 @@ def do(payload, config, plugin_config, inputs):
             return build_select_choices()
 
     if parameter_name == "data_type":
-        json_string = get_lastest_config(config)
+        json_string = get_latest_config(config)
         json_string = json_string or "{}"
         json_choice = json.loads(json_string)
         url_candidate = json_choice.get("url")
@@ -160,7 +160,7 @@ def do(payload, config, plugin_config, inputs):
     return build_select_choices()
 
 
-def get_lastest_config(config):
+def get_latest_config(config):
     latest_config = None
     for element_number in range(10, 1, -1):
         latest_config = config.get("element_{}".format(element_number), None)

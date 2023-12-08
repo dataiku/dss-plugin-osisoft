@@ -122,6 +122,12 @@
             "columnRole": "input_dataset"
         },
         {
+            "name": "search_full_hierarchy",
+            "label": "Search full hierarchy",
+            "description": "",
+            "type": "BOOLEAN"
+        },
+        {
             "type": "SEPARATOR",
             "description": "Time",
             "visibilityCondition": "false && ['InterpolatedData', 'RecordedData', 'PlotData', 'EventFrames'].includes(model.data_type)"
@@ -227,7 +233,7 @@
         {
             "name": "max_count",
             "label": "Max count",
-            "visibilityCondition": "['InterpolatedData', 'RecordedData', 'PlotData'].includes(model.data_type)",
+            "visibilityCondition": "['RecordedData'].includes(model.data_type)",
             "description": "",
             "type": "INT",
             "defaultValue": 1000
