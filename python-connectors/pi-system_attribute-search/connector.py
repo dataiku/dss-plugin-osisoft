@@ -1,11 +1,12 @@
 import json
+import datetime
 from dataiku.connector import Connector
 from osisoft_client import OSIsoftClient
 from safe_logger import SafeLogger
 from osisoft_plugin_common import (
     PISystemConnectorError, RecordsLimit, get_credentials, assert_time_format,
     remove_unwanted_columns, format_output, filter_columns_from_schema, is_child_attribute_path,
-    check_debug_mode
+    check_debug_mode, PerformanceTimer, get_max_count
 )
 from osisoft_constants import OSIsoftConstants
 
@@ -24,7 +25,13 @@ class OSIsoftConnector(Connector):  # Browse
         auth_type, username, password, server_url, is_ssl_check_disabled = get_credentials(config)
         is_debug_mode = check_debug_mode(config)
 
-        self.client = OSIsoftClient(server_url, auth_type, username, password, is_ssl_check_disabled=is_ssl_check_disabled, is_debug_mode=is_debug_mode)
+        self.network_timer = PerformanceTimer()
+        self.client = OSIsoftClient(
+            server_url, auth_type, username, password,
+            is_ssl_check_disabled=is_ssl_check_disabled,
+            is_debug_mode=is_debug_mode,
+            network_timer=self.network_timer
+        )
         self.start_time = config.get("start_time")
         self.end_time = config.get("end_time")
         is_interpolated_data = config.get("data_type", "").endswith("InterpolatedData")
@@ -43,6 +50,7 @@ class OSIsoftConnector(Connector):  # Browse
         self.data_type = config.get("data_type")
         self.attribute_value_type = config.get("attribute_value_type")
         self.must_filter_child_attributes = not (config.get("must_keep_child_attributes", False))
+        self.max_count = get_max_count(config)
         self.config = config
 
     def extract_database_webid(self, database_endpoint):
@@ -78,6 +86,7 @@ class OSIsoftConnector(Connector):  # Browse
 
     def generate_rows(self, dataset_schema=None, dataset_partitioning=None,
                       partition_id=None, records_limit=-1):
+        start_time = datetime.datetime.now()
         limit = RecordsLimit(records_limit)
         if self.must_retrieve_metrics:
             for attribute in self.client.search_attributes(
@@ -98,7 +107,8 @@ class OSIsoftConnector(Connector):  # Browse
                         interval=self.interval,
                         sync_time=self.sync_time,
                         endpoint_type="AF",
-                        selected_fields="Links%3BItems.Timestamp%3BItems.Value"
+                        selected_fields="Links%3BItems.Timestamp%3BItems.Value",
+                        max_count=self.max_count
                         # boundary_type=self.boundary_type
                     ):
                         if limit.is_reached():
@@ -118,6 +128,10 @@ class OSIsoftConnector(Connector):  # Browse
                 remove_unwanted_columns(row)
                 output_row = format_output(row)
                 yield output_row
+        end_time = datetime.datetime.now()
+        duration = end_time - start_time
+        logger.info("generate_rows overall duration = {}s".format(duration.microseconds/1000000 + duration.seconds))
+        logger.info("Network timer:{}".format(self.network_timer.get_report()))
 
     def get_writer(self, dataset_schema=None, dataset_partitioning=None,
                    partition_id=None):
