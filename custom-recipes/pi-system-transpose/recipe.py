@@ -65,7 +65,6 @@ def get_datetime_from_row(row, datetime_column):
 def get_latest_values_at_timestamp(file_handles, seek_timestamp):
     attribute_index = 0
     values = {}
-    last_valid_timestamp = None
     for attribute_path in file_handles:
         next_cached_timestamp = next_timestamps_cache[attribute_index]
         previous_line = None
