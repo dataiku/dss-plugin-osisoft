@@ -65,6 +65,23 @@ def check_debug_mode(config):
     return config.get('show_advanced_parameters', False) and config.get('is_debug_mode', False)
 
 
+def check_must_convert_object_to_string(config):
+    return config.get('show_advanced_parameters', False) and config.get('must_convert_object_to_string', False)
+
+
+def convert_schema_objects_to_string(input_schema):
+    schema = copy.deepcopy(input_schema)
+    if isinstance(schema, list):
+        columns = schema
+    else:
+        columns = schema.get("columns", [])
+    for column in columns:
+        column_type = column.get("type")
+        if column_type == "object":
+            column["type"] = "string"
+    return schema
+
+
 def get_interpolated_parameters(config):
     data_type = config.get("data_type")
     interval = None
@@ -106,7 +123,9 @@ def build_requests_params(**kwargs):
         "template_name": "templateName",
         "referenced_element_name_filter": "referencedElementNameFilter",
         "referenced_element_template": "referencedElementTemplate",
-        "severity_levels": "severity"
+        "severity_levels": "severity",
+        "max_count": "maxCount",
+        "start_index": "startIndex"
     }
     requests_params = build_query_requests_params(
         query_name=kwargs.get("query_name"),
@@ -125,6 +144,8 @@ def build_requests_params(**kwargs):
     search_mode = kwargs.get("search_mode")
     if search_mode and (kwargs.get("start_time") or kwargs.get("end_time")):
         requests_params.update({"searchMode": "{}".format(search_mode)})
+    if search_mode in OSIsoftConstants.SEARCHMODES_ENDTIME_INCOMPATIBLE:
+        requests_params.pop("endtime")
     resource_path = kwargs.get("resource_path")
     if resource_path:
         requests_params.update({"path": escape(resource_path)})
@@ -142,17 +163,19 @@ def build_query_requests_params(query_name=None, query_category=None, query_temp
         query_elements.append("afelementtemplate:({})".format(query_template))
     if query_attribute:
         query_elements.append("attributename:({})".format(query_attribute))
-    params.update({"q": " AND ".join(query_elements)})
-    return params
+    if query_elements:
+        return params.update({"q": " AND ".join(query_elements)})
+    else:
+        return {}
 
 
 char_to_escape = {
+        "%": "%25",
         " ": "%20",
         "!": "%21",
         '"': "%22",
         "#": "%23",
         "$": "%24",
-        "%": "%25",
         "&": "%26",
         "'": "%27",
         "(": "%28",
@@ -185,6 +208,11 @@ def escape(string_to_escape):
 def assert_time_format(date, error_source):
     # https://docs.osisoft.com/bundle/pi-web-api-reference/page/help/topics/time-strings.html
     pass
+
+
+def assert_server_url_ok(server_url):
+    if not server_url:
+        raise ValueError("The server URL is not set")
 
 
 def get_schema_as_arrays(dataset_schema):
@@ -248,7 +276,7 @@ def is_filtered_out(item, filters=None):
 def is_server_throttling(response):
     if response is None:
         return True
-    if response.status_code in [429, 503]:
+    if response.status_code in [409, 429, 503]:
         logger.warning("Error {}, headers = {}".format(response.status_code, response.headers))
         seconds_before_retry = decode_retry_after_header(response)
         logger.warning("Sleeping for {} seconds".format(seconds_before_retry))
@@ -318,6 +346,28 @@ def get_base_for_data_type(data_type, object_id):
     return ret
 
 
+def get_max_count(config):
+    # some data_type requests only returns a maximum of 1k items
+    # This can be increased by using maxCount
+    DATA_TYPES_REQUIRING_MAXCOUNT = ["InterpolatedData", "PlotData", "RecordedData"]
+    DEFAULT_MAXCOUNT = None  # TODO replace with 0 when we can confirm it is equivalement to max authorized
+    max_count = None
+    data_type = config.get("data_type", None)
+    if data_type in DATA_TYPES_REQUIRING_MAXCOUNT:
+        max_count = config.get("max_count", DEFAULT_MAXCOUNT)
+    return max_count
+
+
+def reorder_dataframe(unnested_items_rows, first_elements):
+    columns = unnested_items_rows.columns.tolist()
+    for first_element in reversed(first_elements):
+        if first_element in columns:
+            columns.remove(first_element)
+            columns.insert(0, first_element)
+    unnested_items_rows = unnested_items_rows[columns]
+    return unnested_items_rows
+
+
 class RecordsLimit():
     def __init__(self, records_limit=-1):
         self.has_no_limit = (records_limit == -1)
@@ -329,3 +379,82 @@ class RecordsLimit():
             return False
         self.counter += 1
         return self.counter > self.records_limit
+
+
+class PerformanceTimer():
+    """
+    Mesures the time between the calls of the start and stop methods
+    If start / stop are called several times,
+        - adds up all start / stop intervals
+        - count the number of intervals
+        - compute the average event time
+        - provides a lists of the NUMBER_OF_SLOWEST_EVENTS_KEPT longest events by event id, for instance url    
+    """
+    NUMBER_OF_SLOWEST_EVENTS_KEPT = 5
+
+    def __init__(self):
+        self.slowest_events = []
+        self.slowest_times = []
+        self.total_duration = 0
+        self.number_events = 0
+        self.current_event_id = None
+
+    def start(self, event_id=None):
+        """
+        Args:
+            event_id (str, optional): name of the event to measure, to be used later on to list the longest events
+        """
+        self.start_time = float(time.time())
+        self.number_events += 1
+        self.current_event_id = event_id
+
+    def stop(self):
+        duration = float(time.time()) - self.start_time
+        self.total_duration += duration
+        if self.current_event_id:
+            self._add_to_summary(duration)
+
+    def _add_to_summary(self, duration):
+        if not self.slowest_events:
+            self.slowest_events.append(self.current_event_id)
+            self.slowest_times.append(duration)
+        else:
+            index = 0
+            was_inserted = False
+            for slowest_time in self.slowest_times:
+                if duration > slowest_time:
+                    self.slowest_times.insert(index, duration)
+                    self.slowest_events.insert(index, self.current_event_id)
+                    was_inserted = True
+                    break
+                index += 1
+            if not was_inserted:
+                self.slowest_times.append(duration)
+                self.slowest_events.append(self.current_event_id)
+            self.slowest_times = self.slowest_times[:self.NUMBER_OF_SLOWEST_EVENTS_KEPT]
+            self.slowest_events = self.slowest_events[:self.NUMBER_OF_SLOWEST_EVENTS_KEPT]
+
+    def get_report(self):
+        """
+        Returns:
+            dict: JSON containing total_duration, number_of_events, average_time, worst_performers list
+        """
+        report = {
+            "total_duration": self.total_duration,
+            "number_of_events": self.number_events,
+            "average_time": self.get_average()
+        }
+        if self.slowest_events:
+            report["worst_performers"] = self.get_worst_performers()
+        return report
+
+    def get_average(self):
+        if not self.number_events:
+            return None
+        return self.total_duration / self.number_events
+
+    def get_worst_performers(self):
+        worst_performers = []
+        for slowest_event, slowest_time in zip(self.slowest_events, self.slowest_times):
+            worst_performers.append("{}: {}s".format(slowest_event, slowest_time))
+        return worst_performers
