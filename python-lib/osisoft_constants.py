@@ -101,6 +101,14 @@ class OSIsoftConstants(object):
         {'name': 'CanBeAcknowledged', 'type': 'boolean'},
         {'name': 'Errors', 'type': 'object'}
     ]
+    SEARCHMODES_ENDTIME_INCOMPATIBLE = [
+        "ForwardFromEndTime",
+        "BackwardFromEndTime",
+        "ForwardFromStartTime",
+        "ForwardInProgress",
+        "BackwardFromStartTime",
+        "BackwardInProgress"
+    ]
     SUMMARY_DATA_SCHEMA = [
         {'name': 'object_id', 'type': 'string'},
         {'name': 'WebId', 'type': 'string'},
@@ -197,6 +205,7 @@ class OSIsoftConstants(object):
     DEFAULT_WAIT_BEFORE_RETRY = 60
     DKU_ERROR_KEY = "Errors"
     LINKS = "Links"
+    MAXIMUM_RETRIES_ON_THROTTLING = 5
     POSSIBLE_WEB_ID_STARTS = ["F1", "I1", "P1", "L1", "D1"]
     RECIPE_SCHEMA_PER_DATA_TYPE = {
         "InterpolatedData": DEFAULT_ASSET_METRICS_SCHEMA,
@@ -268,7 +277,8 @@ class OSIsoftConstants(object):
         {"name": "Span", "type": "float"},
         {"name": "Zero", "type": "float"},
         {"name": "Id", "type": "string"},
-        {"name": "WebId", "type": "string"}
+        {"name": "WebId", "type": "string"},
+        {"name": "Errors", "type": "string"}
     ]
     SCHEMA_ATTRIBUTES_METRICS_RESPONSE = [
         {"name": "Name", "type": "string"},
@@ -300,7 +310,8 @@ class OSIsoftConstants(object):
         {"name": "Span", "type": "float"},
         {"name": "Zero", "type": "float"},
         {"name": "Id", "type": "string"},
-        {"name": "WebId", "type": "string"}
+        {"name": "WebId", "type": "string"},
+        {"name": "Errors", "type": "string"}
     ]
     SCHEMA_ATTRIBUTES_METRICS_FILTER = [
         "ConfigString", "DataReferencePlugIn", "DisplayDigits",
@@ -365,6 +376,8 @@ class OSIsoftConstants(object):
     SEARCH_PATH = "search"
     STREAM_PATH = "streams"
     STREAMSETS_PATH = "streamsets"
+    TIMESTAMP_COLUMN_NAME = "Timestamp"
+    TIMESTAMP_COLUMN_SUFFIX = "_ts"
     PIWEBAPI_AF_ENDPOINTS = {
         "InterpolatedData": "{base_url}/streams/{webid}/interpolated",
         "RecordedData": "{base_url}/streams/{webid}/recorded",
@@ -390,6 +403,7 @@ class OSIsoftConstants(object):
         "Security": "{base_url}/eventframes/{webid}/security",
         "SecurityEntries": "{base_url}/eventframes/{webid}/securityentries"
     }
-    PLUGIN_VERSION = "1.2.0-beta.2"
+    PLUGIN_VERSION = "1.2.0"
+    VALUE_COLUMN_SUFFIX = "_val"
     WEB_API_PATH = "piwebapi"
     WRITE_HEADERS = {'X-Requested-With': 'XmlHttpRequest'}

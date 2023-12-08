@@ -329,7 +329,7 @@
         {
             "name": "max_count",
             "label": "Max count",
-            "visibilityCondition": "model.must_retrieve_metrics && ['InterpolatedData', 'RecordedData'].includes(model.data_type)",
+            "visibilityCondition": "model.must_retrieve_metrics && ['RecordedData'].includes(model.data_type)",
             "description": "",
             "type": "INT",
             "defaultValue": 1000

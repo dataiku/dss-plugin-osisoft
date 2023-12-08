@@ -6,7 +6,8 @@ from safe_logger import SafeLogger
 from osisoft_plugin_common import (
     get_credentials, get_interpolated_parameters, normalize_af_path,
     get_combined_description, get_base_for_data_type, check_debug_mode,
-    get_max_count
+    PerformanceTimer, get_max_count, check_must_convert_object_to_string,
+    convert_schema_objects_to_string
 )
 from osisoft_client import OSIsoftClient
 from osisoft_constants import OSIsoftConstants
@@ -27,6 +28,7 @@ logger.info("Initialization with config config={}".format(logger.filter_secrets(
 auth_type, username, password, server_url, is_ssl_check_disabled = get_credentials(config)
 is_debug_mode = check_debug_mode(config)
 max_count = get_max_count(config)
+must_convert_object_to_string = check_must_convert_object_to_string(config)
 
 use_server_url_column = config.get("use_server_url_column", False)
 if not server_url and not use_server_url_column:
@@ -46,6 +48,10 @@ end_time_column = config.get("end_time_column")
 server_url_column = config.get("server_url_column")
 interval, sync_time, boundary_type = get_interpolated_parameters(config)
 
+network_timer = PerformanceTimer()
+processing_timer = PerformanceTimer()
+processing_timer.start()
+
 input_parameters_dataset = dataiku.Dataset(input_dataset[0])
 output_dataset = dataiku.Dataset(output_names_stats[0])
 input_parameters_dataframe = input_parameters_dataset.get_dataframe()
@@ -62,7 +68,11 @@ with output_dataset.get_writer() as writer:
         end_time = input_parameters_row.get(end_time_column, end_time) if use_end_time_column else end_time
 
         if client is None or previous_server_url != server_url:
-            client = OSIsoftClient(server_url, auth_type, username, password, is_ssl_check_disabled=is_ssl_check_disabled, is_debug_mode=is_debug_mode)
+            client = OSIsoftClient(
+                server_url, auth_type, username, password,
+                is_ssl_check_disabled=is_ssl_check_disabled,
+                is_debug_mode=is_debug_mode, network_timer=network_timer
+            )
             previous_server_url = server_url
         object_id = input_parameters_row.get(path_column)
         item = None
@@ -111,9 +121,15 @@ with output_dataset.get_writer() as writer:
         unnested_items_rows = pd.DataFrame(results)
         if first_dataframe:
             default_columns = OSIsoftConstants.RECIPE_SCHEMA_PER_DATA_TYPE.get(data_type)
+            if must_convert_object_to_string:
+                default_columns = convert_schema_objects_to_string(default_columns)
             combined_columns_description = get_combined_description(default_columns, unnested_items_rows)
             output_dataset.write_schema(combined_columns_description)
             first_dataframe = False
         if not unnested_items_rows.empty:
             writer.write_dataframe(unnested_items_rows)
         results = []
+
+processing_timer.stop()
+logger.info("Overall timer:{}".format(processing_timer.get_report()))
+logger.info("Network timer:{}".format(network_timer.get_report()))
