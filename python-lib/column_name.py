@@ -31,6 +31,8 @@ def get_hash(input_string):
 
 
 def shrink_name(name_to_shrink, max_length):
+    if not name_to_shrink:
+        return None
     if len(name_to_shrink) <= max_length:
         return name_to_shrink
     kept_string_length = max_length - 2  # start here as no point in hashing just one char
