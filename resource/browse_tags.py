@@ -39,12 +39,3 @@ def do(payload, config, plugin_config, inputs):
         return build_select_choices(choices)
 
     return build_select_choices()
-
-
-def get_lastest_config(config):
-    latest_config = None
-    for element_number in range(10, 1, -1):
-        latest_config = config.get("element_{}".format(element_number), None)
-        if latest_config:
-            return latest_config
-    return None

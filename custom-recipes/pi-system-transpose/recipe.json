@@ -1,7 +1,7 @@
 {
     "meta": {
         "label": "Transpose & Synchronize",
-        "description": "Transpose PI values and synchronize them to one single attribute",
+        "description": "Transpose PI values and synchronize them to one single attribute\n ⚠️ This recipe uses temporary cache on the DSS server's filesystem",
         "icon": "icon-dku-timeseries-resample icon-DKU_timeseries_resample"
     },
     "kind": "PYTHON",
@@ -81,6 +81,52 @@
             "description": "\\\\server\\database\\elements..|attribute",
             "type": "STRING",
             "mandatory": true
+          },
+          {
+            "name": "show_advanced_parameters",
+            "label": "Show advanced parameters",
+            "description": "",
+            "type": "BOOLEAN",
+            "defaultValue": false
+          },
+          {
+            "name": "should_add_timestamps_columns",
+            "label": "Add timestamps columns",
+            "description": "Adds one column per attributes with last value's timestamp",
+            "type": "BOOLEAN",
+            "defaultValue": false,
+            "visibilityCondition": "model.show_advanced_parameters"
+          },
+          {
+            "name": "columns_names_normalization",
+            "label": "Columns names normalization",
+            "description": "Making output columns names more DB friendly",
+            "type": "SELECT",
+            "selectChoices": [
+              {"value": "raw", "label": "None"},
+              {"value": "elements", "label": "Keep a number of path elements"},
+              {"value": "hashed", "label": "Use hash"}
+            ],
+            "defaultValue": "raw",
+            "visibilityCondition": "model.show_advanced_parameters"
+          },
+          {
+            "name": "column_name_max_length",
+            "label": "Column name max length",
+            "description": "",
+            "type": "INT",
+            "defaultValue": 31,
+            "minI": 10,
+            "visibilityCondition": "model.show_advanced_parameters && model.columns_names_normalization=='hashed'"
+          },
+          {
+            "name": "number_of_elements",
+            "label": "Number of path elements",
+            "description": "",
+            "type": "INT",
+            "defaultValue": 1,
+            "minI": 1,
+            "visibilityCondition": "model.show_advanced_parameters && model.columns_names_normalization=='elements'"
           }
     ],
     "resourceKeys": []
