@@ -121,10 +121,10 @@ def get_column_name_specifications():
     if should_make_column_names_db_compatible:
         if columns_names_normalization == "hashed":
             column_name_max_length = config.get("column_name_max_length", 31)
-            if should_add_timestamps_columns:
-                column_name_max_length -= column_name_suffix_margin
             if column_name_max_length < 10:
                 column_name_max_length = 10
+            if should_add_timestamps_columns:
+                column_name_max_length -= column_name_suffix_margin
         elif columns_names_normalization == "elements":
             number_of_elements = config.get("number_of_elements", 1)
             if number_of_elements < 1:
