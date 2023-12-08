@@ -1,5 +1,9 @@
 # Changelog
 
+## [Version 1.2.1](https://github.com/dataiku/dss-plugin-pi-server/releases/tag/v1.2.1) - Feature and bug release - 2023-11-08
+
+- Updated code-env descriptor for DSS 12
+
 ## [Version 1.2.0](https://github.com/dataiku/dss-plugin-pi-server/releases/tag/v1.2.0) - Feature and bug release - 2023-03-14
 
 - Add Tag Search custom dataset
