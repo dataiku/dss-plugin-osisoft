@@ -82,13 +82,12 @@ def get_latest_values_at_timestamp(file_handles, seek_timestamp):
                 break
             previous_line = line
             attribute_timestamp, attribute_value = parse_timestamp_and_value(line)
-            last_valid_timestamp = next_timestamps_cache[attribute_index]
             next_timestamps_cache[attribute_index] = attribute_timestamp
             next_values_cache[attribute_index] = attribute_value
             next_cached_timestamp = next_timestamps_cache[attribute_index]
         if should_add_timestamps_columns:
             values.update({
-                "{}{}".format(attribute_path, OSIsoftConstants.TIMESTAMP_COLUMN_SUFFIX): last_valid_timestamp,
+                "{}{}".format(attribute_path, OSIsoftConstants.TIMESTAMP_COLUMN_SUFFIX): current_timestamps_cache[attribute_index],
                 "{}{}".format(attribute_path, OSIsoftConstants.VALUE_COLUMN_SUFFIX): current_values_cache[attribute_index]
             })
         else:
@@ -118,6 +117,22 @@ def clean_cache(groupby_list):
     logger.info("Cleaning done, all done.")
 
 
+def get_column_name_specifications():
+    column_name_max_length = number_of_elements = None
+    if should_make_column_names_db_compatible:
+        if columns_names_normalization == "hashed":
+            column_name_max_length = config.get("column_name_max_length", 31)
+            if should_add_timestamps_columns:
+                column_name_max_length -= column_name_suffix_margin
+            if column_name_max_length < 10:
+                column_name_max_length = 10
+        elif columns_names_normalization == "elements":
+            number_of_elements = config.get("number_of_elements", 1)
+            if number_of_elements < 1:
+                number_of_elements = 1
+    return column_name_max_length, number_of_elements
+
+
 input_dataset = get_input_names_for_role('input_dataset')
 config = get_recipe_config()
 dku_flow_variables = dataiku.get_flow_variables()
@@ -138,19 +153,9 @@ column_name_suffix_margin = max([
 
 columns_names_normalization = config.get("columns_names_normalization", "raw")
 should_make_column_names_db_compatible = config.get("show_advanced_parameters", False) and (columns_names_normalization in ["hashed", "elements"])
-column_name_max_length = number_of_elements = None
 should_add_timestamps_columns = config.get("show_advanced_parameters", False) and config.get("should_add_timestamps_columns", False)
+column_name_max_length, number_of_elements = get_column_name_specifications()
 if should_make_column_names_db_compatible:
-    if columns_names_normalization == "hashed":
-        column_name_max_length = config.get("column_name_max_length", 31)
-        if should_add_timestamps_columns:
-            column_name_max_length -= column_name_suffix_margin
-        if column_name_max_length < 10:
-            column_name_max_length = 10
-    elif columns_names_normalization == "elements":
-        number_of_elements = config.get("number_of_elements", 1)
-        if number_of_elements < 1:
-            number_of_elements = 1
     synchronize_on_identifier = normalise_name(synchronize_on_identifier, max_length=column_name_max_length, number_of_elements=number_of_elements)
 
 if not groupby_column:
