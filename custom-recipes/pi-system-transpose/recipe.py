@@ -8,6 +8,7 @@ from temp_utils import CustomTmpFile
 from osisoft_constants import OSIsoftConstants
 import dateutil.parser
 from column_name import normalise_name
+from osisoft_plugin_common import reorder_dataframe
 
 
 logger = SafeLogger("pi-system plugin", forbiden_keys=["token", "password"])
@@ -234,7 +235,7 @@ with output_dataset.get_writer() as writer:
         })
         unnested_items_rows.append(output_columns_dictionary)
         unnested_items_rows = pd.DataFrame(unnested_items_rows)
-        unnested_items_rows = reorder_dataframe(unnested_items_rows, [reference_attribute_path, OSIsoftConstants.TIMESTAMP_COLUMN_NAME])
+        unnested_items_rows = reorder_dataframe(unnested_items_rows, [OSIsoftConstants.TIMESTAMP_COLUMN_NAME, synchronize_on_identifier])
         if first_dataframe:
             output_dataset.write_schema_from_dataframe(unnested_items_rows)
             first_dataframe = False
