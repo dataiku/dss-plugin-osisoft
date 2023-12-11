@@ -4,6 +4,7 @@ import time
 from osisoft_constants import OSIsoftConstants
 from safe_logger import SafeLogger
 from datetime import datetime
+import dateutil.parser as date_parser
 
 
 logger = SafeLogger("pi-system plugin", ["Authorization", "sharepoint_username", "sharepoint_password", "client_secret"])
@@ -356,6 +357,20 @@ def get_max_count(config):
     if data_type in DATA_TYPES_REQUIRING_MAXCOUNT:
         max_count = config.get("max_count", DEFAULT_MAXCOUNT)
     return max_count
+
+
+def epoch_to_iso(epoch):
+    return datetime.utcfromtimestamp(epoch).strftime("%Y-%m-%dT%H:%M:%S.%fZ")
+
+
+def iso_to_epoch(iso_timestamp):
+    epoch_timestamp = None
+    try:
+        parsed_timestamp = date_parser.parse(iso_timestamp)
+        epoch_timestamp = parsed_timestamp.timestamp()
+    except Exception:
+        return None
+    return epoch_timestamp
 
 
 def reorder_dataframe(unnested_items_rows, first_elements):
