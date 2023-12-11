@@ -1,5 +1,13 @@
 # Changelog
 
+## [Version 1.2.2](https://github.com/dataiku/dss-plugin-pi-server/releases/tag/v1.2.2) - Feature release - 2023-12-11
+
+- Time range pagination - no more `maxCount` and / or `maxReturnedItemsPerCall` limitation
+
+## [Version 1.2.1](https://github.com/dataiku/dss-plugin-pi-server/releases/tag/v1.2.1) - Feature and bug release - 2023-11-08
+
+- Updated code-env descriptor for DSS 12
+
 ## [Version 1.2.0](https://github.com/dataiku/dss-plugin-pi-server/releases/tag/v1.2.0) - Feature and bug release - 2023-03-14
 
 - Add Tag Search custom dataset
@@ -11,6 +19,11 @@
 - Transpose & Synchronization recipe output made DB friendly
 - Add Event Frames Search Full Hierarchy
 - Add time span search modes to Event Frame search connector
+- Fix write issue when Value column contains empty cells
+
+## [Version 1.0.2](https://github.com/dataiku/dss-plugin-pi-server/releases/tag/v1.0.2) - Bugfix release - 2023-04-25
+
+- Updated code-env descriptor for DSS 12
 
 ## [Version 1.0.1](https://github.com/dataiku/dss-plugin-pi-server/releases/tag/v1.0.1) - Feature release - 2023-01-05
 

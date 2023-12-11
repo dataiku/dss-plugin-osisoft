@@ -873,6 +873,9 @@ class OSIsoftWriter(object):
             timestamp = self.timestamp_convertion(row[self.timestamp_rank])
         else:
             timestamp = datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%S.%fZ")
+        if not row[self.value_rank]:
+            logger.warning("Empty value at timestamp {}".format(timestamp))
+            return
         data = {
             "Timestamp": timestamp,
             "Value": row[self.value_rank]

@@ -1,2 +1,2 @@
-pytest==6.2.1
-allure-pytest==2.8.29
+pytest~=6.2
+allure-pytest~=2.8
