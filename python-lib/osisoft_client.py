@@ -45,7 +45,8 @@ class OSIsoftClient(object):
 
     def get_all_rows_from_webid(self, webid, data_type, start_date=None, end_date=None,
                                 interval=None, sync_time=None, boundary_type=None, selected_fields=None,
-                                can_raise=True, endpoint_type="event_frames", search_full_hierarchy=None, max_count=None):
+                                can_raise=True, endpoint_type="event_frames", search_full_hierarchy=None,
+                                max_count=None, summary_type=None):
         # Split the time range until no more HTTP 400
         not_happy = True
         previous_item_timestamp = False
@@ -53,7 +54,8 @@ class OSIsoftClient(object):
             logger.info("Attempting download from {} to {}".format(start_date, end_date))
             ret = self.get_row_from_webid(webid, data_type, start_date=start_date, end_date=end_date,
                                           interval=interval, sync_time=sync_time, boundary_type=boundary_type, selected_fields=selected_fields,
-                                          can_raise=can_raise, endpoint_type=endpoint_type, search_full_hierarchy=search_full_hierarchy, max_count=max_count)
+                                          can_raise=can_raise, endpoint_type=endpoint_type, search_full_hierarchy=search_full_hierarchy,
+                                          max_count=max_count, summary_type=summary_type)
             """
             ret = self.get_row_from_item(item, data_type, start_date=start_date, end_date=end_date, interval=interval,
                           sync_time=sync_time, boundary_type=boundary_type, can_raise=can_raise, object_id=None,
@@ -107,7 +109,8 @@ class OSIsoftClient(object):
 
     def get_all_rows_from_item(self, pi_tag, data_type, start_date=None, end_date=None,
                                interval=None, sync_time=None, boundary_type=None,
-                               can_raise=True, object_id=None, endpoint_type="event_frames", search_full_hierarchy=None, max_count=None):
+                               can_raise=True, object_id=None, endpoint_type="event_frames", search_full_hierarchy=None,
+                               max_count=None, summary_type=None):
         # Split the time range until no more HTTP 400
         not_happy = True
         previous_item_timestamp = False
@@ -115,7 +118,7 @@ class OSIsoftClient(object):
             logger.info("Attempting download from {} to {}".format(start_date, end_date))
             ret = self.get_row_from_item(pi_tag, data_type, start_date=start_date, end_date=end_date, interval=interval,
                                          sync_time=sync_time, boundary_type=boundary_type, can_raise=True, object_id=object_id,
-                                         search_full_hierarchy=search_full_hierarchy, max_count=max_count)
+                                         search_full_hierarchy=search_full_hierarchy, max_count=max_count, summary_type=summary_type)
             counter = 0
             try:
                 first_item = next(ret)
@@ -183,7 +186,8 @@ class OSIsoftClient(object):
 
     def get_row_from_webid(self, webid, data_type, start_date=None, end_date=None,
                            interval=None, sync_time=None, boundary_type=None, selected_fields=None,
-                           can_raise=True, endpoint_type="event_frames", search_full_hierarchy=None, max_count=None):
+                           can_raise=True, endpoint_type="event_frames", search_full_hierarchy=None,
+                           max_count=None, summary_type=None):
 
         url = self.endpoint.get_data_from_webid_url(endpoint_type, data_type, webid)
         has_more = True
@@ -199,7 +203,8 @@ class OSIsoftClient(object):
                 selected_fields=selected_fields,
                 search_full_hierarchy=search_full_hierarchy,
                 max_count=max_count,
-                can_raise=can_raise
+                can_raise=can_raise,
+                summary_type=summary_type
             )
             if OSIsoftConstants.DKU_ERROR_KEY in json_response:
                 json_response['object_id'] = "{}".format(webid)
@@ -210,7 +215,7 @@ class OSIsoftClient(object):
 
     def get_rows_from_webids(self, input_rows, data_type, start_date=None, end_date=None,
                              interval=None, sync_time=None, boundary_type=None, selected_fields=None, search_full_hierarchy=None,
-                             max_count=None, can_raise=True, endpoint_type="event_frames", batch_size=500):
+                             max_count=None, can_raise=True, endpoint_type="event_frames", batch_size=500, summary_type=None):
         batch_requests_parameters = []
         number_processed_webids = 0
         number_of_webids_to_process = len(input_rows)
@@ -226,7 +231,7 @@ class OSIsoftClient(object):
             else:
                 webid = input_row
             url = self.endpoint.get_data_from_webid_url(endpoint_type, data_type, webid)
-            requests_kwargs = self.generic_get_kwargs(search_full_hierarchy=search_full_hierarchy, max_count=max_count)
+            requests_kwargs = self.generic_get_kwargs(search_full_hierarchy=search_full_hierarchy, max_count=max_count, summary_type=summary_type)
             requests_kwargs['url'] = build_query_string(url, requests_kwargs.get("params"))
             web_ids.append(webid)
             event_start_times.append(event_start_time)
@@ -272,7 +277,8 @@ class OSIsoftClient(object):
             yield batch_section.get("Content", {})
 
     def generic_get_kwargs(self, start_date=None, end_date=None, interval=None, sync_time=None,
-                           boundary_type=None, selected_fields=None, search_full_hierarchy=None, max_count=None, can_raise=None):
+                           boundary_type=None, selected_fields=None, search_full_hierarchy=None, max_count=None,
+                           summary_type=None, can_raise=None):
         headers = self.get_requests_headers()
         params = self.get_requests_params(
             start_date,
@@ -282,7 +288,8 @@ class OSIsoftClient(object):
             boundary_type=boundary_type,
             selected_fields=selected_fields,
             search_full_hierarchy=search_full_hierarchy,
-            max_count=max_count
+            max_count=max_count,
+            summary_type=summary_type
         )
         return {
             "headers": headers,
@@ -290,7 +297,8 @@ class OSIsoftClient(object):
         }
 
     def generic_get(self, url, start_date=None, end_date=None, interval=None, sync_time=None,
-                    boundary_type=None, selected_fields=None, search_full_hierarchy=None, max_count=None, can_raise=None):
+                    boundary_type=None, selected_fields=None, search_full_hierarchy=None, max_count=None,
+                    can_raise=None, summary_type=None):
         headers = self.get_requests_headers()
         params = self.get_requests_params(
             start_date,
@@ -300,7 +308,8 @@ class OSIsoftClient(object):
             boundary_type=boundary_type,
             selected_fields=selected_fields,
             search_full_hierarchy=search_full_hierarchy,
-            max_count=max_count
+            max_count=max_count,
+            summary_type=summary_type
         )
         json_response = self.get(
             url=url,
@@ -312,7 +321,7 @@ class OSIsoftClient(object):
 
     def get_row_from_item(self, item, data_type, start_date=None, end_date=None, interval=None,
                           sync_time=None, boundary_type=None, can_raise=True, object_id=None,
-                          search_full_hierarchy=None, max_count=None):
+                          search_full_hierarchy=None, max_count=None, summary_type=None):
         has_more = True
         while has_more:
             json_response, has_more = self.get_paginated(
@@ -326,7 +335,8 @@ class OSIsoftClient(object):
                 boundary_type=boundary_type,
                 max_count=max_count,
                 search_full_hierarchy=search_full_hierarchy,
-                can_raise=can_raise
+                can_raise=can_raise,
+                summary_type=summary_type
             )
             if OSIsoftConstants.DKU_ERROR_KEY in json_response:
                 json_response['object_id'] = "{}".format(object_id)
@@ -337,7 +347,7 @@ class OSIsoftClient(object):
 
     def get_link_from_item(self, item, data_type, start_date, end_date, interval=None,
                            sync_time=None, boundary_type=None, search_full_hierarchy=None,
-                           max_count=None, can_raise=True):
+                           max_count=None, can_raise=True, summary_type=None):
         url = self.extract_link_with_key(item, data_type)
         if not url:
             error_message = "This object does not have {} data type".format(data_type)
@@ -347,7 +357,8 @@ class OSIsoftClient(object):
         headers = self.get_requests_headers()
         params = build_requests_params(
             start_time=start_date, end_time=end_date, interval=interval,
-            sync_time=sync_time, sync_time_boundary_type=boundary_type, search_full_hierarchy=search_full_hierarchy, max_count=max_count
+            sync_time=sync_time, sync_time_boundary_type=boundary_type, search_full_hierarchy=search_full_hierarchy,
+            max_count=max_count, summary_type=summary_type
         )
         json_response = self.get(
             url=url,
@@ -567,7 +578,8 @@ class OSIsoftClient(object):
         }
 
     def get_requests_params(self, start_date=None, end_date=None, interval=None, sync_time=None,
-                            boundary_type=None, selected_fields=None, search_full_hierarchy=None, max_count=None):
+                            boundary_type=None, selected_fields=None, search_full_hierarchy=None,
+                            max_count=None, summary_type=None):
         params = {}
         if start_date:
             params.update({"starttime": start_date})
@@ -585,6 +597,8 @@ class OSIsoftClient(object):
             params.update({"searchFullHierarchy": True})
         if max_count is not None:
             params.update({"maxCount": max_count})
+        if summary_type:
+            params.update({"summaryType": "{}".format(",".join(summary_type))})
         return params
 
     def assert_valid_response(self, response, can_raise=True, error_source=None):
