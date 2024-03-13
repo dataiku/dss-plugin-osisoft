@@ -52,6 +52,7 @@ class OSIsoftConnector(Connector):  # Browse
         self.must_filter_child_attributes = not (config.get("must_keep_child_attributes", False))
         self.max_count = get_max_count(config)
         self.config = config
+        self.summary_type = config.get("summary_type")
 
     def extract_database_webid(self, database_endpoint):
         return database_endpoint.split("/")[-1]
@@ -107,8 +108,9 @@ class OSIsoftConnector(Connector):  # Browse
                         interval=self.interval,
                         sync_time=self.sync_time,
                         endpoint_type="AF",
-                        selected_fields="Links%3BItems.Timestamp%3BItems.Value",
-                        max_count=self.max_count
+                        selected_fields="Links%3BItems.Timestamp%3BItems.Value%3BItems.Type",
+                        max_count=self.max_count,
+                        summary_type=self.summary_type
                         # boundary_type=self.boundary_type
                     ):
                         if limit.is_reached():

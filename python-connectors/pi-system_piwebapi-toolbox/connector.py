@@ -29,6 +29,7 @@ class OSIsoftConnector(Connector):  # Search
         self.end_time = config.get("end_time")
         self.interval = config.get("interval")
         self.sync_time = config.get("sync_time")
+        self.summary_type = config.get("summary_type")
         assert_time_format(self.start_time, error_source="start time")
         assert_time_format(self.end_time, error_source="start time")
         self.item = None
@@ -52,7 +53,8 @@ class OSIsoftConnector(Connector):  # Search
                 end_date=self.end_time,
                 interval=self.interval,
                 sync_time=self.sync_time,
-                max_count=self.max_count
+                max_count=self.max_count,
+                summary_type=self.summary_type
             ):
                 if limit.is_reached():
                     break
@@ -66,7 +68,8 @@ class OSIsoftConnector(Connector):  # Search
                 interval=self.interval,
                 sync_time=self.sync_time,
                 endpoint_type="AF",
-                max_count=self.max_count
+                max_count=self.max_count,
+                summary_type=self.summary_type
             ):
                 if limit.is_reached():
                     break

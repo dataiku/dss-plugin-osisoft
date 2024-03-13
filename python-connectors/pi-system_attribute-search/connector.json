@@ -327,6 +327,26 @@
             "defaultValue": "RecordedData"
         },
         {
+            "name": "summary_type",
+            "label": "Summary type",
+            "type": "MULTISELECT",
+            "selectChoices":[
+                {"value": "Total", "label": "Total"},
+                {"value": "Average", "label": "Average"},
+                {"value": "Minimum", "label": "Minimum"},
+                {"value": "Maximum", "label": "Maximum"},
+                {"value": "Range", "label": "Range"},
+                {"value": "StdDev", "label": "Standard deviation"},
+                {"value": "PopulationStdDev", "label": "Population standard deviation"},
+                {"value": "Count", "label": "Count"},
+                {"value": "PercentGood", "label": "Percent good"},
+                {"value": "TotalWithUOM", "label": "Total with UOM"},
+                {"value": "All", "label": "All"},
+                {"value": "AllForNonNumeric", "label": "All for non numeric"}
+            ],
+            "visibilityCondition": "((model.must_retrieve_metrics) && (model.data_type == 'SummaryData'))"
+        },
+        {
             "name": "max_count",
             "label": "Max count",
             "visibilityCondition": "false && model.must_retrieve_metrics && ['InterpolatedData', 'RecordedData'].includes(model.data_type)",

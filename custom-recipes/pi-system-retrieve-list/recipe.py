@@ -28,6 +28,7 @@ logger.info("Initialization with config config={}".format(logger.filter_secrets(
 auth_type, username, password, server_url, is_ssl_check_disabled = get_credentials(config)
 is_debug_mode = check_debug_mode(config)
 max_count = get_max_count(config)
+summary_type = config.get("summary_type")
 must_convert_object_to_string = check_must_convert_object_to_string(config)
 
 use_server_url_column = config.get("use_server_url_column", False)
@@ -90,7 +91,8 @@ with output_dataset.get_writer() as writer:
                 boundary_type=boundary_type,
                 max_count=max_count,
                 can_raise=False,
-                object_id=object_id
+                object_id=object_id,
+                summary_type=summary_type
             )
         else:
             rows = client.get_row_from_webid(
@@ -103,10 +105,11 @@ with output_dataset.get_writer() as writer:
                 boundary_type=boundary_type,
                 max_count=max_count,
                 can_raise=False,
-                endpoint_type="AF"
+                endpoint_type="AF",
+                summary_type=summary_type
             )
         for row in rows:
-            if type(row) == list:
+            if isinstance(row, list):
                 for line in row:
                     base = get_base_for_data_type(data_type, object_id)
                     base.update(line)
