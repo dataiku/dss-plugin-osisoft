@@ -375,6 +375,8 @@ def epoch_to_iso(epoch):
 
 
 def iso_to_epoch(iso_timestamp):
+    if is_epoch(iso_timestamp):
+        return iso_timestamp
     epoch_timestamp = None
     try:
         parsed_timestamp = date_parser.parse(iso_timestamp)
@@ -382,6 +384,14 @@ def iso_to_epoch(iso_timestamp):
     except Exception:
         return None
     return epoch_timestamp
+
+
+def is_epoch(timestamp):
+    if not timestamp:
+        return False
+    if isinstance(timestamp, int) or isinstance(timestamp, float):
+        return True
+    return timestamp.replace(".", "", 1).isdigit()
 
 
 def reorder_dataframe(unnested_items_rows, first_elements):
