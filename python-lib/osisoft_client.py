@@ -74,8 +74,8 @@ class OSIsoftClient(object):
             except Exception as err:
                 if "Error 400" in "{}".format(err):
                     logger.warning("The time range {} -> {} is too large, splitting the job in two".format(start_date, end_date))
-                    start_timestamp = self.parse_pi_time(start_date)
-                    end_timestamp = self.parse_pi_time(end_date)
+                    start_timestamp = self.parse_pi_time(start_date, to_epoch=True)
+                    end_timestamp = self.parse_pi_time(end_date, to_epoch=True)
                     new_time_range = (end_timestamp - start_timestamp) / 2
                     half_time_iso = epoch_to_iso(start_timestamp + new_time_range)
                     first_half_items = self.get_all_rows_from_webid(
@@ -132,8 +132,8 @@ class OSIsoftClient(object):
             except Exception as err:
                 if "Error 400" in "{}".format(err):
                     logger.warning("The time range {} -> {} is too large, splitting the job in two".format(start_date, end_date))
-                    start_timestamp = self.parse_pi_time(start_date)
-                    end_timestamp = self.parse_pi_time(end_date)
+                    start_timestamp = self.parse_pi_time(start_date, to_epoch=True)
+                    end_timestamp = self.parse_pi_time(end_date, to_epoch=True)
                     new_time_range = (end_timestamp - start_timestamp) / 2
                     half_time_iso = epoch_to_iso(start_timestamp + new_time_range)
                     first_half_items = self.get_all_rows_from_item(
@@ -167,7 +167,9 @@ class OSIsoftClient(object):
             else:
                 not_happy = False
 
-    def parse_pi_time(self, pi_time):
+    def parse_pi_time(self, pi_time, to_epoch=False):
+        if not pi_time:
+            return None
         epoch_timestamp = iso_to_epoch(pi_time)
         if epoch_timestamp:
             return epoch_timestamp
@@ -180,9 +182,9 @@ class OSIsoftClient(object):
         items = json_response.get("Items", [{}])
         item = items[0]
         iso_timestamp = item.get("Timestamp")
-        if iso_timestamp:
+        if to_epoch and iso_timestamp:
             return iso_to_epoch(iso_timestamp)
-        return None
+        return iso_timestamp
 
     def get_row_from_webid(self, webid, data_type, start_date=None, end_date=None,
                            interval=None, sync_time=None, boundary_type=None, selected_fields=None,
