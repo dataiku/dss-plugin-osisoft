@@ -33,10 +33,13 @@ class OSIsoftConnector(Connector):  # Browse
             network_timer=self.network_timer
         )
         self.start_time = config.get("start_time")
+        self.start_time = self.client.parse_pi_time(self.start_time)
         self.end_time = config.get("end_time")
+        self.end_time = self.client.parse_pi_time(self.end_time)
         is_interpolated_data = config.get("data_type", "").endswith("InterpolatedData")
         self.interval = config.get("interval") if is_interpolated_data else None
         self.sync_time = config.get("sync_time") if is_interpolated_data else None
+        self.sync_time = self.client.parse_pi_time(self.sync_time)
         assert_time_format(self.start_time, error_source="start time")
         assert_time_format(self.end_time, error_source="end time")
         self.attribute_name = config.get("attribute_name")  # todo: check if next_element has an url first
