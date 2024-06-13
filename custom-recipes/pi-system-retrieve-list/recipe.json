@@ -198,8 +198,7 @@
             "type": "SELECT",
             "selectChoices":[
                 {"value": "Inside", "label": "Inside"},
-                {"value": "Outside", "label": "Outside"},
-                {"value": "InterpolatedData", "label": "Interpolated"}
+                {"value": "Outside", "label": "Outside"}
             ],
             "defaultValue": "Inside"
         },
