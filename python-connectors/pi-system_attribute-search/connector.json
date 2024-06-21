@@ -238,7 +238,7 @@
         {
             "name": "element_template_manual_input",
             "label": " ",
-            "description": "Template",
+            "description": " ",
             "type": "STRING",
             "visibilityCondition": "model.element_template == '_DKU_manual_input'"
         },
