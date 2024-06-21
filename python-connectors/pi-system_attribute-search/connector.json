@@ -243,6 +243,13 @@
             "visibilityCondition": "model.element_template == '_DKU_manual_input'"
         },
         {
+            "name": "element_template_variable_select",
+            "label": " ",
+            "type": "SELECT",
+            "visibilityCondition": "model.element_template == '_DKU_variable_select'",
+            "getChoicesFromPython": true
+        },
+        {
             "name": "element_type",
             "label": "Type",
             "type": "SELECT",

@@ -954,6 +954,16 @@ def apply_manual_inputs(kwargs):
         if value == "_DKU_manual_input":
             new_value = kwargs.get("{}_manual_input".format(kwarg))
             new_kwargs[kwarg] = new_value
-        elif not kwarg.endswith("_manual_input"):
+        elif value == "_DKU_variable_select":
+            import dataiku
+            variable_name = kwargs.get("{}_variable_select".format(kwarg))
+            variables = dataiku.get_custom_variables()
+            if not variable_name:
+                raise Exception("No variable was selected for {}".format(kwarg))
+            if variable_name not in variables:
+                raise Exception("Variable '{}' used in {} does not exists".format(variable_name, kwarg))
+            new_value = "{}".format(variables.get(variable_name))
+            new_kwargs[kwarg] = new_value
+        elif not kwarg.endswith("_manual_input") and not kwarg.endswith("_variable_select"):
             new_kwargs[kwarg] = kwargs.get(kwarg)
     return new_kwargs
