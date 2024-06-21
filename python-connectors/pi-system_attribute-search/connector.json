@@ -236,6 +236,13 @@
             "getChoicesFromPython": true
         },
         {
+            "name": "element_template_manual_input",
+            "label": " ",
+            "description": "Template",
+            "type": "STRING",
+            "visibilityCondition": "model.element_template == '_DKU_manual_input'"
+        },
+        {
             "name": "element_type",
             "label": "Type",
             "type": "SELECT",

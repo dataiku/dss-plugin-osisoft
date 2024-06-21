@@ -729,6 +729,7 @@ class OSIsoftClient(object):
             "element_category": "CategoryName:'{}'"
         }
         output_tokens = []
+        kwargs = apply_manual_inputs(kwargs)
         for argument in kwargs:
             value = kwargs.get(argument)
             if value and argument in element_query_keys:
@@ -944,3 +945,15 @@ def unnest(row):
             for key in value_object:
                 row["{}".format(key)] = value_object.get(key)
     return row
+
+
+def apply_manual_inputs(kwargs):
+    new_kwargs = {}
+    for kwarg in kwargs:
+        value = kwargs.get(kwarg)
+        if value == "_DKU_manual_input":
+            new_value = kwargs.get("{}_manual_input".format(kwarg))
+            new_kwargs[kwarg] = new_value
+        elif not kwarg.endswith("_manual_input"):
+            new_kwargs[kwarg] = kwargs.get(kwarg)
+    return new_kwargs

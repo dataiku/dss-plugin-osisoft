@@ -70,6 +70,10 @@ def do(payload, config, plugin_config, inputs):
             return build_select_choices()
         next_url = next_links + "/elementtemplates"
         choices.extend(client.get_next_choices(next_url, "Self", use_name_as_link=True, filter={'InstanceType': 'Element'}))
+        choices.append({
+            "label": "✍️ Enter manually",
+            "value": "_DKU_manual_input"
+        })
         return build_select_choices(choices)
 
     if parameter_name == "attribute_category":
