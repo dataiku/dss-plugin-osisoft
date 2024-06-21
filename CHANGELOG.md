@@ -5,6 +5,7 @@
 - Time range pagination - no more `maxCount` and / or `maxReturnedItemsPerCall` limitation
 - Add type selector for summary reports
 - Fix time drift when using PI-system time strings as start / end / synch time
+- Add manual input to template selector
 
 ## [Version 1.2.1](https://github.com/dataiku/dss-plugin-pi-server/releases/tag/v1.2.1) - Feature and bug release - 2023-11-08
 
