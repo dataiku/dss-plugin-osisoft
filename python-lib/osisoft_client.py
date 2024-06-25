@@ -175,7 +175,7 @@ class OSIsoftClient(object):
         headers = self.get_requests_headers()
         json_response = self.get(url=url, headers=headers, params={
             "expression": 'ParseTime("*")',
-            "time": "{}".format(pi_time)
+            "time": escape(pi_time)
         })
         items = json_response.get("Items", [{}])
         item = items[0]
@@ -209,9 +209,12 @@ class OSIsoftClient(object):
             if OSIsoftConstants.DKU_ERROR_KEY in json_response:
                 json_response['object_id'] = "{}".format(webid)
                 yield json_response
-            items = json_response.get(OSIsoftConstants.API_ITEM_KEY, [json_response])
-            for item in items:
-                yield item
+            else:
+                items = json_response.get(OSIsoftConstants.API_ITEM_KEY, [json_response])
+                if not items:
+                    items = [{}]
+                for item in items:
+                    yield item
 
     def get_rows_from_webids(self, input_rows, data_type, start_date=None, end_date=None,
                              interval=None, sync_time=None, boundary_type=None, selected_fields=None, search_full_hierarchy=None,
