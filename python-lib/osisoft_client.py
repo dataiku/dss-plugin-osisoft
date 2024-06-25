@@ -172,7 +172,7 @@ class OSIsoftClient(object):
         headers = self.get_requests_headers()
         json_response = self.get(url=url, headers=headers, params={
             "expression": 'ParseTime("*")',
-            "time": "{}".format(pi_time)
+            "time": escape(pi_time)
         })
         items = json_response.get("Items", [{}])
         item = items[0]
