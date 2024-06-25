@@ -40,7 +40,13 @@ class OSIsoftConnector(Connector):
         if self.object_id is None:
             self.object_id = config.get("next_element", None)
         self.start_time = config.get("start_time")
+        self.start_time = self.client.parse_pi_time(self.start_time)
+        if self.start_time:
+            config["start_time"] = self.start_time
         self.end_time = config.get("end_time")
+        self.end_time = self.client.parse_pi_time(self.end_time)
+        if self.end_time:
+            config["end_time"] = self.end_time
         self.search_mode = config.get("search_mode", None)
         self.output_type = config.get("output_type")
         assert_time_format(self.start_time, error_source="start time")
