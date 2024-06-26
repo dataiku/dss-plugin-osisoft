@@ -3,9 +3,13 @@ import copy
 import time
 from osisoft_constants import OSIsoftConstants
 from safe_logger import SafeLogger
-from datetime import datetime, timezone, date
+from datetime import datetime, timezone
 import dateutil.parser as date_parser
+import re
 
+
+regex_iso8601 = r'^(-?(?:[1-9][0-9]*)?[0-9]{4})-(1[0-2]|0[1-9])-(3[01]|0[1-9]|[12][0-9])T(2[0-3]|[01][0-9]):([0-5][0-9]):([0-5][0-9])(\.[0-9]+)?(Z|[+-](?:2[0-3]|[01][0-9]):[0-5][0-9])?$'
+match_iso8601 = re.compile(regex_iso8601).match
 
 logger = SafeLogger("pi-system plugin", ["Authorization", "sharepoint_username", "sharepoint_password", "client_secret"])
 
@@ -401,11 +405,13 @@ def is_epoch(timestamp):
     return timestamp.replace(".", "", 1).isdigit()
 
 
-def is_iso(timestamp):
-    # Todo : improve that
+def is_iso8601(timestamp):
+    # https://stackoverflow.com/questions/41129921/validate-an-iso-8601-datetime-string-in-python
     if not isinstance(timestamp, str):
         return False
-    return len(timestamp.split("-")) == 3
+    if match_iso8601(timestamp) is not None:
+        return True
+    return False
 
 
 def reorder_dataframe(unnested_items_rows, first_elements):

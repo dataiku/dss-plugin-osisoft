@@ -10,7 +10,7 @@ from osisoft_endpoints import OSIsoftEndpoints
 from osisoft_plugin_common import (
     assert_server_url_ok, build_requests_params,
     is_filtered_out, is_server_throttling, escape, epoch_to_iso,
-    iso_to_epoch, RecordsLimit, is_iso
+    iso_to_epoch, RecordsLimit, is_iso8601
 )
 from osisoft_pagination import OffsetPagination
 from safe_logger import SafeLogger
@@ -174,7 +174,7 @@ class OSIsoftClient(object):
     def parse_pi_time(self, pi_time, to_epoch=False):
         if not pi_time:
             return None
-        if is_iso(pi_time):
+        if is_iso8601(pi_time):
             if not to_epoch:
                 return pi_time
         if to_epoch:
