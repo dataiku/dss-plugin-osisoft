@@ -3,7 +3,7 @@ import copy
 import time
 from osisoft_constants import OSIsoftConstants
 from safe_logger import SafeLogger
-from datetime import datetime
+from datetime import datetime, timezone
 import dateutil.parser as date_parser
 
 
@@ -372,7 +372,7 @@ def get_max_count(config):
 
 
 def epoch_to_iso(epoch):
-    return datetime.utcfromtimestamp(epoch).strftime("%Y-%m-%dT%H:%M:%S.%fZ")
+    return datetime.fromtimestamp(epoch, tz=timezone.utc).strftime("%Y-%m-%dT%H:%M:%S.%fZ")
 
 
 def iso_to_epoch(iso_timestamp):
