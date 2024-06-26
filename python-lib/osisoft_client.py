@@ -7,7 +7,11 @@ from datetime import datetime
 from requests_ntlm import HttpNtlmAuth
 from osisoft_constants import OSIsoftConstants
 from osisoft_endpoints import OSIsoftEndpoints
-from osisoft_plugin_common import assert_server_url_ok, build_requests_params, is_filtered_out, is_server_throttling, escape, epoch_to_iso, iso_to_epoch, RecordsLimit
+from osisoft_plugin_common import (
+    assert_server_url_ok, build_requests_params,
+    is_filtered_out, is_server_throttling, escape, epoch_to_iso,
+    iso_to_epoch, RecordsLimit, is_iso
+)
 from osisoft_pagination import OffsetPagination
 from safe_logger import SafeLogger
 
@@ -170,9 +174,13 @@ class OSIsoftClient(object):
     def parse_pi_time(self, pi_time, to_epoch=False):
         if not pi_time:
             return None
-        epoch_timestamp = iso_to_epoch(pi_time)
-        if epoch_timestamp:
-            return epoch_timestamp
+        if is_iso(pi_time):
+            if not to_epoch:
+                return pi_time
+        if to_epoch:
+            epoch_timestamp = iso_to_epoch(pi_time)
+            if epoch_timestamp:
+                return epoch_timestamp
         url = self.endpoint.get_calculation_time_url()
         headers = self.get_requests_headers()
         json_response = self.get(url=url, headers=headers, params={

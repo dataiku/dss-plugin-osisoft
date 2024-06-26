@@ -3,7 +3,7 @@ import copy
 import time
 from osisoft_constants import OSIsoftConstants
 from safe_logger import SafeLogger
-from datetime import datetime, timezone
+from datetime import datetime, timezone, date
 import dateutil.parser as date_parser
 
 
@@ -289,6 +289,8 @@ def is_filtered_out(item, filters=None):
 def is_server_throttling(response):
     if response is None:
         return True
+    if response.status_code == 409 and not response_has_retry_header(response):
+        return True
     if response.status_code in [409, 429, 503]:
         logger.warning("Error {}, headers = {}".format(response.status_code, response.headers))
         seconds_before_retry = decode_retry_after_header(response)
@@ -296,6 +298,10 @@ def is_server_throttling(response):
         time.sleep(seconds_before_retry)
         return True
     return False
+
+
+def response_has_retry_header(response):
+    return "Retry-After" in response.headers
 
 
 def decode_retry_after_header(response):
@@ -393,6 +399,13 @@ def is_epoch(timestamp):
     if isinstance(timestamp, int) or isinstance(timestamp, float):
         return True
     return timestamp.replace(".", "", 1).isdigit()
+
+
+def is_iso(timestamp):
+    # Todo : improve that
+    if not isinstance(timestamp, str):
+        return False
+    return len(timestamp.split("-")) == 3
 
 
 def reorder_dataframe(unnested_items_rows, first_elements):
