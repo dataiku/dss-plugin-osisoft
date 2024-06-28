@@ -409,9 +409,7 @@ def is_iso8601(timestamp):
     # https://stackoverflow.com/questions/41129921/validate-an-iso-8601-datetime-string-in-python
     if not isinstance(timestamp, str):
         return False
-    if match_iso8601(timestamp) is not None:
-        return True
-    return False
+    return match_iso8601(timestamp) is not None
 
 
 def reorder_dataframe(unnested_items_rows, first_elements):
