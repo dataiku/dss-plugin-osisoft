@@ -373,7 +373,7 @@ def get_max_count(config):
     # some data_type requests only returns a maximum of 1k items
     # This can be increased by using maxCount
     DATA_TYPES_REQUIRING_MAXCOUNT = ["InterpolatedData", "PlotData", "RecordedData"]
-    DEFAULT_MAXCOUNT = None  # TODO replace with 0 when we can confirm it is equivalement to max authorized
+    DEFAULT_MAXCOUNT = 1000
     max_count = None
     data_type = config.get("data_type", None)
     if data_type in DATA_TYPES_REQUIRING_MAXCOUNT:
@@ -382,23 +382,30 @@ def get_max_count(config):
 
 
 def epoch_to_iso(epoch):
-    return datetime.fromtimestamp(epoch, tz=timezone.utc).strftime("%Y-%m-%dT%H:%M:%S.%fZ")
+    logger.info("Converting '{}' epoch to iso".format(epoch))
+    iso_timestamp = datetime.fromtimestamp(epoch, tz=timezone.utc).strftime("%Y-%m-%dT%H:%M:%S.%fZ")
+    logger.info("Iso for '{}' is '{}'".format(epoch, iso_timestamp))
+    return iso_timestamp
 
 
 def iso_to_epoch(iso_timestamp):
+    logger.info("Converting iso timestamp '{}' to epoch".format(iso_timestamp))
     if is_epoch(iso_timestamp):
+        logger.info("Timestamp is already epoch")
         return iso_timestamp
     epoch_timestamp = None
     try:
         parsed_timestamp = date_parser.parse(iso_timestamp)
         epoch_timestamp = parsed_timestamp.timestamp()
     except Exception:
+        logger.error("Error when converting iso timestamp '{}' to epoch".format(iso_timestamp))
         return None
+    logger.info("Timestamp is now '{}'".format(epoch_timestamp))
     return epoch_timestamp
 
 
 def is_epoch(timestamp):
-    if not timestamp:
+    if timestamp is None:
         return False
     if isinstance(timestamp, int) or isinstance(timestamp, float):
         return True

@@ -55,7 +55,7 @@ class OSIsoftClient(object):
         not_happy = True
         previous_item_timestamp = False
         while not_happy:
-            logger.info("Attempting download from {} to {}".format(start_date, end_date))
+            logger.info("Attempting download webids from {} to {}".format(start_date, end_date))
             ret = self.get_row_from_webid(webid, data_type, start_date=start_date, end_date=end_date,
                                           interval=interval, sync_time=sync_time, boundary_type=boundary_type, selected_fields=selected_fields,
                                           can_raise=can_raise, endpoint_type=endpoint_type, search_full_hierarchy=search_full_hierarchy,
@@ -119,7 +119,7 @@ class OSIsoftClient(object):
         not_happy = True
         previous_item_timestamp = False
         while not_happy:
-            logger.info("Attempting download from {} to {}".format(start_date, end_date))
+            logger.info("Attempting download items from {} to {}".format(start_date, end_date))
             ret = self.get_row_from_item(pi_tag, data_type, start_date=start_date, end_date=end_date, interval=interval,
                                          sync_time=sync_time, boundary_type=boundary_type, can_raise=True, object_id=object_id,
                                          search_full_hierarchy=search_full_hierarchy, max_count=max_count, summary_type=summary_type)
@@ -172,15 +172,22 @@ class OSIsoftClient(object):
                 not_happy = False
 
     def parse_pi_time(self, pi_time, to_epoch=False):
+        logger.info("Parsing '{}' to_epoch={}".format(pi_time, to_epoch))
         if not pi_time:
+            logger.info("No time given")
             return None
         if is_iso8601(pi_time):
+            logger.info("Time is iso8601")
             if not to_epoch:
                 return pi_time
+        else:
+            logger.info("Time is not iso8601")
         if to_epoch:
             epoch_timestamp = iso_to_epoch(pi_time)
+            logger.info("'{}' converted to epoch '{}'".format(pi_time, epoch_timestamp))
             if epoch_timestamp:
                 return epoch_timestamp
+        logger.info("Using Pi server to resolve time string format")
         url = self.endpoint.get_calculation_time_url()
         headers = self.get_requests_headers()
         json_response = self.get(url=url, headers=headers, params={
