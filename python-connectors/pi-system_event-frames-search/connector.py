@@ -107,7 +107,7 @@ class OSIsoftConnector(Connector):
                 event_frames = json_response.get(OSIsoftConstants.API_ITEM_KEY, [json_response])
                 if self.must_retrieve_metrics:
                     if use_batch_mode:
-                        batch_rows = self.client.get_rows_from_webids(
+                        batch_rows = self.client.get_row_from_webids(
                                 event_frames, self.data_type,
                                 search_full_hierarchy=self.search_full_hierarchy,
                                 can_raise=False,

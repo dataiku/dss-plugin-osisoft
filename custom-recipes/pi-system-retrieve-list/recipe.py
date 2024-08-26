@@ -92,7 +92,7 @@ with output_dataset.get_writer() as writer:
             object_id = normalize_af_path(object_id)
             item = client.get_item_from_path(object_id)
         if item:
-            rows = client.get_all_rows_from_item(
+            rows = client.recursive_get_row_from_item(
                 item,
                 data_type,
                 start_date=start_time,
