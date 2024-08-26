@@ -76,7 +76,7 @@ class OSIsoftClient(object):
                     yield first_item
                     counter += 1
             except Exception as err:
-                if "Error 400" in "{}".format(err):
+                if is_parameter_greater_than_max_allowed(err):
                     logger.warning("The time range {} -> {} is too large, splitting the job in two".format(start_date, end_date))
                     start_timestamp = self.parse_pi_time(start_date, to_epoch=True)
                     end_timestamp = self.parse_pi_time(end_date, to_epoch=True)
@@ -134,7 +134,7 @@ class OSIsoftClient(object):
                     yield first_item
                     counter += 1
             except Exception as err:
-                if "Error 400" in "{}".format(err):
+                if is_parameter_greater_than_max_allowed(err):
                     logger.warning("The time range {} -> {} is too large, splitting the job in two".format(start_date, end_date))
                     start_timestamp = self.parse_pi_time(start_date, to_epoch=True)
                     end_timestamp = self.parse_pi_time(end_date, to_epoch=True)
@@ -985,3 +985,7 @@ def apply_manual_inputs(kwargs):
         elif not kwarg.endswith("_manual_input") and not kwarg.endswith("_variable_select"):
             new_kwargs[kwarg] = kwargs.get(kwarg)
     return new_kwargs
+
+
+def is_parameter_greater_than_max_allowed(error_message):
+    return "Error 400" in "{}".format(error_message) and "is greater than the maximum allowed" in "{}".format(error_message)
