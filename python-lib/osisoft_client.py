@@ -84,7 +84,7 @@ class OSIsoftClient(object):
                     )
                     for row in first_half_rows:
                         yield row
-                    logger.info("Successfuly retrieved first half of {} to {}".format(start_timestamp, half_time_iso))
+                    logger.info("Successfuly retrieved first half ({} to {})".format(start_timestamp, half_time_iso))
                     second_half_rows = self.recursive_get_row_from_webid(
                         webid, data_type, start_date=half_time_iso, end_date=end_timestamp,
                         interval=interval, sync_time=sync_time, boundary_type=boundary_type, selected_fields=selected_fields,
@@ -92,7 +92,7 @@ class OSIsoftClient(object):
                     )
                     for row in second_half_rows:
                         yield row
-                    logger.info("Successfuly retrieved second half of {} to {}".format(half_time_iso, end_timestamp))
+                    logger.info("Successfuly retrieved second half ({} to {})".format(half_time_iso, end_timestamp))
                 else:
                     logger.error("Error: {}".format(err))
                     raise Exception("Error: {}".format(err))
@@ -142,7 +142,7 @@ class OSIsoftClient(object):
                     )
                     for row in first_half_rows:
                         yield row
-                    logger.info("Successfuly retrieved first half of {} to {}".format(start_timestamp, half_time_iso))
+                    logger.info("Successfuly retrieved first half ({} to {})".format(start_timestamp, half_time_iso))
                     second_half_rows = self.recursive_get_row_from_item(
                         pi_tag, data_type, start_date=half_time_iso, end_date=end_timestamp,
                         interval=interval, sync_time=sync_time, boundary_type=boundary_type, can_raise=True, object_id=object_id,
@@ -150,7 +150,7 @@ class OSIsoftClient(object):
                     )
                     for row in second_half_rows:
                         yield row
-                    logger.info("Successfuly retrieved second half of {} to {}".format(half_time_iso, end_timestamp))
+                    logger.info("Successfuly retrieved second half ({} to {})".format(half_time_iso, end_timestamp))
                 else:
                     logger.error("Error: {}".format(err))
                     if can_raise:
