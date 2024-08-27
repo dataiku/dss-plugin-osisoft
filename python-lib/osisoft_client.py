@@ -175,6 +175,14 @@ class OSIsoftClient(object):
         return epoch_to_iso(start_timestamp), epoch_to_iso(end_timestamp), half_time_iso
 
     def parse_pi_time(self, pi_time, to_epoch=False):
+        """" Checks that pi_time is iso8601.
+        If not, send it to pi-server to evaluate the Pi time expression.
+
+        Arguments:
+        pi_time -- String containing an iso8601 datetime or [Pi time string format](https://docs.aveva.com/bundle/pi-web-api-reference/page/help/topics/time-strings.html)
+        to_epoch -- Select the format of the returned datetime (iso8601 / epoch)
+        """
+
         logger.info("Parsing '{}' to_epoch={}".format(pi_time, to_epoch))
         if not pi_time:
             logger.info("No time given")
