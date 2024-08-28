@@ -155,6 +155,7 @@ class OSIsoftClient(object):
                     logger.error("Error: {}".format(err))
                     if can_raise:
                         raise Exception("Error: {}".format(err))
+                    # Only wrap and yield unhandled exceptions in the outer call
                     yield {'object_id': "{}".format(object_id), 'Errors': "{}".format(err)}
             logger.info("Successfuly retrieved time range {} to {}".format(start_date, end_date))
             if counter == max_count:
