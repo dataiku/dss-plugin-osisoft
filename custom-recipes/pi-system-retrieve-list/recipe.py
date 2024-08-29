@@ -68,6 +68,7 @@ with output_dataset.get_writer() as writer:
         server_url = input_parameters_row.get(server_url_column, server_url) if use_server_url_column else server_url
         start_time = input_parameters_row.get(start_time_column, start_time) if use_start_time_column else start_time
         end_time = input_parameters_row.get(end_time_column, end_time) if use_end_time_column else end_time
+        row_name = input_parameters_row.get("Name")
 
         if client is None or previous_server_url != server_url:
             client = OSIsoftClient(
@@ -120,6 +121,8 @@ with output_dataset.get_writer() as writer:
                 summary_type=summary_type
             )
         for row in rows:
+            row["Name"] = row_name
+            row[path_column] = object_id
             if isinstance(row, list):
                 for line in row:
                     base = get_base_for_data_type(data_type, object_id)
