@@ -106,16 +106,17 @@ class OSIsoftClient(object):
             else:
                 done = True
 
-    def recursive_get_row_from_item(self, pi_tag, data_type, start_date=None, end_date=None,
+    def recursive_get_row_from_item(self, item, data_type, start_date=None, end_date=None,
                                     interval=None, sync_time=None, boundary_type=None,
                                     can_raise=True, object_id=None, endpoint_type="event_frames", search_full_hierarchy=None,
                                     max_count=None, summary_type=None):
+        # item can be an pi tag, a path to an element or event frame
         # Split the time range until no more HTTP 400
         done = False
         previous_item_timestamp = False
         while not done:
             logger.info("Attempting download items from {} to {}".format(start_date, end_date))
-            rows = self.get_row_from_item(pi_tag, data_type, start_date=start_date, end_date=end_date, interval=interval,
+            rows = self.get_row_from_item(item, data_type, start_date=start_date, end_date=end_date, interval=interval,
                                           sync_time=sync_time, boundary_type=boundary_type, can_raise=True, object_id=object_id,
                                           search_full_hierarchy=search_full_hierarchy, max_count=max_count, summary_type=summary_type)
             counter = 0
@@ -136,7 +137,7 @@ class OSIsoftClient(object):
                 if is_parameter_greater_than_max_allowed(err):
                     start_timestamp, end_timestamp, half_time_iso = self.halve_time_range(start_date, end_date)
                     first_half_rows = self.recursive_get_row_from_item(
-                        pi_tag, data_type, start_date=start_timestamp, end_date=half_time_iso,
+                        item, data_type, start_date=start_timestamp, end_date=half_time_iso,
                         interval=interval, sync_time=sync_time, boundary_type=boundary_type, can_raise=True, object_id=object_id,
                         search_full_hierarchy=search_full_hierarchy, max_count=max_count
                     )
@@ -144,7 +145,7 @@ class OSIsoftClient(object):
                         yield row
                     logger.info("Successfuly retrieved first half ({} to {})".format(start_timestamp, half_time_iso))
                     second_half_rows = self.recursive_get_row_from_item(
-                        pi_tag, data_type, start_date=half_time_iso, end_date=end_timestamp,
+                        item, data_type, start_date=half_time_iso, end_date=end_timestamp,
                         interval=interval, sync_time=sync_time, boundary_type=boundary_type, can_raise=True, object_id=object_id,
                         search_full_hierarchy=search_full_hierarchy, max_count=max_count
                     )
@@ -354,6 +355,7 @@ class OSIsoftClient(object):
     def get_row_from_item(self, item, data_type, start_date=None, end_date=None, interval=None,
                           sync_time=None, boundary_type=None, can_raise=True, object_id=None,
                           search_full_hierarchy=None, max_count=None, summary_type=None):
+        # item can be an pi tag, a path to an element or event frame
         has_more = True
         while has_more:
             json_response, has_more = self.get_paginated(
