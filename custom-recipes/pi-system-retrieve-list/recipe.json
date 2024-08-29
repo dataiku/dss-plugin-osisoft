@@ -119,7 +119,7 @@
         },
         {
             "type": "SEPARATOR",
-            "description": "Date / time can either be ISO 8601 or OSIsoft Time String format (see documentation)",
+            "description": "Date / time in yyyy-mm-ddThh:mm:ssZ or <a href='https://docs.aveva.com/bundle/pi-web-api-reference/page/help/topics/time-strings.html'>Pi Time String</a> format",
             "visibilityCondition": "['InterpolatedData', 'RecordedData', 'PlotData', 'EventFrames'].includes(model.data_type)"
         },
         {
@@ -198,7 +198,8 @@
             "type": "SELECT",
             "selectChoices":[
                 {"value": "Inside", "label": "Inside"},
-                {"value": "Outside", "label": "Outside"}
+                {"value": "Outside", "label": "Outside"},
+                {"value": "InterpolatedData", "label": "Interpolated"}
             ],
             "defaultValue": "Inside"
         },

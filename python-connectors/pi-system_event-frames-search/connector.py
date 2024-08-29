@@ -59,6 +59,7 @@ class OSIsoftConnector(Connector):
         if self.must_retrieve_metrics:
             self.search_full_hierarchy = config.get("search_full_hierarchy", None)
         self.data_type = config.get("data_type", "Recorded")
+        self.summary_type = config.get("summary_type", None)
         self.max_count = get_max_count(config)
         self.config = config
         self.use_batch_mode, self.batch_size = get_advanced_parameters(config)
@@ -112,6 +113,7 @@ class OSIsoftConnector(Connector):
                                 search_full_hierarchy=self.search_full_hierarchy,
                                 can_raise=False,
                                 batch_size=self.batch_size,
+                                summary_type=self.summary_type,
                                 max_count=self.max_count
                             )
                         for batch_row in batch_rows:
@@ -141,7 +143,7 @@ class OSIsoftConnector(Connector):
                         for event_frame in event_frames:
                             event_frame_id = event_frame.get("WebId")
                             event_frame_metrics = self.client.get_row_from_webid(
-                                event_frame_id, self.data_type,
+                                event_frame_id, self.data_type, summary_type=self.summary_type,
                                 search_full_hierarchy=self.search_full_hierarchy, max_count=self.max_count,
                                 can_raise=False
                             )

@@ -250,10 +250,6 @@ def remove_unwanted_columns(row):
 def format_output(input_row, reference_row=None, is_enumeration_value=False):
     output_row = copy.deepcopy(input_row)
     type_column = None
-    if reference_row:
-        if type_column:
-            reference_row["Type"] = type_column
-        output_row.update(reference_row)
     if "Value" in output_row and isinstance(output_row.get("Value"), dict):
         type_column = output_row.get("Type")
         output_row = output_row.get("Value")
@@ -261,11 +257,14 @@ def format_output(input_row, reference_row=None, is_enumeration_value=False):
         output_row.pop("Questionable", None)
         output_row.pop("Substituted", None)
         output_row.pop("Annotated", None)
-        return output_row
     if is_enumeration_value:
         value = output_row.pop("Value", {})
         output_row["Value"] = value.get("Name", "")
         output_row["Value_ID"] = value.get("Value", None)
+    if reference_row:
+        if type_column:
+            reference_row["Type"] = type_column
+        output_row.update(reference_row)
     return output_row
 
 

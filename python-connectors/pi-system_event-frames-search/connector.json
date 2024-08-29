@@ -89,7 +89,7 @@
         {
             "type": "SEPARATOR",
             "label": " ",
-            "description": "Date / time can either be ISO 8601 or OSIsoft Time String format (see documentation)",
+            "description": "Date / time in yyyy-mm-ddThh:mm:ssZ or <a href='https://docs.aveva.com/bundle/pi-web-api-reference/page/help/topics/time-strings.html'>Pi Time String</a> format",
             "visibilityCondition": "model.database_name.length>0"
         },
         {
