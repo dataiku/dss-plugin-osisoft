@@ -139,7 +139,7 @@
             "columnRole": "input_dataset"
         },
         {
-            "visibilityCondition": "model.use_start_time_column==false && (['InterpolatedData', 'RecordedData', 'PlotData', 'EventFrames'].includes(model.data_type))",
+            "visibilityCondition": "model.use_start_time_column==false && (['InterpolatedData', 'RecordedData', 'PlotData', 'EventFrames', 'SummaryData'].includes(model.data_type))",
             "name": "start_time",
             "label": "Start time",
             "description": "Optional",
@@ -163,7 +163,7 @@
             "columnRole": "input_dataset"
         },
         {
-            "visibilityCondition": "model.use_end_time_column==false && (['InterpolatedData', 'RecordedData', 'PlotData', 'EventFrames'].includes(model.data_type))",
+            "visibilityCondition": "model.use_end_time_column==false && (['InterpolatedData', 'RecordedData', 'PlotData', 'EventFrames', 'SummaryData'].includes(model.data_type))",
             "name": "end_time",
             "label": "End time",
             "description": "Optional",
