@@ -93,7 +93,7 @@ with output_dataset.get_writer() as writer:
             object_id = normalize_af_path(object_id)
             item = client.get_item_from_path(object_id)
         if item:
-            rows = client.recursive_get_row_from_item(
+            rows = client.recursive_get_rows_from_item(
                 item,
                 data_type,
                 start_date=start_time,
@@ -107,7 +107,7 @@ with output_dataset.get_writer() as writer:
                 summary_type=summary_type
             )
         else:
-            rows = client.get_row_from_webid(
+            rows = client.get_rows_from_webid(
                 object_id,
                 data_type,
                 start_date=start_time,

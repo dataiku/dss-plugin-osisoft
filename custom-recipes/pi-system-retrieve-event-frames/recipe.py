@@ -98,7 +98,7 @@ with output_dataset.get_writer() as writer:
         if client.is_resource_path(object_id):
             item = client.get_item_from_path(object_id)
         if item:
-            rows = client.get_row_from_item(
+            rows = client.get_rows_from_item(
                 item,
                 data_type,
                 start_date=start_time,
@@ -115,7 +115,7 @@ with output_dataset.get_writer() as writer:
             buffer.append({"WebId": object_id, "StartTime": event_frame_start_time, "EndTime": event_frame_end_time})
             batch_buffer_size += 1
             if (batch_buffer_size >= batch_size) or (absolute_index == nb_rows_to_process):
-                rows = client.get_row_from_webids(
+                rows = client.get_rows_from_webids(
                     buffer, data_type, max_count,
                     search_full_hierarchy=search_full_hierarchy,
                     can_raise=False,
@@ -127,7 +127,7 @@ with output_dataset.get_writer() as writer:
             else:
                 continue
         else:
-            rows = client.get_row_from_webid(
+            rows = client.get_rows_from_webid(
                 object_id,
                 data_type,
                 start_date=start_time,

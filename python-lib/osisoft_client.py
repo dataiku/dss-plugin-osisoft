@@ -47,19 +47,19 @@ class OSIsoftClient(object):
         else:
             return None
 
-    def recursive_get_row_from_webid(self, webid, data_type, start_date=None, end_date=None,
-                                     interval=None, sync_time=None, boundary_type=None, selected_fields=None,
-                                     can_raise=True, endpoint_type="event_frames", search_full_hierarchy=None,
-                                     max_count=None, summary_type=None):
+    def recursive_get_rows_from_webid(self, webid, data_type, start_date=None, end_date=None,
+                                      interval=None, sync_time=None, boundary_type=None, selected_fields=None,
+                                      can_raise=True, endpoint_type="event_frames", search_full_hierarchy=None,
+                                      max_count=None, summary_type=None):
         # Split the time range until no more HTTP 400
         done = False
         previous_item_timestamp = False
         while not done:
             logger.info("Attempting download webids from {} to {}".format(start_date, end_date))
-            rows = self.get_row_from_webid(webid, data_type, start_date=start_date, end_date=end_date,
-                                           interval=interval, sync_time=sync_time, boundary_type=boundary_type, selected_fields=selected_fields,
-                                           can_raise=can_raise, endpoint_type=endpoint_type, search_full_hierarchy=search_full_hierarchy,
-                                           max_count=max_count, summary_type=summary_type)
+            rows = self.get_rows_from_webid(webid, data_type, start_date=start_date, end_date=end_date,
+                                            interval=interval, sync_time=sync_time, boundary_type=boundary_type, selected_fields=selected_fields,
+                                            can_raise=can_raise, endpoint_type=endpoint_type, search_full_hierarchy=search_full_hierarchy,
+                                            max_count=max_count, summary_type=summary_type)
             counter = 0
             try:
                 row = next(rows)
@@ -77,7 +77,7 @@ class OSIsoftClient(object):
             except Exception as err:
                 if is_parameter_greater_than_max_allowed(err):
                     start_timestamp, end_timestamp, half_time_iso = self.halve_time_range(start_date, end_date)
-                    first_half_rows = self.recursive_get_row_from_webid(
+                    first_half_rows = self.recursive_get_rows_from_webid(
                         webid, data_type, start_date=start_timestamp, end_date=half_time_iso,
                         interval=interval, sync_time=sync_time, boundary_type=boundary_type, selected_fields=selected_fields,
                         can_raise=can_raise, endpoint_type=endpoint_type, search_full_hierarchy=search_full_hierarchy, max_count=max_count
@@ -85,7 +85,7 @@ class OSIsoftClient(object):
                     for row in first_half_rows:
                         yield row
                     logger.info("Successfully retrieved first half ({} to {})".format(start_timestamp, half_time_iso))
-                    second_half_rows = self.recursive_get_row_from_webid(
+                    second_half_rows = self.recursive_get_rows_from_webid(
                         webid, data_type, start_date=half_time_iso, end_date=end_timestamp,
                         interval=interval, sync_time=sync_time, boundary_type=boundary_type, selected_fields=selected_fields,
                         can_raise=can_raise, endpoint_type=endpoint_type, search_full_hierarchy=search_full_hierarchy, max_count=max_count
@@ -106,19 +106,19 @@ class OSIsoftClient(object):
             else:
                 done = True
 
-    def recursive_get_row_from_item(self, item, data_type, start_date=None, end_date=None,
-                                    interval=None, sync_time=None, boundary_type=None,
-                                    can_raise=True, object_id=None, endpoint_type="event_frames", search_full_hierarchy=None,
-                                    max_count=None, summary_type=None):
+    def recursive_get_rows_from_item(self, item, data_type, start_date=None, end_date=None,
+                                     interval=None, sync_time=None, boundary_type=None,
+                                     can_raise=True, object_id=None, endpoint_type="event_frames", search_full_hierarchy=None,
+                                     max_count=None, summary_type=None):
         # item can be an pi tag, a path to an element or event frame
         # Split the time range until no more HTTP 400
         done = False
         previous_item_timestamp = False
         while not done:
             logger.info("Attempting download items from {} to {}".format(start_date, end_date))
-            rows = self.get_row_from_item(item, data_type, start_date=start_date, end_date=end_date, interval=interval,
-                                          sync_time=sync_time, boundary_type=boundary_type, can_raise=True, object_id=object_id,
-                                          search_full_hierarchy=search_full_hierarchy, max_count=max_count, summary_type=summary_type)
+            rows = self.get_rows_from_item(item, data_type, start_date=start_date, end_date=end_date, interval=interval,
+                                           sync_time=sync_time, boundary_type=boundary_type, can_raise=True, object_id=object_id,
+                                           search_full_hierarchy=search_full_hierarchy, max_count=max_count, summary_type=summary_type)
             counter = 0
             try:
                 row = next(rows)
@@ -136,7 +136,7 @@ class OSIsoftClient(object):
             except Exception as err:
                 if is_parameter_greater_than_max_allowed(err):
                     start_timestamp, end_timestamp, half_time_iso = self.halve_time_range(start_date, end_date)
-                    first_half_rows = self.recursive_get_row_from_item(
+                    first_half_rows = self.recursive_get_rows_from_item(
                         item, data_type, start_date=start_timestamp, end_date=half_time_iso,
                         interval=interval, sync_time=sync_time, boundary_type=boundary_type, can_raise=True, object_id=object_id,
                         search_full_hierarchy=search_full_hierarchy, max_count=max_count
@@ -144,7 +144,7 @@ class OSIsoftClient(object):
                     for row in first_half_rows:
                         yield row
                     logger.info("Successfully retrieved first half ({} to {})".format(start_timestamp, half_time_iso))
-                    second_half_rows = self.recursive_get_row_from_item(
+                    second_half_rows = self.recursive_get_rows_from_item(
                         item, data_type, start_date=half_time_iso, end_date=end_timestamp,
                         interval=interval, sync_time=sync_time, boundary_type=boundary_type, can_raise=True, object_id=object_id,
                         search_full_hierarchy=search_full_hierarchy, max_count=max_count
@@ -181,7 +181,8 @@ class OSIsoftClient(object):
         If not, send it to pi-server to evaluate the Pi time expression.
 
         Arguments:
-        pi_time -- String containing an iso8601 datetime or [Pi time string format](https://docs.aveva.com/bundle/pi-web-api-reference/page/help/topics/time-strings.html)
+        pi_time -- String containing an iso8601 datetime or Pi time string format
+                   https://docs.aveva.com/bundle/pi-web-api-reference/page/help/topics/time-strings.html
         to_epoch -- Select the format of the returned datetime (iso8601 / epoch)
         """
 
@@ -214,10 +215,10 @@ class OSIsoftClient(object):
             return iso_to_epoch(iso_timestamp)
         return iso_timestamp
 
-    def get_row_from_webid(self, webid, data_type, start_date=None, end_date=None,
-                           interval=None, sync_time=None, boundary_type=None, selected_fields=None,
-                           can_raise=True, endpoint_type="event_frames", search_full_hierarchy=None,
-                           max_count=None, summary_type=None):
+    def get_rows_from_webid(self, webid, data_type, start_date=None, end_date=None,
+                            interval=None, sync_time=None, boundary_type=None, selected_fields=None,
+                            can_raise=True, endpoint_type="event_frames", search_full_hierarchy=None,
+                            max_count=None, summary_type=None):
 
         url = self.endpoint.get_data_from_webid_url(endpoint_type, data_type, webid)
         has_more = True
@@ -246,7 +247,7 @@ class OSIsoftClient(object):
                 for item in items:
                     yield item
 
-    def get_row_from_webids(self, input_rows, data_type, start_date=None, end_date=None,
+    def get_rows_from_webids(self, input_rows, data_type, start_date=None, end_date=None,
                              interval=None, sync_time=None, boundary_type=None, selected_fields=None, search_full_hierarchy=None,
                              max_count=None, can_raise=True, endpoint_type="event_frames", batch_size=500, summary_type=None):
         batch_requests_parameters = []
@@ -352,9 +353,9 @@ class OSIsoftClient(object):
         )
         return json_response
 
-    def get_row_from_item(self, item, data_type, start_date=None, end_date=None, interval=None,
-                          sync_time=None, boundary_type=None, can_raise=True, object_id=None,
-                          search_full_hierarchy=None, max_count=None, summary_type=None):
+    def get_rows_from_item(self, item, data_type, start_date=None, end_date=None, interval=None,
+                           sync_time=None, boundary_type=None, can_raise=True, object_id=None,
+                           search_full_hierarchy=None, max_count=None, summary_type=None):
         # item can be an pi tag, a path to an element or event frame
         has_more = True
         while has_more:
@@ -402,7 +403,7 @@ class OSIsoftClient(object):
         )
         return json_response
 
-    def get_row_from_url(self, url=None, start_date=None, end_date=None, interval=None, sync_time=None, max_count=None):
+    def get_rows_from_url(self, url=None, start_date=None, end_date=None, interval=None, sync_time=None, max_count=None):
         pagination = OffsetPagination()
         has_more = True
         while has_more:
@@ -419,11 +420,11 @@ class OSIsoftClient(object):
                 else:
                     yield item
 
-    def get_row_from_urls(self, links=None, data_type=None, start_date=None, end_date=None, interval=None, sync_time=None, max_count=None):
+    def get_rows_from_urls(self, links=None, data_type=None, start_date=None, end_date=None, interval=None, sync_time=None, max_count=None):
         links = links or []
         for link in links:
             url = link
-            rows = self.get_row_from_url(url, start_date=start_date, end_date=end_date, interval=interval, sync_time=sync_time, max_count=max_count)
+            rows = self.get_rows_from_url(url, start_date=start_date, end_date=end_date, interval=interval, sync_time=sync_time, max_count=max_count)
             for row in rows:
                 yield row
 

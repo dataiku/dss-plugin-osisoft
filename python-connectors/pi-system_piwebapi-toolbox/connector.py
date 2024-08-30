@@ -46,7 +46,7 @@ class OSIsoftConnector(Connector):  # Search
         limit = RecordsLimit(records_limit)
 
         if self.item:
-            for row in self.client.get_row_from_item(
+            for row in self.client.get_rows_from_item(
                 self.item,
                 self.data_type,
                 start_date=self.start_time,
@@ -60,7 +60,7 @@ class OSIsoftConnector(Connector):  # Search
                     break
                 yield row
         else:
-            for row in self.client.get_row_from_webid(
+            for row in self.client.get_rows_from_webid(
                 self.object_id,
                 self.data_type,
                 start_date=self.start_time,
