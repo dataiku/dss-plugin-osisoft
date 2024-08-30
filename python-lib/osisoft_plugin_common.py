@@ -292,8 +292,6 @@ def is_filtered_out(item, filters=None):
 def is_server_throttling(response):
     if response is None:
         return True
-    if response.status_code == 409 and not response_has_retry_header(response):
-        return True
     if response.status_code in [409, 429, 503]:
         logger.warning("Error {}, headers = {}".format(response.status_code, response.headers))
         seconds_before_retry = decode_retry_after_header(response)
@@ -301,10 +299,6 @@ def is_server_throttling(response):
         time.sleep(seconds_before_retry)
         return True
     return False
-
-
-def response_has_retry_header(response):
-    return "Retry-After" in response.headers
 
 
 def decode_retry_after_header(response):
@@ -415,7 +409,12 @@ def is_iso8601(timestamp):
     # https://stackoverflow.com/questions/41129921/validate-an-iso-8601-datetime-string-in-python
     if not isinstance(timestamp, str):
         return False
-    return match_iso8601(timestamp) is not None
+    try:
+        if match_iso8601(timestamp) is not None:
+            return True
+    except Exception:
+        pass
+    return False
 
 
 def reorder_dataframe(unnested_items_rows, first_elements):
