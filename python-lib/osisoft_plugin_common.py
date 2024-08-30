@@ -292,8 +292,6 @@ def is_filtered_out(item, filters=None):
 def is_server_throttling(response):
     if response is None:
         return True
-    if response.status_code == 409 and not response_has_retry_header(response):
-        return True
     if response.status_code in [409, 429, 503]:
         logger.warning("Error {}, headers = {}".format(response.status_code, response.headers))
         seconds_before_retry = decode_retry_after_header(response)
@@ -301,10 +299,6 @@ def is_server_throttling(response):
         time.sleep(seconds_before_retry)
         return True
     return False
-
-
-def response_has_retry_header(response):
-    return "Retry-After" in response.headers
 
 
 def decode_retry_after_header(response):
