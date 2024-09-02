@@ -7,7 +7,11 @@ from datetime import datetime
 from requests_ntlm import HttpNtlmAuth
 from osisoft_constants import OSIsoftConstants
 from osisoft_endpoints import OSIsoftEndpoints
-from osisoft_plugin_common import assert_server_url_ok, build_requests_params, is_filtered_out, is_server_throttling, escape, epoch_to_iso, iso_to_epoch, RecordsLimit
+from osisoft_plugin_common import (
+    assert_server_url_ok, build_requests_params,
+    is_filtered_out, is_server_throttling, escape, epoch_to_iso,
+    iso_to_epoch, RecordsLimit, is_iso8601
+)
 from osisoft_pagination import OffsetPagination
 from safe_logger import SafeLogger
 
@@ -43,136 +47,161 @@ class OSIsoftClient(object):
         else:
             return None
 
-    def get_all_rows_from_webid(self, webid, data_type, start_date=None, end_date=None,
-                                interval=None, sync_time=None, boundary_type=None, selected_fields=None,
-                                can_raise=True, endpoint_type="event_frames", search_full_hierarchy=None,
-                                max_count=None, summary_type=None):
+    def recursive_get_rows_from_webid(self, webid, data_type, start_date=None, end_date=None,
+                                      interval=None, sync_time=None, boundary_type=None, selected_fields=None,
+                                      can_raise=True, endpoint_type="event_frames", search_full_hierarchy=None,
+                                      max_count=None, summary_type=None):
         # Split the time range until no more HTTP 400
-        not_happy = True
+        done = False
         previous_item_timestamp = False
-        while not_happy:
-            logger.info("Attempting download from {} to {}".format(start_date, end_date))
-            ret = self.get_row_from_webid(webid, data_type, start_date=start_date, end_date=end_date,
-                                          interval=interval, sync_time=sync_time, boundary_type=boundary_type, selected_fields=selected_fields,
-                                          can_raise=can_raise, endpoint_type=endpoint_type, search_full_hierarchy=search_full_hierarchy,
-                                          max_count=max_count, summary_type=summary_type)
-            """
-            ret = self.get_row_from_item(item, data_type, start_date=start_date, end_date=end_date, interval=interval,
-                          sync_time=sync_time, boundary_type=boundary_type, can_raise=can_raise, object_id=None,
-                          search_full_hierarchy=search_full_hierarchy, max_count=max_count):
-            """
+        while not done:
+            logger.info("Attempting download webids from {} to {}".format(start_date, end_date))
+            rows = self.get_rows_from_webid(webid, data_type, start_date=start_date, end_date=end_date,
+                                            interval=interval, sync_time=sync_time, boundary_type=boundary_type, selected_fields=selected_fields,
+                                            can_raise=can_raise, endpoint_type=endpoint_type, search_full_hierarchy=search_full_hierarchy,
+                                            max_count=max_count, summary_type=summary_type)
             counter = 0
             try:
-                first_item = next(ret)
-                if not previous_item_timestamp or previous_item_timestamp != first_item.get("Timestamp"):
-                    logger.info("Yielding first item")
-                    yield first_item
+                row = next(rows)
+                if not previous_item_timestamp or previous_item_timestamp != row.get("Timestamp"):
+                    # When the number of rows returned for a timerange is equal to maxCount,
+                    # we re-send this request, this time between [last time received ; initial end time]
+                    # The first element of this new request is likely to be the last element of the previous requeset
+                    # If that's not the case (not the same timestamp), we keep that row.
+                    logger.info("Keeping first row")
+                    yield row
                 counter += 1
-                for first_item in ret:
-                    yield first_item
+                for row in rows:
+                    yield row
                     counter += 1
             except Exception as err:
-                if "Error 400" in "{}".format(err):
-                    logger.warning("The time range {} -> {} is too large, splitting the job in two".format(start_date, end_date))
-                    start_timestamp = self.parse_pi_time(start_date, to_epoch=True)
-                    end_timestamp = self.parse_pi_time(end_date, to_epoch=True)
-                    new_time_range = (end_timestamp - start_timestamp) / 2
-                    half_time_iso = epoch_to_iso(start_timestamp + new_time_range)
-                    first_half_items = self.get_all_rows_from_webid(
-                        webid, data_type, start_date=epoch_to_iso(start_timestamp), end_date=half_time_iso,
+                if is_parameter_greater_than_max_allowed(err):
+                    start_timestamp, end_timestamp, half_time_iso = self.halve_time_range(start_date, end_date)
+                    first_half_rows = self.recursive_get_rows_from_webid(
+                        webid, data_type, start_date=start_timestamp, end_date=half_time_iso,
                         interval=interval, sync_time=sync_time, boundary_type=boundary_type, selected_fields=selected_fields,
                         can_raise=can_raise, endpoint_type=endpoint_type, search_full_hierarchy=search_full_hierarchy, max_count=max_count
                     )
-                    for item in first_half_items:
-                        yield item
-                    logger.info("Successfuly retrieved first half of {} to {}".format(epoch_to_iso(start_timestamp), half_time_iso))
-                    second_half_items = self.get_all_rows_from_webid(
-                        webid, data_type, start_date=half_time_iso, end_date=epoch_to_iso(end_timestamp),
+                    for row in first_half_rows:
+                        yield row
+                    logger.info("Successfully retrieved first half ({} to {})".format(start_timestamp, half_time_iso))
+                    second_half_rows = self.recursive_get_rows_from_webid(
+                        webid, data_type, start_date=half_time_iso, end_date=end_timestamp,
                         interval=interval, sync_time=sync_time, boundary_type=boundary_type, selected_fields=selected_fields,
                         can_raise=can_raise, endpoint_type=endpoint_type, search_full_hierarchy=search_full_hierarchy, max_count=max_count
                     )
-                    for item in second_half_items:
-                        yield item
-                    logger.info("Successfuly retrieved second half of {} to {}".format(half_time_iso, epoch_to_iso(end_timestamp)))
+                    for row in second_half_rows:
+                        yield row
+                    logger.info("Successfully retrieved second half ({} to {})".format(half_time_iso, end_timestamp))
                 else:
                     logger.error("Error: {}".format(err))
                     raise Exception("Error: {}".format(err))
-            logger.info("Successfuly retrieved time range {} to {}".format(start_date, end_date))
+            logger.info("Successfully retrieved time range {} to {}".format(start_date, end_date))
             if counter == max_count:
                 logger.warning("Number of replies equals maxCount. Shifting startDate and trying one more time.")
-                last_received_timestamp = first_item.get("Timestamp")
+                last_received_timestamp = row.get("Timestamp")
                 logger.info("Last received timestamp is {}".format(last_received_timestamp))
                 start_date = last_received_timestamp
                 previous_item_timestamp = last_received_timestamp
             else:
-                not_happy = False
+                done = True
 
-    def get_all_rows_from_item(self, pi_tag, data_type, start_date=None, end_date=None,
-                               interval=None, sync_time=None, boundary_type=None,
-                               can_raise=True, object_id=None, endpoint_type="event_frames", search_full_hierarchy=None,
-                               max_count=None, summary_type=None):
+    def recursive_get_rows_from_item(self, item, data_type, start_date=None, end_date=None,
+                                     interval=None, sync_time=None, boundary_type=None,
+                                     can_raise=True, object_id=None, endpoint_type="event_frames", search_full_hierarchy=None,
+                                     max_count=None, summary_type=None):
+        # item can be an pi tag, a path to an element or event frame
         # Split the time range until no more HTTP 400
-        not_happy = True
+        done = False
         previous_item_timestamp = False
-        while not_happy:
-            logger.info("Attempting download from {} to {}".format(start_date, end_date))
-            ret = self.get_row_from_item(pi_tag, data_type, start_date=start_date, end_date=end_date, interval=interval,
-                                         sync_time=sync_time, boundary_type=boundary_type, can_raise=True, object_id=object_id,
-                                         search_full_hierarchy=search_full_hierarchy, max_count=max_count, summary_type=summary_type)
+        while not done:
+            logger.info("Attempting download items from {} to {}".format(start_date, end_date))
+            rows = self.get_rows_from_item(item, data_type, start_date=start_date, end_date=end_date, interval=interval,
+                                           sync_time=sync_time, boundary_type=boundary_type, can_raise=True, object_id=object_id,
+                                           search_full_hierarchy=search_full_hierarchy, max_count=max_count, summary_type=summary_type)
             counter = 0
             try:
-                first_item = next(ret)
-                if not previous_item_timestamp or previous_item_timestamp != first_item.get("Timestamp"):
-                    logger.info("Yielding first item")
-                    yield first_item
+                row = next(rows)
+                if not previous_item_timestamp or previous_item_timestamp != row.get("Timestamp"):
+                    # When the number of rows returned for a timerange is equal to maxCount,
+                    # we re-send this request, this time between [last time received ; initial end time]
+                    # The first element of this new request is likely to be the last element of the previous requeset
+                    # If that's not the case (not the same timestamp), we keep that row.
+                    logger.info("Keeping first row")
+                    yield row
                 counter += 1
-                for first_item in ret:
-                    yield first_item
+                for row in rows:
+                    yield row
                     counter += 1
             except Exception as err:
-                if "Error 400" in "{}".format(err):
-                    logger.warning("The time range {} -> {} is too large, splitting the job in two".format(start_date, end_date))
-                    start_timestamp = self.parse_pi_time(start_date, to_epoch=True)
-                    end_timestamp = self.parse_pi_time(end_date, to_epoch=True)
-                    new_time_range = (end_timestamp - start_timestamp) / 2
-                    half_time_iso = epoch_to_iso(start_timestamp + new_time_range)
-                    first_half_items = self.get_all_rows_from_item(
-                        pi_tag, data_type, start_date=epoch_to_iso(start_timestamp), end_date=half_time_iso,
+                if is_parameter_greater_than_max_allowed(err):
+                    start_timestamp, end_timestamp, half_time_iso = self.halve_time_range(start_date, end_date)
+                    first_half_rows = self.recursive_get_rows_from_item(
+                        item, data_type, start_date=start_timestamp, end_date=half_time_iso,
                         interval=interval, sync_time=sync_time, boundary_type=boundary_type, can_raise=True, object_id=object_id,
                         search_full_hierarchy=search_full_hierarchy, max_count=max_count
                     )
-                    for item in first_half_items:
-                        yield item
-                    logger.info("Successfuly retrieved first half of {} to {}".format(epoch_to_iso(start_timestamp), half_time_iso))
-                    second_half_items = self.get_all_rows_from_item(
-                        pi_tag, data_type, start_date=half_time_iso, end_date=epoch_to_iso(end_timestamp),
+                    for row in first_half_rows:
+                        yield row
+                    logger.info("Successfully retrieved first half ({} to {})".format(start_timestamp, half_time_iso))
+                    second_half_rows = self.recursive_get_rows_from_item(
+                        item, data_type, start_date=half_time_iso, end_date=end_timestamp,
                         interval=interval, sync_time=sync_time, boundary_type=boundary_type, can_raise=True, object_id=object_id,
                         search_full_hierarchy=search_full_hierarchy, max_count=max_count
                     )
-                    for item in second_half_items:
-                        yield item
-                    logger.info("Successfuly retrieved second half of {} to {}".format(half_time_iso, epoch_to_iso(end_timestamp)))
+                    for row in second_half_rows:
+                        yield row
+                    logger.info("Successfully retrieved second half ({} to {})".format(half_time_iso, end_timestamp))
                 else:
                     logger.error("Error: {}".format(err))
                     if can_raise:
                         raise Exception("Error: {}".format(err))
+                    # Only wrap and yield unhandled exceptions in the outer call
                     yield {'object_id': "{}".format(object_id), 'Errors': "{}".format(err)}
-            logger.info("Successfuly retrieved time range {} to {}".format(start_date, end_date))
+            logger.info("Successfully retrieved time range {} to {}".format(start_date, end_date))
             if counter == max_count:
                 logger.warning("Number of replies equals maxCount. Shifting startDate and trying one more time.")
-                last_received_timestamp = first_item.get("Timestamp")
+                last_received_timestamp = row.get("Timestamp")
                 logger.info("Last received timestamp is {}".format(last_received_timestamp))
                 start_date = last_received_timestamp
                 previous_item_timestamp = last_received_timestamp
             else:
-                not_happy = False
+                done = True
+
+    def halve_time_range(self, start_date, end_date):
+        logger.warning("The time range {} -> {} is too large, splitting the job in two".format(start_date, end_date))
+        start_timestamp = self.parse_pi_time(start_date, to_epoch=True)
+        end_timestamp = self.parse_pi_time(end_date, to_epoch=True)
+        new_time_range = (end_timestamp - start_timestamp) / 2
+        half_time_iso = epoch_to_iso(start_timestamp + new_time_range)
+        return epoch_to_iso(start_timestamp), epoch_to_iso(end_timestamp), half_time_iso
 
     def parse_pi_time(self, pi_time, to_epoch=False):
+        """" Checks that pi_time is iso8601.
+        If not, send it to pi-server to evaluate the Pi time expression.
+
+        Arguments:
+        pi_time -- String containing an iso8601 datetime or Pi time string format
+                   https://docs.aveva.com/bundle/pi-web-api-reference/page/help/topics/time-strings.html
+        to_epoch -- Select the format of the returned datetime (iso8601 / epoch)
+        """
+
+        logger.info("Parsing '{}' to_epoch={}".format(pi_time, to_epoch))
         if not pi_time:
+            logger.info("No time given")
             return None
-        epoch_timestamp = iso_to_epoch(pi_time)
-        if epoch_timestamp:
-            return epoch_timestamp
+        if is_iso8601(pi_time):
+            logger.info("Time is iso8601")
+            if not to_epoch:
+                return pi_time
+        else:
+            logger.info("Time is not iso8601")
+        if to_epoch:
+            epoch_timestamp = iso_to_epoch(pi_time)
+            logger.info("'{}' converted to epoch '{}'".format(pi_time, epoch_timestamp))
+            if epoch_timestamp:
+                return epoch_timestamp
+        logger.info("Using Pi server to resolve time string format")
         url = self.endpoint.get_calculation_time_url()
         headers = self.get_requests_headers()
         json_response = self.get(url=url, headers=headers, params={
@@ -186,10 +215,10 @@ class OSIsoftClient(object):
             return iso_to_epoch(iso_timestamp)
         return iso_timestamp
 
-    def get_row_from_webid(self, webid, data_type, start_date=None, end_date=None,
-                           interval=None, sync_time=None, boundary_type=None, selected_fields=None,
-                           can_raise=True, endpoint_type="event_frames", search_full_hierarchy=None,
-                           max_count=None, summary_type=None):
+    def get_rows_from_webid(self, webid, data_type, start_date=None, end_date=None,
+                            interval=None, sync_time=None, boundary_type=None, selected_fields=None,
+                            can_raise=True, endpoint_type="event_frames", search_full_hierarchy=None,
+                            max_count=None, summary_type=None):
 
         url = self.endpoint.get_data_from_webid_url(endpoint_type, data_type, webid)
         has_more = True
@@ -324,9 +353,10 @@ class OSIsoftClient(object):
         )
         return json_response
 
-    def get_row_from_item(self, item, data_type, start_date=None, end_date=None, interval=None,
-                          sync_time=None, boundary_type=None, can_raise=True, object_id=None,
-                          search_full_hierarchy=None, max_count=None, summary_type=None):
+    def get_rows_from_item(self, item, data_type, start_date=None, end_date=None, interval=None,
+                           sync_time=None, boundary_type=None, can_raise=True, object_id=None,
+                           search_full_hierarchy=None, max_count=None, summary_type=None):
+        # item can be an pi tag, a path to an element or event frame
         has_more = True
         while has_more:
             json_response, has_more = self.get_paginated(
@@ -373,7 +403,7 @@ class OSIsoftClient(object):
         )
         return json_response
 
-    def get_row_from_url(self, url=None, start_date=None, end_date=None, interval=None, sync_time=None, max_count=None):
+    def get_rows_from_url(self, url=None, start_date=None, end_date=None, interval=None, sync_time=None, max_count=None):
         pagination = OffsetPagination()
         has_more = True
         while has_more:
@@ -390,11 +420,11 @@ class OSIsoftClient(object):
                 else:
                     yield item
 
-    def get_row_from_urls(self, links=None, data_type=None, start_date=None, end_date=None, interval=None, sync_time=None, max_count=None):
+    def get_rows_from_urls(self, links=None, data_type=None, start_date=None, end_date=None, interval=None, sync_time=None, max_count=None):
         links = links or []
         for link in links:
             url = link
-            rows = self.get_row_from_url(url, start_date=start_date, end_date=end_date, interval=interval, sync_time=sync_time, max_count=max_count)
+            rows = self.get_rows_from_url(url, start_date=start_date, end_date=end_date, interval=interval, sync_time=sync_time, max_count=max_count)
             for row in rows:
                 yield row
 
@@ -732,6 +762,7 @@ class OSIsoftClient(object):
             "element_category": "CategoryName:'{}'"
         }
         output_tokens = []
+        kwargs = apply_manual_inputs(kwargs)
         for argument in kwargs:
             value = kwargs.get(argument)
             if value and argument in element_query_keys:
@@ -947,3 +978,29 @@ def unnest(row):
             for key in value_object:
                 row["{}".format(key)] = value_object.get(key)
     return row
+
+
+def apply_manual_inputs(kwargs):
+    new_kwargs = {}
+    for kwarg in kwargs:
+        value = kwargs.get(kwarg)
+        if value == "_DKU_manual_input":
+            new_value = kwargs.get("{}_manual_input".format(kwarg))
+            new_kwargs[kwarg] = new_value
+        elif value == "_DKU_variable_select":
+            import dataiku
+            variable_name = kwargs.get("{}_variable_select".format(kwarg))
+            variables = dataiku.get_custom_variables()
+            if not variable_name:
+                raise Exception("No variable was selected for {}".format(kwarg))
+            if variable_name not in variables:
+                raise Exception("Variable '{}' used in {} does not exists".format(variable_name, kwarg))
+            new_value = "{}".format(variables.get(variable_name))
+            new_kwargs[kwarg] = new_value
+        elif not kwarg.endswith("_manual_input") and not kwarg.endswith("_variable_select"):
+            new_kwargs[kwarg] = kwargs.get(kwarg)
+    return new_kwargs
+
+
+def is_parameter_greater_than_max_allowed(error_message):
+    return "Error 400" in "{}".format(error_message) and "is greater than the maximum allowed" in "{}".format(error_message)

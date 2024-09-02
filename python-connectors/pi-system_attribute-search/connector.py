@@ -103,7 +103,7 @@ class OSIsoftConnector(Connector):  # Browse
                 if OSIsoftConstants.DKU_ERROR_KEY in attribute:
                     yield attribute
                 else:
-                    for row in self.client.get_all_rows_from_webid(
+                    for row in self.client.recursive_get_rows_from_webid(
                         attribute_webid,
                         self.data_type,
                         start_date=self.start_time,
