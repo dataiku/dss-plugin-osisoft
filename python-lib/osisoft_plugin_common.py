@@ -3,9 +3,13 @@ import copy
 import time
 from osisoft_constants import OSIsoftConstants
 from safe_logger import SafeLogger
-from datetime import datetime
+from datetime import datetime, timezone
 import dateutil.parser as date_parser
+import re
 
+
+regex_iso8601 = r'^(-?(?:[1-9][0-9]*)?[0-9]{4})-(1[0-2]|0[1-9])-(3[01]|0[1-9]|[12][0-9])T(2[0-3]|[01][0-9]):([0-5][0-9]):([0-5][0-9])(\.[0-9]+)?(Z|[+-](?:2[0-3]|[01][0-9]):[0-5][0-9])?$'
+match_iso8601 = re.compile(regex_iso8601).match
 
 logger = SafeLogger("pi-system plugin", ["Authorization", "sharepoint_username", "sharepoint_password", "client_secret"])
 
@@ -126,7 +130,8 @@ def build_requests_params(**kwargs):
         "referenced_element_template": "referencedElementTemplate",
         "severity_levels": "severity",
         "max_count": "maxCount",
-        "start_index": "startIndex"
+        "start_index": "startIndex",
+        "summary_type": "summaryType"
     }
     requests_params = build_query_requests_params(
         query_name=kwargs.get("query_name"),
@@ -244,12 +249,25 @@ def remove_unwanted_columns(row):
 
 def format_output(input_row, reference_row=None, is_enumeration_value=False):
     output_row = copy.deepcopy(input_row)
-    if reference_row:
-        output_row.update(reference_row)
+    type_column = None
+    if "Value" in output_row and isinstance(output_row.get("Value"), dict):
+        type_column = output_row.get("Type")
+        output_row = output_row.get("Value")
+        output_row.pop("Good", None)
+        output_row.pop("Questionable", None)
+        output_row.pop("Substituted", None)
+        output_row.pop("Annotated", None)
     if is_enumeration_value:
-        value = output_row.pop("Value", {})
-        output_row["Value"] = value.get("Name", "")
-        output_row["Value_ID"] = value.get("Value", None)
+        value = output_row.pop("Value", None)
+        if isinstance(value, dict):
+            output_row["Value"] = value.get("Name", "")
+            output_row["Value_ID"] = value.get("Value", None)
+        elif value is not None:
+            output_row["Value"] = value
+    if reference_row:
+        if type_column:
+            reference_row["Type"] = type_column
+        output_row.update(reference_row)
     return output_row
 
 
@@ -351,7 +369,7 @@ def get_max_count(config):
     # some data_type requests only returns a maximum of 1k items
     # This can be increased by using maxCount
     DATA_TYPES_REQUIRING_MAXCOUNT = ["InterpolatedData", "PlotData", "RecordedData"]
-    DEFAULT_MAXCOUNT = None  # TODO replace with 0 when we can confirm it is equivalement to max authorized
+    DEFAULT_MAXCOUNT = 1000
     max_count = None
     data_type = config.get("data_type", None)
     if data_type in DATA_TYPES_REQUIRING_MAXCOUNT:
@@ -360,17 +378,46 @@ def get_max_count(config):
 
 
 def epoch_to_iso(epoch):
-    return datetime.utcfromtimestamp(epoch).strftime("%Y-%m-%dT%H:%M:%S.%fZ")
+    logger.info("Converting '{}' epoch to iso".format(epoch))
+    iso_timestamp = datetime.fromtimestamp(epoch, tz=timezone.utc).strftime("%Y-%m-%dT%H:%M:%S.%fZ")
+    logger.info("Iso for '{}' is '{}'".format(epoch, iso_timestamp))
+    return iso_timestamp
 
 
 def iso_to_epoch(iso_timestamp):
+    logger.info("Converting iso timestamp '{}' to epoch".format(iso_timestamp))
+    if is_epoch(iso_timestamp):
+        logger.info("Timestamp is already epoch")
+        return iso_timestamp
     epoch_timestamp = None
     try:
         parsed_timestamp = date_parser.parse(iso_timestamp)
         epoch_timestamp = parsed_timestamp.timestamp()
     except Exception:
+        logger.error("Error when converting iso timestamp '{}' to epoch".format(iso_timestamp))
         return None
+    logger.info("Timestamp is now '{}'".format(epoch_timestamp))
     return epoch_timestamp
+
+
+def is_epoch(timestamp):
+    if timestamp is None:
+        return False
+    if isinstance(timestamp, int) or isinstance(timestamp, float):
+        return True
+    return timestamp.replace(".", "", 1).isdigit()
+
+
+def is_iso8601(timestamp):
+    # https://stackoverflow.com/questions/41129921/validate-an-iso-8601-datetime-string-in-python
+    if not isinstance(timestamp, str):
+        return False
+    try:
+        if match_iso8601(timestamp) is not None:
+            return True
+    except Exception:
+        pass
+    return False
 
 
 def reorder_dataframe(unnested_items_rows, first_elements):

@@ -236,6 +236,20 @@
             "getChoicesFromPython": true
         },
         {
+            "name": "element_template_manual_input",
+            "label": " ",
+            "description": " ",
+            "type": "STRING",
+            "visibilityCondition": "model.element_template == '_DKU_manual_input'"
+        },
+        {
+            "name": "element_template_variable_select",
+            "label": " ",
+            "type": "SELECT",
+            "visibilityCondition": "model.element_template == '_DKU_variable_select'",
+            "getChoicesFromPython": true
+        },
+        {
             "name": "element_type",
             "label": "Type",
             "type": "SELECT",
@@ -325,6 +339,26 @@
                 {"value": "EndValue", "label": "End value"}
             ],
             "defaultValue": "RecordedData"
+        },
+        {
+            "name": "summary_type",
+            "label": "Summary type",
+            "type": "MULTISELECT",
+            "selectChoices":[
+                {"value": "Total", "label": "Total"},
+                {"value": "Average", "label": "Average"},
+                {"value": "Minimum", "label": "Minimum"},
+                {"value": "Maximum", "label": "Maximum"},
+                {"value": "Range", "label": "Range"},
+                {"value": "StdDev", "label": "Standard deviation"},
+                {"value": "PopulationStdDev", "label": "Population standard deviation"},
+                {"value": "Count", "label": "Count"},
+                {"value": "PercentGood", "label": "Percent good"},
+                {"value": "TotalWithUOM", "label": "Total with UOM"},
+                {"value": "All", "label": "All"},
+                {"value": "AllForNonNumeric", "label": "All for non numeric"}
+            ],
+            "visibilityCondition": "((model.must_retrieve_metrics) && (model.data_type == 'SummaryData'))"
         },
         {
             "name": "max_count",

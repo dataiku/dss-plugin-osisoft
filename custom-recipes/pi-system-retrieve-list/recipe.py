@@ -28,6 +28,7 @@ logger.info("Initialization with config config={}".format(logger.filter_secrets(
 auth_type, username, password, server_url, is_ssl_check_disabled = get_credentials(config)
 is_debug_mode = check_debug_mode(config)
 max_count = get_max_count(config)
+summary_type = config.get("summary_type")
 must_convert_object_to_string = check_must_convert_object_to_string(config)
 
 use_server_url_column = config.get("use_server_url_column", False)
@@ -60,12 +61,14 @@ results = []
 time_last_request = None
 client = None
 previous_server_url = ""
+time_not_parsed = True
 with output_dataset.get_writer() as writer:
     first_dataframe = True
     for index, input_parameters_row in input_parameters_dataframe.iterrows():
         server_url = input_parameters_row.get(server_url_column, server_url) if use_server_url_column else server_url
         start_time = input_parameters_row.get(start_time_column, start_time) if use_start_time_column else start_time
         end_time = input_parameters_row.get(end_time_column, end_time) if use_end_time_column else end_time
+        row_name = input_parameters_row.get("Name")
 
         if client is None or previous_server_url != server_url:
             client = OSIsoftClient(
@@ -74,13 +77,23 @@ with output_dataset.get_writer() as writer:
                 is_debug_mode=is_debug_mode, network_timer=network_timer
             )
             previous_server_url = server_url
+            if time_not_parsed:
+                # make sure all OSIsoft time string format are evaluated at the same time
+                # rather than at every request, at least for start / end times set in the UI
+                time_not_parsed = False
+                if not use_start_time_column:
+                    start_time = client.parse_pi_time(start_time)
+                if not use_end_time_column:
+                    end_time = client.parse_pi_time(end_time)
+                sync_time = client.parse_pi_time(sync_time)
+
         object_id = input_parameters_row.get(path_column)
         item = None
         if client.is_resource_path(object_id):
             object_id = normalize_af_path(object_id)
             item = client.get_item_from_path(object_id)
         if item:
-            rows = client.get_all_rows_from_item(
+            rows = client.recursive_get_rows_from_item(
                 item,
                 data_type,
                 start_date=start_time,
@@ -90,10 +103,11 @@ with output_dataset.get_writer() as writer:
                 boundary_type=boundary_type,
                 max_count=max_count,
                 can_raise=False,
-                object_id=object_id
+                object_id=object_id,
+                summary_type=summary_type
             )
         else:
-            rows = client.get_row_from_webid(
+            rows = client.get_rows_from_webid(
                 object_id,
                 data_type,
                 start_date=start_time,
@@ -103,10 +117,13 @@ with output_dataset.get_writer() as writer:
                 boundary_type=boundary_type,
                 max_count=max_count,
                 can_raise=False,
-                endpoint_type="AF"
+                endpoint_type="AF",
+                summary_type=summary_type
             )
         for row in rows:
-            if type(row) == list:
+            row["Name"] = row_name
+            row[path_column] = object_id
+            if isinstance(row, list):
                 for line in row:
                     base = get_base_for_data_type(data_type, object_id)
                     base.update(line)

@@ -45,6 +45,7 @@ use_end_time_column = config.get("use_end_time_column", False)
 end_time_column = config.get("end_time_column")
 server_url_column = config.get("server_url_column")
 search_full_hierarchy = config.get("search_full_hierarchy", None)
+summary_type = config.get("summary_type")
 use_batch_mode, batch_size = get_advanced_parameters(config)
 interval, sync_time, boundary_type = get_interpolated_parameters(config)
 
@@ -60,6 +61,7 @@ input_parameters_dataframe = input_parameters_dataset.get_dataframe()
 time_last_request = None
 client = None
 previous_server_url = ""
+time_not_parsed = True
 with output_dataset.get_writer() as writer:
     first_dataframe = True
     absolute_index = 0
@@ -82,12 +84,21 @@ with output_dataset.get_writer() as writer:
                 network_timer=network_timer
             )
             previous_server_url = server_url
+            if time_not_parsed:
+                # make sure all OSIsoft time string format are evaluated at the same time
+                # rather than at every request, at least for start / end times set in the UI
+                time_not_parsed = False
+                if not use_start_time_column:
+                    start_time = client.parse_pi_time(start_time)
+                if not use_end_time_column:
+                    end_time = client.parse_pi_time(end_time)
+                sync_time = client.parse_pi_time(sync_time)
         object_id = input_parameters_row.get(path_column)
         item = None
         if client.is_resource_path(object_id):
             item = client.get_item_from_path(object_id)
         if item:
-            rows = client.get_row_from_item(
+            rows = client.get_rows_from_item(
                 item,
                 data_type,
                 start_date=start_time,
@@ -97,7 +108,8 @@ with output_dataset.get_writer() as writer:
                 boundary_type=boundary_type,
                 search_full_hierarchy=search_full_hierarchy,
                 can_raise=False,
-                max_count=max_count
+                max_count=max_count,
+                summary_type=summary_type
             )
         elif use_batch_mode:
             buffer.append({"WebId": object_id, "StartTime": event_frame_start_time, "EndTime": event_frame_end_time})
@@ -107,14 +119,15 @@ with output_dataset.get_writer() as writer:
                     buffer, data_type, max_count,
                     search_full_hierarchy=search_full_hierarchy,
                     can_raise=False,
-                    batch_size=batch_size
+                    batch_size=batch_size,
+                    summary_type=summary_type
                 )
                 batch_buffer_size = 0
                 buffer = []
             else:
                 continue
         else:
-            rows = client.get_row_from_webid(
+            rows = client.get_rows_from_webid(
                 object_id,
                 data_type,
                 start_date=start_time,
@@ -124,7 +137,8 @@ with output_dataset.get_writer() as writer:
                 boundary_type=boundary_type,
                 search_full_hierarchy=search_full_hierarchy,
                 max_count=max_count,
-                can_raise=False
+                can_raise=False,
+                summary_type=summary_type
             )
         unnested_items_rows = []
         row_count = 0

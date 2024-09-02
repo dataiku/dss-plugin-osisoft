@@ -71,6 +71,26 @@
             "defaultValue": "RecordedData"
         },
         {
+            "name": "summary_type",
+            "label": "Summary type",
+            "type": "MULTISELECT",
+            "selectChoices":[
+                {"value": "Total", "label": "Total"},
+                {"value": "Average", "label": "Average"},
+                {"value": "Minimum", "label": "Minimum"},
+                {"value": "Maximum", "label": "Maximum"},
+                {"value": "Range", "label": "Range"},
+                {"value": "StdDev", "label": "Standard deviation"},
+                {"value": "PopulationStdDev", "label": "Population standard deviation"},
+                {"value": "Count", "label": "Count"},
+                {"value": "PercentGood", "label": "Percent good"},
+                {"value": "TotalWithUOM", "label": "Total with UOM"},
+                {"value": "All", "label": "All"},
+                {"value": "AllForNonNumeric", "label": "All for non numeric"}
+            ],
+            "visibilityCondition": "model.data_type == 'SummaryData'"
+        },
+        {
             "name": "max_count",
             "label": "Max count",
             "visibilityCondition": "['RecordedData'].includes(model.data_type)",
@@ -81,7 +101,7 @@
         {
             "type": "SEPARATOR",
             "label": " ",
-            "description": "Date / time can either be ISO 8601 or OSIsoft Time String format (see documentation)",
+            "description": "Date / time in yyyy-mm-ddThh:mm:ssZ or <a href='https://docs.aveva.com/bundle/pi-web-api-reference/page/help/topics/time-strings.html'>Pi Time String</a> format",
             "visibilityCondition": "(['InterpolatedData', 'RecordedData', 'PlotData', 'EventFrames'].includes(model.data_type))"
         },
         {

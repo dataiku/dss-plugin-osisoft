@@ -43,7 +43,7 @@ class PiExplorerConnector(Connector):
     def generate_rows(self, dataset_schema=None, dataset_partitioning=None,
                       partition_id=None, records_limit=-1):
         limit = RecordsLimit(records_limit)
-        rows = self.client.get_row_from_url(self.data_server_url)
+        rows = self.client.get_rows_from_url(self.data_server_url)
         for row in rows:
             row.pop("Links")
             yield row
