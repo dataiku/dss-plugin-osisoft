@@ -98,7 +98,7 @@ with output_dataset.get_writer() as writer:
         if client.is_resource_path(object_id):
             item = client.get_item_from_path(object_id)
         if item:
-            rows = client.get_row_from_item(
+            rows = client.get_rows_from_item(
                 item,
                 data_type,
                 start_date=start_time,
@@ -127,7 +127,7 @@ with output_dataset.get_writer() as writer:
             else:
                 continue
         else:
-            rows = client.get_row_from_webid(
+            rows = client.get_rows_from_webid(
                 object_id,
                 data_type,
                 start_date=start_time,

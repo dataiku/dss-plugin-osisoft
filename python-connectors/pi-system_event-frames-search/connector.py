@@ -77,7 +77,7 @@ class OSIsoftConnector(Connector):
         use_batch_mode = self.use_batch_mode and (records_limit == -1 or records_limit >= 500)
         start_time = datetime.datetime.now()
         if self.object_id:
-            for event_frame in self.client.get_row_from_urls(
+            for event_frame in self.client.get_rows_from_urls(
                         self.object_id, self.data_type, start_date=self.start_time,
                         end_date=self.end_time, max_count=self.max_count):
                 self.yields_timer.start()
@@ -142,7 +142,7 @@ class OSIsoftConnector(Connector):
                     else:
                         for event_frame in event_frames:
                             event_frame_id = event_frame.get("WebId")
-                            event_frame_metrics = self.client.get_row_from_webid(
+                            event_frame_metrics = self.client.get_rows_from_webid(
                                 event_frame_id, self.data_type, summary_type=self.summary_type,
                                 search_full_hierarchy=self.search_full_hierarchy, max_count=self.max_count,
                                 can_raise=False

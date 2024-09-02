@@ -258,9 +258,12 @@ def format_output(input_row, reference_row=None, is_enumeration_value=False):
         output_row.pop("Substituted", None)
         output_row.pop("Annotated", None)
     if is_enumeration_value:
-        value = output_row.pop("Value", {})
-        output_row["Value"] = value.get("Name", "")
-        output_row["Value_ID"] = value.get("Value", None)
+        value = output_row.pop("Value", None)
+        if isinstance(value, dict):
+            output_row["Value"] = value.get("Name", "")
+            output_row["Value_ID"] = value.get("Value", None)
+        elif value is not None:
+            output_row["Value"] = value
     if reference_row:
         if type_column:
             reference_row["Type"] = type_column
