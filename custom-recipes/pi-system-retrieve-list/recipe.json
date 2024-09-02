@@ -119,7 +119,7 @@
         },
         {
             "type": "SEPARATOR",
-            "description": "Date / time can either be ISO 8601 or OSIsoft Time String format (see documentation)",
+            "description": "Date / time in yyyy-mm-ddThh:mm:ssZ or <a href='https://docs.aveva.com/bundle/pi-web-api-reference/page/help/topics/time-strings.html'>Pi Time String</a> format",
             "visibilityCondition": "['InterpolatedData', 'RecordedData', 'PlotData', 'EventFrames'].includes(model.data_type)"
         },
         {
@@ -139,7 +139,7 @@
             "columnRole": "input_dataset"
         },
         {
-            "visibilityCondition": "model.use_start_time_column==false && (['InterpolatedData', 'RecordedData', 'PlotData', 'EventFrames'].includes(model.data_type))",
+            "visibilityCondition": "model.use_start_time_column==false && (['InterpolatedData', 'RecordedData', 'PlotData', 'EventFrames', 'SummaryData'].includes(model.data_type))",
             "name": "start_time",
             "label": "Start time",
             "description": "Optional",
@@ -163,7 +163,7 @@
             "columnRole": "input_dataset"
         },
         {
-            "visibilityCondition": "model.use_end_time_column==false && (['InterpolatedData', 'RecordedData', 'PlotData', 'EventFrames'].includes(model.data_type))",
+            "visibilityCondition": "model.use_end_time_column==false && (['InterpolatedData', 'RecordedData', 'PlotData', 'EventFrames', 'SummaryData'].includes(model.data_type))",
             "name": "end_time",
             "label": "End time",
             "description": "Optional",
@@ -198,8 +198,7 @@
             "type": "SELECT",
             "selectChoices":[
                 {"value": "Inside", "label": "Inside"},
-                {"value": "Outside", "label": "Outside"},
-                {"value": "InterpolatedData", "label": "Interpolated"}
+                {"value": "Outside", "label": "Outside"}
             ],
             "defaultValue": "Inside"
         },
@@ -227,9 +226,29 @@
             "defaultValue": "RecordedData"
         },
         {
+            "name": "summary_type",
+            "label": "Summary type",
+            "type": "MULTISELECT",
+            "selectChoices":[
+                {"value": "Total", "label": "Total"},
+                {"value": "Average", "label": "Average"},
+                {"value": "Minimum", "label": "Minimum"},
+                {"value": "Maximum", "label": "Maximum"},
+                {"value": "Range", "label": "Range"},
+                {"value": "StdDev", "label": "Standard deviation"},
+                {"value": "PopulationStdDev", "label": "Population standard deviation"},
+                {"value": "Count", "label": "Count"},
+                {"value": "PercentGood", "label": "Percent good"},
+                {"value": "TotalWithUOM", "label": "Total with UOM"},
+                {"value": "All", "label": "All"},
+                {"value": "AllForNonNumeric", "label": "All for non numeric"}
+            ],
+            "visibilityCondition": "model.data_type == 'SummaryData'"
+        },
+        {
             "name": "max_count",
             "label": "Max count",
-            "visibilityCondition": "['RecordedData'].includes(model.data_type)",
+            "visibilityCondition": "false && ['RecordedData'].includes(model.data_type)",
             "description": "",
             "type": "INT",
             "defaultValue": 1000

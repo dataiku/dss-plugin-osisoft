@@ -1,4 +1,5 @@
 import json
+import dataiku
 from osisoft_client import OSIsoftClient
 from osisoft_plugin_common import get_credentials, build_select_choices, check_debug_mode
 
@@ -70,6 +71,22 @@ def do(payload, config, plugin_config, inputs):
             return build_select_choices()
         next_url = next_links + "/elementtemplates"
         choices.extend(client.get_next_choices(next_url, "Self", use_name_as_link=True, filter={'InstanceType': 'Element'}))
+        choices.append({"label": "✍️ Enter manually", "value": "_DKU_manual_input"})
+        choices.append({"label": "🗄️ Use a variable", "value": "_DKU_variable_select"})
+        return build_select_choices(choices)
+
+    if parameter_name == "element_template_variable_select":
+        choices = []
+        variables = dataiku.get_custom_variables()
+        for variable in variables:
+            choices.append(
+                {
+                    "label": variable,
+                    "value": variable
+                }
+            )
+        if not choices:
+            return build_select_choices("No variable available")
         return build_select_choices(choices)
 
     if parameter_name == "attribute_category":

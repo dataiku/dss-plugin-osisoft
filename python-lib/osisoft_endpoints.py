@@ -69,5 +69,9 @@ class OSIsoftEndpoints():
         )
         return url
 
+    def get_calculation_time_url(self):
+        url = self.get_base_url() + "/calculation/times"
+        return url
+
     def get_batch_endpoint(self):
         return self.get_base_url() + "/batch/"

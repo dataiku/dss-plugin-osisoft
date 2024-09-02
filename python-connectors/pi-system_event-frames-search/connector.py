@@ -40,7 +40,13 @@ class OSIsoftConnector(Connector):
         if self.object_id is None:
             self.object_id = config.get("next_element", None)
         self.start_time = config.get("start_time")
+        self.start_time = self.client.parse_pi_time(self.start_time)
+        if self.start_time:
+            config["start_time"] = self.start_time
         self.end_time = config.get("end_time")
+        self.end_time = self.client.parse_pi_time(self.end_time)
+        if self.end_time:
+            config["end_time"] = self.end_time
         self.search_mode = config.get("search_mode", None)
         self.output_type = config.get("output_type")
         assert_time_format(self.start_time, error_source="start time")
@@ -53,6 +59,7 @@ class OSIsoftConnector(Connector):
         if self.must_retrieve_metrics:
             self.search_full_hierarchy = config.get("search_full_hierarchy", None)
         self.data_type = config.get("data_type", "Recorded")
+        self.summary_type = config.get("summary_type", None)
         self.max_count = get_max_count(config)
         self.config = config
         self.use_batch_mode, self.batch_size = get_advanced_parameters(config)
@@ -70,7 +77,7 @@ class OSIsoftConnector(Connector):
         use_batch_mode = self.use_batch_mode and (records_limit == -1 or records_limit >= 500)
         start_time = datetime.datetime.now()
         if self.object_id:
-            for event_frame in self.client.get_row_from_urls(
+            for event_frame in self.client.get_rows_from_urls(
                         self.object_id, self.data_type, start_date=self.start_time,
                         end_date=self.end_time, max_count=self.max_count):
                 self.yields_timer.start()
@@ -106,6 +113,7 @@ class OSIsoftConnector(Connector):
                                 search_full_hierarchy=self.search_full_hierarchy,
                                 can_raise=False,
                                 batch_size=self.batch_size,
+                                summary_type=self.summary_type,
                                 max_count=self.max_count
                             )
                         for batch_row in batch_rows:
@@ -134,8 +142,8 @@ class OSIsoftConnector(Connector):
                     else:
                         for event_frame in event_frames:
                             event_frame_id = event_frame.get("WebId")
-                            event_frame_metrics = self.client.get_row_from_webid(
-                                event_frame_id, self.data_type,
+                            event_frame_metrics = self.client.get_rows_from_webid(
+                                event_frame_id, self.data_type, summary_type=self.summary_type,
                                 search_full_hierarchy=self.search_full_hierarchy, max_count=self.max_count,
                                 can_raise=False
                             )

@@ -33,10 +33,13 @@ class OSIsoftConnector(Connector):  # Browse
             network_timer=self.network_timer
         )
         self.start_time = config.get("start_time")
+        self.start_time = self.client.parse_pi_time(self.start_time)
         self.end_time = config.get("end_time")
+        self.end_time = self.client.parse_pi_time(self.end_time)
         is_interpolated_data = config.get("data_type", "").endswith("InterpolatedData")
         self.interval = config.get("interval") if is_interpolated_data else None
         self.sync_time = config.get("sync_time") if is_interpolated_data else None
+        self.sync_time = self.client.parse_pi_time(self.sync_time)
         assert_time_format(self.start_time, error_source="start time")
         assert_time_format(self.end_time, error_source="end time")
         self.attribute_name = config.get("attribute_name")  # todo: check if next_element has an url first
@@ -52,6 +55,7 @@ class OSIsoftConnector(Connector):  # Browse
         self.must_filter_child_attributes = not (config.get("must_keep_child_attributes", False))
         self.max_count = get_max_count(config)
         self.config = config
+        self.summary_type = config.get("summary_type")
 
     def extract_database_webid(self, database_endpoint):
         return database_endpoint.split("/")[-1]
@@ -99,7 +103,7 @@ class OSIsoftConnector(Connector):  # Browse
                 if OSIsoftConstants.DKU_ERROR_KEY in attribute:
                     yield attribute
                 else:
-                    for row in self.client.get_row_from_webid(
+                    for row in self.client.recursive_get_rows_from_webid(
                         attribute_webid,
                         self.data_type,
                         start_date=self.start_time,
@@ -107,8 +111,9 @@ class OSIsoftConnector(Connector):  # Browse
                         interval=self.interval,
                         sync_time=self.sync_time,
                         endpoint_type="AF",
-                        selected_fields="Links%3BItems.Timestamp%3BItems.Value",
-                        max_count=self.max_count
+                        selected_fields="Links%3BItems.Timestamp%3BItems.Value%3BItems.Type",
+                        max_count=self.max_count,
+                        summary_type=self.summary_type
                         # boundary_type=self.boundary_type
                     ):
                         if limit.is_reached():

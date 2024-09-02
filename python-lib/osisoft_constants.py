@@ -304,7 +304,7 @@ class OSIsoftConstants(object):
         {"name": "IsHidden", "type": "boolean"},
         {"name": "IsManualDataEntry", "type": "boolean"},
         {"name": "HasChildren", "type": "boolean"},
-        {"name": "CategoryNames", "type": "string"}, 
+        {"name": "CategoryNames", "type": "string"},
         {"name": "Step", "type": "boolean"},
         {"name": "TraitName", "type": "string"},
         {"name": "Span", "type": "float"},
@@ -403,7 +403,7 @@ class OSIsoftConstants(object):
         "Security": "{base_url}/eventframes/{webid}/security",
         "SecurityEntries": "{base_url}/eventframes/{webid}/securityentries"
     }
-    PLUGIN_VERSION = "1.2.1"
+    PLUGIN_VERSION = "1.2.2"
     VALUE_COLUMN_SUFFIX = "_val"
     WEB_API_PATH = "piwebapi"
     WRITE_HEADERS = {'X-Requested-With': 'XmlHttpRequest'}

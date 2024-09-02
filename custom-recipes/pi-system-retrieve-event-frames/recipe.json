@@ -208,8 +208,7 @@
             "type": "SELECT",
             "selectChoices":[
                 {"value": "Inside", "label": "Inside"},
-                {"value": "Outside", "label": "Outside"},
-                {"value": "InterpolatedData", "label": "Interpolated"}
+                {"value": "Outside", "label": "Outside"}
             ],
             "defaultValue": "Inside"
         },
@@ -229,6 +228,26 @@
                 {"value": "EndValue", "label": "EndValue"}
             ],
             "defaultValue": "SummaryData"
+        },
+        {
+            "name": "summary_type",
+            "label": "Summary type",
+            "type": "MULTISELECT",
+            "selectChoices":[
+                {"value": "Total", "label": "Total"},
+                {"value": "Average", "label": "Average"},
+                {"value": "Minimum", "label": "Minimum"},
+                {"value": "Maximum", "label": "Maximum"},
+                {"value": "Range", "label": "Range"},
+                {"value": "StdDev", "label": "Standard deviation"},
+                {"value": "PopulationStdDev", "label": "Population standard deviation"},
+                {"value": "Count", "label": "Count"},
+                {"value": "PercentGood", "label": "Percent good"},
+                {"value": "TotalWithUOM", "label": "Total with UOM"},
+                {"value": "All", "label": "All"},
+                {"value": "AllForNonNumeric", "label": "All for non numeric"}
+            ],
+            "visibilityCondition": "model.data_type == 'SummaryData'"
         },
         {
             "name": "max_count",
