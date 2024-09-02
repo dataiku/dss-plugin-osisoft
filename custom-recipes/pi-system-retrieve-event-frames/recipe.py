@@ -61,6 +61,7 @@ input_parameters_dataframe = input_parameters_dataset.get_dataframe()
 time_last_request = None
 client = None
 previous_server_url = ""
+time_not_parsed = True
 with output_dataset.get_writer() as writer:
     first_dataframe = True
     absolute_index = 0
@@ -83,12 +84,21 @@ with output_dataset.get_writer() as writer:
                 network_timer=network_timer
             )
             previous_server_url = server_url
+            if time_not_parsed:
+                # make sure all OSIsoft time string format are evaluated at the same time
+                # rather than at every request, at least for start / end times set in the UI
+                time_not_parsed = False
+                if not use_start_time_column:
+                    start_time = client.parse_pi_time(start_time)
+                if not use_end_time_column:
+                    end_time = client.parse_pi_time(end_time)
+                sync_time = client.parse_pi_time(sync_time)
         object_id = input_parameters_row.get(path_column)
         item = None
         if client.is_resource_path(object_id):
             item = client.get_item_from_path(object_id)
         if item:
-            rows = client.get_row_from_item(
+            rows = client.get_rows_from_item(
                 item,
                 data_type,
                 start_date=start_time,
@@ -117,7 +127,7 @@ with output_dataset.get_writer() as writer:
             else:
                 continue
         else:
-            rows = client.get_row_from_webid(
+            rows = client.get_rows_from_webid(
                 object_id,
                 data_type,
                 start_date=start_time,
