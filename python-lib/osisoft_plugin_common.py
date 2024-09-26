@@ -100,6 +100,16 @@ def get_interpolated_parameters(config):
     return interval, sync_time, boundary_type
 
 
+def get_summary_parameters(config):
+    data_type = config.get("data_type")
+    summary_type = None
+    summary_duration = None
+    if data_type == "SummaryData":
+        summary_type = config.get("summary_type")
+        summary_duration = config.get("summary_duration")
+    return summary_type, summary_duration
+
+
 def build_select_choices(choices=None):
     if not choices:
         return {"choices": []}
@@ -131,7 +141,8 @@ def build_requests_params(**kwargs):
         "severity_levels": "severity",
         "max_count": "maxCount",
         "start_index": "startIndex",
-        "summary_type": "summaryType"
+        "summary_type": "summaryType",
+        "summary_duration": "summaryDuration"
     }
     requests_params = build_query_requests_params(
         query_name=kwargs.get("query_name"),
