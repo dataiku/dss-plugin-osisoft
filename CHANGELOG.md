@@ -1,5 +1,9 @@
 # Changelog
 
+## [Version 1.2.3](https://github.com/dataiku/dss-plugin-pi-server/releases/tag/v1.2.3) - Feature release - 2024-09-26
+
+- Add summaryDuration selector (duration of each summary interval)
+
 ## [Version 1.2.2](https://github.com/dataiku/dss-plugin-pi-server/releases/tag/v1.2.2) - Feature release - 2023-12-11
 
 - Time range pagination - no more `maxCount` and / or `maxReturnedItemsPerCall` limitation
