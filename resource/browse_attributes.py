@@ -2,6 +2,7 @@ import json
 import dataiku
 from osisoft_client import OSIsoftClient
 from osisoft_plugin_common import get_credentials, build_select_choices, check_debug_mode
+from osisoft_domain_handling import DomainHandler
 
 
 def do(payload, config, plugin_config, inputs):
@@ -11,6 +12,7 @@ def do(payload, config, plugin_config, inputs):
         return {"choices": [{"label": "Requires DSS v10.0.4 or above. Please use the OSIsoft Search custom dataset instead"}]}
     elif config.get("credentials") == {}:
         return {"choices": [{"label": "Pick a credential"}]}
+    domain_handler = DomainHandler(config)
 
     auth_type, username, password, server_url, is_ssl_check_disabled, credential_error = get_credentials(config, can_raise=False)
 
@@ -37,14 +39,20 @@ def do(payload, config, plugin_config, inputs):
 
     if parameter_name == "server_name":
         choices = []
-        choices.extend(client.get_asset_servers(can_raise=False))
+        choices.extend(
+            domain_handler.ui_side_url(client.get_asset_servers(can_raise=False))
+        )
         return build_select_choices(choices)
 
     if parameter_name == "database_name":
         choices = []
         next_url = config.get("server_name")
         if next_url:
-            choices.extend(client.get_next_choices(next_url, "Self"))
+            choices.extend(
+                domain_handler.ui_side_url(
+                    client.get_next_choices(domain_handler.client_side_url(next_url), "Self")
+                )
+            )
             return build_select_choices(choices)
         else:
             return build_select_choices()
@@ -58,7 +66,9 @@ def do(payload, config, plugin_config, inputs):
         if not next_links:
             return build_select_choices()
         next_url = next_links + "/elementcategories"
-        choices.extend(client.get_next_choices(next_url, "Self", use_name_as_link=True))
+        choices.extend(
+            client.get_next_choices(domain_handler.client_side_url(next_url), "Self", use_name_as_link=True)
+        )
         return build_select_choices(choices)
 
     if parameter_name == "element_template":
@@ -70,7 +80,7 @@ def do(payload, config, plugin_config, inputs):
         if not next_links:
             return build_select_choices()
         next_url = next_links + "/elementtemplates"
-        choices.extend(client.get_next_choices(next_url, "Self", use_name_as_link=True, filter={'InstanceType': 'Element'}))
+        choices.extend(client.get_next_choices(domain_handler.client_side_url(next_url), "Self", use_name_as_link=True, filter={'InstanceType': 'Element'}))
         choices.append({"label": "✍️ Enter manually", "value": "_DKU_manual_input"})
         choices.append({"label": "🗄️ Use a variable", "value": "_DKU_variable_select"})
         return build_select_choices(choices)
@@ -98,14 +108,16 @@ def do(payload, config, plugin_config, inputs):
         if not next_links:
             return build_select_choices()
         next_url = next_links + "/attributecategories"
-        choices.extend(client.get_next_choices(next_url, "Self", use_name_as_link=True))
+        next_url = domain_handler.ui_side_url(next_url)
+        choices.extend(client.get_next_choices(domain_handler.client_side_url(next_url), "Self", use_name_as_link=True))
         return build_select_choices(choices)
 
     if parameter_name == "element_1":
         choices = []
         next_url = config.get("database_name", None)
+        next_url = domain_handler.client_side_url(next_url)
         if next_url:
-            choices.extend(client.get_next_choices_as_json(next_url+"/elements", "Elements"))
+            choices.extend(domain_handler.ui_side_url(client.get_next_choices_as_json(next_url+"/elements", "Elements")))
             return build_select_choices(choices)
         else:
             return build_select_choices()
@@ -116,8 +128,9 @@ def do(payload, config, plugin_config, inputs):
             json_string = config.get("element_{}".format(element_number - 1), "{}")
             json_choice = json.loads(json_string)
             next_url = json_choice.get("url")
+            next_url = domain_handler.client_side_url(next_url)
             if next_url:
-                choices.extend(client.get_next_choices_as_json(next_url, "Elements"))
+                choices.extend(domain_handler.ui_side_url(client.get_next_choices_as_json(next_url, "Elements")))
                 return build_select_choices(choices)
             else:
                 return build_select_choices()
@@ -128,10 +141,14 @@ def do(payload, config, plugin_config, inputs):
         json_string = json_string or "{}"
         json_choice = json.loads(json_string)
         next_url = json_choice.get("url")
+        next_url = domain_handler.client_side_url(next_url)
         if next_url:
-            choices.extend(client.get_next_choices(
-                next_url.replace("/elements", "/attributes").replace("/{}/attributes".format(client.endpoint.get_web_api_path()), "/{}/elements".format(client.endpoint.get_web_api_path())),
-                "Self")
+            choices.extend(
+                domain_handler.ui_site_url(
+                    client.get_next_choices(
+                        next_url.replace("/elements", "/attributes").replace("/{}/attributes".format(client.endpoint.get_web_api_path()), "/{}/elements".format(client.endpoint.get_web_api_path())),
+                        "Self")
+                    )
             )
             return build_select_choices(choices)
         else:
@@ -143,10 +160,15 @@ def do(payload, config, plugin_config, inputs):
         json_string = json_string or "{}"
         json_choice = json.loads(json_string)
         next_url = json_choice.get("url")
+        next_url = domain_handler.client_side_url(next_url)
         if next_url:
-            choices.extend(client.get_next_choices(
-                next_url.replace("/elements", "/eventframes").replace("/{}/eventframes".format(client.endpoint.get_web_api_path()), "/{}/elements".format(client.endpoint.get_web_api_path())),
-                "Self")
+            choices.extend(
+                domain_handler.ui_site_url(
+                    client.get_next_choices(
+                        next_url.replace("/elements", "/eventframes").replace("/{}/eventframes".format(client.endpoint.get_web_api_path()), "/{}/elements".format(client.endpoint.get_web_api_path())),
+                        "Self"
+                    )
+                )
             )
             return build_select_choices(choices)
         else:

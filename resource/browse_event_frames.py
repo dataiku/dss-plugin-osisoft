@@ -1,5 +1,6 @@
 from osisoft_client import OSIsoftClient
 from osisoft_plugin_common import get_credentials, build_select_choices, build_requests_params
+from osisoft_domain_handling import DomainHandler
 
 
 def do(payload, config, plugin_config, inputs):
@@ -9,6 +10,7 @@ def do(payload, config, plugin_config, inputs):
         return build_select_choices("Requires DSS v10.0.4 or above. Please use the OSIsoft Search custom dataset instead")
     elif config.get("credentials") == {}:
         return build_select_choices("Pick a credential")
+    domain_handler = DomainHandler(config)
 
     auth_type, username, password, server_url, is_ssl_check_disabled, credential_error = get_credentials(config, can_raise=False)
 
@@ -32,14 +34,19 @@ def do(payload, config, plugin_config, inputs):
 
     if parameter_name == "server_name":
         choices = []
-        choices.extend(client.get_asset_servers())
+        choices.extend(domain_handler.ui_side_url(client.get_asset_servers()))
         return build_select_choices(choices)
 
     if parameter_name == "database_name":
         choices = []
         next_url = config.get("server_name")
+        next_url = domain_handler.client_side_url(next_url)
         if next_url:
-            choices.extend(client.get_next_choices(next_url, "Self"))
+            choices.extend(
+                domain_handler.ui_side_url(
+                    client.get_next_choices(next_url, "Self")
+                )
+            )
             return build_select_choices(choices)
         else:
             return build_select_choices()
@@ -53,7 +60,12 @@ def do(payload, config, plugin_config, inputs):
         if not next_links:
             return build_select_choices()
         next_url = next_links + "/elementcategories"
-        choices.extend(client.get_next_choices(next_url, "Self", use_name_as_link=True))
+        next_url = domain_handler.client_side_url(next_url)
+        choices.extend(
+            domain_handler.ui_side_url(
+                client.get_next_choices(next_url, "Self", use_name_as_link=True)
+            )
+        )
         return build_select_choices(choices)
 
     if parameter_name == "template_name":
@@ -65,7 +77,10 @@ def do(payload, config, plugin_config, inputs):
         if not next_links:
             return build_select_choices()
         next_url = next_links + "/elementtemplates"
-        next_choices = client.get_next_choices(next_url, "Self", use_name_as_link=True, filter={'InstanceType': 'EventFrame'})
+        next_url = domain_handler.client_side_url(next_url)
+        next_choices = domain_handler.ui_side_url(
+            client.get_next_choices(next_url, "Self", use_name_as_link=True, filter={'InstanceType': 'EventFrame'})
+        )
         choices.extend(next_choices)
         return build_select_choices(choices)
 
@@ -75,13 +90,18 @@ def do(payload, config, plugin_config, inputs):
         if not next_links:
             return build_select_choices(choices)
         next_url = next_links + "/eventframes"
+        next_url = domain_handler.client_side_url(next_url)
         params = build_requests_params(
             **config
         )
         endpoint_name = "Self"
         if config.get("must_retrieve_metrics"):
             endpoint_name = config.get("data_type", "Self")
-        choices.extend(client.get_next_choices(next_url, endpoint_name, params=params))
+        choices.extend(
+            domain_handler.ui_side_url(
+                client.get_next_choices(next_url, endpoint_name, params=params)
+            )
+        )
         return build_select_choices(choices)
 
     return build_select_choices()
