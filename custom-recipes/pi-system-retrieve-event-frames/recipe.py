@@ -159,7 +159,7 @@ with output_dataset.get_writer() as writer:
                 item_row = {} if use_batch_mode else {"event_frame_webid": event_frame_webid}
                 value = item.get("Value", {})
                 if isinstance(value, dict):
-                    item.pop("Value")
+                    item.pop("Value", None)
                     item_row.update(value)
                 item_row.update(base_row)
                 item_row.update(item)
@@ -168,7 +168,7 @@ with output_dataset.get_writer() as writer:
                 item_row = {} if use_batch_mode else {"event_frame_webid": event_frame_webid}
                 value = base_row.get("Value", {})
                 if isinstance(value, dict):
-                    base_row.pop("Value")
+                    base_row.pop("Value", None)
                     base_row.update(value)
                 item_row.update(base_row)
                 unnested_items_rows.append(item_row)

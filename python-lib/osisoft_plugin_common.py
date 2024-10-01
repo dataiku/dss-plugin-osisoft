@@ -162,7 +162,7 @@ def build_requests_params(**kwargs):
     if search_mode and (kwargs.get("start_time") or kwargs.get("end_time")):
         requests_params.update({"searchMode": "{}".format(search_mode)})
     if search_mode in OSIsoftConstants.SEARCHMODES_ENDTIME_INCOMPATIBLE:
-        requests_params.pop("endtime")
+        requests_params.pop("endtime", None)
     resource_path = kwargs.get("resource_path")
     if resource_path:
         requests_params.update({"path": escape(resource_path)})

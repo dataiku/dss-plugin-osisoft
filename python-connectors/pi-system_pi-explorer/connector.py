@@ -45,7 +45,7 @@ class PiExplorerConnector(Connector):
         limit = RecordsLimit(records_limit)
         rows = self.client.get_rows_from_url(self.data_server_url)
         for row in rows:
-            row.pop("Links")
+            row.pop("Links", None)
             yield row
             if limit.is_reached():
                 return
