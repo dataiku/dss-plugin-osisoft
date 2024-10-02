@@ -385,6 +385,8 @@ def get_max_count(config):
     data_type = config.get("data_type", None)
     if data_type in DATA_TYPES_REQUIRING_MAXCOUNT:
         max_count = config.get("max_count", DEFAULT_MAXCOUNT)
+    if isinstance(max_count, float):
+        max_count = int(max_count)
     return max_count
 
 
