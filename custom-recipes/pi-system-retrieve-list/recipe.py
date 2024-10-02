@@ -7,7 +7,7 @@ from osisoft_plugin_common import (
     get_credentials, get_interpolated_parameters, normalize_af_path,
     get_combined_description, get_base_for_data_type, check_debug_mode,
     PerformanceTimer, get_max_count, check_must_convert_object_to_string,
-    convert_schema_objects_to_string
+    convert_schema_objects_to_string, get_summary_parameters
 )
 from osisoft_client import OSIsoftClient
 from osisoft_constants import OSIsoftConstants
@@ -48,6 +48,7 @@ use_end_time_column = config.get("use_end_time_column", False)
 end_time_column = config.get("end_time_column")
 server_url_column = config.get("server_url_column")
 interval, sync_time, boundary_type = get_interpolated_parameters(config)
+summary_type, summary_duration = get_summary_parameters(config)
 
 network_timer = PerformanceTimer()
 processing_timer = PerformanceTimer()
@@ -104,7 +105,8 @@ with output_dataset.get_writer() as writer:
                 max_count=max_count,
                 can_raise=False,
                 object_id=object_id,
-                summary_type=summary_type
+                summary_type=summary_type,
+                summary_duration=summary_duration
             )
         else:
             rows = client.get_rows_from_webid(
@@ -118,7 +120,8 @@ with output_dataset.get_writer() as writer:
                 max_count=max_count,
                 can_raise=False,
                 endpoint_type="AF",
-                summary_type=summary_type
+                summary_type=summary_type,
+                summary_duration=summary_duration
             )
         for row in rows:
             row["Name"] = row_name

@@ -6,7 +6,7 @@ from safe_logger import SafeLogger
 from osisoft_plugin_common import (
     PISystemConnectorError, RecordsLimit, get_credentials, assert_time_format,
     remove_unwanted_columns, format_output, filter_columns_from_schema, is_child_attribute_path,
-    check_debug_mode, PerformanceTimer, get_max_count
+    check_debug_mode, PerformanceTimer, get_max_count, get_summary_parameters
 )
 from osisoft_constants import OSIsoftConstants
 
@@ -55,7 +55,7 @@ class OSIsoftConnector(Connector):  # Browse
         self.must_filter_child_attributes = not (config.get("must_keep_child_attributes", False))
         self.max_count = get_max_count(config)
         self.config = config
-        self.summary_type = config.get("summary_type")
+        self.summary_type, self.summary_duration = get_summary_parameters(config)
 
     def extract_database_webid(self, database_endpoint):
         return database_endpoint.split("/")[-1]
@@ -113,7 +113,8 @@ class OSIsoftConnector(Connector):  # Browse
                         endpoint_type="AF",
                         selected_fields="Links%3BItems.Timestamp%3BItems.Value%3BItems.Type",
                         max_count=self.max_count,
-                        summary_type=self.summary_type
+                        summary_type=self.summary_type,
+                        summary_duration=self.summary_duration
                         # boundary_type=self.boundary_type
                     ):
                         if limit.is_reached():

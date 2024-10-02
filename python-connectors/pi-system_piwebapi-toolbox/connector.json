@@ -121,6 +121,14 @@
             "visibilityCondition": "(['InterpolatedData', 'RecordedData', 'PlotData', 'EventFrames'].includes(model.data_type))"
         },
         {
+            "name": "summary_duration",
+            "label": "Summary duration",
+            "visibilityCondition": "((model.must_retrieve_metrics) && (model.data_type == 'SummaryData'))",
+            "description": "Optional",
+            "type": "STRING",
+            "defaultValue": ""
+        },
+        {
             "type": "SEPARATOR",
             "description": "Interpolation",
             "visibilityCondition": "(model.data_type.toLowerCase().endsWith('interpolateddata'))"

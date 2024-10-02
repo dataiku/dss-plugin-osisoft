@@ -7,7 +7,7 @@ from safe_logger import SafeLogger
 from osisoft_plugin_common import (
     PISystemConnectorError, RecordsLimit, get_credentials,
     build_requests_params, assert_time_format, get_advanced_parameters, check_debug_mode,
-    PerformanceTimer, get_max_count
+    PerformanceTimer, get_max_count, get_summary_parameters
 )
 
 
@@ -59,10 +59,10 @@ class OSIsoftConnector(Connector):
         if self.must_retrieve_metrics:
             self.search_full_hierarchy = config.get("search_full_hierarchy", None)
         self.data_type = config.get("data_type", "Recorded")
-        self.summary_type = config.get("summary_type", None)
         self.max_count = get_max_count(config)
         self.config = config
         self.use_batch_mode, self.batch_size = get_advanced_parameters(config)
+        self.summary_type, self.summary_duration = get_summary_parameters(config)
 
     def get_read_schema(self):
         return {
@@ -114,6 +114,7 @@ class OSIsoftConnector(Connector):
                                 can_raise=False,
                                 batch_size=self.batch_size,
                                 summary_type=self.summary_type,
+                                summary_duration=self.summary_duration,
                                 max_count=self.max_count
                             )
                         for batch_row in batch_rows:
@@ -143,7 +144,7 @@ class OSIsoftConnector(Connector):
                         for event_frame in event_frames:
                             event_frame_id = event_frame.get("WebId")
                             event_frame_metrics = self.client.get_rows_from_webid(
-                                event_frame_id, self.data_type, summary_type=self.summary_type,
+                                event_frame_id, self.data_type, summary_type=self.summary_type, summary_duration=self.summary_duration,
                                 search_full_hierarchy=self.search_full_hierarchy, max_count=self.max_count,
                                 can_raise=False
                             )

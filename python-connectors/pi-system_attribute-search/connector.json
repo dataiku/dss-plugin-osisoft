@@ -318,6 +318,14 @@
             "defaultValue": ""
         },
         {
+            "name": "summary_duration",
+            "label": "Summary duration",
+            "visibilityCondition": "((model.must_retrieve_metrics) && (model.data_type == 'SummaryData'))",
+            "description": "Optional",
+            "type": "STRING",
+            "defaultValue": ""
+        },
+        {
             "name": "sync_time",
             "label": "Sync time",
             "visibilityCondition": "((model.must_retrieve_metrics) && (model.data_type.toLowerCase().endsWith('interpolateddata')))",

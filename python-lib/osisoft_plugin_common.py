@@ -100,6 +100,16 @@ def get_interpolated_parameters(config):
     return interval, sync_time, boundary_type
 
 
+def get_summary_parameters(config):
+    data_type = config.get("data_type")
+    summary_type = None
+    summary_duration = None
+    if data_type == "SummaryData":
+        summary_type = config.get("summary_type")
+        summary_duration = config.get("summary_duration")
+    return summary_type, summary_duration
+
+
 def build_select_choices(choices=None):
     if not choices:
         return {"choices": []}
@@ -131,7 +141,8 @@ def build_requests_params(**kwargs):
         "severity_levels": "severity",
         "max_count": "maxCount",
         "start_index": "startIndex",
-        "summary_type": "summaryType"
+        "summary_type": "summaryType",
+        "summary_duration": "summaryDuration"
     }
     requests_params = build_query_requests_params(
         query_name=kwargs.get("query_name"),
@@ -151,7 +162,7 @@ def build_requests_params(**kwargs):
     if search_mode and (kwargs.get("start_time") or kwargs.get("end_time")):
         requests_params.update({"searchMode": "{}".format(search_mode)})
     if search_mode in OSIsoftConstants.SEARCHMODES_ENDTIME_INCOMPATIBLE:
-        requests_params.pop("endtime")
+        requests_params.pop("endtime", None)
     resource_path = kwargs.get("resource_path")
     if resource_path:
         requests_params.update({"path": escape(resource_path)})
@@ -374,6 +385,8 @@ def get_max_count(config):
     data_type = config.get("data_type", None)
     if data_type in DATA_TYPES_REQUIRING_MAXCOUNT:
         max_count = config.get("max_count", DEFAULT_MAXCOUNT)
+    if isinstance(max_count, float):
+        max_count = int(max_count)
     return max_count
 
 
