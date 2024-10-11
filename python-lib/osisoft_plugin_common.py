@@ -443,6 +443,14 @@ def reorder_dataframe(unnested_items_rows, first_elements):
     return unnested_items_rows
 
 
+def fields_selector(data_type):
+    # specifies the fields to be returned for each data type
+    if data_type in ["Value", "EndValue"]:
+        return "Links%3BTimestamp%3BValue%3BType%3BUnitsAbbreviation"
+    else:
+        return "Links%3BItems.Timestamp%3BItems.Value%3BItems.Type"
+
+
 class RecordsLimit():
     def __init__(self, records_limit=-1):
         self.has_no_limit = (records_limit == -1)
