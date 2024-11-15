@@ -91,6 +91,14 @@
             "visibilityCondition": "model.data_type == 'SummaryData'"
         },
         {
+            "name": "summary_duration",
+            "label": "Summary duration",
+            "visibilityCondition": "model.data_type === 'SummaryData'",
+            "description": "Optional",
+            "type": "STRING",
+            "defaultValue": ""
+        },
+        {
             "name": "max_count",
             "label": "Max count",
             "visibilityCondition": "['RecordedData'].includes(model.data_type)",
@@ -119,14 +127,6 @@
             "type": "STRING",
             "defaultValue": "",
             "visibilityCondition": "(['InterpolatedData', 'RecordedData', 'PlotData', 'EventFrames'].includes(model.data_type))"
-        },
-        {
-            "name": "summary_duration",
-            "label": "Summary duration",
-            "visibilityCondition": "model.data_type === 'SummaryData'",
-            "description": "Optional",
-            "type": "STRING",
-            "defaultValue": ""
         },
         {
             "type": "SEPARATOR",

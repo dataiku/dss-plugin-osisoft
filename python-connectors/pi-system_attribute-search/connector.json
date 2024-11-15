@@ -318,14 +318,6 @@
             "defaultValue": ""
         },
         {
-            "name": "summary_duration",
-            "label": "Summary duration",
-            "visibilityCondition": "((model.must_retrieve_metrics) && (model.data_type == 'SummaryData'))",
-            "description": "Optional",
-            "type": "STRING",
-            "defaultValue": ""
-        },
-        {
             "name": "sync_time",
             "label": "Sync time",
             "visibilityCondition": "((model.must_retrieve_metrics) && (model.data_type.toLowerCase().endsWith('interpolateddata')))",
@@ -367,6 +359,14 @@
                 {"value": "AllForNonNumeric", "label": "All for non numeric"}
             ],
             "visibilityCondition": "((model.must_retrieve_metrics) && (model.data_type == 'SummaryData'))"
+        },
+        {
+            "name": "summary_duration",
+            "label": "Summary duration",
+            "visibilityCondition": "((model.must_retrieve_metrics) && (model.data_type == 'SummaryData'))",
+            "description": "Optional",
+            "type": "STRING",
+            "defaultValue": ""
         },
         {
             "name": "max_count",

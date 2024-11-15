@@ -129,14 +129,6 @@
             "defaultValue": ""
         },
         {
-            "name": "summary_duration",
-            "label": "Summary duration",
-            "visibilityCondition": "((model.must_retrieve_metrics) && (model.data_type == 'SummaryData'))",
-            "description": "Optional",
-            "type": "STRING",
-            "defaultValue": ""
-        },
-        {
             "name": "name_filter",
             "label": "Name",
             "visibilityCondition": "model.database_name.length>0",
@@ -227,6 +219,14 @@
                 {"value": "AllForNonNumeric", "label": "All for non numeric"}
             ],
             "visibilityCondition": "((model.must_retrieve_metrics) && (model.database_name.length>=0) && (model.data_type == 'SummaryData'))"
+        },
+        {
+            "name": "summary_duration",
+            "label": "Summary duration",
+            "visibilityCondition": "((model.must_retrieve_metrics) && (model.data_type == 'SummaryData'))",
+            "description": "Optional",
+            "type": "STRING",
+            "defaultValue": ""
         },
         {
             "name": "max_count",

@@ -192,14 +192,6 @@
             "defaultValue": ""
         },
         {
-            "name": "summary_duration",
-            "label": "Summary duration",
-            "visibilityCondition": "model.data_type == 'SummaryData'",
-            "description": "Optional",
-            "type": "STRING",
-            "defaultValue": ""
-        },
-        {
             "name": "boundary_type",
             "label": "Boundary type",
             "visibilityCondition": "['InterpolatedData'].includes(model.data_type)",
@@ -252,6 +244,14 @@
                 {"value": "AllForNonNumeric", "label": "All for non numeric"}
             ],
             "visibilityCondition": "model.data_type == 'SummaryData'"
+        },
+        {
+            "name": "summary_duration",
+            "label": "Summary duration",
+            "visibilityCondition": "model.data_type == 'SummaryData'",
+            "description": "Optional",
+            "type": "STRING",
+            "defaultValue": ""
         },
         {
             "name": "max_count",
