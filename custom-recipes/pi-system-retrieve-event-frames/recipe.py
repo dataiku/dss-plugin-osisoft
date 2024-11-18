@@ -6,7 +6,8 @@ import pandas as pd
 from safe_logger import SafeLogger
 from osisoft_plugin_common import (
     get_credentials, get_interpolated_parameters,
-    get_advanced_parameters, check_debug_mode, PerformanceTimer, get_max_count, reorder_dataframe
+    get_advanced_parameters, check_debug_mode, PerformanceTimer,
+    get_max_count, reorder_dataframe, get_summary_parameters
 )
 from osisoft_constants import OSIsoftConstants
 from osisoft_client import OSIsoftClient
@@ -45,9 +46,9 @@ use_end_time_column = config.get("use_end_time_column", False)
 end_time_column = config.get("end_time_column")
 server_url_column = config.get("server_url_column")
 search_full_hierarchy = config.get("search_full_hierarchy", None)
-summary_type = config.get("summary_type")
 use_batch_mode, batch_size = get_advanced_parameters(config)
 interval, sync_time, boundary_type = get_interpolated_parameters(config)
+summary_type, summary_duration = get_summary_parameters(config)
 
 network_timer = PerformanceTimer()
 processing_timer = PerformanceTimer()
@@ -109,7 +110,8 @@ with output_dataset.get_writer() as writer:
                 search_full_hierarchy=search_full_hierarchy,
                 can_raise=False,
                 max_count=max_count,
-                summary_type=summary_type
+                summary_type=summary_type,
+                summary_duration=summary_duration
             )
         elif use_batch_mode:
             buffer.append({"WebId": object_id, "StartTime": event_frame_start_time, "EndTime": event_frame_end_time})
@@ -120,7 +122,8 @@ with output_dataset.get_writer() as writer:
                     search_full_hierarchy=search_full_hierarchy,
                     can_raise=False,
                     batch_size=batch_size,
-                    summary_type=summary_type
+                    summary_type=summary_type,
+                    summary_duration=summary_duration
                 )
                 batch_buffer_size = 0
                 buffer = []
@@ -138,7 +141,8 @@ with output_dataset.get_writer() as writer:
                 search_full_hierarchy=search_full_hierarchy,
                 max_count=max_count,
                 can_raise=False,
-                summary_type=summary_type
+                summary_type=summary_type,
+                summary_duration=summary_duration
             )
         unnested_items_rows = []
         row_count = 0
@@ -155,7 +159,7 @@ with output_dataset.get_writer() as writer:
                 item_row = {} if use_batch_mode else {"event_frame_webid": event_frame_webid}
                 value = item.get("Value", {})
                 if isinstance(value, dict):
-                    item.pop("Value")
+                    item.pop("Value", None)
                     item_row.update(value)
                 item_row.update(base_row)
                 item_row.update(item)
@@ -164,7 +168,7 @@ with output_dataset.get_writer() as writer:
                 item_row = {} if use_batch_mode else {"event_frame_webid": event_frame_webid}
                 value = base_row.get("Value", {})
                 if isinstance(value, dict):
-                    base_row.pop("Value")
+                    base_row.pop("Value", None)
                     base_row.update(value)
                 item_row.update(base_row)
                 unnested_items_rows.append(item_row)

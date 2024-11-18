@@ -221,6 +221,14 @@
             "visibilityCondition": "((model.must_retrieve_metrics) && (model.database_name.length>=0) && (model.data_type == 'SummaryData'))"
         },
         {
+            "name": "summary_duration",
+            "label": "Summary duration",
+            "visibilityCondition": "((model.must_retrieve_metrics) && (model.data_type == 'SummaryData'))",
+            "description": "Optional",
+            "type": "STRING",
+            "defaultValue": ""
+        },
+        {
             "name": "max_count",
             "label": "Max count",
             "visibilityCondition": "model.must_retrieve_metrics && ['RecordedData'].includes(model.data_type)",
