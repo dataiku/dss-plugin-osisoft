@@ -443,6 +443,25 @@ def reorder_dataframe(unnested_items_rows, first_elements):
     return unnested_items_rows
 
 
+def fields_selector(data_type):
+    # specifies the fields to be returned for each data type
+    if data_type in ["Value", "EndValue"]:
+        return "Links%3BTimestamp%3BValue%3BType%3BUnitsAbbreviation"
+    else:
+        return "Links%3BItems.Timestamp%3BItems.Value%3BItems.Type"
+
+
+def get_next_page_url(json):
+    if not json:
+        return None
+    next_page_url = json.get("Links", {}).get("Next", "").replace('&amp;', '&')
+    if next_page_url:
+        logger.info("Next page's url is {}".format(next_page_url))
+    else:
+        logger.info("No more pages available")
+    return next_page_url
+
+
 class RecordsLimit():
     def __init__(self, records_limit=-1):
         self.has_no_limit = (records_limit == -1)

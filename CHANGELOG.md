@@ -2,8 +2,10 @@
 
 ## [Version 1.2.3](https://github.com/dataiku/dss-plugin-pi-server/releases/tag/v1.2.3) - Feature release - 2024-09-26
 
-- Add summaryDuration selector (duration of each summary interval)
+- Add summaryDuration input (duration of each summary interval)
 - Fix issue when using `Starting After` search option in browse PI event frames
+- Fix issue with `Value` and `End value` data types in Search attributes dataset
+- Add pagination on element retrieval
 
 ## [Version 1.2.2](https://github.com/dataiku/dss-plugin-pi-server/releases/tag/v1.2.2) - Feature release - 2023-12-11
 

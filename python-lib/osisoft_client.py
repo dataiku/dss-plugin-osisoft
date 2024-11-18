@@ -10,7 +10,7 @@ from osisoft_endpoints import OSIsoftEndpoints
 from osisoft_plugin_common import (
     assert_server_url_ok, build_requests_params,
     is_filtered_out, is_server_throttling, escape, epoch_to_iso,
-    iso_to_epoch, RecordsLimit, is_iso8601
+    iso_to_epoch, RecordsLimit, is_iso8601, get_next_page_url
 )
 from osisoft_pagination import OffsetPagination
 from safe_logger import SafeLogger
@@ -763,9 +763,15 @@ class OSIsoftClient(object):
         json_response = self.get(url=search_attributes_base_url, headers=headers, params=params)
         if OSIsoftConstants.DKU_ERROR_KEY in json_response:
             yield json_response
-        items = json_response.get(OSIsoftConstants.API_ITEM_KEY, [])
-        for item in items:
-            yield item
+        while json_response:
+            next_page_url = get_next_page_url(json_response)
+            items = json_response.get(OSIsoftConstants.API_ITEM_KEY, [])
+            for item in items:
+                yield item
+            if next_page_url:
+                json_response = self.get(url=next_page_url, headers={}, params={})
+            else:
+                json_response = None
 
     def build_element_query(self, **kwargs):
         element_query_keys = {
