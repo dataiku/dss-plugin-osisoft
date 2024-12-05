@@ -132,7 +132,7 @@ def build_requests_params(**kwargs):
         "end_time": "endtime",
         "interval": "interval",
         "sync_time": "syncTime",
-        "sync_time_boundary_type": "syncTimeBoundaryType",
+        "boundary_type": "boundaryType",
         "name_filter": "nameFilter",
         "category_name": "categoryName",
         "template_name": "templateName",

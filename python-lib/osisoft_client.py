@@ -404,7 +404,7 @@ class OSIsoftClient(object):
         headers = self.get_requests_headers()
         params = build_requests_params(
             start_time=start_date, end_time=end_date, interval=interval,
-            sync_time=sync_time, sync_time_boundary_type=boundary_type, search_full_hierarchy=search_full_hierarchy,
+            sync_time=sync_time, boundary_type=boundary_type, search_full_hierarchy=search_full_hierarchy,
             max_count=max_count, summary_type=summary_type, summary_duration=summary_duration
         )
         json_response = self.get(
@@ -637,7 +637,7 @@ class OSIsoftClient(object):
         if sync_time:
             params.update({"syncTime": sync_time})
         if boundary_type:
-            params.update({"syncTimeBoundaryType": boundary_type})
+            params.update({"boundaryType": boundary_type})
         if selected_fields:
             params.update({"selectedFields": selected_fields})
         if search_full_hierarchy:

@@ -48,6 +48,7 @@ use_end_time_column = config.get("use_end_time_column", False)
 end_time_column = config.get("end_time_column")
 server_url_column = config.get("server_url_column")
 interval, sync_time, boundary_type = get_interpolated_parameters(config)
+boundary_type = config.get("boundary_type") if boundary_type is None else boundary_type
 summary_type, summary_duration = get_summary_parameters(config)
 
 network_timer = PerformanceTimer()
