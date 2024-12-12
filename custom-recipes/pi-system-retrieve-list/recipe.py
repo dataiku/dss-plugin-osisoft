@@ -48,6 +48,7 @@ use_end_time_column = config.get("use_end_time_column", False)
 end_time_column = config.get("end_time_column")
 server_url_column = config.get("server_url_column")
 interval, sync_time, boundary_type = get_interpolated_parameters(config)
+record_boundary_type = config.get("boundary_type") if data_type == "RecordedData" else None
 summary_type, summary_duration = get_summary_parameters(config)
 
 network_timer = PerformanceTimer()
@@ -102,6 +103,7 @@ with output_dataset.get_writer() as writer:
                 interval=interval,
                 sync_time=sync_time,
                 boundary_type=boundary_type,
+                record_boundary_type=record_boundary_type,
                 max_count=max_count,
                 can_raise=False,
                 object_id=object_id,
@@ -117,6 +119,7 @@ with output_dataset.get_writer() as writer:
                 interval=interval,
                 sync_time=sync_time,
                 boundary_type=boundary_type,
+                record_boundary_type=record_boundary_type,
                 max_count=max_count,
                 can_raise=False,
                 endpoint_type="AF",

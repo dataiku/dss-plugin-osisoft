@@ -133,6 +133,7 @@ def build_requests_params(**kwargs):
         "interval": "interval",
         "sync_time": "syncTime",
         "sync_time_boundary_type": "syncTimeBoundaryType",
+        "record_boundary_type": "boundaryType",
         "name_filter": "nameFilter",
         "category_name": "categoryName",
         "template_name": "templateName",
@@ -482,7 +483,7 @@ class PerformanceTimer():
         - adds up all start / stop intervals
         - count the number of intervals
         - compute the average event time
-        - provides a lists of the NUMBER_OF_SLOWEST_EVENTS_KEPT longest events by event id, for instance url    
+        - provides a lists of the NUMBER_OF_SLOWEST_EVENTS_KEPT longest events by event id, for instance url
     """
     NUMBER_OF_SLOWEST_EVENTS_KEPT = 5
 

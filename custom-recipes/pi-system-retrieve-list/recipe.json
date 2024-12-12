@@ -194,7 +194,7 @@
         {
             "name": "boundary_type",
             "label": "Boundary type",
-            "visibilityCondition": "['InterpolatedData'].includes(model.data_type)",
+            "visibilityCondition": "['InterpolatedData','RecordedData'].includes(model.data_type)",
             "type": "SELECT",
             "selectChoices":[
                 {"value": "Inside", "label": "Inside"},
