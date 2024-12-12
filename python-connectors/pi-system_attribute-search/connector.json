@@ -361,6 +361,17 @@
             "visibilityCondition": "((model.must_retrieve_metrics) && (model.data_type == 'SummaryData'))"
         },
         {
+            "name": "boundary_type",
+            "label": "Boundary type",
+            "visibilityCondition": "((model.must_retrieve_metrics) && ['InterpolatedData','RecordedData'].includes(model.data_type))",
+            "type": "SELECT",
+            "selectChoices":[
+                {"value": "Inside", "label": "Inside"},
+                {"value": "Outside", "label": "Outside"}
+            ],
+            "defaultValue": "Inside"
+        },
+        {
             "name": "summary_duration",
             "label": "Summary duration",
             "visibilityCondition": "((model.must_retrieve_metrics) && (model.data_type == 'SummaryData'))",
