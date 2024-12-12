@@ -1,5 +1,10 @@
 # Changelog
 
+## [Version 1.2.4](https://github.com/dataiku/dss-plugin-pi-server/releases/tag/v1.2.4) - Feature release - 2024-12-12
+
+- Add boundary type selector to recorded data type
+- Add boundary type selector to attribute search connector
+
 ## [Version 1.2.3](https://github.com/dataiku/dss-plugin-pi-server/releases/tag/v1.2.3) - Feature release - 2024-09-26
 
 - Add summaryDuration input (duration of each summary interval)
