@@ -1,6 +1,6 @@
 {
     "id": "pi-system",
-    "version": "1.2.3",
+    "version": "1.2.4",
     "meta": {
         "label": "PI System",
         "description": "Retrieve data from your OSIsoft PI System servers",
