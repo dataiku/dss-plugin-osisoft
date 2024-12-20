@@ -11,6 +11,7 @@ from osisoft_plugin_common import (
 )
 from osisoft_client import OSIsoftClient
 from osisoft_constants import OSIsoftConstants
+from io_utils import get_dataset_schema
 
 
 logger = SafeLogger("pi-system plugin", forbiden_keys=["token", "password"])
@@ -50,7 +51,8 @@ server_url_column = config.get("server_url_column")
 interval, sync_time, boundary_type = get_interpolated_parameters(config)
 record_boundary_type = config.get("boundary_type") if data_type == "RecordedData" else None
 summary_type, summary_duration = get_summary_parameters(config)
-
+context_columns = config.get("context_columns")
+logger.info("context_columns={}".format(context_columns))
 network_timer = PerformanceTimer()
 processing_timer = PerformanceTimer()
 processing_timer.start()
@@ -58,6 +60,7 @@ processing_timer.start()
 input_parameters_dataset = dataiku.Dataset(input_dataset[0])
 output_dataset = dataiku.Dataset(output_names_stats[0])
 input_parameters_dataframe = input_parameters_dataset.get_dataframe()
+input_context_schema = get_dataset_schema(input_parameters_dataset, list_columns=context_columns)
 
 results = []
 time_last_request = None
@@ -129,6 +132,9 @@ with output_dataset.get_writer() as writer:
         for row in rows:
             row["Name"] = row_name
             row[path_column] = object_id
+            #add context datas
+            for context_column in context_columns:
+                row[context_column] = input_parameters_row.get(context_column)
             if isinstance(row, list):
                 for line in row:
                     base = get_base_for_data_type(data_type, object_id)
@@ -144,6 +150,14 @@ with output_dataset.get_writer() as writer:
         unnested_items_rows = pd.DataFrame(results)
         if first_dataframe:
             default_columns = OSIsoftConstants.RECIPE_SCHEMA_PER_DATA_TYPE.get(data_type)
+            #add context columns
+            logger.info("default_columns={}".format(default_columns))
+            logger.info("input_context_schema={}".format(input_context_schema))
+            if input_context_schema:
+                default_columns_name = [x['name'] for x in default_columns]
+                input_context_columns_to_add = [col for col in input_context_schema if col["name"] not in default_columns_name]  # remove duplicates if column already in default_columns
+                default_columns.extend(input_context_columns_to_add)
+            logger.info("default_columns  after merge={}".format(default_columns))
             if must_convert_object_to_string:
                 default_columns = convert_schema_objects_to_string(default_columns)
             combined_columns_description = get_combined_description(default_columns, unnested_items_rows)
