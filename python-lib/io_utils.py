@@ -18,3 +18,11 @@ def get_input_output():
     output_dataset_name = get_output_names_for_role('output_dataset')[0]
     output_dataset = dataiku.Dataset(output_dataset_name)
     return (input_dataset, output_dataset)
+
+
+def get_dataset_schema(dataset, list_columns=[]):
+    schema = dataset.read_schema()
+    if list_columns:
+        schema = [col for col in schema if col['name'] in list_columns]
+    return schema
+

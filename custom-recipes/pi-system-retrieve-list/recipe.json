@@ -260,6 +260,16 @@
             "description": "",
             "type": "INT",
             "defaultValue": 1000
+        },
+        {
+            "type": "SEPARATOR",
+            "description": "Context datas"
+        },
+        {
+            "name": "context_columns",
+            "label": "Context columns",
+            "type": "COLUMNS",
+            "columnRole": "input_dataset"
         }
     ],
     "resourceKeys": []
