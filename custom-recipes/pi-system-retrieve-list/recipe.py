@@ -50,6 +50,7 @@ server_url_column = config.get("server_url_column")
 interval, sync_time, boundary_type = get_interpolated_parameters(config)
 record_boundary_type = config.get("boundary_type") if data_type == "RecordedData" else None
 summary_type, summary_duration = get_summary_parameters(config)
+do_duplicate_input_row = config.get("do_duplicate_input_row", False)
 
 network_timer = PerformanceTimer()
 processing_timer = PerformanceTimer()
@@ -64,6 +65,9 @@ time_last_request = None
 client = None
 previous_server_url = ""
 time_not_parsed = True
+
+input_columns = list(input_parameters_dataframe.columns) if do_duplicate_input_row else []
+
 with output_dataset.get_writer() as writer:
     first_dataframe = True
     for index, input_parameters_row in input_parameters_dataframe.iterrows():
@@ -71,6 +75,9 @@ with output_dataset.get_writer() as writer:
         start_time = input_parameters_row.get(start_time_column, start_time) if use_start_time_column else start_time
         end_time = input_parameters_row.get(end_time_column, end_time) if use_end_time_column else end_time
         row_name = input_parameters_row.get("Name")
+        duplicate_initial_row = {}
+        for input_column in input_columns:
+            duplicate_initial_row[input_column] = input_parameters_row.get(input_column)
 
         if client is None or previous_server_url != server_url:
             client = OSIsoftClient(
@@ -137,6 +144,8 @@ with output_dataset.get_writer() as writer:
                     results.extend(extention)
             else:
                 base = get_base_for_data_type(data_type, object_id)
+                if duplicate_initial_row:
+                    base.update(duplicate_initial_row)
                 base.update(row)
                 extention = client.unnest_row(base)
                 results.extend(extention)

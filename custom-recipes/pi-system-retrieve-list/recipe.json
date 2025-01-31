@@ -113,6 +113,12 @@
             "columnRole": "input_dataset"
         },
         {
+            "name": "do_duplicate_input_row",
+            "label": " ",
+            "description": " Copy input parameters in the output dataset",
+            "type": "BOOLEAN"
+        },
+        {
             "type": "SEPARATOR",
             "description": "Time",
             "visibilityCondition": "['InterpolatedData', 'RecordedData', 'PlotData', 'EventFrames'].includes(model.data_type)"
