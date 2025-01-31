@@ -4,6 +4,7 @@
 
 - Add boundary type selector to recorded data type
 - Add boundary type selector to attribute search connector
+- *Assets values downloader* Add option to copy each input row into output dataset
 
 ## [Version 1.2.3](https://github.com/dataiku/dss-plugin-pi-server/releases/tag/v1.2.3) - Feature release - 2024-09-26
 
