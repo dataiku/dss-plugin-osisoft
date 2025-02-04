@@ -449,7 +449,7 @@ def fields_selector(data_type):
     if data_type in ["Value", "EndValue"]:
         return "Links%3BTimestamp%3BValue%3BType%3BUnitsAbbreviation"
     else:
-        return "Links%3BItems.Timestamp%3BItems.Value%3BItems.Type"
+        return "Links%3BItems.Timestamp%3BItems.Value%3BItems.Type%3BItems.Value.Value"
 
 
 def get_next_page_url(json):
