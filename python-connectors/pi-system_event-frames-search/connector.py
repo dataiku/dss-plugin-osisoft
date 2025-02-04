@@ -7,7 +7,7 @@ from safe_logger import SafeLogger
 from osisoft_plugin_common import (
     PISystemConnectorError, RecordsLimit, get_credentials,
     build_requests_params, assert_time_format, get_advanced_parameters, check_debug_mode,
-    PerformanceTimer, get_max_count, get_summary_parameters
+    PerformanceTimer, get_max_count, get_summary_parameters, get_interpolated_parameters
 )
 
 
@@ -47,6 +47,7 @@ class OSIsoftConnector(Connector):
         self.end_time = self.client.parse_pi_time(self.end_time)
         if self.end_time:
             config["end_time"] = self.end_time
+        self.interval, self.sync_time, self.boundary_type = get_interpolated_parameters(config)
         self.search_mode = config.get("search_mode", None)
         self.output_type = config.get("output_type")
         assert_time_format(self.start_time, error_source="start time")
@@ -79,7 +80,7 @@ class OSIsoftConnector(Connector):
         if self.object_id:
             for event_frame in self.client.get_rows_from_urls(
                         self.object_id, self.data_type, start_date=self.start_time,
-                        end_date=self.end_time, max_count=self.max_count):
+                        end_date=self.end_time, interval=self.interval, sync_time=self.sync_time, max_count=self.max_count):
                 self.yields_timer.start()
                 yield event_frame
                 self.yields_timer.stop()
@@ -115,6 +116,9 @@ class OSIsoftConnector(Connector):
                                 batch_size=self.batch_size,
                                 summary_type=self.summary_type,
                                 summary_duration=self.summary_duration,
+                                boundary_type=self.boundary_type,
+                                interval=self.interval,
+                                sync_time=self.sync_time,
                                 max_count=self.max_count
                             )
                         for batch_row in batch_rows:
@@ -145,6 +149,7 @@ class OSIsoftConnector(Connector):
                             event_frame_id = event_frame.get("WebId")
                             event_frame_metrics = self.client.get_rows_from_webid(
                                 event_frame_id, self.data_type, summary_type=self.summary_type, summary_duration=self.summary_duration,
+                                interval=self.interval, sync_time=self.sync_time, boundary_type=self.boundary_type,
                                 search_full_hierarchy=self.search_full_hierarchy, max_count=self.max_count,
                                 can_raise=False
                             )
