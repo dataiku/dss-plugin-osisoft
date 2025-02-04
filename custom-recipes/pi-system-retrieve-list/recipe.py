@@ -90,10 +90,8 @@ with output_dataset.get_writer() as writer:
                 # make sure all OSIsoft time string format are evaluated at the same time
                 # rather than at every request, at least for start / end times set in the UI
                 time_not_parsed = False
-                if not use_start_time_column:
-                    start_time = client.parse_pi_time(start_time)
-                if not use_end_time_column:
-                    end_time = client.parse_pi_time(end_time)
+                start_time = client.parse_pi_time(start_time)
+                end_time = client.parse_pi_time(end_time)
                 sync_time = client.parse_pi_time(sync_time)
 
         object_id = input_parameters_row.get(path_column)

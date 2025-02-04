@@ -131,8 +131,8 @@
         {
             "name": "use_start_time_column",
             "label": "Use start time value per row",
-            "description": "Description here",
-            "visibilityCondition": "false && (['InterpolatedData', 'RecordedData', 'PlotData', 'EventFrames'].includes(model.data_type))",
+            "description": "",
+            "visibilityCondition": "['InterpolatedData', 'RecordedData', 'PlotData', 'EventFrames'].includes(model.data_type)",
             "type": "BOOLEAN",
             "defaultValue": false
         },
@@ -140,7 +140,7 @@
             "visibilityCondition": "model.use_start_time_column==true && (['InterpolatedData', 'RecordedData', 'PlotData', 'EventFrames'].includes(model.data_type))",
             "name": "start_time_column",
             "label": "Start times' column",
-            "description": "Optional",
+            "description": "Column type must be string",
             "type": "COLUMN",
             "columnRole": "input_dataset"
         },
@@ -154,9 +154,9 @@
         },
         {
             "name": "use_end_time_column",
-            "label": "Use start time value per row",
+            "label": "Use end time value per row",
             "description": "",
-            "visibilityCondition": "false && (['InterpolatedData', 'RecordedData', 'PlotData', 'EventFrames'].includes(model.data_type))",
+            "visibilityCondition": "['InterpolatedData', 'RecordedData', 'PlotData', 'EventFrames'].includes(model.data_type)",
             "type": "BOOLEAN",
             "defaultValue": false
         },
@@ -164,7 +164,7 @@
             "visibilityCondition": "model.use_end_time_column==true && (['InterpolatedData', 'RecordedData', 'PlotData', 'EventFrames'].includes(model.data_type))",
             "name": "end_time_column",
             "label": "End times' column",
-            "description": "Optional",
+            "description": "Column type must be string",
             "type": "COLUMN",
             "columnRole": "input_dataset"
         },
