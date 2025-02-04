@@ -7,6 +7,7 @@
 - *Assets values downloader* Add option to copy each input row into output dataset
 - Fix issue with recorded data type
 - *Assets values downloader* Time range pagination when using webids
+- *Assets values downloader* Time can be selected from a column of the input dataset
 
 ## [Version 1.2.3](https://github.com/dataiku/dss-plugin-pi-server/releases/tag/v1.2.3) - Feature release - 2024-09-26
 
