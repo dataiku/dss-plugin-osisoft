@@ -118,7 +118,7 @@ with output_dataset.get_writer() as writer:
                 summary_duration=summary_duration
             )
         else:
-            rows = client.get_rows_from_webid(
+            rows = client.recursive_get_rows_from_webid(
                 object_id,
                 data_type,
                 start_date=start_time,
