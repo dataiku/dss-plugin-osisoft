@@ -1,6 +1,6 @@
 # Changelog
 
-## [Version 1.2.4](https://github.com/dataiku/dss-plugin-pi-server/releases/tag/v1.2.4) - Feature  and bug release - 2024-12-12
+## [Version 1.2.4](https://github.com/dataiku/dss-plugin-pi-server/releases/tag/v1.2.4) - Feature  and bug release - 2025-02-18
 
 - Add boundary type selector to recorded data type
 - Add boundary type selector to attribute search connector
