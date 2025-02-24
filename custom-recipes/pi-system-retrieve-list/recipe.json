@@ -114,8 +114,8 @@
         },
         {
             "name": "do_duplicate_input_row",
-            "label": " ",
-            "description": " Copy input parameters in the output dataset",
+            "label": "Copy other input columns",
+            "description": "Copy other input columns to the output dataset",
             "type": "BOOLEAN"
         },
         {
