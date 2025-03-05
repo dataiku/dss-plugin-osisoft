@@ -130,10 +130,13 @@ def build_requests_params(**kwargs):
     requests_params_options = {
         "start_time": "starttime",
         "end_time": "endtime",
+        "start_date": "starttime",
+        "end_date": "endtime",
         "interval": "interval",
         "sync_time": "syncTime",
         "sync_time_boundary_type": "syncTimeBoundaryType",
         "record_boundary_type": "boundaryType",
+        "boundary_type": "syncTimeBoundaryType",
         "name_filter": "nameFilter",
         "category_name": "categoryName",
         "template_name": "templateName",
@@ -143,7 +146,8 @@ def build_requests_params(**kwargs):
         "max_count": "maxCount",
         "start_index": "startIndex",
         "summary_type": "summaryType",
-        "summary_duration": "summaryDuration"
+        "summary_duration": "summaryDuration",
+        "selected_fields": "selectedFields",
     }
     requests_params = build_query_requests_params(
         query_name=kwargs.get("query_name"),
@@ -164,6 +168,9 @@ def build_requests_params(**kwargs):
         requests_params.update({"searchMode": "{}".format(search_mode)})
     if search_mode in OSIsoftConstants.SEARCHMODES_ENDTIME_INCOMPATIBLE:
         requests_params.pop("endtime", None)
+    search_full_hierarchy = kwargs.get("search_full_hierarchy")
+    if search_full_hierarchy:
+        requests_params.update({"searchFullHierarchy": True})
     resource_path = kwargs.get("resource_path")
     if resource_path:
         requests_params.update({"path": escape(resource_path)})
@@ -461,6 +468,12 @@ def get_next_page_url(json):
     else:
         logger.info("No more pages available")
     return next_page_url
+
+
+def change_key_in_dict(input_dictionary, key_to_change, new_key_name):
+    if key_to_change in input_dictionary:
+        input_dictionary[new_key_name] = input_dictionary.pop(key_to_change)
+    return input_dictionary
 
 
 class RecordsLimit():
