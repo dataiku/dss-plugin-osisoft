@@ -110,6 +110,7 @@ class OSIsoftClient(object):
                 last_received_timestamp = row.get("Timestamp")
                 logger.info("Last received timestamp is {}".format(last_received_timestamp))
                 start_date = last_received_timestamp
+                kwargs["start_date"] = start_date
                 previous_item_timestamp = last_received_timestamp
             else:
                 done = True
