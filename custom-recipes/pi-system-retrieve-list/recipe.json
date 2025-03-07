@@ -115,7 +115,7 @@
         {
             "name": "do_duplicate_input_row",
             "label": "Copy other input columns",
-            "description": "Copy other input columns to the output dataset",
+            "description": "(those with matching names will be overwritten by PI system data)",
             "type": "BOOLEAN"
         },
         {
