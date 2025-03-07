@@ -139,7 +139,7 @@
         {
             "visibilityCondition": "model.use_start_time_column==true && (['InterpolatedData', 'RecordedData', 'PlotData', 'EventFrames'].includes(model.data_type))",
             "name": "start_time_column",
-            "label": "Start times' column",
+            "label": "Start times column",
             "description": "Column type must be string",
             "type": "COLUMN",
             "columnRole": "input_dataset"
@@ -163,7 +163,7 @@
         {
             "visibilityCondition": "model.use_end_time_column==true && (['InterpolatedData', 'RecordedData', 'PlotData', 'EventFrames'].includes(model.data_type))",
             "name": "end_time_column",
-            "label": "End times' column",
+            "label": "End times column",
             "description": "Column type must be string",
             "type": "COLUMN",
             "columnRole": "input_dataset"
