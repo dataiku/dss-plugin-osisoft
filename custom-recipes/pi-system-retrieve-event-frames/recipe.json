@@ -182,6 +182,24 @@
         },
         {
             "type": "SEPARATOR",
+            "description": "Data to retrieve"
+        },
+        {
+            "name": "data_type",
+            "label": "Data type",
+            "type": "SELECT",
+            "selectChoices":[
+                {"value": "InterpolatedData", "label": "Interpolated"},
+                {"value": "PlotData", "label": "Plot"},
+                {"value": "RecordedData", "label": "Recorded"},
+                {"value": "SummaryData", "label": "SummaryData"},
+                {"value": "Value", "label": "Value"},
+                {"value": "EndValue", "label": "EndValue"}
+            ],
+            "defaultValue": "SummaryData"
+        },
+        {
+            "type": "SEPARATOR",
             "description": "Interpolation",
             "visibilityCondition": "['InterpolatedData'].includes(model.data_type)"
         },
@@ -211,23 +229,6 @@
                 {"value": "Outside", "label": "Outside"}
             ],
             "defaultValue": "Inside"
-        },
-        {
-            "type": "SEPARATOR",
-            "description": "Data to retrieve"
-        },
-        {
-            "name": "data_type",
-            "label": "Data type",
-            "type": "SELECT",
-            "selectChoices":[
-                {"value": "PlotData", "label": "Plot"},
-                {"value": "RecordedData", "label": "Recorded"},
-                {"value": "SummaryData", "label": "SummaryData"},
-                {"value": "Value", "label": "Value"},
-                {"value": "EndValue", "label": "EndValue"}
-            ],
-            "defaultValue": "SummaryData"
         },
         {
             "name": "summary_type",
