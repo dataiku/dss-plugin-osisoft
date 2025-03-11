@@ -56,7 +56,7 @@ class OSIsoftConnector(Connector):  # Browse
         self.config = config
         self.summary_type, self.summary_duration = get_summary_parameters(config)
 
-        self.record_boundary_type = config.get("boundary_type") if self.data_type == "RecordedData" else None
+        self.record_boundary_type = config.get("record_boundary_type") if self.data_type == "RecordedData" else None
 
     def extract_database_webid(self, database_endpoint):
         return database_endpoint.split("/")[-1]

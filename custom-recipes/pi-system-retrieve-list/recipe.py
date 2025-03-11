@@ -48,7 +48,7 @@ use_end_time_column = config.get("use_end_time_column", False)
 end_time_column = config.get("end_time_column")
 server_url_column = config.get("server_url_column")
 interval, sync_time, boundary_type = get_interpolated_parameters(config)
-record_boundary_type = config.get("boundary_type") if data_type == "RecordedData" else None
+record_boundary_type = config.get("record_boundary_type") if data_type == "RecordedData" else None
 summary_type, summary_duration = get_summary_parameters(config)
 do_duplicate_input_row = config.get("do_duplicate_input_row", False)
 
@@ -90,10 +90,8 @@ with output_dataset.get_writer() as writer:
                 # make sure all OSIsoft time string format are evaluated at the same time
                 # rather than at every request, at least for start / end times set in the UI
                 time_not_parsed = False
-                if not use_start_time_column:
-                    start_time = client.parse_pi_time(start_time)
-                if not use_end_time_column:
-                    end_time = client.parse_pi_time(end_time)
+                start_time = client.parse_pi_time(start_time)
+                end_time = client.parse_pi_time(end_time)
                 sync_time = client.parse_pi_time(sync_time)
 
         object_id = input_parameters_row.get(path_column)
@@ -118,7 +116,7 @@ with output_dataset.get_writer() as writer:
                 summary_duration=summary_duration
             )
         else:
-            rows = client.get_rows_from_webid(
+            rows = client.recursive_get_rows_from_webid(
                 object_id,
                 data_type,
                 start_date=start_time,
