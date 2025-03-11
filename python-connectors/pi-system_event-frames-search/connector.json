@@ -201,6 +201,38 @@
             "mandatory": true
         },
         {
+            "type": "SEPARATOR",
+            "description": "Interpolation",
+            "visibilityCondition": "(model.must_retrieve_metrics) && ['InterpolatedData'].includes(model.data_type)"
+        },
+        {
+            "name": "interval",
+            "label": "Interval",
+            "visibilityCondition": "(model.must_retrieve_metrics) && ['InterpolatedData'].includes(model.data_type)",
+            "description": "Optional",
+            "type": "STRING",
+            "defaultValue": ""
+        },
+        {
+            "name": "sync_time",
+            "label": "Sync time",
+            "visibilityCondition": "(model.must_retrieve_metrics) && ['InterpolatedData'].includes(model.data_type)",
+            "description": "Optional",
+            "type": "STRING",
+            "defaultValue": ""
+        },
+        {
+            "name": "boundary_type",
+            "label": "Boundary type",
+            "visibilityCondition": "(model.must_retrieve_metrics) && ['InterpolatedData'].includes(model.data_type)",
+            "type": "SELECT",
+            "selectChoices":[
+                {"value": "Inside", "label": "Inside"},
+                {"value": "Outside", "label": "Outside"}
+            ],
+            "defaultValue": "Inside"
+        },
+        {
             "name": "summary_type",
             "label": "Summary type",
             "type": "MULTISELECT",

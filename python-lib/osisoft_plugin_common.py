@@ -133,6 +133,7 @@ def build_requests_params(**kwargs):
         "interval": "interval",
         "sync_time": "syncTime",
         "sync_time_boundary_type": "syncTimeBoundaryType",
+        "record_boundary_type": "boundaryType",
         "name_filter": "nameFilter",
         "category_name": "categoryName",
         "template_name": "templateName",
@@ -263,7 +264,7 @@ def format_output(input_row, reference_row=None, is_enumeration_value=False):
     type_column = None
     if "Value" in output_row and isinstance(output_row.get("Value"), dict):
         type_column = output_row.get("Type")
-        output_row = output_row.get("Value")
+        output_row.update(output_row.get("Value"))
         output_row.pop("Good", None)
         output_row.pop("Questionable", None)
         output_row.pop("Substituted", None)
@@ -448,7 +449,7 @@ def fields_selector(data_type):
     if data_type in ["Value", "EndValue"]:
         return "Links%3BTimestamp%3BValue%3BType%3BUnitsAbbreviation"
     else:
-        return "Links%3BItems.Timestamp%3BItems.Value%3BItems.Type"
+        return "Links%3BItems.Timestamp%3BItems.Value%3BItems.Type%3BItems.Value.Value"
 
 
 def get_next_page_url(json):
@@ -482,7 +483,7 @@ class PerformanceTimer():
         - adds up all start / stop intervals
         - count the number of intervals
         - compute the average event time
-        - provides a lists of the NUMBER_OF_SLOWEST_EVENTS_KEPT longest events by event id, for instance url    
+        - provides a lists of the NUMBER_OF_SLOWEST_EVENTS_KEPT longest events by event id, for instance url
     """
     NUMBER_OF_SLOWEST_EVENTS_KEPT = 5
 

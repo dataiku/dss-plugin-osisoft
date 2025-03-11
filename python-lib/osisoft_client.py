@@ -48,7 +48,7 @@ class OSIsoftClient(object):
             return None
 
     def recursive_get_rows_from_webid(self, webid, data_type, start_date=None, end_date=None,
-                                      interval=None, sync_time=None, boundary_type=None, selected_fields=None,
+                                      interval=None, sync_time=None, boundary_type=None, record_boundary_type=None, selected_fields=None,
                                       can_raise=True, endpoint_type="event_frames", search_full_hierarchy=None,
                                       max_count=None, summary_type=None, summary_duration=None):
         # Split the time range until no more HTTP 400
@@ -57,7 +57,8 @@ class OSIsoftClient(object):
         while not done:
             logger.info("Attempting download webids from {} to {}".format(start_date, end_date))
             rows = self.get_rows_from_webid(webid, data_type, start_date=start_date, end_date=end_date,
-                                            interval=interval, sync_time=sync_time, boundary_type=boundary_type, selected_fields=selected_fields,
+                                            interval=interval, sync_time=sync_time, boundary_type=boundary_type,
+                                            record_boundary_type=record_boundary_type, selected_fields=selected_fields,
                                             can_raise=can_raise, endpoint_type=endpoint_type, search_full_hierarchy=search_full_hierarchy,
                                             max_count=max_count, summary_type=summary_type, summary_duration=summary_duration)
             counter = 0
@@ -79,7 +80,8 @@ class OSIsoftClient(object):
                     start_timestamp, end_timestamp, half_time_iso = self.halve_time_range(start_date, end_date)
                     first_half_rows = self.recursive_get_rows_from_webid(
                         webid, data_type, start_date=start_timestamp, end_date=half_time_iso,
-                        interval=interval, sync_time=sync_time, boundary_type=boundary_type, selected_fields=selected_fields,
+                        interval=interval, sync_time=sync_time, boundary_type=boundary_type,
+                        record_boundary_type=record_boundary_type, selected_fields=selected_fields,
                         can_raise=can_raise, endpoint_type=endpoint_type, search_full_hierarchy=search_full_hierarchy, max_count=max_count,
                         summary_type=summary_type, summary_duration=summary_duration
                     )
@@ -88,7 +90,8 @@ class OSIsoftClient(object):
                     logger.info("Successfully retrieved first half ({} to {})".format(start_timestamp, half_time_iso))
                     second_half_rows = self.recursive_get_rows_from_webid(
                         webid, data_type, start_date=half_time_iso, end_date=end_timestamp,
-                        interval=interval, sync_time=sync_time, boundary_type=boundary_type, selected_fields=selected_fields,
+                        interval=interval, sync_time=sync_time, boundary_type=boundary_type,
+                        record_boundary_type=record_boundary_type, selected_fields=selected_fields,
                         can_raise=can_raise, endpoint_type=endpoint_type, search_full_hierarchy=search_full_hierarchy, max_count=max_count,
                         summary_type=summary_type, summary_duration=summary_duration
                     )
@@ -109,7 +112,7 @@ class OSIsoftClient(object):
                 done = True
 
     def recursive_get_rows_from_item(self, item, data_type, start_date=None, end_date=None,
-                                     interval=None, sync_time=None, boundary_type=None,
+                                     interval=None, sync_time=None, boundary_type=None, record_boundary_type=None,
                                      can_raise=True, object_id=None, endpoint_type="event_frames", search_full_hierarchy=None,
                                      max_count=None, summary_type=None, summary_duration=None):
         # item can be an pi tag, a path to an element or event frame
@@ -119,7 +122,8 @@ class OSIsoftClient(object):
         while not done:
             logger.info("Attempting download items from {} to {}".format(start_date, end_date))
             rows = self.get_rows_from_item(item, data_type, start_date=start_date, end_date=end_date, interval=interval,
-                                           sync_time=sync_time, boundary_type=boundary_type, can_raise=True, object_id=object_id,
+                                           sync_time=sync_time, boundary_type=boundary_type, record_boundary_type=record_boundary_type,
+                                           can_raise=True, object_id=object_id,
                                            search_full_hierarchy=search_full_hierarchy, max_count=max_count,
                                            summary_type=summary_type, summary_duration=summary_duration)
             counter = 0
@@ -141,7 +145,8 @@ class OSIsoftClient(object):
                     start_timestamp, end_timestamp, half_time_iso = self.halve_time_range(start_date, end_date)
                     first_half_rows = self.recursive_get_rows_from_item(
                         item, data_type, start_date=start_timestamp, end_date=half_time_iso,
-                        interval=interval, sync_time=sync_time, boundary_type=boundary_type, can_raise=True, object_id=object_id,
+                        interval=interval, sync_time=sync_time, boundary_type=boundary_type,
+                        record_boundary_type=record_boundary_type, can_raise=True, object_id=object_id,
                         search_full_hierarchy=search_full_hierarchy, max_count=max_count, summary_type=summary_type, summary_duration=summary_duration
                     )
                     for row in first_half_rows:
@@ -149,7 +154,8 @@ class OSIsoftClient(object):
                     logger.info("Successfully retrieved first half ({} to {})".format(start_timestamp, half_time_iso))
                     second_half_rows = self.recursive_get_rows_from_item(
                         item, data_type, start_date=half_time_iso, end_date=end_timestamp,
-                        interval=interval, sync_time=sync_time, boundary_type=boundary_type, can_raise=True, object_id=object_id,
+                        interval=interval, sync_time=sync_time, boundary_type=boundary_type,
+                        record_boundary_type=record_boundary_type, can_raise=True, object_id=object_id,
                         search_full_hierarchy=search_full_hierarchy, max_count=max_count, summary_type=summary_type, summary_duration=summary_duration
                     )
                     for row in second_half_rows:
@@ -219,7 +225,7 @@ class OSIsoftClient(object):
         return iso_timestamp
 
     def get_rows_from_webid(self, webid, data_type, start_date=None, end_date=None,
-                            interval=None, sync_time=None, boundary_type=None, selected_fields=None,
+                            interval=None, sync_time=None, boundary_type=None, record_boundary_type=None, selected_fields=None,
                             can_raise=True, endpoint_type="event_frames", search_full_hierarchy=None,
                             max_count=None, summary_type=None, summary_duration=None):
 
@@ -234,6 +240,7 @@ class OSIsoftClient(object):
                 interval=interval,
                 sync_time=sync_time,
                 boundary_type=boundary_type,
+                record_boundary_type=record_boundary_type,
                 selected_fields=selected_fields,
                 search_full_hierarchy=search_full_hierarchy,
                 max_count=max_count,
@@ -252,7 +259,7 @@ class OSIsoftClient(object):
                     yield item
 
     def get_rows_from_webids(self, input_rows, data_type, start_date=None, end_date=None,
-                             interval=None, sync_time=None, boundary_type=None, selected_fields=None, search_full_hierarchy=None,
+                             interval=None, sync_time=None, boundary_type=None, record_boundary_type=None, selected_fields=None, search_full_hierarchy=None,
                              max_count=None, can_raise=True, endpoint_type="event_frames", batch_size=500, summary_type=None, summary_duration=None):
         batch_requests_parameters = []
         number_processed_webids = 0
@@ -318,7 +325,7 @@ class OSIsoftClient(object):
             yield batch_section.get("Content", {})
 
     def generic_get_kwargs(self, start_date=None, end_date=None, interval=None, sync_time=None,
-                           boundary_type=None, selected_fields=None, search_full_hierarchy=None, max_count=None,
+                           boundary_type=None, record_boundary_type=None, selected_fields=None, search_full_hierarchy=None, max_count=None,
                            summary_type=None, summary_duration=None, can_raise=None):
         headers = self.get_requests_headers()
         params = self.get_requests_params(
@@ -327,6 +334,7 @@ class OSIsoftClient(object):
             interval=interval,
             sync_time=sync_time,
             boundary_type=boundary_type,
+            record_boundary_type=record_boundary_type,
             selected_fields=selected_fields,
             search_full_hierarchy=search_full_hierarchy,
             max_count=max_count,
@@ -339,7 +347,7 @@ class OSIsoftClient(object):
         }
 
     def generic_get(self, url, start_date=None, end_date=None, interval=None, sync_time=None,
-                    boundary_type=None, selected_fields=None, search_full_hierarchy=None, max_count=None,
+                    boundary_type=None, record_boundary_type=None, selected_fields=None, search_full_hierarchy=None, max_count=None,
                     can_raise=None, summary_type=None, summary_duration=None):
         headers = self.get_requests_headers()
         params = self.get_requests_params(
@@ -348,6 +356,7 @@ class OSIsoftClient(object):
             interval=interval,
             sync_time=sync_time,
             boundary_type=boundary_type,
+            record_boundary_type=record_boundary_type,
             selected_fields=selected_fields,
             search_full_hierarchy=search_full_hierarchy,
             max_count=max_count,
@@ -363,7 +372,7 @@ class OSIsoftClient(object):
         return json_response
 
     def get_rows_from_item(self, item, data_type, start_date=None, end_date=None, interval=None,
-                           sync_time=None, boundary_type=None, can_raise=True, object_id=None,
+                           sync_time=None, boundary_type=None, record_boundary_type=None, can_raise=True, object_id=None,
                            search_full_hierarchy=None, max_count=None, summary_type=None,
                            summary_duration=None):
         # item can be an pi tag, a path to an element or event frame
@@ -378,6 +387,7 @@ class OSIsoftClient(object):
                 interval=interval,
                 sync_time=sync_time,
                 boundary_type=boundary_type,
+                record_boundary_type=record_boundary_type,
                 max_count=max_count,
                 search_full_hierarchy=search_full_hierarchy,
                 can_raise=can_raise,
@@ -392,7 +402,7 @@ class OSIsoftClient(object):
                 yield self.loop_sub_items(item)
 
     def get_link_from_item(self, item, data_type, start_date, end_date, interval=None,
-                           sync_time=None, boundary_type=None, search_full_hierarchy=None,
+                           sync_time=None, boundary_type=None, record_boundary_type=None, search_full_hierarchy=None,
                            max_count=None, can_raise=True, summary_type=None,
                            summary_duration=None):
         url = self.extract_link_with_key(item, data_type)
@@ -404,7 +414,8 @@ class OSIsoftClient(object):
         headers = self.get_requests_headers()
         params = build_requests_params(
             start_time=start_date, end_time=end_date, interval=interval,
-            sync_time=sync_time, sync_time_boundary_type=boundary_type, search_full_hierarchy=search_full_hierarchy,
+            sync_time=sync_time, sync_time_boundary_type=boundary_type, record_boundary_type=record_boundary_type,
+            search_full_hierarchy=search_full_hierarchy,
             max_count=max_count, summary_type=summary_type, summary_duration=summary_duration
         )
         json_response = self.get(
@@ -415,13 +426,13 @@ class OSIsoftClient(object):
         )
         return json_response
 
-    def get_rows_from_url(self, url=None, start_date=None, end_date=None, interval=None, sync_time=None, max_count=None):
+    def get_rows_from_url(self, url=None, start_date=None, end_date=None, interval=None, sync_time=None, boundary_type=None,  max_count=None):
         pagination = OffsetPagination()
         has_more = True
         while has_more:
             json_response, has_more = pagination.get_offset_paginated(
                 self.get_link_from_url,
-                url, start_date=start_date, end_date=end_date, interval=interval, sync_time=sync_time, max_count=max_count
+                url, start_date=start_date, end_date=end_date, interval=interval, sync_time=sync_time, boundary_type=boundary_type, max_count=max_count
             )
             items = json_response.get(OSIsoftConstants.API_ITEM_KEY, [json_response])
             for item in items:
@@ -432,15 +443,18 @@ class OSIsoftClient(object):
                 else:
                     yield item
 
-    def get_rows_from_urls(self, links=None, data_type=None, start_date=None, end_date=None, interval=None, sync_time=None, max_count=None):
+    def get_rows_from_urls(self, links=None, data_type=None, start_date=None, end_date=None, interval=None, sync_time=None, boundary_type=None, max_count=None):
         links = links or []
         for link in links:
             url = link
-            rows = self.get_rows_from_url(url, start_date=start_date, end_date=end_date, interval=interval, sync_time=sync_time, max_count=max_count)
+            rows = self.get_rows_from_url(
+                url, start_date=start_date, end_date=end_date, interval=interval,
+                sync_time=sync_time, boundary_type=boundary_type, max_count=max_count
+            )
             for row in rows:
                 yield row
 
-    def get_link_from_url(self, url, start_date=None, end_date=None, interval=None, sync_time=None, start_index=None, max_count=None):
+    def get_link_from_url(self, url, start_date=None, end_date=None, interval=None, sync_time=None, start_index=None, boundary_type=None, max_count=None):
         if not url:
             url = self.endpoint.get_base_url()
         headers = self.get_requests_headers()
@@ -450,6 +464,7 @@ class OSIsoftClient(object):
             interval=interval,
             sync_time=sync_time,
             start_index=start_index,
+            sync_time_boundary_type=boundary_type,
             max_count=max_count
         )
         json_response = self.get(
@@ -625,7 +640,7 @@ class OSIsoftClient(object):
         }
 
     def get_requests_params(self, start_date=None, end_date=None, interval=None, sync_time=None,
-                            boundary_type=None, selected_fields=None, search_full_hierarchy=None,
+                            boundary_type=None, record_boundary_type=None, selected_fields=None, search_full_hierarchy=None,
                             max_count=None, summary_type=None, summary_duration=None):
         params = {}
         if start_date:
@@ -638,6 +653,8 @@ class OSIsoftClient(object):
             params.update({"syncTime": sync_time})
         if boundary_type:
             params.update({"syncTimeBoundaryType": boundary_type})
+        if record_boundary_type:
+            params.update({"boundaryType": record_boundary_type})
         if selected_fields:
             params.update({"selectedFields": selected_fields})
         if search_full_hierarchy:

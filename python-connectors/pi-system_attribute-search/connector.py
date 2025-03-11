@@ -6,7 +6,8 @@ from safe_logger import SafeLogger
 from osisoft_plugin_common import (
     PISystemConnectorError, RecordsLimit, get_credentials, assert_time_format,
     remove_unwanted_columns, format_output, filter_columns_from_schema, is_child_attribute_path,
-    check_debug_mode, PerformanceTimer, get_max_count, get_summary_parameters, fields_selector
+    check_debug_mode, PerformanceTimer, get_max_count, get_summary_parameters, fields_selector,
+    get_interpolated_parameters
 )
 from osisoft_constants import OSIsoftConstants
 
@@ -36,9 +37,7 @@ class OSIsoftConnector(Connector):  # Browse
         self.start_time = self.client.parse_pi_time(self.start_time)
         self.end_time = config.get("end_time")
         self.end_time = self.client.parse_pi_time(self.end_time)
-        is_interpolated_data = config.get("data_type", "").endswith("InterpolatedData")
-        self.interval = config.get("interval") if is_interpolated_data else None
-        self.sync_time = config.get("sync_time") if is_interpolated_data else None
+        self.interval, self.sync_time, self.boundary_type = get_interpolated_parameters(config)
         self.sync_time = self.client.parse_pi_time(self.sync_time)
         assert_time_format(self.start_time, error_source="start time")
         assert_time_format(self.end_time, error_source="end time")
@@ -56,6 +55,8 @@ class OSIsoftConnector(Connector):  # Browse
         self.max_count = get_max_count(config)
         self.config = config
         self.summary_type, self.summary_duration = get_summary_parameters(config)
+
+        self.record_boundary_type = config.get("record_boundary_type") if self.data_type == "RecordedData" else None
 
     def extract_database_webid(self, database_endpoint):
         return database_endpoint.split("/")[-1]
@@ -114,8 +115,9 @@ class OSIsoftConnector(Connector):  # Browse
                         selected_fields=fields_selector(self.data_type),
                         max_count=self.max_count,
                         summary_type=self.summary_type,
-                        summary_duration=self.summary_duration
-                        # boundary_type=self.boundary_type
+                        summary_duration=self.summary_duration,
+                        boundary_type=self.boundary_type,
+                        record_boundary_type=self.record_boundary_type
                     ):
                         if limit.is_reached():
                             return
