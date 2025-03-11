@@ -113,6 +113,12 @@
             "columnRole": "input_dataset"
         },
         {
+            "name": "do_duplicate_input_row",
+            "label": "Copy other input columns",
+            "description": "(those with matching names will be overwritten by PI system data)",
+            "type": "BOOLEAN"
+        },
+        {
             "type": "SEPARATOR",
             "description": "Time",
             "visibilityCondition": "['InterpolatedData', 'RecordedData', 'PlotData', 'EventFrames'].includes(model.data_type)"
@@ -125,16 +131,16 @@
         {
             "name": "use_start_time_column",
             "label": "Use start time value per row",
-            "description": "Description here",
-            "visibilityCondition": "false && (['InterpolatedData', 'RecordedData', 'PlotData', 'EventFrames'].includes(model.data_type))",
+            "description": "",
+            "visibilityCondition": "['InterpolatedData', 'RecordedData', 'PlotData', 'EventFrames'].includes(model.data_type)",
             "type": "BOOLEAN",
             "defaultValue": false
         },
         {
             "visibilityCondition": "model.use_start_time_column==true && (['InterpolatedData', 'RecordedData', 'PlotData', 'EventFrames'].includes(model.data_type))",
             "name": "start_time_column",
-            "label": "Start times' column",
-            "description": "Optional",
+            "label": "Start times column",
+            "description": "Column type must be string",
             "type": "COLUMN",
             "columnRole": "input_dataset"
         },
@@ -148,17 +154,17 @@
         },
         {
             "name": "use_end_time_column",
-            "label": "Use start time value per row",
+            "label": "Use end time value per row",
             "description": "",
-            "visibilityCondition": "false && (['InterpolatedData', 'RecordedData', 'PlotData', 'EventFrames'].includes(model.data_type))",
+            "visibilityCondition": "['InterpolatedData', 'RecordedData', 'PlotData', 'EventFrames'].includes(model.data_type)",
             "type": "BOOLEAN",
             "defaultValue": false
         },
         {
             "visibilityCondition": "model.use_end_time_column==true && (['InterpolatedData', 'RecordedData', 'PlotData', 'EventFrames'].includes(model.data_type))",
             "name": "end_time_column",
-            "label": "End times' column",
-            "description": "Optional",
+            "label": "End times column",
+            "description": "Column type must be string",
             "type": "COLUMN",
             "columnRole": "input_dataset"
         },
@@ -194,10 +200,22 @@
         {
             "name": "boundary_type",
             "label": "Boundary type",
-            "visibilityCondition": "['InterpolatedData','RecordedData'].includes(model.data_type)",
+            "visibilityCondition": "((model.must_retrieve_metrics) && ['InterpolatedData'].includes(model.data_type))",
             "type": "SELECT",
             "selectChoices":[
                 {"value": "Inside", "label": "Inside"},
+                {"value": "Outside", "label": "Outside"}
+            ],
+            "defaultValue": "Inside"
+        },
+        {
+            "name": "record_boundary_type",
+            "label": "Boundary type",
+            "visibilityCondition": "((model.must_retrieve_metrics) && ['RecordedData'].includes(model.data_type))",
+            "type": "SELECT",
+            "selectChoices":[
+                {"value": "Inside", "label": "Inside"},
+                {"value": "Interpolated", "label": "Interpolated"},
                 {"value": "Outside", "label": "Outside"}
             ],
             "defaultValue": "Inside"
