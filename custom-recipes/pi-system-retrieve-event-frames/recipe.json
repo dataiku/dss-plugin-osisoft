@@ -143,7 +143,7 @@
         {
             "visibilityCondition": "model.use_start_time_column==true && (['InterpolatedData', 'RecordedData', 'PlotData', 'EventFrames'].includes(model.data_type))",
             "name": "start_time_column",
-            "label": "Start times' column",
+            "label": "Start times column",
             "description": "Optional",
             "type": "COLUMN",
             "columnRole": "input_dataset"
@@ -167,7 +167,7 @@
         {
             "visibilityCondition": "model.use_end_time_column==true && (['InterpolatedData', 'RecordedData', 'PlotData', 'EventFrames'].includes(model.data_type))",
             "name": "end_time_column",
-            "label": "End times' column",
+            "label": "End times column",
             "description": "Optional",
             "type": "COLUMN",
             "columnRole": "input_dataset"
@@ -179,6 +179,24 @@
             "description": "Optional",
             "type": "STRING",
             "defaultValue": ""
+        },
+        {
+            "type": "SEPARATOR",
+            "description": "Data to retrieve"
+        },
+        {
+            "name": "data_type",
+            "label": "Data type",
+            "type": "SELECT",
+            "selectChoices":[
+                {"value": "InterpolatedData", "label": "Interpolated"},
+                {"value": "PlotData", "label": "Plot"},
+                {"value": "RecordedData", "label": "Recorded"},
+                {"value": "SummaryData", "label": "SummaryData"},
+                {"value": "Value", "label": "Value"},
+                {"value": "EndValue", "label": "EndValue"}
+            ],
+            "defaultValue": "SummaryData"
         },
         {
             "type": "SEPARATOR",
@@ -211,23 +229,6 @@
                 {"value": "Outside", "label": "Outside"}
             ],
             "defaultValue": "Inside"
-        },
-        {
-            "type": "SEPARATOR",
-            "description": "Data to retrieve"
-        },
-        {
-            "name": "data_type",
-            "label": "Data type",
-            "type": "SELECT",
-            "selectChoices":[
-                {"value": "PlotData", "label": "Plot"},
-                {"value": "RecordedData", "label": "Recorded"},
-                {"value": "SummaryData", "label": "SummaryData"},
-                {"value": "Value", "label": "Value"},
-                {"value": "EndValue", "label": "EndValue"}
-            ],
-            "defaultValue": "SummaryData"
         },
         {
             "name": "summary_type",
