@@ -200,10 +200,22 @@
         {
             "name": "boundary_type",
             "label": "Boundary type",
-            "visibilityCondition": "['InterpolatedData','RecordedData'].includes(model.data_type)",
+            "visibilityCondition": "((model.must_retrieve_metrics) && ['InterpolatedData'].includes(model.data_type))",
             "type": "SELECT",
             "selectChoices":[
                 {"value": "Inside", "label": "Inside"},
+                {"value": "Outside", "label": "Outside"}
+            ],
+            "defaultValue": "Inside"
+        },
+        {
+            "name": "record_boundary_type",
+            "label": "Boundary type",
+            "visibilityCondition": "((model.must_retrieve_metrics) && ['RecordedData'].includes(model.data_type))",
+            "type": "SELECT",
+            "selectChoices":[
+                {"value": "Inside", "label": "Inside"},
+                {"value": "Interpolated", "label": "Interpolated"},
                 {"value": "Outside", "label": "Outside"}
             ],
             "defaultValue": "Inside"

@@ -48,7 +48,7 @@ use_end_time_column = config.get("use_end_time_column", False)
 end_time_column = config.get("end_time_column")
 server_url_column = config.get("server_url_column")
 interval, sync_time, boundary_type = get_interpolated_parameters(config)
-record_boundary_type = config.get("boundary_type") if data_type == "RecordedData" else None
+record_boundary_type = config.get("record_boundary_type") if data_type == "RecordedData" else None
 summary_type, summary_duration = get_summary_parameters(config)
 do_duplicate_input_row = config.get("do_duplicate_input_row", False)
 
