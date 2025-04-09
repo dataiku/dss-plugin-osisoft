@@ -490,13 +490,13 @@ class OSIsoftClient(object):
         )
         return json_response
 
-    def get_rows_from_url(self, url=None, start_date=None, end_date=None, interval=None, sync_time=None, max_count=None):
+    def get_rows_from_url(self, url=None, start_date=None, end_date=None, interval=None, sync_time=None, boundary_type=None,  max_count=None):
         pagination = OffsetPagination()
         has_more = True
         while has_more:
             json_response, has_more = pagination.get_offset_paginated(
                 self.get_link_from_url,
-                url, start_date=start_date, end_date=end_date, interval=interval, sync_time=sync_time, max_count=max_count
+                url, start_date=start_date, end_date=end_date, interval=interval, sync_time=sync_time, boundary_type=boundary_type, max_count=max_count
             )
             items = json_response.get(OSIsoftConstants.API_ITEM_KEY, [json_response])
             for item in items:
@@ -507,15 +507,17 @@ class OSIsoftClient(object):
                 else:
                     yield item
 
-    def get_rows_from_urls(self, links=None, data_type=None, start_date=None, end_date=None, interval=None, sync_time=None, max_count=None):
+    def get_rows_from_urls(self, links=None, data_type=None, start_date=None, end_date=None, interval=None, sync_time=None, boundary_type=None, max_count=None):
         links = links or []
         for link in links:
             url = link
-            rows = self.get_rows_from_url(url, start_date=start_date, end_date=end_date, interval=interval, sync_time=sync_time, max_count=max_count)
+            rows = self.get_rows_from_url(
+                url, start_date=start_date, end_date=end_date, interval=interval,
+                sync_time=sync_time, boundary_type=boundary_type, max_count=max_count
+            )
             for row in rows:
                 yield row
 
-    # def get_link_from_url(self, url, start_date=None, end_date=None, interval=None, sync_time=None, start_index=None, max_count=None):
     def get_link_from_url(self, url, **kwargs):
         if not url:
             url = self.endpoint.get_base_url()

@@ -80,7 +80,8 @@ class OSIsoftConnector(Connector):
         if self.object_id:
             for event_frame in self.client.get_rows_from_urls(
                         self.object_id, self.data_type, start_date=self.start_time,
-                        end_date=self.end_time, interval=self.interval, sync_time=self.sync_time, max_count=self.max_count):
+                        end_date=self.end_time, interval=self.interval, sync_time=self.sync_time,
+                        boundary_type=self.boundary_type, max_count=self.max_count):
                 self.yields_timer.start()
                 yield event_frame
                 self.yields_timer.stop()
