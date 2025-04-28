@@ -47,10 +47,6 @@ class OSIsoftClient(object):
         else:
             return None
 
-    # def recursive_get_rows_from_webid(self, webid, data_type, start_date=None, end_date=None,
-    #                                   interval=None, sync_time=None, boundary_type=None, record_boundary_type=None, selected_fields=None,
-    #                                   can_raise=True, endpoint_type="event_frames", search_full_hierarchy=None,
-    #                                   max_count=None, summary_type=None, summary_duration=None):
     def recursive_get_rows_from_webid(self, webid, data_type, **kwargs):
         # Split the time range until no more HTTP 400
         kwargs["endpoint_type"] = kwargs.get("endpoint_type", "event_frames")
@@ -62,11 +58,6 @@ class OSIsoftClient(object):
         previous_item_timestamp = False
         while not done:
             logger.info("Attempting download webids from {} to {}".format(start_date, end_date))
-            # rows = self.get_rows_from_webid(webid, data_type, start_date=start_date, end_date=end_date,
-            #                                 interval=interval, sync_time=sync_time, boundary_type=boundary_type,
-            #                                 record_boundary_type=record_boundary_type, selected_fields=selected_fields,
-            #                                 can_raise=can_raise, endpoint_type=endpoint_type, search_full_hierarchy=search_full_hierarchy,
-            #                                 max_count=max_count, summary_type=summary_type, summary_duration=summary_duration)
             rows = self.get_rows_from_webid(webid, data_type, **kwargs)
             counter = 0
             try:
@@ -228,32 +219,12 @@ class OSIsoftClient(object):
             return iso_to_epoch(iso_timestamp)
         return iso_timestamp
 
-    # def get_rows_from_webid(self, webid, data_type, start_date=None, end_date=None,
-    #                         interval=None, sync_time=None, boundary_type=None, record_boundary_type=None, selected_fields=None,
-    #                         can_raise=True, endpoint_type="event_frames", search_full_hierarchy=None,
-    #                         max_count=None, summary_type=None, summary_duration=None):
     def get_rows_from_webid(self, webid, data_type, **kwargs):
         endpoint_type = kwargs.get("endpoint_type", "event_frames")
         kwargs["endpoint_type"] = endpoint_type
         url = self.endpoint.get_data_from_webid_url(endpoint_type, data_type, webid)
         has_more = True
         while has_more:
-            # json_response, has_more = self.get_paginated(
-            #     self.generic_get,
-            #     url,
-            #     start_date=start_date,
-            #     end_date=end_date,
-            #     interval=interval,
-            #     sync_time=sync_time,
-            #     boundary_type=boundary_type,
-            #     record_boundary_type=record_boundary_type,
-            #     selected_fields=selected_fields,
-            #     search_full_hierarchy=search_full_hierarchy,
-            #     max_count=max_count,
-            #     can_raise=can_raise,
-            #     summary_type=summary_type,
-            #     summary_duration=summary_duration
-            # )
             json_response, has_more = self.get_paginated(
                 self.generic_get,
                 url,
@@ -269,9 +240,6 @@ class OSIsoftClient(object):
                 for item in items:
                     yield item
 
-    # def get_rows_from_webids(self, input_rows, data_type, start_date=None, end_date=None,
-    #                          interval=None, sync_time=None, boundary_type=None, record_boundary_type=None, selected_fields=None, search_full_hierarchy=None,
-    #                          max_count=None, can_raise=True, endpoint_type="event_frames", batch_size=500, summary_type=None, summary_duration=None):
     def get_rows_from_webids(self, input_rows, data_type, **kwargs):
         search_full_hierarchy = kwargs.get("search_full_hierarchy")
         max_count = kwargs.get("max_count")
@@ -343,75 +311,17 @@ class OSIsoftClient(object):
             batch_section = json_response.get("{}".format(index), {})
             yield batch_section.get("Content", {})
 
-    # def generic_get_kwargs(self, start_date=None, end_date=None, interval=None, sync_time=None,
-    #                        boundary_type=None, record_boundary_type=None, selected_fields=None, search_full_hierarchy=None, max_count=None,
-    #                        summary_type=None, summary_duration=None, can_raise=None):
     def generic_get_kwargs(self, **kwargs):
         headers = self.get_requests_headers()
         params = build_requests_params(**kwargs)
-        # params = build_requests_params(
-        #     start_date=start_date,
-        #     end_date=end_date,
-        #     interval=interval,
-        #     sync_time=sync_time,
-        #     boundary_type=boundary_type,
-        #     record_boundary_type=record_boundary_type,
-        #     selected_fields=selected_fields,
-        #     search_full_hierarchy=search_full_hierarchy,
-        #     max_count=max_count,
-        #     summary_type=summary_type,
-        #     summary_duration=summary_duration
-        # )
-        # params = self.get_requests_params(
-        #     start_date,
-        #     end_date,
-        #     interval=interval,
-        #     sync_time=sync_time,
-        #     boundary_type=boundary_type,
-        #     record_boundary_type=record_boundary_type,
-        #     selected_fields=selected_fields,
-        #     search_full_hierarchy=search_full_hierarchy,
-        #     max_count=max_count,
-        #     summary_type=summary_type,
-        #     summary_duration=summary_duration
-        # )
         return {
             "headers": headers,
             "params": params
         }
 
-    # def generic_get(self, url, start_date=None, end_date=None, interval=None, sync_time=None,
-    #                 boundary_type=None, record_boundary_type=None, selected_fields=None, search_full_hierarchy=None, max_count=None,
-    #                 can_raise=None, summary_type=None, summary_duration=None):
     def generic_get(self, url, **kwargs):
         headers = self.get_requests_headers()
         params = build_requests_params(**kwargs)
-        # params = build_requests_params(
-        #     start_date=start_date,
-        #     end_date=end_date,
-        #     interval=interval,
-        #     sync_time=sync_time,
-        #     boundary_type=boundary_type,
-        #     record_boundary_type=record_boundary_type,
-        #     selected_fields=selected_fields,
-        #     search_full_hierarchy=search_full_hierarchy,
-        #     max_count=max_count,
-        #     summary_type=summary_type,
-        #     summary_duration=summary_duration
-        # )
-        # params = self.get_requests_params(
-        #     start_date,
-        #     end_date,
-        #     interval=interval,
-        #     sync_time=sync_time,
-        #     boundary_type=boundary_type,
-        #     record_boundary_type=record_boundary_type,
-        #     selected_fields=selected_fields,
-        #     search_full_hierarchy=search_full_hierarchy,
-        #     max_count=max_count,
-        #     summary_type=summary_type,
-        #     summary_duration=summary_duration
-        # )
         can_raise = kwargs.get("can_raise", True)
         json_response = self.get(
             url=url,
@@ -421,10 +331,6 @@ class OSIsoftClient(object):
         )
         return json_response
 
-    # def get_rows_from_item(self, item, data_type, start_date=None, end_date=None, interval=None,
-    #                        sync_time=None, boundary_type=None, record_boundary_type=None, can_raise=True, object_id=None,
-    #                        search_full_hierarchy=None, max_count=None, summary_type=None,
-    #                        summary_duration=None):
     def get_rows_from_item(self, item, data_type, **kwargs):
         # item can be an pi tag, a path to an element or event frame
         has_more = True
@@ -436,22 +342,6 @@ class OSIsoftClient(object):
                 data_type,
                 **kwargs
             )
-            # json_response, has_more = self.get_paginated(
-            #     self.get_link_from_item,
-            #     item,
-            #     data_type,
-            #     start_date=start_date,
-            #     end_date=end_date,
-            #     interval=interval,
-            #     sync_time=sync_time,
-            #     boundary_type=boundary_type,
-            #     record_boundary_type=record_boundary_type,
-            #     max_count=max_count,
-            #     search_full_hierarchy=search_full_hierarchy,
-            #     can_raise=can_raise,
-            #     summary_type=summary_type,
-            #     summary_duration=summary_duration
-            # )
             if OSIsoftConstants.DKU_ERROR_KEY in json_response:
                 json_response['object_id'] = "{}".format(object_id)
                 yield json_response
@@ -459,10 +349,6 @@ class OSIsoftClient(object):
             for item in items:
                 yield self.loop_sub_items(item)
 
-    # def get_link_from_item(self, item, data_type, start_date=None, end_date=None, interval=None,
-    #                        sync_time=None, boundary_type=None, record_boundary_type=None, search_full_hierarchy=None,
-    #                        max_count=None, can_raise=True, summary_type=None,
-    #                        summary_duration=None):
     def get_link_from_item(self, item, data_type, **kwargs):
         can_raise = kwargs.get("can_raise", True)
         url = self.extract_link_with_key(item, data_type)
@@ -473,12 +359,6 @@ class OSIsoftClient(object):
             return {OSIsoftConstants.DKU_ERROR_KEY: error_message}
         headers = self.get_requests_headers()
         kwargs = change_key_in_dict(kwargs, "boundary_type", "sync_time_boundary_type")
-        # params = build_requests_params(
-        #     start_time=start_date, end_time=end_date, interval=interval,
-        #     sync_time=sync_time, sync_time_boundary_type=boundary_type, record_boundary_type=record_boundary_type,
-        #     search_full_hierarchy=search_full_hierarchy,
-        #     max_count=max_count, summary_type=summary_type, summary_duration=summary_duration
-        # )
         params = build_requests_params(
             **kwargs
         )
@@ -522,14 +402,6 @@ class OSIsoftClient(object):
         if not url:
             url = self.endpoint.get_base_url()
         headers = self.get_requests_headers()
-        # params = build_requests_params(
-        #     start_time=start_date,
-        #     end_time=end_date,
-        #     interval=interval,
-        #     sync_time=sync_time,
-        #     start_index=start_index,
-        #     max_count=max_count
-        # )
         params = build_requests_params(
             **kwargs
         )
@@ -704,34 +576,6 @@ class OSIsoftClient(object):
             "Accept": "application/json",
             "Accept-Encoding": "gzip, deflate, br"
         }
-
-    # def get_requests_params(self, start_date=None, end_date=None, interval=None, sync_time=None,
-    #                         boundary_type=None, record_boundary_type=None, selected_fields=None, search_full_hierarchy=None,
-    #                         max_count=None, summary_type=None, summary_duration=None):
-    #     params = {}
-    #     if start_date:
-    #         params.update({"starttime": start_date})
-    #     if end_date:
-    #         params.update({"endtime": end_date})
-    #     if interval:
-    #         params.update({"interval": interval})
-    #     if sync_time:
-    #         params.update({"syncTime": sync_time})
-    #     if boundary_type:
-    #         params.update({"syncTimeBoundaryType": boundary_type})
-    #     if record_boundary_type:
-    #         params.update({"boundaryType": record_boundary_type})
-    #     if selected_fields:
-    #         params.update({"selectedFields": selected_fields})
-    #     if search_full_hierarchy:
-    #         params.update({"searchFullHierarchy": True})
-    #     if max_count is not None:
-    #         params.update({"maxCount": max_count})
-    #     if summary_type:
-    #         params.update({"summaryType": "{}".format(",".join(summary_type))})
-    #     if summary_duration:
-    #         params.update({"summaryDuration": "{}".format(summary_duration)})
-    #     return params
 
     def assert_valid_response(self, response, can_raise=True, error_source=None):
         if response.status_code >= 400:
