@@ -316,7 +316,7 @@ class OSIsoftConstants(object):
     SCHEMA_ATTRIBUTES_METRICS_FILTER = [
         "ConfigString", "DataReferencePlugIn", "DisplayDigits",
         "HasChildren", "Id", "IsConfigurationItem", "IsExcluded",
-        "IsHidden", "IsManualDataEntry", "Links", "Span", "Step", "TraitName", "Zero",
+        "IsHidden", "IsManualDataEntry", "Links", "Span", "TraitName", "Zero",
         "Good", "Questionable", "Substituted", "Annotated"
     ]
     SCHEMA_EVENT_FRAMES_RESPONSE = [
