@@ -174,6 +174,18 @@ def build_requests_params(**kwargs):
     resource_path = kwargs.get("resource_path")
     if resource_path:
         requests_params.update({"path": escape(resource_path)})
+    requests_params = escape_dates(requests_params)
+    return requests_params
+
+
+def escape_dates(requests_params):
+    if not requests_params:
+        return requests_params
+    parameters_to_escape = ["starttime", "endtime", "syncTime"]
+    for parameter_to_escape in parameters_to_escape:
+        escaped_date = requests_params.get(parameter_to_escape, "").replace("+", "%2B")
+        if escaped_date:
+            requests_params[parameter_to_escape] = escaped_date
     return requests_params
 
 
