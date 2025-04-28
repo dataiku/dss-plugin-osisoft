@@ -385,13 +385,17 @@ def get_combined_description(default_columns, actual_columns):
     return output_columns
 
 
-def get_base_for_data_type(data_type, object_id):
+def get_base_for_data_type(data_type, object_id, **kwargs):
     schema = OSIsoftConstants.RECIPE_SCHEMA_PER_DATA_TYPE.get(data_type)
     base = {}
     for item in schema:
         item_name = item.get("name")
         base[item_name] = None
     base['object_id'] = object_id
+    for kwarg in kwargs:
+        value = kwargs.get(kwarg)
+        if value:
+            base[kwarg] = value
     ret = copy.deepcopy(base)
     return ret
 
