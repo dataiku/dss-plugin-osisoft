@@ -263,10 +263,10 @@
         {
             "name": "max_count",
             "label": "Max count",
-            "visibilityCondition": "model.must_retrieve_metrics && ['RecordedData'].includes(model.data_type)",
+            "visibilityCondition": "model.show_advanced_parameters==true && model.must_retrieve_metrics && ['PlotData', 'InterpolatedData', 'RecordedData'].includes(model.data_type)",
             "description": "",
             "type": "INT",
-            "defaultValue": 1000
+            "defaultValue": 10000
         },
         {
             "name": "event_frame_to_retrieve",
