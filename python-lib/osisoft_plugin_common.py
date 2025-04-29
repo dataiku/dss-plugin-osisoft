@@ -404,11 +404,14 @@ def get_max_count(config):
     # some data_type requests only returns a maximum of 1k items
     # This can be increased by using maxCount
     DATA_TYPES_REQUIRING_MAXCOUNT = ["InterpolatedData", "PlotData", "RecordedData"]
-    DEFAULT_MAXCOUNT = 1000
+    DEFAULT_MAXCOUNT = 10000
     max_count = None
     data_type = config.get("data_type", None)
     if data_type in DATA_TYPES_REQUIRING_MAXCOUNT:
-        max_count = config.get("max_count", DEFAULT_MAXCOUNT)
+        if config.get("show_advanced_parameters", False):
+            max_count = config.get("max_count", DEFAULT_MAXCOUNT)
+        else:
+            max_count = DEFAULT_MAXCOUNT
     if isinstance(max_count, float):
         max_count = int(max_count)
     return max_count
