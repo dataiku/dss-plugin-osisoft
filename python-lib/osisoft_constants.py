@@ -314,7 +314,7 @@ class OSIsoftConstants(object):
         {"name": "Errors", "type": "string"}
     ]
     SCHEMA_ATTRIBUTES_METRICS_FILTER = [
-        "ConfigString", "DataReferencePlugIn", "DisplayDigits",
+        "ConfigString", "DisplayDigits",
         "HasChildren", "Id", "IsConfigurationItem", "IsExcluded",
         "IsHidden", "IsManualDataEntry", "Links", "Span", "TraitName", "Zero",
         "Good", "Questionable", "Substituted", "Annotated"
