@@ -1,5 +1,13 @@
 # Changelog
 
+## [Version 1.3.0](https://github.com/dataiku/dss-plugin-pi-server/releases/tag/v1.3.0) - Feature and bug release - 2025-04-30
+
+- Accept timezone in datetime inputs
+- Add a "Step" column
+- Add linear interpolation to Transpose & Sync recipe
+- Allows maxCount parameter tuning to allow faster data transfer
+- Add ElementName column to the Attribute Search connector
+
 ## [Version 1.2.4](https://github.com/dataiku/dss-plugin-pi-server/releases/tag/v1.2.4) - Feature  and bug release - 2025-02-18
 
 - Add boundary type selector to recorded data type
