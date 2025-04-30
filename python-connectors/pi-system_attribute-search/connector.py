@@ -121,7 +121,11 @@ class OSIsoftConnector(Connector):  # Browse
                     ):
                         if limit.is_reached():
                             return
-                        output_row = format_output(row, attribute, is_enumeration_value=is_enumeration_value)
+                        output_row = format_output(
+                            row, attribute,
+                            is_enumeration_value=is_enumeration_value,
+                            add_element_name=True
+                        )
                         yield output_row
         else:
             for row in self.client.search_attributes(
@@ -134,7 +138,7 @@ class OSIsoftConnector(Connector):  # Browse
                     if is_child_attribute_path(path):
                         continue
                 remove_unwanted_columns(row)
-                output_row = format_output(row)
+                output_row = format_output(row, add_element_name=True)
                 yield output_row
         end_time = datetime.datetime.now()
         duration = end_time - start_time
