@@ -124,6 +124,8 @@ def interpolate(previous_timestamp, previous_value, next_timestamp, next_value, 
     time_now = get_epoch_from_string(time_now)
     if previous_timestamp is None or next_timestamp is None or time_now is None:
         return None
+    if previous_timestamp == next_timestamp or time_now == previous_timestamp:
+        return previous_value
     rate_of_change = (float(next_value) - float(previous_value)) / (float(next_timestamp) - float(previous_timestamp))
     value_now = float(previous_value) + rate_of_change * (float(time_now) - float(previous_timestamp))
     return value_now
