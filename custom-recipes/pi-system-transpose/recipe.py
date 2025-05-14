@@ -107,7 +107,7 @@ def get_values_at_timestamp(file_handles, seek_timestamp, step_attributes):
             calculated_value = current_values_cache[attribute_index]
         if should_add_timestamps_columns:
             values.update({
-                "{}{}".format(attribute_path, OSIsoftConstants.TIMESTAMP_COLUMN_SUFFIX): next_cached_timestamp,
+                "{}{}".format(attribute_path, OSIsoftConstants.TIMESTAMP_COLUMN_SUFFIX): current_timestamps_cache[attribute_index],
                 "{}{}".format(attribute_path, OSIsoftConstants.VALUE_COLUMN_SUFFIX): calculated_value
             })
         else:
