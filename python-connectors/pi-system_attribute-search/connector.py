@@ -123,8 +123,7 @@ class OSIsoftConnector(Connector):  # Browse
                             return
                         output_row = format_output(
                             row, attribute,
-                            is_enumeration_value=is_enumeration_value,
-                            add_element_name=True
+                            is_enumeration_value=is_enumeration_value
                         )
                         yield output_row
         else:
@@ -138,7 +137,7 @@ class OSIsoftConnector(Connector):  # Browse
                     if is_child_attribute_path(path):
                         continue
                 remove_unwanted_columns(row)
-                output_row = format_output(row, add_element_name=True)
+                output_row = format_output(row)
                 yield output_row
         end_time = datetime.datetime.now()
         duration = end_time - start_time

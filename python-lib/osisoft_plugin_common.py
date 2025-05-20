@@ -278,7 +278,7 @@ def remove_unwanted_columns(row):
         row.pop(unwated_column, None)
 
 
-def format_output(input_row, reference_row=None, is_enumeration_value=False, add_element_name=False):
+def format_output(input_row, reference_row=None, is_enumeration_value=False):
     output_row = copy.deepcopy(input_row)
     type_column = None
     if "Value" in output_row and isinstance(output_row.get("Value"), dict):
@@ -299,7 +299,7 @@ def format_output(input_row, reference_row=None, is_enumeration_value=False, add
         if type_column:
             reference_row["Type"] = type_column
         output_row.update(reference_row)
-    if add_element_name and "Path" in output_row:
+    if "Path" in output_row:
         output_row["ElementName"] = get_element_name_from_path(output_row.get("Path"))
     return output_row
 
