@@ -878,9 +878,9 @@ class OSIsoftWriter(object):
             "Value": row[self.value_rank]
         }
         if self.value_url:
-            self.client.post_value(self.path, data)
+            return self.client.post_value(self.path, data)
         else:
-            self.client.post_stream_value(self.webid, data)
+            return self.client.post_stream_value(self.webid, data)
 
     def timestamp_convertion(self, timestamp):
         return timestamp
