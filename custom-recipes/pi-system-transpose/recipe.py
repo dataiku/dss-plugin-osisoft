@@ -107,7 +107,7 @@ def get_values_at_timestamp(file_handles, seek_timestamp, step_attributes):
             calculated_value = current_values_cache[attribute_index]
         if should_add_timestamps_columns:
             values.update({
-                "{}{}".format(attribute_path, OSIsoftConstants.TIMESTAMP_COLUMN_SUFFIX): next_cached_timestamp,
+                "{}{}".format(attribute_path, OSIsoftConstants.TIMESTAMP_COLUMN_SUFFIX): current_timestamps_cache[attribute_index],
                 "{}{}".format(attribute_path, OSIsoftConstants.VALUE_COLUMN_SUFFIX): calculated_value
             })
         else:
@@ -124,15 +124,10 @@ def interpolate(previous_timestamp, previous_value, next_timestamp, next_value, 
     time_now = get_epoch_from_string(time_now)
     if previous_timestamp is None or next_timestamp is None or time_now is None:
         return None
-    value_now = (
-            (
-                float(next_value) - float(previous_value)
-            ) / (
-                float(next_timestamp) - float(previous_timestamp)
-            )
-        ) * (
-            float(time_now) - float(previous_timestamp)
-        ) + float(previous_value)
+    if previous_timestamp == next_timestamp or time_now == previous_timestamp:
+        return previous_value
+    rate_of_change = (float(next_value) - float(previous_value)) / (float(next_timestamp) - float(previous_timestamp))
+    value_now = float(previous_value) + rate_of_change * (float(time_now) - float(previous_timestamp))
     return value_now
 
 
