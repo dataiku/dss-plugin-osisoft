@@ -118,7 +118,7 @@ with output_dataset.get_writer() as writer:
             batch_buffer_size += 1
             if (batch_buffer_size >= batch_size) or (absolute_index == nb_rows_to_process):
                 rows = client.get_rows_from_webids(
-                    buffer, data_type, max_count,
+                    buffer, data_type, max_count=max_count,
                     search_full_hierarchy=search_full_hierarchy,
                     can_raise=False,
                     batch_size=batch_size,
