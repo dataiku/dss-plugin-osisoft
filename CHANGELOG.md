@@ -1,6 +1,6 @@
 # Changelog
 
-## [Version 1.3.0](https://github.com/dataiku/dss-plugin-pi-server/releases/tag/v1.3.0) - Feature and bug release - 2025-04-30
+## [Version 1.3.0](https://github.com/dataiku/dss-plugin-pi-server/releases/tag/v1.3.0) - Feature and bug release - 2025-05-23
 
 - Accept timezone in datetime inputs
 - Add a "Step" column
