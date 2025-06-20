@@ -241,12 +241,8 @@ class OSIsoftClient(object):
                     yield item
 
     def get_rows_from_webids(self, input_rows, data_type, **kwargs):
-        search_full_hierarchy = kwargs.get("search_full_hierarchy")
-        max_count = kwargs.get("max_count")
         endpoint_type = kwargs.get("endpoint_type", "event_frames")
         batch_size = kwargs.get("batch_size", 500)
-        summary_type = kwargs.get("summary_type")
-        summary_duration = kwargs.get("summary_duration")
 
         batch_requests_parameters = []
         number_processed_webids = 0
@@ -263,10 +259,7 @@ class OSIsoftClient(object):
             else:
                 webid = input_row
             url = self.endpoint.get_data_from_webid_url(endpoint_type, data_type, webid)
-            requests_kwargs = self.generic_get_kwargs(
-                search_full_hierarchy=search_full_hierarchy, max_count=max_count,
-                summary_type=summary_type, summary_duration=summary_duration
-            )
+            requests_kwargs = self.generic_get_kwargs(**kwargs)
             requests_kwargs['url'] = build_query_string(url, requests_kwargs.get("params"))
             web_ids.append(webid)
             event_start_times.append(event_start_time)
@@ -295,7 +288,8 @@ class OSIsoftClient(object):
                     response_index += 1
                 web_ids = []
 
-    def _batch_requests(self, batch_requests_parameters):
+    def _batch_requests(self, batch_requests_parameters, method=None):
+        method = method or "GET"
         batch_endpoint = self.endpoint.get_batch_endpoint()
         batch_body = {}
         index = 0

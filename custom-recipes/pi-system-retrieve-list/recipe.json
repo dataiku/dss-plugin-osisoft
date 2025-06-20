@@ -102,6 +102,23 @@
             "defaultValue": false
         },
         {
+            "name": "use_batch_mode",
+            "label": "Use batch mode",
+            "type": "BOOLEAN",
+            "description": "",
+            "visibilityCondition": "model.show_advanced_parameters==true",
+            "defaultValue": false
+        },
+        {
+            "name": "batch_size",
+            "label": "Batch size",
+            "type": "INT",
+            "description": "",
+            "visibilityCondition": "model.show_advanced_parameters==true && model.use_batch_mode==true",
+            "minI": 1,
+            "defaultValue": 500
+        },
+        {
             "type": "SEPARATOR",
             "description": "Source"
         },
@@ -200,7 +217,7 @@
         {
             "name": "boundary_type",
             "label": "Boundary type",
-            "visibilityCondition": "((model.must_retrieve_metrics) && ['InterpolatedData'].includes(model.data_type))",
+            "visibilityCondition": "(['InterpolatedData'].includes(model.data_type))",
             "type": "SELECT",
             "selectChoices":[
                 {"value": "Inside", "label": "Inside"},
@@ -211,7 +228,7 @@
         {
             "name": "record_boundary_type",
             "label": "Boundary type",
-            "visibilityCondition": "((model.must_retrieve_metrics) && ['RecordedData'].includes(model.data_type))",
+            "visibilityCondition": "(['RecordedData'].includes(model.data_type))",
             "type": "SELECT",
             "selectChoices":[
                 {"value": "Inside", "label": "Inside"},
