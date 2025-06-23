@@ -275,7 +275,8 @@ class OSIsoftClient(object):
                     event_start_time = event_start_times[response_index]
                     event_end_time = event_end_times[response_index]
                     if OSIsoftConstants.DKU_ERROR_KEY in json_response:
-                        json_response['event_frame_webid'] = "{}".format(webid)
+                        if endpoint_type == "event_frames":
+                            json_response['event_frame_webid'] = "{}".format(webid)
                         yield json_response
                     items = json_response.get(OSIsoftConstants.API_ITEM_KEY, [])
                     for item in items:
@@ -283,7 +284,8 @@ class OSIsoftClient(object):
                             item['StartTime'] = event_start_time
                         if event_end_time:
                             item['EndTime'] = event_end_time
-                        item['event_frame_webid'] = "{}".format(webid)
+                        if endpoint_type == "event_frames":
+                            item['event_frame_webid'] = "{}".format(webid)
                         yield item
                     response_index += 1
                 web_ids = []
