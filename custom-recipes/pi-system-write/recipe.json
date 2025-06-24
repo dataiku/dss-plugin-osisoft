@@ -105,6 +105,13 @@
             "columnRole": "input_dataset"
         },
         {
+            "name": "webid_column",
+            "label": "WebID column",
+            "description": "",
+            "type": "COLUMN",
+            "columnRole": "input_dataset"
+        },
+        {
             "name": "time_column",
             "label": "Time column",
             "description": "",

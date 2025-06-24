@@ -43,6 +43,10 @@ class OSIsoftEndpoints():
         url = self.get_base_url() + "/streams/{webid}/value".format(webid=webid)
         return url
 
+    def get_stream_record_url(self, webid):
+        url = self.get_base_url() + "/streams/{webid}/recorded".format(webid=webid)
+        return url
+
     def get_asset_servers_url(self):
         url = self.get_base_url() + "/assetservers"
         return url

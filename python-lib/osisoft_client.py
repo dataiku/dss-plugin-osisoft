@@ -536,6 +536,18 @@ class OSIsoftClient(object):
         )
         return response
 
+    def post_all_values(self, webid, buffer):
+        url = self.endpoint.get_stream_record_url(webid)
+        headers = OSIsoftConstants.WRITE_HEADERS
+        params = {}
+        response = self.post(
+            url=url,
+            headers=headers,
+            params=params,
+            data=buffer
+        )
+        return response
+
     def post(self, url, headers, params, data, can_raise=True, error_source=None):
         url = build_query_string(url, params)
         logger.info("Trying to post to {}".format(url))
@@ -890,6 +902,54 @@ class OSIsoftWriter(object):
     #   "Timestamp": "2015-04-03T18:46:10.39135 -7",
     #   "Value": 42.0,
     # }
+
+
+class OSIsoftBatchWriter(object):
+    def __init__(self, client, max_streak_buffer_size=500):
+        logger.info("Initializing OSIsoftBatchWriter")
+        self.client = client
+        self.streak_buffer = []  # points from one webid
+        self.current_webid = None
+        self.max_buffer_size = max_streak_buffer_size
+
+    def write_row(self, webid, timestamp, value):
+        response = None
+        timestamp = self.timestamp_convertion(timestamp)
+        if self.current_webid is None:
+            logger.info("webid now is {}".format(webid))
+            self.current_webid = webid
+        if webid != self.current_webid or len(self.streak_buffer) > self.max_buffer_size:
+            logger.info("webid: {} / {}".format(webid, self.current_webid))
+            response = self.flush_streak()
+            self.current_webid = webid
+        self.streak_buffer.append(
+            {
+                "Timestamp": "{}".format(timestamp),
+                "Value": "{}".format(value)
+            }
+        )
+        logger.info("Pushed in buffer, now {}".format(len(self.streak_buffer)))
+        return response
+
+    def flush_streak(self):
+        # streak buffer must be flushed every time the webid changes
+        logger.info("flushing streak")
+        response = self.client.post_all_values(self.current_webid, self.streak_buffer)  # that should be added to a batch instead of just being posted
+        # do something with response
+        logger.info("response={}".format(response))
+        status_code = response.status_code
+        trace = (status_code, self.current_webid, self.streak_buffer)
+        self.streak_buffer = []
+        return trace
+
+    def close(self):
+        logger.info("closing")
+        return self.flush_streak()
+
+    def timestamp_convertion(self, timestamp):
+        if timestamp:
+            return timestamp
+        return datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%S.%fZ")
 
 
 def formatted_error_source(error_source):
