@@ -241,12 +241,8 @@ class OSIsoftClient(object):
                     yield item
 
     def get_rows_from_webids(self, input_rows, data_type, **kwargs):
-        search_full_hierarchy = kwargs.get("search_full_hierarchy")
-        max_count = kwargs.get("max_count")
         endpoint_type = kwargs.get("endpoint_type", "event_frames")
         batch_size = kwargs.get("batch_size", 500)
-        summary_type = kwargs.get("summary_type")
-        summary_duration = kwargs.get("summary_duration")
 
         batch_requests_parameters = []
         number_processed_webids = 0
@@ -263,10 +259,7 @@ class OSIsoftClient(object):
             else:
                 webid = input_row
             url = self.endpoint.get_data_from_webid_url(endpoint_type, data_type, webid)
-            requests_kwargs = self.generic_get_kwargs(
-                search_full_hierarchy=search_full_hierarchy, max_count=max_count,
-                summary_type=summary_type, summary_duration=summary_duration
-            )
+            requests_kwargs = self.generic_get_kwargs(**kwargs)
             requests_kwargs['url'] = build_query_string(url, requests_kwargs.get("params"))
             web_ids.append(webid)
             event_start_times.append(event_start_time)
@@ -278,38 +271,46 @@ class OSIsoftClient(object):
                 batch_requests_parameters = []
                 response_index = 0
                 for json_response in json_responses:
+                    response_content = json_response.get("Content", {})
                     webid = web_ids[response_index]
                     event_start_time = event_start_times[response_index]
                     event_end_time = event_end_times[response_index]
-                    if OSIsoftConstants.DKU_ERROR_KEY in json_response:
-                        json_response['event_frame_webid'] = "{}".format(webid)
-                        yield json_response
-                    items = json_response.get(OSIsoftConstants.API_ITEM_KEY, [])
+                    if OSIsoftConstants.DKU_ERROR_KEY in response_content:
+                        if endpoint_type == "event_frames":
+                            response_content['event_frame_webid'] = "{}".format(webid)
+                        yield response_content
+                    items = response_content.get(OSIsoftConstants.API_ITEM_KEY, [])
                     for item in items:
                         if event_start_time:
                             item['StartTime'] = event_start_time
                         if event_end_time:
                             item['EndTime'] = event_end_time
-                        item['event_frame_webid'] = "{}".format(webid)
+                        if endpoint_type == "event_frames":
+                            item['event_frame_webid'] = "{}".format(webid)
                         yield item
                     response_index += 1
                 web_ids = []
 
-    def _batch_requests(self, batch_requests_parameters):
+    def _batch_requests(self, batch_requests_parameters, method=None):
+        method = method or "GET"
         batch_endpoint = self.endpoint.get_batch_endpoint()
         batch_body = {}
         index = 0
         for row_request_parameters in batch_requests_parameters:
-            batch_body["{}".format(index)] = {
-                "Method": "GET",
-                "Resource": "{}".format(row_request_parameters.get("url"))
-            }
+            batch_request = {}
+            batch_request["Method"] = method
+            batch_request["Resource"] = "{}".format(row_request_parameters.get("url"))
+            if "data" in row_request_parameters:
+                batch_request["Content"] = "{}".format(row_request_parameters.get("data"))
+            if "json" in row_request_parameters:
+                batch_request["Content"] = "{}".format(row_request_parameters.get("json"))
+            batch_body["{}".format(index)] = batch_request
             index += 1
         response = self.post_value(url=batch_endpoint, data=batch_body)
         json_response = simplejson.loads(response.content)
         for index in range(0, len(batch_requests_parameters)):
             batch_section = json_response.get("{}".format(index), {})
-            yield batch_section.get("Content", {})
+            yield batch_section
 
     def generic_get_kwargs(self, **kwargs):
         headers = self.get_requests_headers()
@@ -539,6 +540,27 @@ class OSIsoftClient(object):
             data=data
         )
         return response
+
+    def post_all_values(self, webid, buffer):
+        url = self.endpoint.get_stream_record_url(webid)
+        headers = OSIsoftConstants.WRITE_HEADERS
+        params = {}
+        response = self.post(
+            url=url,
+            headers=headers,
+            params=params,
+            data=buffer
+        )
+        return response
+
+    def prepare_post_all_values(self, webid, buffer):
+        url = self.endpoint.get_stream_record_url(webid)
+        headers = OSIsoftConstants.WRITE_HEADERS
+        params = {}
+        requests_kwargs = self.generic_get_kwargs(url=url, headers=headers, params=params, data=buffer)
+        requests_kwargs['url'] = url
+        requests_kwargs['json'] = buffer
+        return requests_kwargs
 
     def post(self, url, headers, params, data, can_raise=True, error_source=None):
         url = build_query_string(url, params)
@@ -896,6 +918,88 @@ class OSIsoftWriter(object):
     # }
 
 
+class OSIsoftBatchWriter(object):
+    # Each row of data added (write_row) first goes in a streak buffer
+    # streak buffer is meant to be used to push a flow of values to one AF path / webid
+    # If the new row concerns another webid, the current streak buffer is flushed into the request buffer
+    # When request buffer is full, it is flushed into the batch endpoint
+
+    # Each write_row call is adds an entry to the responses list
+    # The pointer into that list is past as a _dku_counter parameter, extracted from the requests just before sending the batch
+    # Uppon receiving the batch response, each individual reponse is reordered
+    #   and the status code / error messages are stored into the responses list at the right pointer
+
+    # Possible improvement: flush the responses list (and result writing in the recipe.py) at each _flush_requests to keep memory from going up.
+
+    # If you have to review this, please accept my sincere apologies.
+
+    def __init__(self, client, max_streak_buffer_size=500, max_requests_buffer_size=500):
+        logger.info("Initializing OSIsoftBatchWriter, msbs={}, mrbs={}".format(max_streak_buffer_size, max_requests_buffer_size))
+        self.client = client
+        self.streak_buffer = []     # list of points from a single webid -> can be all sent in one request
+        self.requests_buffer = []   # list of independant requests -> sent one batch at a time
+        self.responses = []         # building a list of reponses in same order as write_row calls
+        self.current_webid = None
+        self.max_buffer_size = max_streak_buffer_size
+        self.max_requests_buffer_size = max_requests_buffer_size
+        self.current_streak = 0
+        self.row_number = 0
+
+    def write_row(self, webid, timestamp, value):
+        response = None
+        timestamp = self._timestamp_convertion(timestamp)
+        # mark in self.responses that status of this write depends on result of streak X
+        if self.current_webid is None:
+            logger.info("webid now is {}".format(webid))
+            self.current_webid = webid
+        if webid != self.current_webid or len(self.streak_buffer) >= self.max_buffer_size:
+            logger.info("webid: {} / {}".format(webid, self.current_webid))
+            self._flush_streak()
+            self.current_webid = webid
+        self.streak_buffer.append(
+            {
+                "Timestamp": "{}".format(timestamp),
+                "Value": "{}".format(value),
+                "_dku_counter": self.row_number
+            }
+        )
+        self.row_number += 1
+        logger.info("Pushed in buffer, now {}".format(len(self.streak_buffer)))
+        self.responses.append({"streak": self.current_streak})
+        return response
+
+    def _flush_streak(self):
+        # streak buffer must be flushed every time the webid changes
+        logger.info("flushing streak")
+        kwargs = self.client.prepare_post_all_values(self.current_webid, self.streak_buffer)
+        self.requests_buffer.append(kwargs)
+        logger.info("pushed to requests buffer {}".format(len(self.requests_buffer)))
+        if len(self.requests_buffer) >= self.max_requests_buffer_size:
+            self._flush_requests()
+        self.streak_buffer = []
+        self.current_streak += 1
+
+    def _flush_requests(self):
+        logger.info("flushing current requests")
+        request_buffer, streaks_pointers = prepare_request_buffer(self.requests_buffer)
+        json_responses = self.client._batch_requests(request_buffer, method='POST')
+        for json_response, streak_pointers in zip(json_responses, streaks_pointers):
+            for streak_pointer in streak_pointers:
+                self.responses[streak_pointer] = json_response
+        self.requests_buffer = []
+
+    def close(self):
+        logger.info("closing")
+        self._flush_streak()
+        self._flush_requests()
+        return self.responses
+
+    def _timestamp_convertion(self, timestamp):
+        if timestamp:
+            return timestamp
+        return datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%S.%fZ")
+
+
 def formatted_error_source(error_source):
     return "({}) ".format(error_source) if error_source else ""
 
@@ -951,3 +1055,18 @@ def apply_manual_inputs(kwargs):
 
 def is_parameter_greater_than_max_allowed(error_message):
     return "Error 400" in "{}".format(error_message) and "is greater than the maximum allowed" in "{}".format(error_message)
+
+
+def prepare_request_buffer(request_buffer):
+    # remove _dku_counter from the request,
+    # produce a list of write_row call number per streak
+    #   later used to determine which response status code / error applies to which write_row call
+    row_counter = []
+    for streak in request_buffer:
+        json = streak.get("json", [])
+        dku_counter = []
+        for row in json:
+            _dku_counter = row.pop("_dku_counter", None)
+            dku_counter.append(_dku_counter)
+        row_counter.append(dku_counter)
+    return request_buffer, row_counter

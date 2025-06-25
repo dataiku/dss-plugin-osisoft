@@ -6,7 +6,7 @@ from osisoft_plugin_common import (
     get_credentials, normalize_af_path, check_debug_mode,
     PerformanceTimer, get_max_count,
 )
-from osisoft_client import OSIsoftClient, OSIsoftWriter
+from osisoft_client import OSIsoftClient, OSIsoftWriter, OSIsoftBatchWriter
 from osisoft_constants import OSIsoftConstants
 from requests import models
 
@@ -28,6 +28,23 @@ def analyse_response(response):
     return status_code, error
 
 
+def write_responses(responses, output):
+    if not responses:
+        return
+    status_code = responses[0]
+    path_used = responses[1]
+    responses = responses[2]
+    for response in responses:
+        output.write_row_dict(
+            {
+                "Path": "{}".format(path_used),
+                "Timestamp": response.get("Timestamp"),
+                "Value": response.get("Value"),
+                "Result": status_code
+            }
+        )
+
+
 input_dataset = get_input_names_for_role('input_dataset')
 output_names_stats = get_output_names_for_role('api_output')
 config = get_recipe_config()
@@ -45,7 +62,8 @@ if not server_url and not use_server_url_column:
     raise ValueError("Server domain not set")
 
 path_column = config.get("path_column", "")
-if not path_column:
+webid_column = config.get("webid_column", "")
+if not path_column and not webid_column:
     raise ValueError("There is no parameter column selected.")
 
 time_column = config.get("time_column", "")
@@ -55,6 +73,9 @@ if not time_column:
 value_column = config.get("value_column", "")
 if not value_column:
     raise ValueError("There is no value column selected.")
+
+max_streak_buffer_size = config.get("max_streak_buffer_size", 500)
+max_requests_buffer_size = config.get("max_requests_buffer_size", 500)
 
 server_url_column = config.get("server_url_column")
 
@@ -85,6 +106,9 @@ output_dataset.write_schema(output_schema)
 
 with output_dataset.get_writer() as output_writer:
     first_dataframe = True
+    previous_path = None
+    pi_writer = None
+    initial_requests = []  # Storing initial request to display in output dataset
     for index, input_parameters_row in input_parameters_dataframe.iterrows():
         server_url = input_parameters_row.get(server_url_column, server_url) if use_server_url_column else server_url
         time = input_parameters_row.get(time_column)
@@ -107,33 +131,34 @@ with output_dataset.get_writer() as output_writer:
                 # rather than at every request, at least for start / end times set in the UI
                 time_not_parsed = False
                 time = client.parse_pi_time(time)
+            if not pi_writer:
+                pi_writer = OSIsoftBatchWriter(
+                    client,
+                    max_requests_buffer_size=max_requests_buffer_size,
+                    max_streak_buffer_size=max_streak_buffer_size
+                )
 
-        object_id = input_parameters_row.get(path_column)
-        try:
-            pi_writer = OSIsoftWriter(client, object_id, ["Timestamp", "Value"])
-        except Exception as error:
-            logger.error("Error on {} (value '{}'): {}".format(object_id, value, error))
-            output_writer.write_row_dict({
-                "Path": object_id,
-                "Timestamp": time,
-                "Value": value,
-                "Result": "Error",
-                "Error": "{}".format(error)
-            })
-            continue
-        item = None
+        if webid_column:
+            object_id = input_parameters_row.get(webid_column)
+        else:
+            object_id = input_parameters_row.get(path_column)
+
         if client.is_resource_path(object_id):
             object_id = normalize_af_path(object_id)
-            item = client.get_item_from_path(object_id)
         row = (time, value)
-        response = pi_writer.write_row(row)
-        result, error = analyse_response(response)
-        output_writer.write_row_dict({
-            "Path": object_id,
-            "Timestamp": time,
-            "Value": value,
-            "Result": str(response.status_code)
-        })
+        responses = pi_writer.write_row(object_id, time, value)
+        initial_requests.append((object_id, time, value))
+    responses = pi_writer.close()
+    for initial_request, response in zip(initial_requests, responses):
+        row = {}
+        row["Path"] = initial_request[0]
+        row["Timestamp"] = initial_request[1]
+        row["Value"] = initial_request[2]
+        row["Result"] = response.get("Status")
+        content = response.get("Content")
+        if content and isinstance(content, dict) and "Errors" in content:
+            row["Error"] = content.get("Errors")
+        output_writer.write_row_dict(row)
 
 processing_timer.stop()
 logger.info("Overall timer:{}".format(processing_timer.get_report()))
