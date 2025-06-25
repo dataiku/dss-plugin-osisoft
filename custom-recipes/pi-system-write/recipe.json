@@ -94,6 +94,24 @@
             "defaultValue": false
         },
         {
+            "name": "max_streak_buffer_size",
+            "label": "Size of streak buffer",
+            "visibilityCondition": "model.show_advanced_parameters==true",
+            "type": "INT",
+            "minI": 1,
+            "defaultValue": 500,
+            "description": ""
+        },
+        {
+            "name": "max_requests_buffer_size",
+            "label": "Size of batch buffer",
+            "visibilityCondition": "model.show_advanced_parameters==true",
+            "type": "INT",
+            "minI": 1,
+            "defaultValue": 500,
+            "description": ""
+        },
+        {
             "type": "SEPARATOR",
             "description": "Source"
         },
@@ -107,7 +125,7 @@
         {
             "name": "webid_column",
             "label": "WebID column",
-            "description": "",
+            "description": "(faster than using path)",
             "type": "COLUMN",
             "columnRole": "input_dataset"
         },
