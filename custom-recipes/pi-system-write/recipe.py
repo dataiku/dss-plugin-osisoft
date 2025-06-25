@@ -109,6 +109,8 @@ with output_dataset.get_writer() as output_writer:
     previous_path = None
     pi_writer = None
     initial_requests = []  # Storing initial request to display in output dataset
+    previous_path = None
+    previous_object_id = None
     for index, input_parameters_row in input_parameters_dataframe.iterrows():
         server_url = input_parameters_row.get(server_url_column, server_url) if use_server_url_column else server_url
         time = input_parameters_row.get(time_column)
@@ -141,10 +143,14 @@ with output_dataset.get_writer() as output_writer:
         if webid_column:
             object_id = input_parameters_row.get(webid_column)
         else:
-            object_id = input_parameters_row.get(path_column)
-
-        if client.is_resource_path(object_id):
-            object_id = normalize_af_path(object_id)
+            path = input_parameters_row.get(path_column)
+            path = normalize_af_path(path)
+            if previous_path != path:
+                object_id = client.get_item_from_path(path).get("WebId", "WebId could not be found")
+                previous_path = path
+                previous_object_id = object_id
+            else:
+                object_id = previous_object_id
         row = (time, value)
         responses = pi_writer.write_row(object_id, time, value)
         initial_requests.append((object_id, time, value))
