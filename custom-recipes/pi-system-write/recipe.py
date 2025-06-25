@@ -74,6 +74,9 @@ value_column = config.get("value_column", "")
 if not value_column:
     raise ValueError("There is no value column selected.")
 
+max_streak_buffer_size = config.get("max_streak_buffer_size", 500)
+max_requests_buffer_size = config.get("max_requests_buffer_size", 500)
+
 server_url_column = config.get("server_url_column")
 
 network_timer = PerformanceTimer()
@@ -105,6 +108,7 @@ with output_dataset.get_writer() as output_writer:
     first_dataframe = True
     previous_path = None
     pi_writer = None
+    initial_requests = []  # Storing initial request to display in output dataset
     for index, input_parameters_row in input_parameters_dataframe.iterrows():
         server_url = input_parameters_row.get(server_url_column, server_url) if use_server_url_column else server_url
         time = input_parameters_row.get(time_column)
@@ -128,7 +132,11 @@ with output_dataset.get_writer() as output_writer:
                 time_not_parsed = False
                 time = client.parse_pi_time(time)
             if not pi_writer:
-                pi_writer = OSIsoftBatchWriter(client)
+                pi_writer = OSIsoftBatchWriter(
+                    client,
+                    max_requests_buffer_size=max_requests_buffer_size,
+                    max_streak_buffer_size=max_streak_buffer_size
+                )
 
         if webid_column:
             object_id = input_parameters_row.get(webid_column)
@@ -139,9 +147,18 @@ with output_dataset.get_writer() as output_writer:
             object_id = normalize_af_path(object_id)
         row = (time, value)
         responses = pi_writer.write_row(object_id, time, value)
-        write_responses(responses, output_writer)
+        initial_requests.append((object_id, time, value))
     responses = pi_writer.close()
-    write_responses(responses, output_writer)
+    for initial_request, response in zip(initial_requests, responses):
+        row = {}
+        row["Path"] = initial_request[0]
+        row["Timestamp"] = initial_request[1]
+        row["Value"] = initial_request[2]
+        row["Result"] = response.get("Status")
+        content = response.get("Content")
+        if content and isinstance(content, dict) and "Errors" in content:
+            row["Error"] = content.get("Errors")
+        output_writer.write_row_dict(row)
 
 processing_timer.stop()
 logger.info("Overall timer:{}".format(processing_timer.get_report()))
