@@ -51,6 +51,13 @@
             "defaultValue": ""
         },
         {
+            "name": "max_request_size",
+            "label": "Maximum request size",
+            "type": "INT",
+            "description": "",
+            "defaultValue": 1000
+        },
+        {
             "name": "osisoft_basic",
             "type": "CREDENTIAL_REQUEST",
             "label": "PI System basic login",
