@@ -299,6 +299,8 @@ def format_output(input_row, reference_row=None, is_enumeration_value=False):
         if type_column:
             reference_row["Type"] = type_column
         output_row.update(reference_row)
+    if "Path" in output_row:
+        output_row["ElementName"] = get_element_name_from_path(output_row.get("Path"))
     return output_row
 
 
@@ -493,6 +495,19 @@ def change_key_in_dict(input_dictionary, key_to_change, new_key_name):
     if key_to_change in input_dictionary:
         input_dictionary[new_key_name] = input_dictionary.pop(key_to_change)
     return input_dictionary
+
+
+def get_element_name_from_path(path):
+    # input: \\osisoft-pi-serv\Well\Assets\TX532|Current
+    # output: TX532
+    if not path:
+        return None
+    element_name = None
+    path_tokens = path.split("\\")
+    if len(path_tokens) > 0:
+        last_token = path_tokens[-1:][0]
+        element_name = last_token.split("|")[0]
+    return element_name
 
 
 class RecordsLimit():
