@@ -83,6 +83,34 @@
             "mandatory": true
           },
           {
+            "name": "type_of_interpolation",
+            "label": "Type of interpolation",
+            "description": "",
+            "type": "SELECT",
+            "selectChoices": [
+              {"value": "last_value", "label": "Last value received"},
+              {"value": "interpolation", "label": "Interpolation"},
+              {"value": "auto", "label": "Mixed (based on step)"}
+            ],
+            "defaultValue": "last_value"
+          },
+          {
+            "name": "step_column_name",
+            "label": "Step column",
+            "description": "Column containing the Step information",
+            "type": "COLUMN",
+            "allowedColumnTypes": [
+              "tinyint",
+              "smallint",
+              "int",
+              "bigint",
+              "string",
+              "boolean"
+            ],
+            "columnRole": "input_dataset",
+            "visibilityCondition": "model.type_of_interpolation=='auto'"
+          },
+          {
             "name": "show_advanced_parameters",
             "label": "Show advanced parameters",
             "description": "",
