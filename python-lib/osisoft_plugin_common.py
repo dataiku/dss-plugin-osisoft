@@ -299,6 +299,8 @@ def format_output(input_row, reference_row=None, is_enumeration_value=False):
         if type_column:
             reference_row["Type"] = type_column
         output_row.update(reference_row)
+    if "Path" in output_row:
+        output_row["ElementName"] = get_element_name_from_path(output_row.get("Path"))
     return output_row
 
 
@@ -385,13 +387,17 @@ def get_combined_description(default_columns, actual_columns):
     return output_columns
 
 
-def get_base_for_data_type(data_type, object_id):
+def get_base_for_data_type(data_type, object_id, **kwargs):
     schema = OSIsoftConstants.RECIPE_SCHEMA_PER_DATA_TYPE.get(data_type)
     base = {}
     for item in schema:
         item_name = item.get("name")
         base[item_name] = None
     base['object_id'] = object_id
+    for kwarg in kwargs:
+        value = kwargs.get(kwarg)
+        if value:
+            base[kwarg] = value
     ret = copy.deepcopy(base)
     return ret
 
@@ -400,11 +406,14 @@ def get_max_count(config):
     # some data_type requests only returns a maximum of 1k items
     # This can be increased by using maxCount
     DATA_TYPES_REQUIRING_MAXCOUNT = ["InterpolatedData", "PlotData", "RecordedData"]
-    DEFAULT_MAXCOUNT = 1000
+    DEFAULT_MAXCOUNT = 10000
     max_count = None
     data_type = config.get("data_type", None)
     if data_type in DATA_TYPES_REQUIRING_MAXCOUNT:
-        max_count = config.get("max_count", DEFAULT_MAXCOUNT)
+        if config.get("show_advanced_parameters", False):
+            max_count = config.get("max_count", DEFAULT_MAXCOUNT)
+        else:
+            max_count = DEFAULT_MAXCOUNT
     if isinstance(max_count, float):
         max_count = int(max_count)
     return max_count
@@ -486,6 +495,19 @@ def change_key_in_dict(input_dictionary, key_to_change, new_key_name):
     if key_to_change in input_dictionary:
         input_dictionary[new_key_name] = input_dictionary.pop(key_to_change)
     return input_dictionary
+
+
+def get_element_name_from_path(path):
+    # input: \\osisoft-pi-serv\Well\Assets\TX532|Current
+    # output: TX532
+    if not path:
+        return None
+    element_name = None
+    path_tokens = path.split("\\")
+    if len(path_tokens) > 0:
+        last_token = path_tokens[-1:][0]
+        element_name = last_token.split("|")[0]
+    return element_name
 
 
 class RecordsLimit():

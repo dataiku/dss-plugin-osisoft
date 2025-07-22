@@ -121,7 +121,10 @@ class OSIsoftConnector(Connector):  # Browse
                     ):
                         if limit.is_reached():
                             return
-                        output_row = format_output(row, attribute, is_enumeration_value=is_enumeration_value)
+                        output_row = format_output(
+                            row, attribute,
+                            is_enumeration_value=is_enumeration_value
+                        )
                         yield output_row
         else:
             for row in self.client.search_attributes(
