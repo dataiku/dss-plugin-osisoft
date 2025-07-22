@@ -18,6 +18,17 @@ logger = SafeLogger("pi-system plugin", forbiden_keys=["token", "password"])
 logger.info("PIWebAPI Assets values downloader recipe v{}".format(
     OSIsoftConstants.PLUGIN_VERSION
 ))
+
+
+def get_step_value(item):
+    if item and "Step" in item:
+        if item.get("Step") is True:
+            return "True"
+        else:
+            return "False"
+    return None
+
+
 input_dataset = get_input_names_for_role('input_dataset')
 output_names_stats = get_output_names_for_role('api_output')
 config = get_recipe_config()
@@ -99,6 +110,7 @@ with output_dataset.get_writer() as writer:
         if client.is_resource_path(object_id):
             object_id = normalize_af_path(object_id)
             item = client.get_item_from_path(object_id)
+        step_value = get_step_value(item)
         if item:
             rows = client.recursive_get_rows_from_item(
                 item,
@@ -136,12 +148,12 @@ with output_dataset.get_writer() as writer:
             row[path_column] = object_id
             if isinstance(row, list):
                 for line in row:
-                    base = get_base_for_data_type(data_type, object_id)
+                    base = get_base_for_data_type(data_type, object_id, Step=step_value)
                     base.update(line)
                     extention = client.unnest_row(base)
                     results.extend(extention)
             else:
-                base = get_base_for_data_type(data_type, object_id)
+                base = get_base_for_data_type(data_type, object_id, Step=step_value)
                 if duplicate_initial_row:
                     base.update(duplicate_initial_row)
                 base.update(row)
