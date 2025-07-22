@@ -274,10 +274,10 @@
         {
             "name": "max_count",
             "label": "Max count",
-            "visibilityCondition": "false && ['RecordedData'].includes(model.data_type)",
-            "description": "",
+            "visibilityCondition": "model.show_advanced_parameters==true && ['InterpolatedData','PlotData','RecordedData'].includes(model.data_type)",
+            "description": "Larger number speeds data transfer but loads the PI server",
             "type": "INT",
-            "defaultValue": 1000
+            "defaultValue": 10000
         }
     ],
     "resourceKeys": []
