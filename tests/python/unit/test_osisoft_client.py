@@ -1,5 +1,5 @@
 from osisoft_client import format_output_row
-from osisoft_plugin_common import is_child_attribute_path
+from osisoft_plugin_common import is_child_attribute_path, get_element_name_from_path
 
 
 class TestCommonMethods:
@@ -31,3 +31,11 @@ class TestCommonMethods:
         assert is_child_attribute
         is_child_attribute = is_child_attribute_path(self.path_to_element)
         assert not is_child_attribute
+
+    def test_get_element_name_from_path(self):
+        assert get_element_name_from_path("\\osisoft-pi-serv\\Well\\Assets\\TX532|Current") == 'TX532'
+        assert get_element_name_from_path("\\osisoft-pi-serv\\Well\\Assets\\TX532") == 'TX532'
+        assert get_element_name_from_path("TX532") == 'TX532'
+        assert get_element_name_from_path("") is None
+        assert get_element_name_from_path("|mknnkn") == ""
+        assert get_element_name_from_path("\\something\\|mknnkn") == ""

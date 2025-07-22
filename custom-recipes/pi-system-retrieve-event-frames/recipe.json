@@ -261,10 +261,10 @@
         {
             "name": "max_count",
             "label": "Max count",
-            "visibilityCondition": "['RecordedData'].includes(model.data_type)",
+            "visibilityCondition": "false && model.show_advanced_parameters==true && ['InterpolatedData','PlotData','RecordedData'].includes(model.data_type)",
             "description": "",
             "type": "INT",
-            "defaultValue": 1000
+            "defaultValue": 10000
         }
     ],
     "resourceKeys": []

@@ -259,6 +259,7 @@ class OSIsoftConstants(object):
         {"name": "Name", "type": "string"},
         {"name": "Description", "type": "string"},
         {"name": "Path", "type": "string"},
+        {"name": "ElementName", "type": "string"},
         {"name": "Type", "type": "string"},
         {"name": "TypeQualifier", "type": "string"},
         {"name": "DefaultUnitsName", "type": "string"},
@@ -284,6 +285,7 @@ class OSIsoftConstants(object):
         {"name": "Name", "type": "string"},
         {"name": "Description", "type": "string"},
         {"name": "Path", "type": "string"},
+        {"name": "ElementName", "type": "string"},
         {"name": "Timestamp", "type": "date"},
         {"name": "Value", "type": "string"},
         {"name": "Value_ID", "type": "string"},
@@ -403,7 +405,7 @@ class OSIsoftConstants(object):
         "Security": "{base_url}/eventframes/{webid}/security",
         "SecurityEntries": "{base_url}/eventframes/{webid}/securityentries"
     }
-    PLUGIN_VERSION = "1.2.4-beta.5"
+    PLUGIN_VERSION = "1.3.0"
     VALUE_COLUMN_SUFFIX = "_val"
     WEB_API_PATH = "piwebapi"
     WRITE_HEADERS = {'X-Requested-With': 'XmlHttpRequest'}

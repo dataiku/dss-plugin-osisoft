@@ -9,6 +9,7 @@ from osisoft_constants import OSIsoftConstants
 import dateutil.parser
 from column_name import normalise_name
 from osisoft_plugin_common import reorder_dataframe
+from datetime import datetime
 
 
 logger = SafeLogger("pi-system plugin", forbiden_keys=["token", "password"])
@@ -36,18 +37,27 @@ def parse_timestamp_and_value(line):
     return date, value
 
 
-def get_datetime_from_string(datetime):
+def get_epoch_from_string(datetime_string):
     try:
-        _ = dateutil.parser.isoparse(datetime)
-        return datetime
+        utc_time = datetime.strptime(datetime_string, "%Y-%m-%dT%H:%M:%SZ")
+        epoch_time = (utc_time - datetime(1970, 1, 1)).total_seconds()
+    except Exception:
+        return None
+    return epoch_time
+
+
+def get_datetime_from_string(datetime_string):
+    try:
+        _ = dateutil.parser.isoparse(datetime_string)
+        return datetime_string
     except Exception:
         pass
     return None
 
 
-def get_datetime_from_pandas(datetime):
+def get_datetime_from_pandas(datetime_string):
     try:
-        time_stamp = datetime.strftime('%Y-%m-%dT%H:%M:%SZ')
+        time_stamp = datetime_string.strftime('%Y-%m-%dT%H:%M:%SZ')
         return time_stamp
     except Exception:
         pass
@@ -63,7 +73,7 @@ def get_datetime_from_row(row, datetime_column):
     return formated_datetime
 
 
-def get_latest_values_at_timestamp(file_handles, seek_timestamp):
+def get_values_at_timestamp(file_handles, seek_timestamp, step_attributes):
     attribute_index = 0
     values = {}
     for attribute_path in file_handles:
@@ -85,17 +95,40 @@ def get_latest_values_at_timestamp(file_handles, seek_timestamp):
             next_timestamps_cache[attribute_index] = attribute_timestamp
             next_values_cache[attribute_index] = attribute_value
             next_cached_timestamp = next_timestamps_cache[attribute_index]
+        if step_attributes.get(attribute_path) is True:
+            calculated_value = interpolate(
+                current_timestamps_cache[attribute_index],
+                current_values_cache[attribute_index],
+                next_timestamps_cache[attribute_index],
+                next_values_cache[attribute_index],
+                seek_timestamp
+            )
+        else:
+            calculated_value = current_values_cache[attribute_index]
         if should_add_timestamps_columns:
             values.update({
                 "{}{}".format(attribute_path, OSIsoftConstants.TIMESTAMP_COLUMN_SUFFIX): current_timestamps_cache[attribute_index],
-                "{}{}".format(attribute_path, OSIsoftConstants.VALUE_COLUMN_SUFFIX): current_values_cache[attribute_index]
+                "{}{}".format(attribute_path, OSIsoftConstants.VALUE_COLUMN_SUFFIX): calculated_value
             })
         else:
             values.update({
-                attribute_path: current_values_cache[attribute_index]
+                attribute_path: calculated_value
             })
         attribute_index = attribute_index + 1
     return values
+
+
+def interpolate(previous_timestamp, previous_value, next_timestamp, next_value, time_now):
+    previous_timestamp = get_epoch_from_string(previous_timestamp)
+    next_timestamp = get_epoch_from_string(next_timestamp)
+    time_now = get_epoch_from_string(time_now)
+    if previous_timestamp is None or next_timestamp is None or time_now is None:
+        return None
+    if previous_timestamp == next_timestamp or time_now == previous_timestamp:
+        return previous_value
+    rate_of_change = (float(next_value) - float(previous_value)) / (float(next_timestamp) - float(previous_timestamp))
+    value_now = float(previous_value) + rate_of_change * (float(time_now) - float(previous_timestamp))
+    return value_now
 
 
 def clean_cache(paths_to_file_handles):
@@ -162,12 +195,17 @@ client = None
 previous_server_url = ""
 paths_to_file_handles = {}
 file_counter = 0
+step_attributes = {}
+
+type_of_interpolation = config.get("type_of_interpolation", "last_value")
+if type_of_interpolation == "auto":
+    step_column_name = config.get("step_column_name", "Step")
 
 # Cache each attribute
 logger.info("Caching all attributes in {}".format(temp_location.name))
 for index, input_parameters_row in input_parameters_dataframe.iterrows():
-    datetime = get_datetime_from_row(input_parameters_row, datetime_column)
-    if not datetime:
+    row_datetime = get_datetime_from_row(input_parameters_row, datetime_column)
+    if not row_datetime:
         continue
     attribute_path = input_parameters_row.get(input_paths_column)
     if should_make_column_names_db_compatible:
@@ -181,7 +219,14 @@ for index, input_parameters_row in input_parameters_dataframe.iterrows():
         if attribute_path == reference_attribute_path:
             time_reference_file = file_counter
         file_counter = file_counter + 1
-    paths_to_file_handles[attribute_path].writelines("{}|{}\n".format(datetime, value))
+    paths_to_file_handles[attribute_path].writelines("{}|{}\n".format(row_datetime, value))
+
+    if type_of_interpolation == "auto":
+        is_step_attribute = input_parameters_row.get(step_column_name)
+        if is_step_attribute == "True" or is_step_attribute is True:
+            step_attributes[attribute_path] = True
+    elif type_of_interpolation == "interpolation":
+        step_attributes[attribute_path] = True
 
 logger.info("Cached all {} attributes".format(file_counter))
 
@@ -210,15 +255,15 @@ current_values_cache.pop(0)
 next_timestamps_cache.pop(0)
 next_values_cache.pop(0)
 
+logger.info("Polling all attributes into final dataset")
 # For each timestamp of synchronizer attribute, read the most up to date value of all other attributes
 # Write all that, one column per attribute
 first_dataframe = True
-logger.info("Polling all attributes into final dataset")
 with output_dataset.get_writer() as writer:
     for line in reference_values_file:
         unnested_items_rows = []
         timestamp, value = parse_timestamp_and_value(line)
-        output_columns_dictionary = get_latest_values_at_timestamp(paths_to_file_handles, timestamp)
+        output_columns_dictionary = get_values_at_timestamp(paths_to_file_handles, timestamp, step_attributes)
         output_columns_dictionary.update({
             OSIsoftConstants.TIMESTAMP_COLUMN_NAME: timestamp,
             reference_attribute_path: value
