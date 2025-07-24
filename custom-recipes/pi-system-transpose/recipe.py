@@ -95,7 +95,7 @@ def get_values_at_timestamp(file_handles, seek_timestamp, step_attributes):
             next_timestamps_cache[attribute_index] = attribute_timestamp
             next_values_cache[attribute_index] = attribute_value
             next_cached_timestamp = next_timestamps_cache[attribute_index]
-        if step_attributes.get(attribute_path) is True:
+        if step_attributes.get(attribute_path) is False:
             calculated_value = interpolate(
                 current_timestamps_cache[attribute_index],
                 current_values_cache[attribute_index],
@@ -225,7 +225,11 @@ for index, input_parameters_row in input_parameters_dataframe.iterrows():
         is_step_attribute = input_parameters_row.get(step_column_name)
         if is_step_attribute == "True" or is_step_attribute is True:
             step_attributes[attribute_path] = True
+        elif is_step_attribute == "False" or is_step_attribute is False:
+            step_attributes[attribute_path] = False
     elif type_of_interpolation == "interpolation":
+        step_attributes[attribute_path] = False
+    elif type_of_interpolation == "last_value":
         step_attributes[attribute_path] = True
 
 logger.info("Cached all {} attributes".format(file_counter))
