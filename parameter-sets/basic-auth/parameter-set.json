@@ -58,6 +58,21 @@
             "defaultValue": 1000
         },
         {
+            "name": "estimated_density",
+            "label": "Estimated point density",
+            "type": "DOUBLE",
+            "description": "points/hour",
+            "defaultValue": 2
+        },
+        {
+            "name": "maximum_points_returned",
+            "label": "Maximum points return",
+            "type": "INT",
+            "description": "Target optimum number of points returned by batch. Calculated based on point density.",
+            "defaultValue": 1000000,
+            "minI": 1
+        },
+        {
             "name": "osisoft_basic",
             "type": "CREDENTIAL_REQUEST",
             "label": "PI System basic login",
