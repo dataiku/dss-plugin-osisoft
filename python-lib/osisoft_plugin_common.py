@@ -619,7 +619,6 @@ class PerformanceTimer():
 
 class BatchTimeCounter(object):
     def __init__(self, max_time_to_retrieve_per_batch):
-        logger.info("ALX:max_time_to_retrieve_per_batch:{}".format(max_time_to_retrieve_per_batch * 60 * 60))
         self.max_time_to_retrieve_per_batch = max_time_to_retrieve_per_batch * 60 * 60
         self.total_batch_time = 0
         # 2 points /h each line
@@ -637,6 +636,4 @@ class BatchTimeCounter(object):
         return False
 
     def add(self, start_time, end_time, interval):
-        print("ALX:add time {}, {}, {}, {}".format(start_time, end_time, interval, self.total_batch_time))
         self.total_batch_time += compute_time_spent(start_time, end_time, interval)
-        print("ALX:added time {}".format(self.total_batch_time))
