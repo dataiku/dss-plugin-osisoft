@@ -56,6 +56,21 @@ def get_credentials(config, can_raise=True):
         return auth_type, username, password, server_url, is_ssl_check_disabled, error_message
 
 
+def get_batch_parameters(config):
+    credentials = config.get("credentials", {})
+    max_request_size = credentials.get("max_request_size", 1000)
+    estimated_density = credentials.get("estimated_density", 6000)
+    maximum_points_returned = credentials.get("maximum_points_returned", 1000000)
+    return max_request_size, estimated_density, maximum_points_returned
+
+
+def compute_time_spent(start, end, bla):
+    # 2023-06-30T13:05:10.8692786Z->2024-06-30T13:05:10.9640942Z
+    start = iso_to_epoch(start)
+    end = iso_to_epoch(end)
+    return end - start
+
+
 def get_advanced_parameters(config):
     show_advanced_parameters = config.get('show_advanced_parameters', False)
     batch_size = 500
@@ -600,3 +615,25 @@ class PerformanceTimer():
         for slowest_event, slowest_time in zip(self.slowest_events, self.slowest_times):
             worst_performers.append("{}: {}s".format(slowest_event, slowest_time))
         return worst_performers
+
+
+class BatchTimeCounter(object):
+    def __init__(self, max_time_to_retrieve_per_batch):
+        self.max_time_to_retrieve_per_batch = max_time_to_retrieve_per_batch * 60 * 60
+        self.total_batch_time = 0
+        # 2 points /h each line
+        # max 1 000 000 lines back -> 500k hours max
+
+    def is_batch_full(self):
+        # return False
+        if self.max_time_to_retrieve_per_batch < 0:
+            return False
+        if self.total_batch_time > self.max_time_to_retrieve_per_batch:
+            logger.warning("batch contains {}s of request, needs to flush now".format(self.total_batch_time))
+            self.total_batch_time = 0
+            return True
+        logger.info("Batch below time threshold")
+        return False
+
+    def add(self, start_time, end_time, interval):
+        self.total_batch_time += compute_time_spent(start_time, end_time, interval)
