@@ -10,7 +10,8 @@ from osisoft_endpoints import OSIsoftEndpoints
 from osisoft_plugin_common import (
     assert_server_url_ok, build_requests_params,
     is_filtered_out, is_server_throttling, escape, epoch_to_iso,
-    iso_to_epoch, RecordsLimit, is_iso8601, get_next_page_url, change_key_in_dict
+    iso_to_epoch, RecordsLimit, is_iso8601, get_next_page_url, change_key_in_dict,
+    BatchTimeCounter
 )
 from osisoft_pagination import OffsetPagination
 from safe_logger import SafeLogger
@@ -243,7 +244,10 @@ class OSIsoftClient(object):
     def get_rows_from_webids(self, input_rows, data_type, **kwargs):
         endpoint_type = kwargs.get("endpoint_type", "event_frames")
         batch_size = kwargs.get("batch_size", 500)
-
+        estimated_density = kwargs.get("estimated_density", 500)
+        maximum_points_returned = kwargs.get("maximum_points_returned", 500)
+        max_time_to_retrieve_per_batch = maximum_points_returned / estimated_density
+        batch_time = BatchTimeCounter(max_time_to_retrieve_per_batch)
         batch_requests_parameters = []
         number_processed_webids = 0
         number_of_webids_to_process = len(input_rows)
@@ -260,13 +264,15 @@ class OSIsoftClient(object):
                 webid = input_row
             url = self.endpoint.get_data_from_webid_url(endpoint_type, data_type, webid)
             requests_kwargs = self.generic_get_kwargs(**kwargs)
+            print("ALX:requests_kwargs={}".format(requests_kwargs))
+            batch_time.add(requests_kwargs.get("params", {}).get("starttime"), requests_kwargs.get("params",{}).get("endtime"), None)
             requests_kwargs['url'] = build_query_string(url, requests_kwargs.get("params"))
             web_ids.append(webid)
             event_start_times.append(event_start_time)
             event_end_times.append(event_end_time)
             batch_requests_parameters.append(requests_kwargs)
             number_processed_webids += 1
-            if (len(batch_requests_parameters) >= batch_size) or (number_processed_webids == number_of_webids_to_process):
+            if (len(batch_requests_parameters) >= batch_size) or (number_processed_webids == number_of_webids_to_process) or batch_time.is_batch_full():
                 json_responses = self._batch_requests(batch_requests_parameters)
                 batch_requests_parameters = []
                 response_index = 0

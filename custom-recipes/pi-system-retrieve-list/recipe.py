@@ -7,7 +7,8 @@ from osisoft_plugin_common import (
     get_credentials, get_interpolated_parameters, normalize_af_path,
     get_combined_description, get_base_for_data_type, check_debug_mode,
     PerformanceTimer, get_max_count, check_must_convert_object_to_string,
-    convert_schema_objects_to_string, get_summary_parameters, get_advanced_parameters
+    convert_schema_objects_to_string, get_summary_parameters, get_advanced_parameters,
+    get_batch_parameters
 )
 from osisoft_client import OSIsoftClient
 from osisoft_constants import OSIsoftConstants
@@ -63,6 +64,8 @@ interval, sync_time, boundary_type = get_interpolated_parameters(config)
 record_boundary_type = config.get("record_boundary_type") if data_type == "RecordedData" else None
 summary_type, summary_duration = get_summary_parameters(config)
 do_duplicate_input_row = config.get("do_duplicate_input_row", False)
+max_request_size, estimated_density, maximum_points_returned = get_batch_parameters(config)
+max_time_to_retrieve_per_batch = estimated_density / maximum_points_returned #density per hour <- max time is in hour
 
 network_timer = PerformanceTimer()
 processing_timer = PerformanceTimer()
@@ -150,9 +153,12 @@ with output_dataset.get_writer() as writer:
                     object_id=object_id,
                     summary_type=summary_type,
                     summary_duration=summary_duration,
-                    endpoint_type="AF"
+                    endpoint_type="AF",
+                    estimated_density=estimated_density,
+                    maximum_points_returned=maximum_points_returned
                 )
                 batch_buffer_size = 0
+                total_batch_time = 0
                 buffer = []
             else:
                 continue
