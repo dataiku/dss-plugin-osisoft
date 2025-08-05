@@ -263,9 +263,11 @@ class OSIsoftClient(object):
             else:
                 webid = input_row
             url = self.endpoint.get_data_from_webid_url(endpoint_type, data_type, webid)
+            start_date = kwargs.get("start_date")
+            end_date = kwargs.get("end_date")
+            interval = kwargs.get("interval")
             requests_kwargs = self.generic_get_kwargs(**kwargs)
-            print("ALX:requests_kwargs={}".format(requests_kwargs))
-            batch_time.add(requests_kwargs.get("params", {}).get("starttime"), requests_kwargs.get("params",{}).get("endtime"), None)
+            batch_time.add(start_date, end_date, interval)
             requests_kwargs['url'] = build_query_string(url, requests_kwargs.get("params"))
             web_ids.append(webid)
             event_start_times.append(event_start_time)
