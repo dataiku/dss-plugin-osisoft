@@ -442,9 +442,9 @@ def epoch_to_iso(epoch):
 
 
 def iso_to_epoch(iso_timestamp):
-    logger.info("Converting iso timestamp '{}' to epoch".format(iso_timestamp))
+    # logger.info("Converting iso timestamp '{}' to epoch".format(iso_timestamp))
     if is_epoch(iso_timestamp):
-        logger.info("Timestamp is already epoch")
+        # logger.info("Timestamp is already epoch")
         return iso_timestamp
     epoch_timestamp = None
     try:
@@ -453,7 +453,7 @@ def iso_to_epoch(iso_timestamp):
     except Exception:
         logger.error("Error when converting iso timestamp '{}' to epoch".format(iso_timestamp))
         return None
-    logger.info("Timestamp is now '{}'".format(epoch_timestamp))
+    # logger.info("Timestamp is now '{}'".format(epoch_timestamp))
     return epoch_timestamp
 
 
@@ -619,24 +619,19 @@ class PerformanceTimer():
 
 class BatchTimeCounter(object):
     def __init__(self, max_time_to_retrieve_per_batch):
-        logger.info("ALX:max_time_to_retrieve_per_batch:{}".format(max_time_to_retrieve_per_batch * 60 * 60))
+        logger.info("BatchTimeCounter:max_time_to_retrieve_per_batch={}s".format(max_time_to_retrieve_per_batch * 60 * 60))
         self.max_time_to_retrieve_per_batch = max_time_to_retrieve_per_batch * 60 * 60
-        self.total_batch_time = 0
-        # 2 points /h each line
-        # max 1 000 000 lines back -> 500k hours max
+        self.total_batched_time = 0
 
     def is_batch_full(self):
-        # return False
         if self.max_time_to_retrieve_per_batch < 0:
             return False
-        if self.total_batch_time > self.max_time_to_retrieve_per_batch:
-            logger.warning("batch contains {}s of request, needs to flush now".format(self.total_batch_time))
-            self.total_batch_time = 0
+        if self.total_batched_time > self.max_time_to_retrieve_per_batch:
+            logger.warning("batch contains {}s of request, needs to flush now".format(self.total_batched_time))
+            self.total_batched_time = 0
             return True
-        logger.info("Batch below time threshold")
         return False
 
     def add(self, start_time, end_time, interval):
-        print("ALX:add time {}, {}, {}, {}".format(start_time, end_time, interval, self.total_batch_time))
-        self.total_batch_time += compute_time_spent(start_time, end_time, interval)
-        print("ALX:added time {}".format(self.total_batch_time))
+        print("ALX:adding start_time={}, end_time={}, interval={}".format(start_time, end_time, interval))
+        self.total_batched_time += compute_time_spent(start_time, end_time, interval)
