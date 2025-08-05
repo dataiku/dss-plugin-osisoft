@@ -158,7 +158,6 @@ with output_dataset.get_writer() as writer:
                     maximum_points_returned=maximum_points_returned
                 )
                 batch_buffer_size = 0
-                total_batch_time = 0
                 buffer = []
             else:
                 continue
