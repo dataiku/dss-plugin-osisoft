@@ -633,5 +633,4 @@ class BatchTimeCounter(object):
         return False
 
     def add(self, start_time, end_time, interval):
-        print("ALX:adding start_time={}, end_time={}, interval={}".format(start_time, end_time, interval))
         self.total_batched_time += compute_time_spent(start_time, end_time, interval)
