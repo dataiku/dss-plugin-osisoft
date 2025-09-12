@@ -1,0 +1,25 @@
+/* This file is the descriptor for custom agent tool search-for-tags */
+{
+    "meta" : {
+        // label: name of the agent tool as displayed, should be short
+        "label": "Custom agent tool search-for-tags",
+
+        // description: longer string to help end users understand what this agent tool does.
+        "description": "This is the description of the custom agent tool search-for-tags",
+
+        // icon: must be one of the FontAwesome 5.15.4 icons, complete list here at https://fontawesome.com/v5/docs/
+        "icon": "fas fa-magic"
+    },
+
+    /* params:
+    DSS will generate a form from this list of requested parameters.
+    Your component code can then access the value provided by users using the "name" field of each parameter.
+
+    Available parameter types include:
+    STRING, INT, DOUBLE, BOOLEAN, DATE, SELECT, TEXTAREA, PRESET and others.
+
+    For the full list and for more details, see the documentation: https://doc.dataiku.com/dss/latest/plugins/reference/params.html
+    */
+    "params": [
+    ]
+}
