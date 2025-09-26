@@ -904,7 +904,7 @@ class OSIsoftWriter(object):
         else:
             return self.client.post_stream_value(self.webid, data)
 
-    def timestamp_convertion(self, timestamp):
+    def timestamp_conversion(self, timestamp):
         return timestamp
 
     def close(self):
