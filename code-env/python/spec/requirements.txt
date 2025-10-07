@@ -1,2 +1,2 @@
-requests_ntlm==1.1.0
+requests_ntlm==1.2.0
 simplejson==3.17.6
