@@ -1,5 +1,9 @@
 # Changelog
 
+## [Version 1.3.2](https://github.com/dataiku/dss-plugin-pi-server/releases/tag/v1.3.2) - Bugfix release - 2025-10-07
+
+- Fix NTLM authentication for py3.9+
+
 ## [Version 1.3.1](https://github.com/dataiku/dss-plugin-pi-server/releases/tag/v1.3.1) - Bugfix release - 2025-05-24
 
 - Fix the mix mode interpolation type in Transpose & Synchronise (the Step value was inverted)
