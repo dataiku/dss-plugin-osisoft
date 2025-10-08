@@ -6,7 +6,12 @@
         "description": "Retrieve data from your OSIsoft PI System servers",
         "author": "Dataiku (Alex Bourret)",
         "icon": "icon-pi-system icon-cogs",
-        "tags": ["Connector"],
+        "category": "Connect",
+        "tags": [
+            "Data source",
+            "Recipe",
+            "Dataset"
+        ],
         "url": "https://www.dataiku.com/product/plugins/pi-system/",
         "licenseInfo": "Apache Software License",
         "supportLevel": "NOT_SUPPORTED"
