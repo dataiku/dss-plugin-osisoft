@@ -935,7 +935,15 @@ class OSIsoftBatchWriter(object):
 
     def write_row(self, webid, timestamp, value):
         response = None
-        timestamp = self._timestamp_convertion(timestamp)
+        if not validate_timestamp(timestamp):
+            error_message = "Timestamp '{}' has an invalid format".format(
+                    timestamp
+            )
+            logger.error(error_message)
+            # No valid timestamp so we skip this row
+            return {
+                "Error": error_message
+            }
         # mark in self.responses that status of this write depends on result of streak X
         if self.current_webid is None:
             logger.info("webid now is {}".format(webid))
@@ -983,10 +991,16 @@ class OSIsoftBatchWriter(object):
         self._flush_requests()
         return self.responses
 
-    def _timestamp_convertion(self, timestamp):
-        if timestamp:
-            return timestamp
-        return datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%S.%fZ")
+
+def validate_timestamp(timestamp):
+    valid_formats=["%Y-%m-%dT%H:%M:%S.%fZ", "%Y-%m-%dT%H:%M:%SZ"]
+    for valid_format in valid_formats:
+        try:
+            datetime.strptime(timestamp, valid_format)
+            return True
+        except Exception:
+            pass
+    return False
 
 
 def formatted_error_source(error_source):

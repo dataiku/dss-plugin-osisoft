@@ -8,6 +8,7 @@ from osisoft_plugin_common import (
 )
 from osisoft_client import OSIsoftClient, OSIsoftBatchWriter
 from osisoft_constants import OSIsoftConstants
+import pandas
 
 DEFAULT_BATCH_SIZE = 500
 
@@ -80,11 +81,14 @@ with output_dataset.get_writer() as output_writer:
     first_dataframe = True
     pi_writer = None
     initial_requests = []  # Storing initial request to display in output dataset
+    instant_responses = []
     previous_path = None
     previous_object_id = None
     for index, input_parameters_row in input_parameters_dataframe.iterrows():
         server_url = input_parameters_row.get(server_url_column, server_url) if use_server_url_column else server_url
         time = input_parameters_row.get(time_column)
+        if isinstance(time, pandas.Timestamp):
+            time = time.strftime("%Y-%m-%dT%H:%M:%S.%fZ")
         value = input_parameters_row.get(value_column)
 
         row_name = input_parameters_row.get("Name")
@@ -123,10 +127,11 @@ with output_dataset.get_writer() as output_writer:
             else:
                 object_id = previous_object_id
         row = (time, value)
-        responses = pi_writer.write_row(object_id, time, value)
+        instant_response = pi_writer.write_row(object_id, time, value)  # usually none, could contain error
+        instant_responses.append(instant_response)
         initial_requests.append((object_id, time, value))
     responses = pi_writer.close()
-    for initial_request, response in zip(initial_requests, responses):
+    for initial_request, response, instant_response in zip(initial_requests, responses, instant_responses):
         row = {}
         row["Path"] = initial_request[0]
         row["Timestamp"] = initial_request[1]
@@ -135,6 +140,8 @@ with output_dataset.get_writer() as output_writer:
         content = response.get("Content")
         if content and isinstance(content, dict) and "Errors" in content:
             row["Error"] = content.get("Errors")
+        if instant_response:
+            row["Error"] = instant_response.get("Error")
         output_writer.write_row_dict(row)
 
 processing_timer.stop()
