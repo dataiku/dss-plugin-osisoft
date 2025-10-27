@@ -60,7 +60,7 @@
             "label": " ",
             "type": "BOOLEAN",
             "description": "Use batch mode",
-            "visibilityCondition": "model.show_advanced_parameters==true && model.must_retrieve_metrics==true",
+            "visibilityCondition": "model.show_advanced_parameters==true",
             "defaultValue": false
         },
         {
@@ -68,7 +68,7 @@
             "label": " ",
             "type": "INT",
             "description": "Batch size",
-            "visibilityCondition": "model.show_advanced_parameters==true && model.use_batch_mode==true && model.must_retrieve_metrics==true",
+            "visibilityCondition": "model.show_advanced_parameters==true && model.use_batch_mode==true",
             "minI": 1,
             "defaultValue": 500
         },
