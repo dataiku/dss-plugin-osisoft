@@ -21,7 +21,7 @@
             "label": " ",
             "type": "BOOLEAN",
             "description": "Show advanced parameters",
-            "defaultValue": false
+            "defaultValue": true
         },
         {
             "name": "server_url",
@@ -61,7 +61,7 @@
             "type": "BOOLEAN",
             "description": "Use batch mode",
             "visibilityCondition": "model.show_advanced_parameters==true",
-            "defaultValue": false
+            "defaultValue": true
         },
         {
             "name": "batch_size",
