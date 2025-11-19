@@ -1,3 +1,4 @@
+import datetime
 from dataiku.connector import Connector
 from osisoft_client import OSIsoftClient
 from safe_logger import SafeLogger
@@ -40,12 +41,14 @@ class HierarchyConnector(Connector):
     def generate_rows(self, dataset_schema=None, dataset_partitioning=None,
                       partition_id=None, records_limit = -1):
         limit = RecordsLimit(records_limit)
+        start_time = datetime.datetime.now()
 
         headers = self.client.get_requests_headers()
         json_response = self.client.get(url=self.database_endpoint, headers=headers, params={}, error_source="traverse")
+        server_name = json_response.get("ExtendedProperties", {}).get("DefaultPIServer", {}).get("Value", "Unknown server name")
 
         if self.use_batch_mode:
-            for item in self.batch_next_item(json_response, type="Database"):
+            for item in self.batch_next_item(json_response, parent=server_name, type="Database"):
                 if limit.is_reached():
                     break
                 yield item
@@ -55,6 +58,10 @@ class HierarchyConnector(Connector):
                 if limit.is_reached():
                     break
                 yield item
+        end_time = datetime.datetime.now()
+        duration = end_time - start_time
+        logger.info("generate_rows overall duration = {}s".format(duration.microseconds/1000000 + duration.seconds))
+        logger.info("Network timer:{}".format(self.network_timer.get_report()))
 
     def recurse_next_item(self, next_url, parent=None, type=None):
         logger.info("recurse_next_item")
@@ -95,11 +102,12 @@ class HierarchyConnector(Connector):
         todo_list.append(
             {
                 "url": self.client.extract_link_with_key(next_item, "Elements"),
-                "parent": next_item.get("Name"),
+                "parent": "\\\\" + parent + "\\" + next_item.get("Name"),
                 "type": "Database"
             }
         )
         batch_requests_parameters= []
+        parent_of_batched_items = []
         while todo_list:
             item = todo_list.pop()
             request_kwargs = {
@@ -107,10 +115,11 @@ class HierarchyConnector(Connector):
                 "headers": self.client.get_requests_headers()
             }
             batch_requests_parameters.append(request_kwargs)
+            parent_of_batched_items.append(item.get("parent"))
             if not todo_list or len(batch_requests_parameters) > self.batch_size:
                 json_responses = self.client._batch_requests(batch_requests_parameters)
                 batch_requests_parameters = []
-                for json_response in json_responses:
+                for parent_of_batched_item, json_response in zip(parent_of_batched_items, json_responses):
                     response_content = json_response.get("Content", {})
                     links = response_content.get("Links", {})
                     next_link = links.get("Next", {})
@@ -131,7 +140,7 @@ class HierarchyConnector(Connector):
                                 {
                                     "url": elements_url,
                                     "type": "Element",
-                                    "parent": retrieved_item_path
+                                    "parent": parent_of_batched_item + "\\" + retrieved_item.get("Name")
                                 }
                             )
                         if attributes_url:
@@ -139,7 +148,7 @@ class HierarchyConnector(Connector):
                                 {
                                     "url": attributes_url,
                                     "type": "Attribute",
-                                    "parent": retrieved_item_path
+                                    "parent": parent_of_batched_item + "\\" + retrieved_item.get("Name")
                                 }
                             )
                         yield {
@@ -148,7 +157,8 @@ class HierarchyConnector(Connector):
                             "Type": retrieved_item.get("Type"),
                             "Description": retrieved_item.get("Description"),
                             "Path": retrieved_item.get("Path"),
-                            "Parent": parent,
+                            "LinkPath": "{}\\{}".format(parent_of_batched_item, retrieved_item.get("Name")),
+                            "Parent": parent_of_batched_item,
                             "DefaultUnitsName": retrieved_item.get("DefaultUnitsName"),
                             "TemplateName": retrieved_item.get("TemplateName"),
                             "CategoryNames": retrieved_item.get("CategoryNames"),
@@ -157,6 +167,7 @@ class HierarchyConnector(Connector):
                             "WebId": retrieved_item.get("WebId"),
                             "Id": retrieved_item.get("Id")
                         }
+                parent_of_batched_items = []
 
 
     def batch_recurse_next_item(self, next_items, parents=None, type=None):
