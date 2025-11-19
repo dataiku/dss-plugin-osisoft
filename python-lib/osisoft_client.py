@@ -946,7 +946,7 @@ class OSIsoftBatchWriter(object):
             }
         # mark in self.responses that status of this write depends on result of streak X
         if self.current_webid is None:
-            logger.info("webid now is {}".format(webid))
+            logger.info("webid : {}".format(webid))
             self.current_webid = webid
         if webid != self.current_webid or len(self.streak_buffer) >= self.max_buffer_size:
             logger.info("webid: {} / {}".format(webid, self.current_webid))
@@ -960,7 +960,7 @@ class OSIsoftBatchWriter(object):
             }
         )
         self.row_number += 1
-        logger.info("Pushed in buffer, now {}".format(len(self.streak_buffer)))
+        logger.info("Pushed in streak buffer. Size is now {}".format(len(self.streak_buffer)))
         self.responses.append({"streak": self.current_streak})
         return response
 
