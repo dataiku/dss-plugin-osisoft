@@ -21,7 +21,7 @@
             "label": " ",
             "type": "BOOLEAN",
             "description": "Show advanced parameters",
-            "defaultValue": false
+            "defaultValue": true
         },
         {
             "name": "server_url",
@@ -60,15 +60,15 @@
             "label": " ",
             "type": "BOOLEAN",
             "description": "Use batch mode",
-            "visibilityCondition": "model.show_advanced_parameters==true && model.must_retrieve_metrics==true",
-            "defaultValue": false
+            "visibilityCondition": "model.show_advanced_parameters==true",
+            "defaultValue": true
         },
         {
             "name": "batch_size",
             "label": " ",
             "type": "INT",
             "description": "Batch size",
-            "visibilityCondition": "model.show_advanced_parameters==true && model.use_batch_mode==true && model.must_retrieve_metrics==true",
+            "visibilityCondition": "model.show_advanced_parameters==true && model.use_batch_mode==true",
             "minI": 1,
             "defaultValue": 500
         },
