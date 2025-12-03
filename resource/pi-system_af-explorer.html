@@ -1,0 +1,47 @@
+<div ng-controller="AfExplorerFormController" ng-init="init()" style="margin: 10px 0px;">
+    <div class="control-group">
+        <label class="control-label" for="pi-system-credentials">Pi System connection</label>
+        <div class="dib">
+            <div autoconfig-preset-element
+                param-desc="paramDesc"
+                model="config.credentials"
+                plugin-id="pi-system"
+                accessible-parameter-set-descriptions="accessibleParameterSetDescriptions"
+                accessible-presets="accessiblePresets"
+                inline-params="inlineParams"
+                inline-plugin-params="inlinePluginParams"
+                error-scope="errorScope"
+                required>
+            </div>
+        </div>
+    </div>
+    <div class="control-group removed-if-manual-query">
+       <label class="control-label">Server</label>{{config.server_name | json}}
+       <div class="controls">
+           <select dku-bs-select
+                   ng-model="config.server_name"
+                   ng-options="sv.value as sv.label for sv in server_name"> 
+           </select>
+           <button ng-click="getServers()" class="btn btn--primary link-like">Get servers names</button>
+       </div>
+   </div>
+   <div class="control-group removed-if-manual-query">
+       <label class="control-label">Database</label>{{config.database_name | json}}
+       <div class="controls">
+           <select dku-bs-select
+                   ng-model="config.database_name"
+                   ng-options="dbn.value as dbn.label for dbn in database_name"> 
+           </select>
+           <button ng-click="getDatabases()" class="btn btn--primary link-like">Get database names</button>
+       </div>
+   </div>
+</div>
+
+<div ng-controller="TreeCtrl">
+  <button ng-click="testPythonDo()" class="btn btn--primary link-like">Test Python do</button>
+  <ul ng-if="treeData.length">
+    <li ng-repeat="node in treeData track by node.id">
+      <tree-node node="node"></tree-node>
+    </li>
+  </ul>
+</div>
