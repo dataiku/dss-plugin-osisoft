@@ -7,7 +7,7 @@ from osisoft_plugin_common import (
     get_credentials, get_interpolated_parameters, normalize_af_path,
     get_combined_description, get_base_for_data_type, check_debug_mode,
     PerformanceTimer, get_max_count, check_must_convert_object_to_string,
-    convert_schema_objects_to_string, get_summary_parameters
+    convert_schema_objects_to_string, get_summary_parameters, get_advanced_parameters
 )
 from osisoft_client import OSIsoftClient
 from osisoft_constants import OSIsoftConstants
@@ -58,6 +58,7 @@ start_time_column = config.get("start_time_column")
 use_end_time_column = config.get("use_end_time_column", False)
 end_time_column = config.get("end_time_column")
 server_url_column = config.get("server_url_column")
+use_batch_mode, batch_size = get_advanced_parameters(config)
 interval, sync_time, boundary_type = get_interpolated_parameters(config)
 record_boundary_type = config.get("record_boundary_type") if data_type == "RecordedData" else None
 summary_type, summary_duration = get_summary_parameters(config)
@@ -81,12 +82,17 @@ input_columns = list(input_parameters_dataframe.columns) if do_duplicate_input_r
 
 with output_dataset.get_writer() as writer:
     first_dataframe = True
+    absolute_index = 0
+    batch_buffer_size = 0
+    buffer = []
     for index, input_parameters_row in input_parameters_dataframe.iterrows():
+        absolute_index += 1
         server_url = input_parameters_row.get(server_url_column, server_url) if use_server_url_column else server_url
         start_time = input_parameters_row.get(start_time_column, start_time) if use_start_time_column else start_time
         end_time = input_parameters_row.get(end_time_column, end_time) if use_end_time_column else end_time
         row_name = input_parameters_row.get("Name")
         duplicate_initial_row = {}
+        nb_rows_to_process = input_parameters_dataframe.shape[0]
         for input_column in input_columns:
             duplicate_initial_row[input_column] = input_parameters_row.get(input_column)
 
@@ -127,6 +133,29 @@ with output_dataset.get_writer() as writer:
                 summary_type=summary_type,
                 summary_duration=summary_duration
             )
+        elif use_batch_mode:
+            buffer.append({"WebId": object_id})
+            batch_buffer_size += 1
+            if (batch_buffer_size >= batch_size) or (absolute_index == nb_rows_to_process):
+                rows = client.get_rows_from_webids(
+                    buffer, data_type, max_count=max_count,
+                    start_date=start_time,
+                    end_date=end_time,
+                    interval=interval,
+                    sync_time=sync_time,
+                    boundary_type=boundary_type,
+                    record_boundary_type=record_boundary_type,
+                    can_raise=False,
+                    batch_size=batch_size,
+                    object_id=object_id,
+                    summary_type=summary_type,
+                    summary_duration=summary_duration,
+                    endpoint_type="AF"
+                )
+                batch_buffer_size = 0
+                buffer = []
+            else:
+                continue
         else:
             rows = client.recursive_get_rows_from_webid(
                 object_id,

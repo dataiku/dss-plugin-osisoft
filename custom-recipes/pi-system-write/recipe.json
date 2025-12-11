@@ -1,0 +1,148 @@
+{
+    "meta": {
+        "label": "Write to tag",
+        "description": "Write values to tags",
+        "icon": "icon-pi-system icon-pencil"
+    },
+    "kind": "PYTHON",
+    "selectableFromDataset": "input_dataset",
+    "inputRoles": [
+        {
+            "name": "input_dataset",
+            "label": "Dataset containing paths or tags",
+            "description": "",
+            "arity": "UNARY",
+            "required": true,
+            "acceptsDataset": true
+        }
+    ],
+
+    "outputRoles": [
+        {
+            "name": "api_output",
+            "label": "Main output displayed name",
+            "description": "",
+            "arity": "UNARY",
+            "required": true,
+            "acceptsDataset": true
+        }
+    ],
+    "params": [
+        {
+            "type": "SEPARATOR",
+            "label": "Authentication"
+        },
+        {
+            "name": "credentials",
+            "label": "User preset",
+            "type": "PRESET",
+            "parameterSetId": "basic-auth"
+        },
+        {
+            "name": "show_advanced_parameters",
+            "label": "Show advanced parameters",
+            "type": "BOOLEAN",
+            "definition": "",
+            "defaultValue": false
+        },
+        {
+            "name": "use_server_url_column",
+            "label": "Use server value per row",
+            "visibilityCondition": "model.show_advanced_parameters==true && false",
+            "description": "",
+            "type": "BOOLEAN",
+            "defaultValue": false
+        },
+        {
+            "visibilityCondition": "(model.use_server_url_column==true) && (model.show_advanced_parameters==true)",
+            "name": "server_url_column",
+            "label": "Server domain columnn",
+            "description": "Should match the required path for each row",
+            "type": "COLUMN",
+            "columnRole": "input_dataset"
+        },
+        {
+            "visibilityCondition": "(model.use_server_url_column==false) && (model.show_advanced_parameters==true)",
+            "name": "server_url",
+            "label": "Server URL",
+            "type": "STRING",
+            "definition": "https://my_server:8082",
+            "defaultValue": ""
+        },
+        {
+            "name": "is_ssl_check_disabled",
+            "label": "Disable SSL check",
+            "visibilityCondition": "model.show_advanced_parameters==true",
+            "type": "BOOLEAN",
+            "definition": "",
+            "defaultValue": false
+        },
+        {
+            "name": "ssl_cert_path",
+            "label": "Path to SSL certificate",
+            "type": "STRING",
+            "description": "(optional)",
+            "visibilityCondition": "model.show_advanced_parameters==true && model.is_ssl_check_disabled==false",
+            "mandatory": false
+        },
+        {
+            "name": "is_debug_mode",
+            "label": "Verbose logging",
+            "visibilityCondition": "model.show_advanced_parameters==true",
+            "type": "BOOLEAN",
+            "description": "",
+            "defaultValue": false
+        },
+        {
+            "name": "max_streak_buffer_size",
+            "label": "Size of streak buffer",
+            "visibilityCondition": "model.show_advanced_parameters==true",
+            "type": "INT",
+            "minI": 1,
+            "defaultValue": 500,
+            "description": ""
+        },
+        {
+            "name": "max_requests_buffer_size",
+            "label": "Size of batch buffer",
+            "visibilityCondition": "model.show_advanced_parameters==true",
+            "type": "INT",
+            "minI": 1,
+            "defaultValue": 500,
+            "description": ""
+        },
+        {
+            "type": "SEPARATOR",
+            "description": "Source"
+        },
+        {
+            "name": "path_column",
+            "label": "Path column",
+            "description": "",
+            "type": "COLUMN",
+            "columnRole": "input_dataset"
+        },
+        {
+            "name": "webid_column",
+            "label": "WebID column",
+            "description": "(faster than using path)",
+            "type": "COLUMN",
+            "columnRole": "input_dataset"
+        },
+        {
+            "name": "time_column",
+            "label": "Time column",
+            "description": "",
+            "type": "COLUMN",
+            "columnRole": "input_dataset"
+        },
+        {
+            "name": "value_column",
+            "label": "Value column",
+            "description": "",
+            "type": "COLUMN",
+            "columnRole": "input_dataset"
+        }
+    ],
+    "resourceKeys": []
+}
