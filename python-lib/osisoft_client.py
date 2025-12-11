@@ -549,18 +549,6 @@ class OSIsoftClient(object):
         )
         return response
 
-    def post_all_values(self, webid, buffer):
-        url = self.endpoint.get_stream_record_url(webid)
-        headers = OSIsoftConstants.WRITE_HEADERS
-        params = {}
-        response = self.post(
-            url=url,
-            headers=headers,
-            params=params,
-            data=buffer
-        )
-        return response
-
     def prepare_post_all_values(self, webid, buffer):
         url = self.endpoint.get_stream_record_url(webid)
         headers = OSIsoftConstants.WRITE_HEADERS
@@ -912,7 +900,7 @@ class OSIsoftWriter(object):
         else:
             return self.client.post_stream_value(self.webid, data)
 
-    def timestamp_convertion(self, timestamp):
+    def timestamp_conversion(self, timestamp):
         return timestamp
 
     def close(self):
@@ -939,7 +927,7 @@ class OSIsoftBatchWriter(object):
 
     # Possible improvement: flush the responses list (and result writing in the recipe.py) at each _flush_requests to keep memory from going up.
 
-    # If you have to review this, please accept my sincere apologies.
+    # My Regards to the unsung Hero who had to review this code
 
     def __init__(self, client, max_streak_buffer_size=500, max_requests_buffer_size=500):
         logger.info("Initializing OSIsoftBatchWriter, msbs={}, mrbs={}".format(max_streak_buffer_size, max_requests_buffer_size))
@@ -955,10 +943,18 @@ class OSIsoftBatchWriter(object):
 
     def write_row(self, webid, timestamp, value):
         response = None
-        timestamp = self._timestamp_convertion(timestamp)
+        if not validate_timestamp(timestamp):
+            error_message = "Timestamp '{}' has an invalid format".format(
+                    timestamp
+            )
+            logger.error(error_message)
+            # No valid timestamp so we skip this row
+            return {
+                "Error": error_message
+            }
         # mark in self.responses that status of this write depends on result of streak X
         if self.current_webid is None:
-            logger.info("webid now is {}".format(webid))
+            logger.info("webid : {}".format(webid))
             self.current_webid = webid
         if webid != self.current_webid or len(self.streak_buffer) >= self.max_buffer_size:
             logger.info("webid: {} / {}".format(webid, self.current_webid))
@@ -972,17 +968,18 @@ class OSIsoftBatchWriter(object):
             }
         )
         self.row_number += 1
-        logger.info("Pushed in buffer, now {}".format(len(self.streak_buffer)))
+        logger.info("Pushed in streak buffer. Size is now {}".format(len(self.streak_buffer)))
         self.responses.append({"streak": self.current_streak})
         return response
 
     def _flush_streak(self):
-        # streak buffer must be flushed every time the webid changes
+        # streak buffer must be flushed every time the webid changes or before closing the session
         logger.info("flushing streak")
         kwargs = self.client.prepare_post_all_values(self.current_webid, self.streak_buffer)
         self.requests_buffer.append(kwargs)
         logger.info("pushed to requests buffer {}".format(len(self.requests_buffer)))
         if len(self.requests_buffer) >= self.max_requests_buffer_size:
+            logger.info("Buffer is full, flushing current requests")
             self._flush_requests()
         self.streak_buffer = []
         self.current_streak += 1
@@ -1002,10 +999,16 @@ class OSIsoftBatchWriter(object):
         self._flush_requests()
         return self.responses
 
-    def _timestamp_convertion(self, timestamp):
-        if timestamp:
-            return timestamp
-        return datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%S.%fZ")
+
+def validate_timestamp(timestamp):
+    valid_formats=["%Y-%m-%dT%H:%M:%S.%fZ", "%Y-%m-%dT%H:%M:%SZ"]
+    for valid_format in valid_formats:
+        try:
+            datetime.strptime(timestamp, valid_format)
+            return True
+        except Exception:
+            pass
+    return False
 
 
 def formatted_error_source(error_source):

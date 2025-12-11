@@ -6,44 +6,17 @@ from osisoft_plugin_common import (
     get_credentials, normalize_af_path, check_debug_mode,
     PerformanceTimer, get_max_count,
 )
-from osisoft_client import OSIsoftClient, OSIsoftWriter, OSIsoftBatchWriter
+from osisoft_client import OSIsoftClient, OSIsoftBatchWriter
 from osisoft_constants import OSIsoftConstants
-from requests import models
+import pandas
 
+DEFAULT_BATCH_SIZE = 500
 
 logger = SafeLogger("pi-system plugin", forbiden_keys=["token", "password"])
 
-logger.info("PIWebAPI Assets values writer recipe v{}".format(
+logger.info("Write to tag recipe v{}".format(
     OSIsoftConstants.PLUGIN_VERSION
 ))
-
-
-def analyse_response(response):
-    status_code = None
-    error = None
-    if isinstance(response, models.Response):
-        status_code = response.status_code
-    else:
-        error = "Issue with server's response"
-    return status_code, error
-
-
-def write_responses(responses, output):
-    if not responses:
-        return
-    status_code = responses[0]
-    path_used = responses[1]
-    responses = responses[2]
-    for response in responses:
-        output.write_row_dict(
-            {
-                "Path": "{}".format(path_used),
-                "Timestamp": response.get("Timestamp"),
-                "Value": response.get("Value"),
-                "Result": status_code
-            }
-        )
-
 
 input_dataset = get_input_names_for_role('input_dataset')
 output_names_stats = get_output_names_for_role('api_output')
@@ -64,7 +37,7 @@ if not server_url and not use_server_url_column:
 path_column = config.get("path_column", "")
 webid_column = config.get("webid_column", "")
 if not path_column and not webid_column:
-    raise ValueError("There is no parameter column selected.")
+    raise ValueError("There is no path nor webid column selected.")
 
 time_column = config.get("time_column", "")
 if not time_column:
@@ -74,8 +47,8 @@ value_column = config.get("value_column", "")
 if not value_column:
     raise ValueError("There is no value column selected.")
 
-max_streak_buffer_size = config.get("max_streak_buffer_size", 500)
-max_requests_buffer_size = config.get("max_requests_buffer_size", 500)
+max_streak_buffer_size = config.get("max_streak_buffer_size", DEFAULT_BATCH_SIZE)
+max_requests_buffer_size = config.get("max_requests_buffer_size", DEFAULT_BATCH_SIZE)
 
 server_url_column = config.get("server_url_column")
 
@@ -106,14 +79,16 @@ output_dataset.write_schema(output_schema)
 
 with output_dataset.get_writer() as output_writer:
     first_dataframe = True
-    previous_path = None
     pi_writer = None
     initial_requests = []  # Storing initial request to display in output dataset
+    instant_responses = []
     previous_path = None
     previous_object_id = None
     for index, input_parameters_row in input_parameters_dataframe.iterrows():
         server_url = input_parameters_row.get(server_url_column, server_url) if use_server_url_column else server_url
         time = input_parameters_row.get(time_column)
+        if isinstance(time, pandas.Timestamp):
+            time = time.strftime("%Y-%m-%dT%H:%M:%S.%fZ")
         value = input_parameters_row.get(value_column)
 
         row_name = input_parameters_row.get("Name")
@@ -152,10 +127,11 @@ with output_dataset.get_writer() as output_writer:
             else:
                 object_id = previous_object_id
         row = (time, value)
-        responses = pi_writer.write_row(object_id, time, value)
+        instant_response = pi_writer.write_row(object_id, time, value)  # usually none, could contain error
+        instant_responses.append(instant_response)
         initial_requests.append((object_id, time, value))
     responses = pi_writer.close()
-    for initial_request, response in zip(initial_requests, responses):
+    for initial_request, response, instant_response in zip(initial_requests, responses, instant_responses):
         row = {}
         row["Path"] = initial_request[0]
         row["Timestamp"] = initial_request[1]
@@ -164,6 +140,8 @@ with output_dataset.get_writer() as output_writer:
         content = response.get("Content")
         if content and isinstance(content, dict) and "Errors" in content:
             row["Error"] = content.get("Errors")
+        if instant_response:
+            row["Error"] = instant_response.get("Error")
         output_writer.write_row_dict(row)
 
 processing_timer.stop()
