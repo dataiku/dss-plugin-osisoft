@@ -1,5 +1,9 @@
 # Changelog
 
+## [Version 1.4.0](https://github.com/dataiku/dss-plugin-pi-server/releases/tag/v1.3.1) - Bugfix release - 2025-05-24
+
+- Add write recipe
+
 ## [Version 1.3.1](https://github.com/dataiku/dss-plugin-pi-server/releases/tag/v1.3.1) - Bugfix release - 2025-05-24
 
 - Fix the mix mode interpolation type in Transpose & Synchronise (the Step value was inverted)
