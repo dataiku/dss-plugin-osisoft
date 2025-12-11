@@ -30,6 +30,7 @@
        <div class="controls">
            <select dku-bs-select
                    ng-model="config.database_name"
+                   ng-change="initializeTree()"
                    ng-options="dbn.value as dbn.label for dbn in database_name"> 
            </select>
            <button ng-click="getDatabases()" class="btn btn--primary link-like">Get database names</button>

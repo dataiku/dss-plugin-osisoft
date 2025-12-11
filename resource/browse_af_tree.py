@@ -39,6 +39,9 @@ def do(payload, config, plugin_config, inputs):
     method = payload.get("method")
     if method == "get_query_catalogs":
         return get_query_catalogs(None, config)
+    if method == "get_children_from_db":
+        parent = payload.get("parent", {})
+        return get_children_from_db(client, parent)
 
     parameter_name = payload.get("parameterName")
 
@@ -78,3 +81,47 @@ def get_query_catalogs(cnx, config):
 
 def get_children(username, password, source_item_url):
     pass
+
+
+def get_children_from_db(client, parent_node):
+    print("ALX:parent_node={}".format(parent_node))
+    # ALX:parent_node={'show_advanced_parameters': False, 'use_server_url_column': False, 'is_ssl_check_disabled': True, 'must_convert_object_to_string': False, 'is_debug_mode': False, 'credentials': {'auth_type': 'basic', 'can_disable_ssl_check': True, 'ssl_cert_path': '', 'default_server': 'dku-qa-osi.francecentral.cloudapp.azure.com', 'can_override_server_url': True, 'get_parameters': {}, 'post_parameters': {}, 'url_swap': [], 'max_request_size': 1000, 'estimated_density': 6, 'maximum_points_returned': 600, 'osisoft_basic': {'user': 'abourret', 'password': 'S58BirZjtsUDTJ3'}}}
+    if isinstance(parent_node, dict):
+        url = parent_node.get("url")
+    else:
+        url = parent_node
+    print("ALX:url to search:{}".format(url))
+    this_node = next(client.get_next_item_from_url(url))
+    links = this_node.get("Links", {})
+    attributes_url = links.get("Attributes")
+    elements_url = links.get("Elements")
+    children = []
+    if attributes_url:
+        attributes = client.get_next_item_from_url(attributes_url)
+        for attribute in attributes:
+            child = get_item_details(attribute)
+            child["type"] = "attribute"
+            child["children"] = []
+            children.append(child)
+    if elements_url:
+        elements = client.get_next_item_from_url(elements_url)
+        for element in elements:
+            child = get_item_details(element)
+            child["type"] = "element"
+            child["children"] = []
+            children.append(child)
+
+    return {"choices": children}
+
+
+def get_item_details(item):
+    KEYS_TO_CHECK = {"Name": "title", "TemplateName": "template_name", "CategoryNames": "category_names", "HasChildren": "has_children", "Path": "path", "WebId": "id"}
+    details = {}
+    print("ALX:in:{}".format(item))
+    for key_to_check in KEYS_TO_CHECK:
+        value = item.get(key_to_check)
+        if value:
+            details[KEYS_TO_CHECK.get(key_to_check)] = value
+    print("ALX:out:{}".format(details))
+    details["url"] = item.get("Links", {}).get("Self")
+    return details

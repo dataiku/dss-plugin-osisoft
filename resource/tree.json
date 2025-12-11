@@ -1,0 +1,20 @@
+[
+  {
+    "id": 1,
+    "title": "Root",
+    "url": "https://dku-qa-osi.francecentral.cloudapp.azure.com/piwebapi/assetdatabases/F1RD3VEt1yTvt0ip6-a5yeEVsgbMcrwu_Je0qg9btcZIvPswT1NJU09GVC1QSS1TRVJWXFdFTEw",
+    "expanded": false,
+    "checked": false,
+    "children": [
+        {
+            "id": "blabla",
+            "url": "xcvb",
+            "title": "Well",
+            "expanded": false,
+            "checked": false,
+            "children": [
+            ]
+        }
+    ]
+  }
+]

@@ -2,7 +2,7 @@ var app = angular.module('piSystemTreeApp.module', []);
 
 app.controller('TreeCtrl', ['$scope', '$http','CreateModalFromTemplate', function($scope, $http, CreateModalFromTemplate) {
   $scope.treeData = [];
-    $http.get('/plugins/treeview/resource/tree.json')
+    $http.get('/plugins/pi-system/resource/tree.json')
   .then(function(response) {
     $scope.treeData = response.data;
         console.log($scope.treeData);
@@ -10,7 +10,7 @@ app.controller('TreeCtrl', ['$scope', '$http','CreateModalFromTemplate', functio
 
   // Toggle récursif des checkboxes
   $scope.toggleChildren = function(node) {
-    console.log("ALX:" + JSON.stringify(node));
+    console.log("ALX:tc:" + JSON.stringify(node));
     if (node.children && node.children.length) {
       node.children.forEach(function(child) {
         child.checked = node.checked;
@@ -20,12 +20,19 @@ app.controller('TreeCtrl', ['$scope', '$http','CreateModalFromTemplate', functio
     }
   };
   $scope.testPythonDo = function(noken) {
-    console.log("ALX:" + JSON.stringify(noken));
+    console.log("ALX:tpd:" + JSON.stringify(noken));
     console.log("ALX:config=" + JSON.stringify($scope.config))
     $scope.callPythonDo({method: "get_query_catalogs"}).then(function(data){
       console.log("ALX:testPythonDo return:"+JSON.stringify(data))
     });
   };
+  $scope.getChildrenFromDB = function(item){
+    console.log("ALX:gcfd:" + JSON.stringify(item));
+    $scope.callPythonDo({method: "get_children_from_db", parent: item}).then(function(data){
+      console.log("ALX:data1=" + JSON.stringify(data));
+      item["children"] = data["choices"]
+    });
+  }
 
 }]);
 
@@ -73,6 +80,12 @@ app.controller('AfExplorerFormController', function($scope, $stateParams, CodeMi
         $scope.database_name = data.choices;
       });
     };
+    $scope.initializeTree = function(){
+      console.log("ALX:initializeTree:scope=" + JSON.stringify($scope.config.database_name));
+      $scope.callPythonDo({method: "get_children_from_db", parent: $scope.config.database_name}).then(function(data){
+        console.log("ALX:data2=" + JSON.stringify(data));
+      });
+    };
 
 });
 
@@ -84,7 +97,7 @@ app.directive('treeNode', function() {
       <div style="display: flex; align-items: center; gap: 6px;">
         
         <!-- Flèche si le noeud possède des enfants -->
-        <span ng-if="node.children && node.children.length > 0"
+        <span ng-if="node.children"
               ng-click="toggleExpand(node)"
               style="cursor: pointer; user-select: none;">
           <strong ng-if="node.expanded">▼</strong>
@@ -110,11 +123,12 @@ app.directive('treeNode', function() {
     link: function(scope) {
       // Récupère la fonction toggleChildren du parent
       scope.toggleChildren = scope.$parent.toggleChildren;
-
+      scope.getChildrenFromDB = scope.$parent.getChildrenFromDB;
       // Simple toggle du expand (plus de chargement HTTP)
       scope.toggleExpand = function(node) {
         console.log("ALX:expand !" + JSON.stringify(node));
         node.expanded = !node.expanded;
+        scope.getChildrenFromDB(node);
       };
     }
   };

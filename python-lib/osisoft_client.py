@@ -491,6 +491,29 @@ class OSIsoftClient(object):
         )
         return json_response
 
+    def get_next_item_from_url(self, url):
+        headers = self.get_requests_headers()
+        params = {}
+        while url:
+            json_response = self.get(
+                url=url,
+                headers=headers,
+                params=params,
+                can_raise=False,
+                error_source="get_next_item_from_url"
+            )
+            url = get_next_page_url(json_response)
+            print("ALX:new url={}".format(url))
+            if isinstance(json_response, list):
+                for item in json_response:
+                    yield item
+            elif "Items" in json_response:
+                items = json_response.get("Items", [])
+                for item in items:
+                    yield item
+            else:
+                yield json_response
+
     def get(self, url, headers, params, can_raise=True, error_source=None):
         error_message = None
         url = build_query_string(url, params)

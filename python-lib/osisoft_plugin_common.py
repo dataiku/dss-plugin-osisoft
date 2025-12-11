@@ -496,7 +496,7 @@ def fields_selector(data_type):
 
 
 def get_next_page_url(json):
-    if not json:
+    if not isinstance(json, dict):
         return None
     next_page_url = json.get("Links", {}).get("Next", "").replace('&amp;', '&')
     if next_page_url:
