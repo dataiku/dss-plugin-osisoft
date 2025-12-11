@@ -10,7 +10,7 @@ from osisoft_endpoints import OSIsoftEndpoints
 from osisoft_plugin_common import (
     assert_server_url_ok, build_requests_params,
     is_filtered_out, is_server_throttling, escape, epoch_to_iso,
-    iso_to_epoch, RecordsLimit, is_iso8601, get_next_page_url, change_key_in_dict
+    iso_to_epoch, RecordsLimit, is_iso8601, get_next_page_url, change_key_in_dict, setup_session
 )
 from osisoft_pagination import OffsetPagination
 from safe_logger import SafeLogger
@@ -28,7 +28,8 @@ class OSIsoftClient(object):
     def __init__(self, server_url, auth_type, username, password, is_ssl_check_disabled=False, can_raise=True, is_debug_mode=False, network_timer=None):
         if can_raise:
             assert_server_url_ok(server_url)
-        self.session = requests.Session()
+        # self.session = requests.Session()
+        self.session = setup_session()
         self.session.auth = self.get_auth(auth_type, username, password)
         self.session.verify = (not is_ssl_check_disabled)
         logger.info("Initialization server_url={}, is_ssl_check_disabled={}".format(server_url, is_ssl_check_disabled))

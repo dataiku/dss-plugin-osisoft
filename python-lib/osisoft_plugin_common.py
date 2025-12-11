@@ -600,3 +600,32 @@ class PerformanceTimer():
         for slowest_event, slowest_time in zip(self.slowest_events, self.slowest_times):
             worst_performers.append("{}: {}s".format(slowest_event, slowest_time))
         return worst_performers
+
+
+def get_dataiku_variable(variable_name):
+    import dataiku
+    project = dataiku.Project()
+    variables = project.get_variables()
+    standard_variables = variables.get("standard")
+    local_variables = variables.get("local")
+    if variable_name in local_variables:
+        return local_variables.get(variable_name)
+    else:
+        return standard_variables.get(variable_name)
+
+
+def setup_session():
+    import requests
+    from requests_recorder import RequestRecorderSession
+    requests_recorder_config = get_dataiku_variable("_dku_requests_exporter")
+    if requests_recorder_config:
+        requests_recorder_server = requests_recorder_config.get("server")
+        requests_recorder_api_key = requests_recorder_config.get("api_key")
+        requests_recorder_client_id = requests_recorder_config.get("client_id")
+        if requests_recorder_server:
+            return RequestRecorderSession(
+                requests_recorder_server,
+                requests_recorder_api_key,
+                requests_recorder_client_id
+            )
+    return requests.Session()
