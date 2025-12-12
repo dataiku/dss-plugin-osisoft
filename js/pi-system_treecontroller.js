@@ -15,7 +15,6 @@ app.controller('TreeCtrl', ['$scope', '$http','CreateModalFromTemplate', functio
       node.children.forEach(function(child) {
         child.checked = node.checked;
         $scope.toggleChildren(child);
-
       });
     }
   };
@@ -28,12 +27,16 @@ app.controller('TreeCtrl', ['$scope', '$http','CreateModalFromTemplate', functio
   };
   $scope.getChildrenFromDB = function(item){
     console.log("ALX:gcfd:" + JSON.stringify(item));
-    $scope.callPythonDo({method: "get_children_from_db", parent: item}).then(function(data){
-      console.log("ALX:data1=" + JSON.stringify(data));
-      item["children"] = data["choices"]
-    });
-  }
-
+    $scope.callPythonDo({ method: "get_children_from_db", parent: item })
+      .then(function (data) {
+        console.log("ALX:data1=" + JSON.stringify(data));
+        item.children = data.choices;
+        item.children.forEach(child => {
+          child.checked = item.checked;
+          child.expanded = false;
+        });
+      });
+    }
 }]);
 
 app.controller('AfExplorerFormController', function($scope, $stateParams, CodeMirrorSettingService) {
