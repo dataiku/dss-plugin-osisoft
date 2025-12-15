@@ -52,6 +52,18 @@ def do(payload, config, plugin_config, inputs):
         database_name = config.get("database_name")
         parent = payload.get("parent", {})
         return get_children_from_db(client, parent, database_name=database_name)
+    if method == "do_search":
+        database_name = config.get("database_name")
+        element_name = config.get("element_name")
+        attribute_name = config.get("attribute_name")
+        attributes = []
+        # https://dku-qa-osi.francecentral.cloudapp.azure.com/piwebapi/assetdatabases/F1RD3VEt1yTvt0ip6-a5yeEVsgbMcrwu_Je0qg9btcZIvPswT1NJU09GVC1QSS1TRVJWXFdFTEw
+        database_webid = database_name.split("/")[-1]
+        for attribute in client.search_attributes(
+            database_webid, attribute_name=attribute_name, element_name=element_name):
+            print("ALX:attribute={}".format(attribute))
+            attributes.append(attribute)
+        return {"choices": attributes}
 
     parameter_name = payload.get("parameterName")
 
@@ -102,19 +114,20 @@ def get_children_from_db(client, parent_node, database_name=None):
     attributes_url = links.get("Attributes")
     elements_url = links.get("Elements")
     children = []
-    if attributes_url:
-        attributes = client.get_next_item_from_url(attributes_url)
-        for attribute in attributes:
-            child = get_item_details(attribute)
-            child["type"] = "attribute"
-            child["children"] = []
-            children.append(child)
     if elements_url:
         elements = client.get_next_item_from_url(elements_url)
         for element in elements:
             child = get_item_details(element)
             child["type"] = "element"
             child["children"] = []
+            children.append(child)
+    if attributes_url:
+        attributes = client.get_next_item_from_url(attributes_url)
+        for attribute in attributes:
+            child = get_item_details(attribute)
+            child["type"] = "attribute"
+            if child.get("has_children"):
+                child["children"] = []
             children.append(child)
 
     return {"choices": children}

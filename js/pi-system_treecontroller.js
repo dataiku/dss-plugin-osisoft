@@ -83,6 +83,38 @@ app.controller('AfExplorerFormController', function($scope, $stateParams, CodeMi
         console.log("ALX:data2=" + JSON.stringify(data));
       });
     };
+    $scope.doSearch = function(element_name, attribute_name){
+      console.log("ALX:search for ", element_name, attribute_name);
+      $scope.callPythonDo({method: "do_search", element_name: element_name, attribute_name: attribute_name}).then(
+        function(data){
+          console.log("ALX:search result:", JSON.stringify(data));
+          // $scope.treeData = data.choices;
+          $scope.$parent.treeData = [
+            {
+              "id": 1,
+              "title": "Elements",
+              "expanded": false,
+              "checked": false,
+              "children": [
+                  {
+                      "id": "blabla",
+                      "url": "xcvb",
+                      "title": "Well",
+                      "expanded": false,
+                      "checked": false,
+                      "children": [
+                      ]
+                  }
+              ]
+            }
+          ];
+          // item.children.forEach(child => {
+          //   child.checked = item.checked;
+          //   child.expanded = false;
+          // });
+        }
+      );
+    };
 
 });
 
