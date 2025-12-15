@@ -18,13 +18,7 @@ app.controller('TreeCtrl', ['$scope', '$http','CreateModalFromTemplate', functio
       });
     }
   };
-  $scope.testPythonDo = function(noken) {
-    console.log("ALX:tpd:" + JSON.stringify(noken));
-    console.log("ALX:config=" + JSON.stringify($scope.config))
-    $scope.callPythonDo({method: "get_query_catalogs"}).then(function(data){
-      console.log("ALX:testPythonDo return:"+JSON.stringify(data))
-    });
-  };
+
   $scope.getChildrenFromDB = function(item){
     console.log("ALX:gcfd:" + JSON.stringify(item));
     $scope.callPythonDo({ method: "get_children_from_db", parent: item })
@@ -108,7 +102,7 @@ app.directive('treeNode', function() {
         </span>
 
         <!-- Espace vide si pas d’enfants -->
-        <span ng-if="!node.children || node.children.length === 0" style="width: 12px;"></span>
+        <!--<span ng-if="!node.children || node.children.length === 0" style="width: 12px;"></span>-->
 
         <label>
           <input type="checkbox" ng-model="node.checked" ng-change="toggleChildren(node)">

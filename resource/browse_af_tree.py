@@ -1,8 +1,18 @@
 from osisoft_client import OSIsoftClient
 from osisoft_plugin_common import get_credentials, build_select_choices, check_debug_mode
+import dataiku
 
 
 def do(payload, config, plugin_config, inputs):
+    input_tree = None
+    if len(inputs)>0:
+        input_item = inputs[0]
+        input_type = input_item.get("type")
+        if input_type == "DATASET":
+            input_dataset_name = input_item.get("fullName")
+            input_dataset = dataiku.Dataset(input_dataset_name)
+            input_tree = input_dataset.get_dataframe(infer_with_pandas=False)
+
     config["is_ssl_check_disabled"] = True
     print("ALX:af explorer do, payload={}, config={}, plugin_config={}, inputs={}".format(payload, config, plugin_config, inputs))
     if "config" in config:
@@ -34,14 +44,14 @@ def do(payload, config, plugin_config, inputs):
     print("ALX:is_ssl_check_disabled={}".format(is_ssl_check_disabled))
 
     client = OSIsoftClient(server_url, auth_type, username, password, is_ssl_check_disabled=is_ssl_check_disabled, is_debug_mode=is_debug_mode)
-    print("ALX:2")
 
     method = payload.get("method")
     if method == "get_query_catalogs":
         return get_query_catalogs(None, config)
     if method == "get_children_from_db":
+        database_name = config.get("database_name")
         parent = payload.get("parent", {})
-        return get_children_from_db(client, parent)
+        return get_children_from_db(client, parent, database_name=database_name)
 
     parameter_name = payload.get("parameterName")
 
@@ -79,15 +89,11 @@ def get_query_catalogs(cnx, config):
     return {"choices": [user, password]}
 
 
-def get_children(username, password, source_item_url):
-    pass
-
-
-def get_children_from_db(client, parent_node):
+def get_children_from_db(client, parent_node, database_name=None):
     print("ALX:parent_node={}".format(parent_node))
     # ALX:parent_node={'show_advanced_parameters': False, 'use_server_url_column': False, 'is_ssl_check_disabled': True, 'must_convert_object_to_string': False, 'is_debug_mode': False, 'credentials': {'auth_type': 'basic', 'can_disable_ssl_check': True, 'ssl_cert_path': '', 'default_server': 'dku-qa-osi.francecentral.cloudapp.azure.com', 'can_override_server_url': True, 'get_parameters': {}, 'post_parameters': {}, 'url_swap': [], 'max_request_size': 1000, 'estimated_density': 6, 'maximum_points_returned': 600, 'osisoft_basic': {'user': 'abourret', 'password': 'S58BirZjtsUDTJ3'}}}
     if isinstance(parent_node, dict):
-        url = parent_node.get("url")
+        url = parent_node.get("url", database_name)
     else:
         url = parent_node
     print("ALX:url to search:{}".format(url))
@@ -117,11 +123,9 @@ def get_children_from_db(client, parent_node):
 def get_item_details(item):
     KEYS_TO_CHECK = {"Name": "title", "TemplateName": "template_name", "CategoryNames": "category_names", "HasChildren": "has_children", "Path": "path", "WebId": "id"}
     details = {}
-    print("ALX:in:{}".format(item))
     for key_to_check in KEYS_TO_CHECK:
         value = item.get(key_to_check)
         if value:
             details[KEYS_TO_CHECK.get(key_to_check)] = value
-    print("ALX:out:{}".format(details))
     details["url"] = item.get("Links", {}).get("Self")
     return details

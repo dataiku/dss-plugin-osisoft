@@ -16,7 +16,7 @@
         </div>
     </div>
     <div class="control-group removed-if-manual-query" ng-if="config.credentials && config.credentials.mode && config.credentials.mode!=='NONE' && config.credentials.name">
-       <label class="control-label">Server</label>{{config.server_name | json}}
+       <label class="control-label">Server</label>
        <div class="controls">
            <select dku-bs-select
                    ng-model="config.server_name"
@@ -27,7 +27,7 @@
        </div>
    </div>
    <div class="control-group removed-if-manual-query" ng-if="config.server_name">
-       <label class="control-label">Database</label>{{config.database_name | json}}
+       <label class="control-label">Database</label>
        <div class="controls">
            <select dku-bs-select
                    ng-model="config.database_name"
@@ -40,7 +40,6 @@
 </div>
 
 <div ng-controller="TreeCtrl">
-  <button ng-click="testPythonDo()" class="btn btn--primary link-like">Test Python do</button>
   <ul ng-if="treeData.length">
     <li ng-repeat="node in treeData track by node.id">
       <tree-node node="node"></tree-node>

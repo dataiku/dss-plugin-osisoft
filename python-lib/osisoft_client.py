@@ -502,8 +502,12 @@ class OSIsoftClient(object):
                 can_raise=False,
                 error_source="get_next_item_from_url"
             )
-            url = get_next_page_url(json_response)
-            print("ALX:new url={}".format(url))
+            next_url = get_next_page_url(json_response)
+            if next_url != url:
+                url = next_url
+            else:
+                # Some endpoints lead to a loop
+                url = None
             if isinstance(json_response, list):
                 for item in json_response:
                     yield item
