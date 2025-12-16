@@ -4,6 +4,7 @@ import copy
 import json
 import simplejson
 from datetime import datetime
+from time import sleep
 from requests_ntlm import HttpNtlmAuth
 from osisoft_constants import OSIsoftConstants
 from osisoft_endpoints import OSIsoftEndpoints
@@ -26,7 +27,8 @@ class PISystemClientError(ValueError):
 
 class OSIsoftClient(object):
 
-    def __init__(self, server_url, auth_type, username, password, is_ssl_check_disabled=False, can_raise=True, is_debug_mode=False, network_timer=None):
+    def __init__(self, server_url, auth_type, username, password, is_ssl_check_disabled=False,
+                 can_raise=True, is_debug_mode=False, network_timer=None, nb_retries_on_504=None, delay_on_504=None):
         if can_raise:
             assert_server_url_ok(server_url)
         self.session = requests.Session()
@@ -39,6 +41,9 @@ class OSIsoftClient(object):
         self.is_debug_mode = is_debug_mode
         self.debug_level = None
         self.network_timer = network_timer
+        self.nb_retries_on_504 = nb_retries_on_504
+        self.delay_on_504 = delay_on_504 or 60
+        self.retries_on_504 = 0
 
     def get_auth(self, auth_type, username, password):
         if auth_type == "basic":
@@ -575,11 +580,13 @@ class OSIsoftClient(object):
         logger.info("Trying to post to {}".format(url))
         if self.network_timer:
             self.network_timer.start(url)
-        response = self.session.post(
-            url=url,
-            headers=headers,
-            json=data
-        )
+        response = self.retry_init()
+        while self.should_retry(response):
+            response = self.session.post(
+                url=url,
+                headers=headers,
+                json=data
+            )
         if self.network_timer:
             self.network_timer.stop()
         if self.is_debug_mode:
@@ -587,6 +594,28 @@ class OSIsoftClient(object):
             logger.info("post response.status={}".format(response.status_code))
         self.assert_valid_response(response, can_raise=can_raise, error_source=error_source)
         return response
+
+    def should_retry(self, response):
+        if response==-1:
+            return True
+        if isinstance(response, requests.Response):
+            status_code = response.status_code
+            if self.nb_retries_on_504 and status_code==504:
+                logger.warning("Status code is 504, should retry {} times".format(self.nb_retries_on_504))
+                self.retries_on_504 += 1
+                if self.retries_on_504 >= self.nb_retries_on_504:
+                    logger.error("Max number of retries reached, giving up.")
+                    return False
+                else:
+                    logger.warning("Sleeping {}s...".format(self.delay_on_504))
+                    sleep(self.delay_on_504)
+                    logger.warning("Retry ({}/{})...".format(self.retries_on_504, self.nb_retries_on_504))
+                    return True
+        return False
+
+    def retry_init(self):
+        self.retries_on_504 = 0
+        return -1
 
     def get_debug_level(self):
         if self.debug_level == 5000:
