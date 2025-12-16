@@ -30,7 +30,8 @@ class HierarchyConnector(Connector):
             server_url, auth_type, username, password,
             is_ssl_check_disabled=is_ssl_check_disabled,
             is_debug_mode=is_debug_mode,
-            network_timer=self.network_timer
+            network_timer=self.network_timer,
+            nb_retries_on_504=3,
         )
         self.use_batch_mode = config.get("use_batch_mode", False)
         self.batch_size = config.get("batch_size", 500)
@@ -117,6 +118,7 @@ class HierarchyConnector(Connector):
             batch_requests_parameters.append(request_kwargs)
             parent_of_batched_items.append(item.get("parent"))
             if not todo_list or len(batch_requests_parameters) > self.batch_size:
+                logger.info("Processing {} entries in batch".format(len(batch_requests_parameters)))
                 json_responses = self.client._batch_requests(batch_requests_parameters)
                 batch_requests_parameters = []
                 for parent_of_batched_item, json_response in zip(parent_of_batched_items, json_responses):
