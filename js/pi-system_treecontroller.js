@@ -8,6 +8,10 @@ app.controller('TreeCtrl', ['$scope', '$http','CreateModalFromTemplate', functio
         console.log($scope.treeData);
   })
 
+  $scope.refreshTree = function(newTree) {
+    $scope.treeData = newTree.choices
+  }
+
   // Toggle récursif des checkboxes
   $scope.toggleChildren = function(node) {
     console.log("ALX:tc:" + JSON.stringify(node));
@@ -30,7 +34,16 @@ app.controller('TreeCtrl', ['$scope', '$http','CreateModalFromTemplate', functio
           child.expanded = false;
         });
       });
-    }
+    };
+
+    $scope.doSearch = function(element_name, attribute_name){
+      console.log("ALX:search for ", element_name, attribute_name);
+      $scope.callPythonDo({method: "do_search", element_name: element_name, attribute_name: attribute_name}).then(
+        function(data){
+          $scope.treeData = data.choices;
+        }
+      );
+    };
 }]);
 
 app.controller('AfExplorerFormController', function($scope, $stateParams, CodeMirrorSettingService) {
@@ -62,58 +75,21 @@ app.controller('AfExplorerFormController', function($scope, $stateParams, CodeMi
         }).error(setErrorInScope.bind($scope.errorScope));
     };
     
-    $scope.getServers = function(noken){
-      console.log("ALX:get servers");
-      console.log("ALX:" + JSON.stringify(noken));
+    $scope.getServers = function(){
       $scope.callPythonDo({parameterName: "server_name"}).then(function(data){
-        console.log("ALX:getServers return:"+JSON.stringify(data))
         // $scope.config["server_name"] = data.choices;
         $scope.server_name = data.choices;
       });
     };
     $scope.getDatabases = function() {
       $scope.callPythonDo({parameterName: "database_name"}).then(function(data){
-        console.log("ALX:getDatabases return:"+JSON.stringify(data))
         $scope.database_name = data.choices;
       });
     };
     $scope.initializeTree = function(){
-      console.log("ALX:initializeTree:scope=" + JSON.stringify($scope.config.database_name));
       $scope.callPythonDo({method: "get_children_from_db", parent: $scope.config.database_name}).then(function(data){
         console.log("ALX:data2=" + JSON.stringify(data));
       });
-    };
-    $scope.doSearch = function(element_name, attribute_name){
-      console.log("ALX:search for ", element_name, attribute_name);
-      $scope.callPythonDo({method: "do_search", element_name: element_name, attribute_name: attribute_name}).then(
-        function(data){
-          console.log("ALX:search result:", JSON.stringify(data));
-          // $scope.treeData = data.choices;
-          $scope.$parent.treeData = [
-            {
-              "id": 1,
-              "title": "Elements",
-              "expanded": false,
-              "checked": false,
-              "children": [
-                  {
-                      "id": "blabla",
-                      "url": "xcvb",
-                      "title": "Well",
-                      "expanded": false,
-                      "checked": false,
-                      "children": [
-                      ]
-                  }
-              ]
-            }
-          ];
-          // item.children.forEach(child => {
-          //   child.checked = item.checked;
-          //   child.expanded = false;
-          // });
-        }
-      );
     };
 
 });

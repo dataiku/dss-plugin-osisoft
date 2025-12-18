@@ -1,5 +1,6 @@
 from osisoft_client import OSIsoftClient
 from osisoft_plugin_common import get_credentials, build_select_choices, check_debug_mode
+from osisoft_plugin_common import get_item_details, Tree, recursive_tree_rebuild
 import dataiku
 
 
@@ -61,9 +62,10 @@ def do(payload, config, plugin_config, inputs):
         database_webid = database_name.split("/")[-1]
         for attribute in client.search_attributes(
             database_webid, attribute_name=attribute_name, element_name=element_name):
-            print("ALX:attribute={}".format(attribute))
+            # print("ALX:attribute={}".format(attribute))
             attributes.append(attribute)
-        return {"choices": attributes}
+        rebuilt_tree = rebuild_tree(client, attributes)
+        return {"choices": rebuilt_tree}
 
     parameter_name = payload.get("parameterName")
 
@@ -118,6 +120,7 @@ def get_children_from_db(client, parent_node, database_name=None):
         elements = client.get_next_item_from_url(elements_url)
         for element in elements:
             child = get_item_details(element)
+            # child["title"] = "🧩{}".format(child.get("title"))
             child["type"] = "element"
             child["children"] = []
             children.append(child)
@@ -125,6 +128,7 @@ def get_children_from_db(client, parent_node, database_name=None):
         attributes = client.get_next_item_from_url(attributes_url)
         for attribute in attributes:
             child = get_item_details(attribute)
+            # child["title"] = "🏷️{}".format(child.get("title"))
             child["type"] = "attribute"
             if child.get("has_children"):
                 child["children"] = []
@@ -132,13 +136,50 @@ def get_children_from_db(client, parent_node, database_name=None):
 
     return {"choices": children}
 
+# method2:
+# we dig, but this time it's index[token name], and we store as we go in the child, with the real data indexed in a list and just the rank pointing to it
+# to build the final tree, we browse the index, get the index data, rebuild the struct from there
+# Tree class ? put(path, data), get(path, data)
 
-def get_item_details(item):
-    KEYS_TO_CHECK = {"Name": "title", "TemplateName": "template_name", "CategoryNames": "category_names", "HasChildren": "has_children", "Path": "path", "WebId": "id"}
-    details = {}
-    for key_to_check in KEYS_TO_CHECK:
-        value = item.get(key_to_check)
-        if value:
-            details[KEYS_TO_CHECK.get(key_to_check)] = value
-    details["url"] = item.get("Links", {}).get("Self")
-    return details
+
+def rebuild_tree(client, items):
+    # builds an active tree containing all the items and their parent up to the root
+    # print("ALX:items={}".format(len(items)))
+    tree = Tree()
+    final_tree = []
+    while len(items) > 1:
+        # print("ALX:items={}".format(items))
+        item = items.pop()
+        if item is None:
+            print("ALX:end")
+            break
+        # print("ALX:searching ancestors for {}".format(item))
+        # tree.put(path_to_list(item.get("Path")), get_item_details(item))
+        all_item_s_ancestors = find_all_ancestors(client, item, tree)
+        print("ALX:found {} ancestors".format(len(all_item_s_ancestors)))
+        final_tree = combine_trees(final_tree, all_item_s_ancestors)
+    # tree.print()
+    result = recursive_tree_rebuild(tree.get_tree(), tree.get_records())
+    # print("ALX:result={}".format(result))
+    return result
+
+
+def find_all_ancestors(client, item, tree):
+    # Find all the ancestors of an item
+    elements_paths_tokens, attributes_paths_tokens = path_to_list(item.get("Path"))
+    # print("ALX:search {}/{}".format(elements_paths_tokens, attributes_paths_tokens))
+    parent_item = client.traverse_and_cache(elements_paths_tokens, attributes_paths_tokens, tree)
+    # print("ALX:parent_item={}".format(parent_item))
+    return []
+
+
+def combine_trees(final_tree, all_item_s_ancestors):
+    # combine two trees with partial overlap and common root ancestor
+    return final_tree
+
+
+# elements, attributes
+def path_to_list(path):
+    if not path:
+        return []
+    return path.split('|')[0].split('\\')[2:], (path.split('|')[1:])

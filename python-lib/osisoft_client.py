@@ -13,6 +13,7 @@ from osisoft_plugin_common import (
     iso_to_epoch, RecordsLimit, is_iso8601, get_next_page_url, change_key_in_dict,
     BatchTimeCounter
 )
+from osisoft_plugin_common import get_item_details
 from osisoft_pagination import OffsetPagination
 from safe_logger import SafeLogger
 
@@ -810,6 +811,60 @@ class OSIsoftClient(object):
             json_response = self.get(url=next_url, headers=headers, params={}, error_source="traverse")
             if attribute:
                 item = self.extract_item_with_name(json_response, attribute)
+        return item
+
+    def traverse_and_cache(self, path_elements, path_attributes, tree):
+        print("ALX:traverse_and_cache:path_elements={}, path_attributes={}".format(path_elements, path_attributes))
+        full_path_elements = path_elements.copy() + path_attributes.copy()
+        # Loading piwebapi initial page
+        next_url = self.endpoint.get_base_url()
+        headers = self.get_requests_headers()
+        json_response = self.get(url=next_url, headers=headers, params={}, error_source="traverse")
+
+        # Asset server page
+        next_url = self.extract_link_with_key(json_response, "AssetServers")
+        json_response = self.get(url=next_url, headers=headers, params={}, error_source="traverse")
+
+        item = self.extract_item_with_name(json_response, path_elements.pop(0))
+        tree.put(full_path_elements[0:1], get_item_details(item))
+        next_url = self.extract_link_with_key(item, "Databases")
+        json_response = self.get(url=next_url, headers=headers, params={}, error_source="traverse")
+
+        # retrieved_from_cache = tree.get(full_path_elements[0:2], {}).get("url")+"/elements"
+        # get the database
+        item = self.extract_item_with_name(json_response, path_elements.pop(0))
+        tree.put(full_path_elements[0:2], get_item_details(item))
+        next_url = self.extract_link_with_key(item, "Elements")
+        # print("ALX:database:next_url={}, retrieved_from_cache={}".format(next_url, retrieved_from_cache))
+        json_response = self.get(url=next_url, headers=headers, params={}, error_source="traverse")
+
+        # Looping through elements
+        counter = 3
+        before_last_url = None
+        for path_element in path_elements:
+            element, attribute = self.split_element_attribute(path_element)
+            item = self.extract_item_with_name(json_response, element)
+            tree.put(full_path_elements[0:counter], get_item_details(item))
+            counter += 1
+            before_last_url = self.extract_link_with_key(item, "Attributes")
+            if attribute:
+                next_url = self.extract_link_with_key(item, "Attributes")
+            else:
+                next_url = self.extract_link_with_key(item, "Elements")
+            json_response = self.get(url=next_url, headers=headers, params={}, error_source="traverse")
+            if attribute:
+                item = self.extract_item_with_name(json_response, attribute)
+        json_response = self.get(url=before_last_url, headers=headers, params={}, error_source="traverse")
+        for path_attribute in path_attributes:
+            # print("ALX:extract '{}' from {}".format(path_attribute, json_response))
+            item = self.extract_item_with_name(json_response, path_attribute)
+            tree.put(full_path_elements[0:counter], get_item_details(item))
+            counter += 1
+            next_url = self.extract_link_with_key(item, "Attributes")
+            if next_url:
+                json_response = self.get(url=next_url, headers=headers, params={}, error_source="traverse")
+            else:
+                break
 
         return item
 

@@ -634,3 +634,105 @@ class BatchTimeCounter(object):
 
     def add(self, start_time, end_time, interval):
         self.total_batched_time += compute_time_spent(start_time, end_time, interval)
+
+
+def get_item_details(item):
+    KEYS_TO_CHECK = {
+        "Name": "title", "TemplateName": "template_name", "CategoryNames": "category_names",
+        "HasChildren": "has_children", "Path": "path", "WebId": "id"
+    }
+    details = {}
+    for key_to_check in KEYS_TO_CHECK:
+        value = item.get(key_to_check)
+        if value:
+            details[KEYS_TO_CHECK.get(key_to_check)] = value
+    details["url"] = item.get("Links", {}).get("Self")
+    return details
+
+
+class Tree():
+    # Each put
+    #   - stores the data in the index
+    #   - builds a tree based on the data's path, pointing at the right index
+    def __init__(self):
+        self.tree = {}
+        self.index = []
+
+    def put(self, path, data):
+        if isinstance(path, list):
+            current_level = self.tree
+            for token in path:
+                if token not in current_level:
+                    current_level[token] = {}
+                current_level = current_level.get(token)
+            index_to_update = current_level.get("_v", None)
+            if index_to_update is not None:
+                self.index[index_to_update] = data
+            else:
+                last_index = len(self.index)
+                self.index.append(data)
+                current_level.update({"_v": last_index})
+
+    def get(self, path, default=None):
+        if isinstance(path, list):
+            current_level = self.tree
+            for token in path:
+                if token not in current_level:
+                    return default
+                else:
+                    current_level = current_level.get(token)
+            index = current_level.get("_v")
+            return self.get_record(index)
+
+    def get_tree(self):
+        return self.tree
+
+    def get_record(self, index):
+        if index < len(self.index):
+            return self.index[index]
+        return None
+
+    def get_records(self):
+        return self.index
+
+    def exists(self, path):
+        current = self.tree
+        if isinstance(path, list):
+            for token in path:
+                current = current.get(token, {})
+                if not current:
+                    return False
+            return True
+        return False
+
+    def print(self):
+        print("Tree {}".format(self.tree))
+        print("Tree content {}".format(self.index))
+
+
+def recursive_tree_rebuild(dictionary, records, counter=None):
+    counter = counter or -1
+    output = []
+
+    for key in dictionary:
+        if key == "_v":
+            continue
+        sub_dictionary = dictionary.get(key)
+        context = {}
+        if "_v" in sub_dictionary:
+            index_id = sub_dictionary.get("_v")
+            if isinstance(index_id, int):
+                context = records[index_id]
+        counter += 1
+        if sub_dictionary:
+            counter += 1
+            children = recursive_tree_rebuild(sub_dictionary, records, counter + 1)
+        else:
+            children = []
+        context["id"] = str(counter)
+        context["title"] = key
+        context["expanded"] = True
+        context["checked"] = False
+        context["children"] = children
+        output.append(context)
+    return output
