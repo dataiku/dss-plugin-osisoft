@@ -1,12 +1,28 @@
 var app = angular.module('piSystemTreeApp.module', []);
 
-app.controller('TreeCtrl', ['$scope', '$http','CreateModalFromTemplate', function($scope, $http, CreateModalFromTemplate) {
-  $scope.treeData = [];
+app.service('TreeDataService', function() {
+  // This will store the shared tree data
+  this.treeData = [];
+
+  // Optional: helper methods
+  this.setTreeData = function(data) {
+    this.treeData = data;
+  };
+
+  this.getTreeData = function() {
+    return this.treeData;
+  };
+});
+
+app.controller('TreeCtrl', ['$scope', '$http','CreateModalFromTemplate', 'TreeDataService', function($scope, $http, CreateModalFromTemplate, TreeDataService) {
+$scope.init = function() {
     $http.get('/plugins/pi-system/resource/tree.json')
   .then(function(response) {
-    $scope.treeData = response.data;
-        console.log($scope.treeData);
+        TreeDataService.setTreeData(response.data);
+        $scope.treeData = TreeDataService.getTreeData();
   })
+}
+
 
   // Toggle récursif des checkboxes
   $scope.toggleChildren = function(node) {
@@ -27,18 +43,26 @@ app.controller('TreeCtrl', ['$scope', '$http','CreateModalFromTemplate', functio
         item.children = data.choices;
         item.children.forEach(child => {
           child.checked = item.checked;
-          child.expanded = false;
+          child.expanded = item.expanded;
         });
       });
     }
 }]);
 
-app.controller('AfExplorerFormController', function($scope, $stateParams, CodeMirrorSettingService) {
+app.controller('AfExplorerFormCtrl', [
+  '$scope', 
+  '$stateParams', 
+  'CodeMirrorSettingService', 
+  'TreeDataService', 
+  function($scope, $stateParams, CodeMirrorSettingService, TreeDataService) {
+    
     $scope.paramDesc = {
       'parameterSetId': 'basic-auth',
       'mandatory': true
     };
-
+    
+    $scope.treeData = TreeDataService.getTreeData();
+    
     $scope.editorOptions = CodeMirrorSettingService.get("text/plain");
 
     $scope.init = function() {
@@ -77,46 +101,42 @@ app.controller('AfExplorerFormController', function($scope, $stateParams, CodeMi
         $scope.database_name = data.choices;
       });
     };
+      
     $scope.initializeTree = function(){
       console.log("ALX:initializeTree:scope=" + JSON.stringify($scope.config.database_name));
       $scope.callPythonDo({method: "get_children_from_db", parent: $scope.config.database_name}).then(function(data){
-        console.log("ALX:data2=" + JSON.stringify(data));
+          console.log("ALX:data2=" + JSON.stringify(data));
+          TreeDataService.setTreeData(data.choices);
+           $scope.treeData =  TreeDataService.getTreeData();
       });
     };
-    $scope.doSearch = function(element_name, attribute_name){
-      console.log("ALX:search for ", element_name, attribute_name);
-      $scope.callPythonDo({method: "do_search", element_name: element_name, attribute_name: attribute_name}).then(
-        function(data){
-          console.log("ALX:search result:", JSON.stringify(data));
-          // $scope.treeData = data.choices;
-          $scope.$parent.treeData = [
-            {
-              "id": 1,
-              "title": "Elements",
-              "expanded": false,
-              "checked": false,
-              "children": [
-                  {
-                      "id": "blabla",
-                      "url": "xcvb",
-                      "title": "Well",
-                      "expanded": false,
-                      "checked": false,
-                      "children": [
-                      ]
-                  }
-              ]
-            }
-          ];
-          // item.children.forEach(child => {
-          //   child.checked = item.checked;
-          //   child.expanded = false;
-          // });
-        }
-      );
-    };
+      
+        $scope.getChildrenFromDB = function(item){
+    console.log("ALX:gcfd:" + JSON.stringify(item));
+    $scope.callPythonDo({ method: "get_children_from_db", parent: item })
+      .then(function (data) {
+        console.log("ALX:data1=" + JSON.stringify(data));
+        item.children = data.choices;
+        item.children.forEach(child => {
+          child.checked = item.checked;
+          child.expanded = false;
+        });
+      });
+    } 
+        
+        
+  // Toggle récursif des checkboxes
+  $scope.toggleChildren = function(node) {
+    console.log("ALX:tc:" + JSON.stringify(node));
+    if (node.children && node.children.length) {
+      node.children.forEach(function(child) {
+        child.checked = node.checked;
+        $scope.toggleChildren(child);
+      });
+    }
+  };
 
-});
+}]);
 
 app.directive('treeNode', function() {
   return {
