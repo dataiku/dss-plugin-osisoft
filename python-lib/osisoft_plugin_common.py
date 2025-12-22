@@ -654,9 +654,21 @@ class Tree():
     # Each put
     #   - stores the data in the index
     #   - builds a tree based on the data's path, pointing at the right index
-    def __init__(self):
+    def __init__(self, root_tree=None):
         self.tree = {}
         self.index = []
+        if root_tree:
+            self._ingest(root_tree)
+
+    def _ingest(self, root_tree):
+        if isinstance(root_tree, list):
+            for item in root_tree:
+                item_children = item.pop("children", [])
+                if item_children:
+                    self._ingest(item_children)
+                path = item.get("path", "")
+                path_tokens = path.replace("|", "\\").split("\\")[2:]
+                self.put(path_tokens, item)
 
     def put(self, path, data):
         if isinstance(path, list):

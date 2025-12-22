@@ -57,6 +57,7 @@ def do(payload, config, plugin_config, inputs):
         database_name = config.get("database_name")
         element_name = config.get("element_name")
         attribute_name = config.get("attribute_name")
+        root_tree = payload.get("root_tree")
         attributes = []
         # https://dku-qa-osi.francecentral.cloudapp.azure.com/piwebapi/assetdatabases/F1RD3VEt1yTvt0ip6-a5yeEVsgbMcrwu_Je0qg9btcZIvPswT1NJU09GVC1QSS1TRVJWXFdFTEw
         database_webid = database_name.split("/")[-1]
@@ -64,7 +65,7 @@ def do(payload, config, plugin_config, inputs):
             database_webid, attribute_name=attribute_name, element_name=element_name):
             # print("ALX:attribute={}".format(attribute))
             attributes.append(attribute)
-        rebuilt_tree = rebuild_tree(client, attributes)
+        rebuilt_tree = rebuild_tree(client, attributes, root_tree)
         return {"choices": rebuilt_tree}
 
     parameter_name = payload.get("parameterName")
@@ -142,35 +143,40 @@ def get_children_from_db(client, parent_node, database_name=None):
 # Tree class ? put(path, data), get(path, data)
 
 
-def rebuild_tree(client, items):
+def rebuild_tree(client, items, root_tree=None):
     # builds an active tree containing all the items and their parent up to the root
-    # print("ALX:items={}".format(len(items)))
-    tree = Tree()
-    final_tree = []
+    tree = Tree(root_tree=root_tree)
+    tree.print()
     while len(items) > 1:
-        # print("ALX:items={}".format(items))
         item = items.pop()
         if item is None:
             print("ALX:end")
             break
-        # print("ALX:searching ancestors for {}".format(item))
-        # tree.put(path_to_list(item.get("Path")), get_item_details(item))
-        all_item_s_ancestors = find_all_ancestors(client, item, tree)
-        print("ALX:found {} ancestors".format(len(all_item_s_ancestors)))
-        final_tree = combine_trees(final_tree, all_item_s_ancestors)
-    # tree.print()
+        find_all_ancestors(client, item, tree)
     result = recursive_tree_rebuild(tree.get_tree(), tree.get_records())
-    # print("ALX:result={}".format(result))
+    result = drop_first_levels(result)
     return result
+
+
+def drop_first_levels(result):
+    # recursively removes the 2 first levels of the returned tree
+    # (server and DB)
+    output_result = []
+    for item in result:
+        path = item.get("path", "")
+        path_length = len(path.split("\\"))
+        if path_length >= 5:
+            output_result.append(item)
+        else:
+            children = item.get("children", [])
+            output_result = drop_first_levels(children)
+    return output_result
 
 
 def find_all_ancestors(client, item, tree):
     # Find all the ancestors of an item
     elements_paths_tokens, attributes_paths_tokens = path_to_list(item.get("Path"))
-    # print("ALX:search {}/{}".format(elements_paths_tokens, attributes_paths_tokens))
-    parent_item = client.traverse_and_cache(elements_paths_tokens, attributes_paths_tokens, tree)
-    # print("ALX:parent_item={}".format(parent_item))
-    return []
+    client.traverse_and_cache(elements_paths_tokens, attributes_paths_tokens, tree)
 
 
 def combine_trees(final_tree, all_item_s_ancestors):

@@ -136,8 +136,7 @@ app.controller('AfExplorerFormCtrl', [
   };
 
   $scope.doSearch = function(element_name, attribute_name){
-      console.log("ALX:search for ", element_name, attribute_name);
-      $scope.callPythonDo({method: "do_search", element_name: element_name, attribute_name: attribute_name}).then(
+      $scope.callPythonDo({method: "do_search", element_name: element_name, attribute_name: attribute_name, root_tree: $scope.treeData}).then(
         function(data){
           $scope.treeData = data.choices;
         }
