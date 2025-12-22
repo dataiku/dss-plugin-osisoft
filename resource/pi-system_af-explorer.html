@@ -1,4 +1,4 @@
-<div ng-controller="AfExplorerFormController" ng-init="init()" style="margin: 10px 0px;">
+<div ng-controller="AfExplorerFormCtrl" ng-init="init()" style="margin: 10px 0px;">
     <div class="control-group">
         <label class="control-label" for="pi-system-credentials">Pi System connection</label>
         <div class="dib">
@@ -36,18 +36,22 @@
                    ng-init="getDatabases()"> 
            </select>
        </div>
+       
    </div>
-</div>
 
-<div ng-controller="TreeCtrl">
+
     <input id="ReturnsName" ng-model="config.element_name" type="text" data-container="body" data-html="true" data-placement="right" data-toggle="tooltip"
                       title="blaa" placeholder="Element name search..."/>
     <input id="ReturnsType" list="datatypes" ng-model="config.attribute_name" type="text" data-container="body" data-html="true" data-placement="right"
         data-toggle="tooltip" title="" placeholder="Attribute name search..." />
     <button ng-click="doSearch(config.element_name, config.attribute_name)" class="btn btn--primary link-like" id="get-query-dim-prop">Search...</button>
-  <ul ng-if="treeData.length">
-    <li ng-repeat="node in treeData track by node.id">
-      <tree-node node="node"></tree-node>
-    </li>
-  </ul>
+  
+    <div ng-if="config.database_name" ng-init="initializeTree()">
+        <ul ng-if="treeData.length">
+        <li ng-repeat="node in treeData track by node.id">
+        <tree-node node="node"></tree-node>
+        </li>
+    </ul>
+    </div>
 </div>
+
