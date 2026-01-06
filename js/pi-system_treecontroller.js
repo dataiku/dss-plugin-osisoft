@@ -193,6 +193,22 @@ app.directive('treeNode', function() {
           <input type="checkbox" ng-model="node.checked" ng-change="toggleChildren(node)">
           {{ node.title }}
         </label>
+<div class="tree-node">
+  <input
+    type="checkbox"
+    ng-model="node.checked"
+    ng-change="toggleChildren(node)"
+    ng-click="$event.stopPropagation()"
+  >
+
+  <span
+    class="tree-node__label"
+    ng-click="selectNode(node)"
+  >
+    {{ node.title }}
+  </span>
+</div>
+
       </div>
 
       <!-- Affichage récursif -->
