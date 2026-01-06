@@ -129,7 +129,12 @@ app.controller('AfExplorerFormCtrl', [
       
         $scope.getChildrenFromDB = function(item){
     console.log("ALX:gcfd:" + JSON.stringify(item));
-    $scope.callPythonDo({ method: "get_children_from_db", parent: item })
+         $http.get('/plugins/pi-system/resource/tree2.json')
+  .then(function(response) {
+        TreeDataService.setTreeData(response.data);
+        //$scope.config.treeData = TreeDataService.getTreeData();
+  })
+    /*$scope.callPythonDo({ method: "get_children_from_db", parent: item })
       .then(function (data) {
         console.log("ALX:data1=" + JSON.stringify(data));
         item.children = data.choices;
@@ -137,7 +142,7 @@ app.controller('AfExplorerFormCtrl', [
           child.checked = item.checked;
           child.expanded = false;
         });
-      });
+      });*/
     } 
         
         
