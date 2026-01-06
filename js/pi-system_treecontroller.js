@@ -108,11 +108,14 @@ app.controller('AfExplorerFormCtrl', [
           TreeDataService.setTreeData(data.choices);
            $scope.treeData =  TreeDataService.getTreeData();
       });*/
-   $http.get('/plugins/pi-system/resource/tree.json')
+        if(!$scope.config.treeData){
+               $http.get('/plugins/pi-system/resource/tree.json')
   .then(function(response) {
         TreeDataService.setTreeData(response.data);
         $scope.config.treeData = TreeDataService.getTreeData();
   })
+        }
+
     };
       
         $scope.getChildrenFromDB = function(item){
