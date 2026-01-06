@@ -205,7 +205,7 @@ app.directive('treeNode', function() {
 
   <span
     class="tree-node__label"
-    ng-click="selectNode(node)"
+    ng-click="displayAttributes(node)"
   >
     {{ node.title }}
   </span>
