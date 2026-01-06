@@ -155,6 +155,7 @@ app.controller('AfExplorerFormCtrl', [
         $scope.toggleChildren(child);
       });
     }
+      $scope.getMyTreeData();
   };
 
   $scope.doSearch = function(element_name, attribute_name){
