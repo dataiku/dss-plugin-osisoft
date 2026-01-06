@@ -1,0 +1,56 @@
+[{
+    "title": "Assets",
+    "has_children": true,
+    "path": "\\\\osisoft-pi-serv\\Well\\Assets",
+    "id": "F1Em3VEt1yTvt0ip6-a5yeEVsghMXislR47BG2pQAiSDmAegT1NJU09GVC1QSS1TRVJWXFdFTExcQVNTRVRT",
+    "url": "https://dku-qa-osi.francecentral.cloudapp.azure.com/piwebapi/elements/F1Em3VEt1yTvt0ip6-a5yeEVsghMXislR47BG2pQAiSDmAegT1NJU09GVC1QSS1TRVJWXFdFTExcQVNTRVRT",
+    "expanded": false,
+    "children": [{
+        "title": "TX531",
+        "template_name": "Substation Transformer",
+        "category_names": ["ABB"],
+        "path": "\\\\osisoft-pi-serv\\Well\\Assets\\TX531",
+        "id": "F1Em3VEt1yTvt0ip6-a5yeEVsg_8XislR47BG2pQAiSDmAegT1NJU09GVC1QSS1TRVJWXFdFTExcQVNTRVRTXFRYNTMx",
+        "url": "https://dku-qa-osi.francecentral.cloudapp.azure.com/piwebapi/elements/F1Em3VEt1yTvt0ip6-a5yeEVsg_8XislR47BG2pQAiSDmAegT1NJU09GVC1QSS1TRVJWXFdFTExcQVNTRVRTXFRYNTMx",
+        "expanded": false,
+        "children": []
+    }, {
+        "title": "TX532",
+        "template_name": "Substation Transformer",
+        "category_names": ["ABB"],
+        "path": "\\\\osisoft-pi-serv\\Well\\Assets\\TX532",
+        "id": "F1Em3VEt1yTvt0ip6-a5yeEVsgDsbislR47BG2pQAiSDmAegT1NJU09GVC1QSS1TRVJWXFdFTExcQVNTRVRTXFRYNTMy",
+        "url": "https://dku-qa-osi.francecentral.cloudapp.azure.com/piwebapi/elements/F1Em3VEt1yTvt0ip6-a5yeEVsgDsbislR47BG2pQAiSDmAegT1NJU09GVC1QSS1TRVJWXFdFTExcQVNTRVRTXFRYNTMy",
+        "expanded": false,
+        "children": []
+    }]
+}, {
+    "title": "California",
+    "template_name": "Local Grid",
+    "has_children": true,
+    "path": "\\\\osisoft-pi-serv\\Well\\California",
+    "id": "F1Em3VEt1yTvt0ip6-a5yeEVsgWcbislR47BG2pQAiSDmAegT1NJU09GVC1QSS1TRVJWXFdFTExcQ0FMSUZPUk5JQQ",
+    "url": "https://dku-qa-osi.francecentral.cloudapp.azure.com/piwebapi/elements/F1Em3VEt1yTvt0ip6-a5yeEVsgWcbislR47BG2pQAiSDmAegT1NJU09GVC1QSS1TRVJWXFdFTExcQ0FMSUZPUk5JQQ",
+    "type": "element",
+    "expanded": false,
+    "children": []
+}, {
+    "title": "PI Data Archive",
+    "template_name": "PI Data Archive",
+    "path": "\\\\osisoft-pi-serv\\Well\\PI Data Archive",
+    "id": "F1Em3VEt1yTvt0ip6-a5yeEVsggPAWdFN47BG2pQAiSDmAegT1NJU09GVC1QSS1TRVJWXFdFTExcUEkgREFUQSBBUkNISVZF",
+    "url": "https://dku-qa-osi.francecentral.cloudapp.azure.com/piwebapi/elements/F1Em3VEt1yTvt0ip6-a5yeEVsggPAWdFN47BG2pQAiSDmAegT1NJU09GVC1QSS1TRVJWXFdFTExcUEkgREFUQSBBUkNISVZF",
+    "type": "element",
+    "expanded": false,
+    "children": []
+}, {
+    "title": "West Texas",
+    "template_name": "Production Area",
+    "has_children": true,
+    "path": "\\\\osisoft-pi-serv\\Well\\West Texas",
+    "id": "F1Em3VEt1yTvt0ip6-a5yeEVsgg_AWdFN47BG2pQAiSDmAegT1NJU09GVC1QSS1TRVJWXFdFTExcV0VTVCBURVhBUw",
+    "url": "https://dku-qa-osi.francecentral.cloudapp.azure.com/piwebapi/elements/F1Em3VEt1yTvt0ip6-a5yeEVsgg_AWdFN47BG2pQAiSDmAegT1NJU09GVC1QSS1TRVJWXFdFTExcV0VTVCBURVhBUw",
+    "type": "element",
+    "expanded": true,
+    "children": []
+}]
