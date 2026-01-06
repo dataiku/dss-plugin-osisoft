@@ -12,6 +12,13 @@ app.service('TreeDataService', function() {
   this.getTreeData = function() {
     return this.treeData;
   };
+    
+  $scope.setMyTreeData = function() {
+      $scope.callPythonDo({parameterName: "treeData"}).then(function(data){
+        console.log("ALX:treeData return:"+JSON.stringify(data))
+        this.treeData = data.choices;
+      });
+    };
 });
 
 app.controller('TreeCtrl', ['$scope', '$http','CreateModalFromTemplate', 'TreeDataService', function($scope, $http, CreateModalFromTemplate, TreeDataService) {
@@ -120,12 +127,7 @@ app.controller('AfExplorerFormCtrl', [
 
     };
       
-              $scope.getMyTreeData = function() {
-      $scope.callPythonDo({parameterName: "treeData"}).then(function(data){
-        console.log("ALX:treeData return:"+JSON.stringify(data))
-        $scope.config.treeData = data.choices;
-      });
-    };
+
       
         $scope.getChildrenFromDB = function(item){
     console.log("ALX:gcfd:" + JSON.stringify(item));
