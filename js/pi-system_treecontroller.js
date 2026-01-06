@@ -103,11 +103,16 @@ app.controller('AfExplorerFormCtrl', [
     };
       
     $scope.initializeTree = function(){
-      $scope.callPythonDo({method: "get_children_from_db", parent: $scope.config.database_name}).then(function(data){
+    /*  $scope.callPythonDo({method: "get_children_from_db", parent: $scope.config.database_name}).then(function(data){
           console.log("ALX:data2=" + JSON.stringify(data));
           TreeDataService.setTreeData(data.choices);
            $scope.treeData =  TreeDataService.getTreeData();
-      });
+      });*/
+   $http.get('/plugins/pi-system/resource/tree.json')
+  .then(function(response) {
+        TreeDataService.setTreeData(response.data);
+        $scope.treeData = TreeDataService.getTreeData();
+  })
     };
       
         $scope.getChildrenFromDB = function(item){
