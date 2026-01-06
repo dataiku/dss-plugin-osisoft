@@ -56,7 +56,7 @@
        </div>
        
    </div>
-    <div ng-if="config.database_name" ng-init="initializeTree()">
+    <div ng-init="initializeTree()">
         <ul ng-if="config.treeData.length">
         <li ng-repeat="node in config.treeData track by node.id">
         <tree-node node="node"></tree-node>
