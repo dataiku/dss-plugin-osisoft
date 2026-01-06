@@ -132,7 +132,7 @@ app.controller('AfExplorerFormCtrl', [
          $http.get('/plugins/pi-system/resource/tree2.json')
   .then(function(response) {
         TreeDataService.setTreeData(response.data);
-        //$scope.config.treeData = TreeDataService.getTreeData();
+        $scope.config.treeData = TreeDataService.getTreeData();
   })
     /*$scope.callPythonDo({ method: "get_children_from_db", parent: item })
       .then(function (data) {
