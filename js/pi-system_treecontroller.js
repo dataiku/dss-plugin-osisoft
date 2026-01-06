@@ -12,13 +12,6 @@ app.service('TreeDataService', function() {
   this.getTreeData = function() {
     return this.treeData;
   };
-    
-  $scope.setMyTreeData = function() {
-      $scope.callPythonDo({parameterName: "treeData"}).then(function(data){
-        console.log("ALX:treeData return:"+JSON.stringify(data))
-        this.treeData = data.choices;
-      });
-    };
 });
 
 app.controller('TreeCtrl', ['$scope', '$http','CreateModalFromTemplate', 'TreeDataService', function($scope, $http, CreateModalFromTemplate, TreeDataService) {
@@ -26,7 +19,7 @@ $scope.init = function() {
     $http.get('/plugins/pi-system/resource/tree.json')
   .then(function(response) {
         TreeDataService.setTreeData(response.data);
-        $scope.config.treeData = TreeDataService.getTreeData();
+        //$scope.config.treeData = TreeDataService.getTreeData();
   })
 }
 
@@ -73,7 +66,7 @@ app.controller('AfExplorerFormCtrl', [
     };
     
     //$scope.config.treeData = TreeDataService.getTreeData(); 
-      $scope.config.treeData = $scope.getTreeData();
+      $scope.config.treeData = $scope.getMyTreeData();
     
     $scope.editorOptions = CodeMirrorSettingService.get("text/plain");
 
@@ -119,15 +112,20 @@ app.controller('AfExplorerFormCtrl', [
         if($scope.config.treeData===[]){
                $http.get('/plugins/pi-system/resource/tree.json')
   .then(function(response) {
-        TreeDataService.setMyTreeData(response.data);
-        //$scope.config.treeData = TreeDataService.getTreeData();
-                   $scope.config.treeData = $scope.getMyTreeData();
+        TreeDataService.setTreeData(response.data);
+        $scope.config.treeData = TreeDataService.getTreeData();
   })
         }
 
     };
       
-
+              $scope.getMyTreeData = function() {
+      $scope.callPythonDo({parameterName: "treeData"}).then(function(data){
+        console.log("ALX:treeData return:"+JSON.stringify(data))
+          TreeDataService.setMyTreeData(data.choices);
+          $scope.config.treeData = TreeDataService.getTreeData();
+      });
+    };
       
         $scope.getChildrenFromDB = function(item){
     console.log("ALX:gcfd:" + JSON.stringify(item));
