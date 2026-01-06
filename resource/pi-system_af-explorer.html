@@ -51,7 +51,7 @@
            <select dku-bs-select
                    ng-model="config.treeData"
                    ng-options="dbn.value as dbn.label for dbn in [config.treeData]"
-                   ng-init="getMyTreeData()"> 
+                   ng-init="initializeTree();getMyTreeData()"> 
            </select>
        </div>
        
