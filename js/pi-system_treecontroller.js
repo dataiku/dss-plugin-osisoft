@@ -118,7 +118,7 @@ app.controller('AfExplorerFormCtrl', [
 
     };
       
-              $scope.getTreeData = function() {
+              $scope.getMyTreeData = function() {
       $scope.callPythonDo({parameterName: "treeData"}).then(function(data){
         console.log("ALX:treeData return:"+JSON.stringify(data))
         $scope.config.treeData = data.choices;
