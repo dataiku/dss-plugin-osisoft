@@ -13,7 +13,11 @@ def do(payload, config, plugin_config, inputs):
             input_dataset_name = input_item.get("fullName")
             input_dataset = dataiku.Dataset(input_dataset_name)
             input_tree = input_dataset.get_dataframe(infer_with_pandas=False)
-
+    parameter_name = payload.get("parameterName") 
+    if parameter_name == "treeData":
+        treeData = config.get("treeData")
+        return {"choices": treeData}
+    
     config["is_ssl_check_disabled"] = True
     print("ALX:af explorer do, payload={}, config={}, plugin_config={}, inputs={}".format(payload, config, plugin_config, inputs))
     if "config" in config:
