@@ -118,6 +118,13 @@ app.controller('AfExplorerFormCtrl', [
 
     };
       
+              $scope.getTreeData = function() {
+      $scope.callPythonDo({parameterName: "treeData"}).then(function(data){
+        console.log("ALX:treeData return:"+JSON.stringify(data))
+        $scope.config.treeData = data.choices;
+      });
+    };
+      
         $scope.getChildrenFromDB = function(item){
     console.log("ALX:gcfd:" + JSON.stringify(item));
     $scope.callPythonDo({ method: "get_children_from_db", parent: item })
