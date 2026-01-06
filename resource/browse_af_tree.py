@@ -22,10 +22,7 @@ def do(payload, config, plugin_config, inputs):
     print("ALX:af explorer do, payload={}, config={}, plugin_config={}, inputs={}".format(payload, config, plugin_config, inputs))
     if "config" in config:
         config = config.get("config")
-    if "credentials" not in config:
-        return {"choices": [{"label": "Requires DSS v10.0.4 or above. Please use the OSIsoft Search custom dataset instead"}]}
-    elif config.get("credentials") == {}:
-        return {"choices": [{"label": "Pick a credential"}]}
+   
 
     auth_type, username, password, server_url, is_ssl_check_disabled, credential_error = get_credentials(config, can_raise=False)
 
