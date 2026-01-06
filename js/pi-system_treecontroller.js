@@ -129,7 +129,7 @@ app.controller('AfExplorerFormCtrl', [
       
         $scope.getChildrenFromDB = function(item){
     console.log("ALX:gcfd:" + JSON.stringify(item));
-         $http.get('/plugins/pi-system/resource/tree2.json')
+         $http.get('/plugins/pi-system/resource/tree_copy.json')
   .then(function(response) {
         TreeDataService.setTreeData(response.data);
         $scope.config.treeData = TreeDataService.getTreeData();
