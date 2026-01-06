@@ -19,13 +19,13 @@ $scope.init = function() {
     $http.get('/plugins/pi-system/resource/tree.json')
   .then(function(response) {
         TreeDataService.setTreeData(response.data);
-        $scope.treeData = TreeDataService.getTreeData();
+        $scope.config.treeData = TreeDataService.getTreeData();
   })
 }
 
 
   $scope.refreshTree = function(newTree) {
-    $scope.treeData = newTree.choices
+    $scope.config.treeData = newTree.choices
   }
 
   // Toggle récursif des checkboxes
