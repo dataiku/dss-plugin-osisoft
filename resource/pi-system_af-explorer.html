@@ -45,7 +45,7 @@
     <input id="ReturnsType" list="datatypes" ng-model="config.attribute_name" type="text" data-container="body" data-html="true" data-placement="right"
         data-toggle="tooltip" title="" placeholder="Attribute name search..." />
     <button ng-click="doSearch(config.element_name, config.attribute_name)" class="btn btn--primary link-like" id="get-query-dim-prop">Search...</button>
-     <div class="control-group removed-if-manual-query" ng-if="config.treeData.length" ng-show="true">
+     <div class="control-group removed-if-manual-query"  ng-show="true">
        <label class="control-label">{{config.treeData|json}}</label>
        <div class="controls">
            <select dku-bs-select
