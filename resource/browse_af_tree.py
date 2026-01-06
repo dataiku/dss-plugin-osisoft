@@ -96,9 +96,6 @@ def do(payload, config, plugin_config, inputs):
             return build_select_choices(choices)
         else:
             return build_select_choices()
-    if parameter_name == "treeData":
-        treeData = config.get("treeData")
-        return {"choices": treeData}
 
     return build_select_choices()
 
