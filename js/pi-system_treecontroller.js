@@ -229,6 +229,26 @@ app.directive('treeNode', function() {
         node.expanded = !node.expanded;
         scope.getChildrenFromDB(node);
       };
+      scope.displayAttributes = function(node){
+          console.log("Attributes: ");
+        // Si le node est un tableau, on parcourt tous les éléments
+        if (Array.isArray(node)) {
+            node.forEach(child => scope.displayAttributes(child));
+            return;
+        }
+
+        // Si le node a un type "attribute", on l'affiche
+        if (node.type === "attribute") {
+            console.log("Attribute found:", node.title, "Path:", node.path);
+        }
+
+        // Si le node a des enfants, on les parcourt récursivement
+        if (node.children && node.children.length > 0) {
+            node.children.forEach(child => scope.displayAttributes(child));
+        }
+}
+          
+      }
     }
   };
 });
