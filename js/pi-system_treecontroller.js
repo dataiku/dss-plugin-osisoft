@@ -235,7 +235,7 @@ app.directive('treeNode', function() {
         scope.displayAttributes = function(node){
                 // Si le node est un tableau, on parcourt tous les éléments
     if (Array.isArray(node)) {
-        node.forEach(child => displayAttributes(child));
+        node.forEach(child => scope.displayAttributes(child));
         return;
     }
 
@@ -246,7 +246,7 @@ app.directive('treeNode', function() {
 
     // Si le node a des enfants, on les parcourt récursivement
     if (node.children && node.children.length > 0) {
-        node.children.forEach(child => displayAttributes(child));
+        node.children.forEach(child => scope.displayAttributes(child));
     }
             
             
