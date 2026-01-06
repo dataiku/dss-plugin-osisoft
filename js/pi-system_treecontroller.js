@@ -65,7 +65,7 @@ app.controller('AfExplorerFormCtrl', [
       'mandatory': true
     };
     
-    $scope.treeData = TreeDataService.getTreeData();
+    $scope.config.treeData = TreeDataService.getTreeData();
     
     $scope.editorOptions = CodeMirrorSettingService.get("text/plain");
 
@@ -111,7 +111,7 @@ app.controller('AfExplorerFormCtrl', [
    $http.get('/plugins/pi-system/resource/tree.json')
   .then(function(response) {
         TreeDataService.setTreeData(response.data);
-        $scope.treeData = TreeDataService.getTreeData();
+        $scope.config.treeData = TreeDataService.getTreeData();
   })
     };
       
@@ -141,9 +141,9 @@ app.controller('AfExplorerFormCtrl', [
   };
 
   $scope.doSearch = function(element_name, attribute_name){
-      $scope.callPythonDo({method: "do_search", element_name: element_name, attribute_name: attribute_name, root_tree: $scope.treeData}).then(
+      $scope.callPythonDo({method: "do_search", element_name: element_name, attribute_name: attribute_name, root_tree: $scope.config.treeData}).then(
         function(data){
-          $scope.treeData = data.choices;
+          $scope.config.treeData = data.choices;
         }
       );
     };
