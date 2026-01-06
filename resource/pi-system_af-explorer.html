@@ -47,8 +47,8 @@
     <button ng-click="doSearch(config.element_name, config.attribute_name)" class="btn btn--primary link-like" id="get-query-dim-prop">Search...</button>
   
     <div ng-if="config.database_name" ng-init="initializeTree()">
-        <ul ng-if="treeData.length">
-        <li ng-repeat="node in treeData track by node.id">
+        <ul ng-if="config.treeData.length">
+        <li ng-repeat="node in config.treeData track by node.id">
         <tree-node node="node"></tree-node>
         </li>
     </ul>
