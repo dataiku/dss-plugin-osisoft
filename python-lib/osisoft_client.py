@@ -733,6 +733,8 @@ class OSIsoftClient(object):
             "query": query,
             "databaseWebId": database_webid
         }
+        if "search_associations" in kwargs:
+            params["associations"] = kwargs.get("search_associations")
         json_response = self.get(url=search_attributes_base_url, headers=headers, params=params)
         if OSIsoftConstants.DKU_ERROR_KEY in json_response:
             yield json_response

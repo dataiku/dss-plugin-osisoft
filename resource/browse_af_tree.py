@@ -77,11 +77,13 @@ def do(payload, config, plugin_config, inputs):
         for attribute in client.search_attributes(
             database_webid,
             attribute_name=attribute_name,
-            element_name=element_name
+            element_name=element_name,
+            search_associations="Paths"
         ):
             # print("ALX:attribute={}".format(attribute))
             attribute["checked"] = True
             attributes.append(attribute)
+        attributes = duplicate_linked_attributes(attributes)
         rebuilt_tree = rebuild_tree(client, attributes, root_tree)
         return {"choices": rebuilt_tree}
 
@@ -217,3 +219,14 @@ def shorten_tree(tree):
             if "children" in node:
                 shorten_tree(node.get("children", []))
     return tree
+
+
+def duplicate_linked_attributes(attributes):
+    duplicated_attributes = []
+    for attribute in attributes:
+        paths = attribute.pop("Paths", [attribute.get("Path")])
+        for path in paths:
+            this_attribute = attribute.copy()
+            this_attribute["Path"] = path
+            duplicated_attributes.append(this_attribute)
+    return duplicated_attributes
