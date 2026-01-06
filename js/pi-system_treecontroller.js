@@ -14,7 +14,8 @@ app.service('TreeDataService', function() {
   };
 });
 
-app.controller('TreeCtrl', ['$scope', '$http','CreateModalFromTemplate', 'TreeDataService', function($scope, $http, CreateModalFromTemplate, TreeDataService) {
+app.controller('TreeCtrl', ['$scope', '$http','CreateModalFromTemplate', 'TreeDataService',
+                            function($scope, $http, CreateModalFromTemplate, TreeDataService) {
 $scope.init = function() {
     $http.get('/plugins/pi-system/resource/tree.json')
   .then(function(response) {
@@ -213,27 +214,7 @@ app.directive('treeNode', function() {
         console.log("ALX:expand !" + JSON.stringify(node));
         node.expanded = !node.expanded;
         scope.getChildrenFromDB(node);
-      };
-      scope.displayAttributes = function(node){
-          console.log("Attributes: ");
-        // Si le node est un tableau, on parcourt tous les éléments
-        if (Array.isArray(node)) {
-            node.forEach(child => scope.displayAttributes(child));
-            return;
-        }
-
-        // Si le node a un type "attribute", on l'affiche
-        if (node.type === "attribute") {
-            console.log("Attribute found:", node.title, "Path:", node.path);
-        }
-
-        // Si le node a des enfants, on les parcourt récursivement
-        if (node.children && node.children.length > 0) {
-            node.children.forEach(child => scope.displayAttributes(child));
-        }
-}
-          
+      };   
       }
     }
-  };
-);
+  });
