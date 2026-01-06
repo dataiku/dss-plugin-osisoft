@@ -66,7 +66,7 @@ app.controller('AfExplorerFormCtrl', [
     };
     
     //$scope.config.treeData = TreeDataService.getTreeData(); 
-      $scope.config.treeData = TreeDataService.getMyTreeData();
+      $scope.config.treeData = TreeDataService.getTreeData();
     
     $scope.editorOptions = CodeMirrorSettingService.get("text/plain");
 
