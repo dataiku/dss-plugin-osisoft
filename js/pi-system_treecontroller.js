@@ -190,10 +190,10 @@ app.directive('treeNode', function() {
         <!-- Espace vide si pas d’enfants -->
         <!--<span ng-if="!node.children || node.children.length === 0" style="width: 12px;"></span>-->
 
-        <label>
+        <!--<label>
           <input type="checkbox" ng-model="node.checked" ng-change="toggleChildren(node)">
           {{ node.title }}
-        </label>
+        </label>-->
 
         <div class="tree-node">
   <input
