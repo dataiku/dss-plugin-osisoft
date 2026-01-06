@@ -109,7 +109,10 @@ app.controller('AfExplorerFormCtrl', [
           TreeDataService.setTreeData(data.choices);
            $scope.treeData =  TreeDataService.getTreeData();
       });*/
+        console.log("here");
+        console.log($scope.config.treeData);
         if(!$scope.config.treeData || $scope.config.treeData===[]){
+            console.log("in if");
                $http.get('/plugins/pi-system/resource/tree.json')
   .then(function(response) {
         TreeDataService.setTreeData(response.data);
