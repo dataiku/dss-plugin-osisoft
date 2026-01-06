@@ -65,7 +65,8 @@ app.controller('AfExplorerFormCtrl', [
       'mandatory': true
     };
     
-    $scope.config.treeData = TreeDataService.getTreeData();
+    //$scope.config.treeData = TreeDataService.getTreeData(); 
+      $scope.config.treeData = $scope.getMyTreeData();
     
     $scope.editorOptions = CodeMirrorSettingService.get("text/plain");
 
@@ -112,7 +113,8 @@ app.controller('AfExplorerFormCtrl', [
                $http.get('/plugins/pi-system/resource/tree.json')
   .then(function(response) {
         TreeDataService.setTreeData(response.data);
-        $scope.config.treeData = TreeDataService.getTreeData();
+        //$scope.config.treeData = TreeDataService.getTreeData();
+                   $scope.config.treeData = $scope.getMyTreeData();
   })
         }
 
