@@ -1,19 +1,433 @@
-[
-  {
-    "id": 1,
-    "title": "Elements",
-    "expanded": false,
-    "checked": false,
-    "children": [
-        {
-            "id": "blabla",
-            "url": "xcvb",
-            "title": "Well",
-            "expanded": false,
-            "checked": false,
-            "children": [
-            ]
-        }
-    ]
-  }
-]
+[{
+    "title": "Assets",
+    "has_children": true,
+    "path": "\\\\osisoft-pi-serv\\Well\\Assets",
+    "id": "F1Em3VEt1yTvt0ip6-a5yeEVsghMXislR47BG2pQAiSDmAegT1NJU09GVC1QSS1TRVJWXFdFTExcQVNTRVRT",
+    "url": "https://dku-qa-osi.francecentral.cloudapp.azure.com/piwebapi/elements/F1Em3VEt1yTvt0ip6-a5yeEVsghMXislR47BG2pQAiSDmAegT1NJU09GVC1QSS1TRVJWXFdFTExcQVNTRVRT",
+    "expanded": true,
+    "children": [{
+        "title": "TX531",
+        "template_name": "Substation Transformer",
+        "category_names": ["ABB"],
+        "path": "\\\\osisoft-pi-serv\\Well\\Assets\\TX531",
+        "id": "F1Em3VEt1yTvt0ip6-a5yeEVsg_8XislR47BG2pQAiSDmAegT1NJU09GVC1QSS1TRVJWXFdFTExcQVNTRVRTXFRYNTMx",
+        "url": "https://dku-qa-osi.francecentral.cloudapp.azure.com/piwebapi/elements/F1Em3VEt1yTvt0ip6-a5yeEVsg_8XislR47BG2pQAiSDmAegT1NJU09GVC1QSS1TRVJWXFdFTExcQVNTRVRTXFRYNTMx",
+        "expanded": true,
+        "children": [{
+            "title": "Rated Current",
+            "category_names": ["Energy"],
+            "path": "\\\\osisoft-pi-serv\\Well\\Assets\\TX531|Rated Current",
+            "id": "F1AbE3VEt1yTvt0ip6-a5yeEVsg_8XislR47BG2pQAiSDmAegLKxAdlX8t1ItKfd7vA95uAT1NJU09GVC1QSS1TRVJWXFdFTExcQVNTRVRTXFRYNTMxfFJBVEVEIENVUlJFTlQ",
+            "url": "https://dku-qa-osi.francecentral.cloudapp.azure.com/piwebapi/attributes/F1AbE3VEt1yTvt0ip6-a5yeEVsg_8XislR47BG2pQAiSDmAegLKxAdlX8t1ItKfd7vA95uAT1NJU09GVC1QSS1TRVJWXFdFTExcQVNTRVRTXFRYNTMxfFJBVEVEIENVUlJFTlQ",
+            "checked": true,
+            "expanded": true,
+            "children": []
+        }, {
+            "title": "Current",
+            "category_names": ["Energy"],
+            "has_children": true,
+            "path": "\\\\osisoft-pi-serv\\Well\\Assets\\TX531|Current",
+            "id": "F1AbE3VEt1yTvt0ip6-a5yeEVsg_8XislR47BG2pQAiSDmAegIh4L3ZeTYlwxQ5YmoPCJiwT1NJU09GVC1QSS1TRVJWXFdFTExcQVNTRVRTXFRYNTMxfENVUlJFTlQ",
+            "url": "https://dku-qa-osi.francecentral.cloudapp.azure.com/piwebapi/attributes/F1AbE3VEt1yTvt0ip6-a5yeEVsg_8XislR47BG2pQAiSDmAegIh4L3ZeTYlwxQ5YmoPCJiwT1NJU09GVC1QSS1TRVJWXFdFTExcQVNTRVRTXFRYNTMxfENVUlJFTlQ",
+            "checked": true,
+            "expanded": true,
+            "children": []
+        }]
+    }, {
+        "title": "TX532",
+        "template_name": "Substation Transformer",
+        "category_names": ["ABB"],
+        "path": "\\\\osisoft-pi-serv\\Well\\Assets\\TX532",
+        "id": "F1Em3VEt1yTvt0ip6-a5yeEVsgDsbislR47BG2pQAiSDmAegT1NJU09GVC1QSS1TRVJWXFdFTExcQVNTRVRTXFRYNTMy",
+        "url": "https://dku-qa-osi.francecentral.cloudapp.azure.com/piwebapi/elements/F1Em3VEt1yTvt0ip6-a5yeEVsgDsbislR47BG2pQAiSDmAegT1NJU09GVC1QSS1TRVJWXFdFTExcQVNTRVRTXFRYNTMy",
+        "expanded": true,
+        "children": [{
+            "title": "Rated Current",
+            "category_names": ["Energy"],
+            "path": "\\\\osisoft-pi-serv\\Well\\Assets\\TX532|Rated Current",
+            "id": "F1AbE3VEt1yTvt0ip6-a5yeEVsgDsbislR47BG2pQAiSDmAeg3a9AdlX8t1ItKfd7vA95uAT1NJU09GVC1QSS1TRVJWXFdFTExcQVNTRVRTXFRYNTMyfFJBVEVEIENVUlJFTlQ",
+            "url": "https://dku-qa-osi.francecentral.cloudapp.azure.com/piwebapi/attributes/F1AbE3VEt1yTvt0ip6-a5yeEVsgDsbislR47BG2pQAiSDmAeg3a9AdlX8t1ItKfd7vA95uAT1NJU09GVC1QSS1TRVJWXFdFTExcQVNTRVRTXFRYNTMyfFJBVEVEIENVUlJFTlQ",
+            "checked": true,
+            "expanded": true,
+            "children": []
+        }]
+    }]
+}, {
+    "title": "California",
+    "template_name": "Local Grid",
+    "has_children": true,
+    "path": "\\\\osisoft-pi-serv\\Well\\California",
+    "id": "F1Em3VEt1yTvt0ip6-a5yeEVsgWcbislR47BG2pQAiSDmAegT1NJU09GVC1QSS1TRVJWXFdFTExcQ0FMSUZPUk5JQQ",
+    "url": "https://dku-qa-osi.francecentral.cloudapp.azure.com/piwebapi/elements/F1Em3VEt1yTvt0ip6-a5yeEVsgWcbislR47BG2pQAiSDmAegT1NJU09GVC1QSS1TRVJWXFdFTExcQ0FMSUZPUk5JQQ",
+    "type": "element",
+    "expanded": true,
+    "children": [{
+        "title": "Fresno",
+        "template_name": "District",
+        "has_children": true,
+        "path": "\\\\osisoft-pi-serv\\Well\\California\\Fresno",
+        "id": "F1Em3VEt1yTvt0ip6-a5yeEVsgXMbislR47BG2pQAiSDmAegT1NJU09GVC1QSS1TRVJWXFdFTExcQ0FMSUZPUk5JQVxGUkVTTk8",
+        "url": "https://dku-qa-osi.francecentral.cloudapp.azure.com/piwebapi/elements/F1Em3VEt1yTvt0ip6-a5yeEVsgXMbislR47BG2pQAiSDmAegT1NJU09GVC1QSS1TRVJWXFdFTExcQ0FMSUZPUk5JQVxGUkVTTk8",
+        "type": "element",
+        "expanded": true,
+        "$$hashKey": "object:1730",
+        "children": [{
+            "title": "Mariposa",
+            "template_name": "Substation",
+            "has_children": true,
+            "path": "\\\\osisoft-pi-serv\\Well\\California\\Fresno\\Mariposa",
+            "id": "F1Em3VEt1yTvt0ip6-a5yeEVsgX8bislR47BG2pQAiSDmAegT1NJU09GVC1QSS1TRVJWXFdFTExcQ0FMSUZPUk5JQVxGUkVTTk9cTUFSSVBPU0E",
+            "url": "https://dku-qa-osi.francecentral.cloudapp.azure.com/piwebapi/elements/F1Em3VEt1yTvt0ip6-a5yeEVsgX8bislR47BG2pQAiSDmAegT1NJU09GVC1QSS1TRVJWXFdFTExcQ0FMSUZPUk5JQVxGUkVTTk9cTUFSSVBPU0E",
+            "type": "element",
+            "expanded": true,
+            "$$hashKey": "object:1745",
+            "children": [{
+                "title": "TX531",
+                "template_name": "Substation Transformer",
+                "category_names": ["ABB"],
+                "path": "\\\\osisoft-pi-serv\\Well\\Assets\\TX531",
+                "id": "F1Em3VEt1yTvt0ip6-a5yeEVsg_8XislR47BG2pQAiSDmAegT1NJU09GVC1QSS1TRVJWXFdFTExcQVNTRVRTXFRYNTMx",
+                "url": "https://dku-qa-osi.francecentral.cloudapp.azure.com/piwebapi/elements/F1Em3VEt1yTvt0ip6-a5yeEVsg_8XislR47BG2pQAiSDmAegT1NJU09GVC1QSS1TRVJWXFdFTExcQVNTRVRTXFRYNTMx",
+                "type": "element",
+                "expanded": true,
+                "$$hashKey": "object:1770",
+                "children": [{
+                    "title": "Current",
+                    "category_names": ["Energy"],
+                    "has_children": true,
+                    "path": "\\\\osisoft-pi-serv\\Well\\Assets\\TX531|Current",
+                    "id": "F1AbE3VEt1yTvt0ip6-a5yeEVsg_8XislR47BG2pQAiSDmAegIh4L3ZeTYlwxQ5YmoPCJiwT1NJU09GVC1QSS1TRVJWXFdFTExcQVNTRVRTXFRYNTMxfENVUlJFTlQ",
+                    "url": "https://dku-qa-osi.francecentral.cloudapp.azure.com/piwebapi/attributes/F1AbE3VEt1yTvt0ip6-a5yeEVsg_8XislR47BG2pQAiSDmAegIh4L3ZeTYlwxQ5YmoPCJiwT1NJU09GVC1QSS1TRVJWXFdFTExcQVNTRVRTXFRYNTMxfENVUlJFTlQ",
+                    "type": "attribute",
+                    "expanded": true,
+                    "$$hashKey": "object:1797",
+                    "children": []
+                }, {
+                    "title": "Hot-Spot Temperature",
+                    "category_names": ["Temperature"],
+                    "path": "\\\\osisoft-pi-serv\\Well\\Assets\\TX531|Hot-Spot Temperature",
+                    "id": "F1AbE3VEt1yTvt0ip6-a5yeEVsg_8XislR47BG2pQAiSDmAegkjsydb6VCF4ckjRRSIstkwT1NJU09GVC1QSS1TRVJWXFdFTExcQVNTRVRTXFRYNTMxfEhPVC1TUE9UIFRFTVBFUkFUVVJF",
+                    "url": "https://dku-qa-osi.francecentral.cloudapp.azure.com/piwebapi/attributes/F1AbE3VEt1yTvt0ip6-a5yeEVsg_8XislR47BG2pQAiSDmAegkjsydb6VCF4ckjRRSIstkwT1NJU09GVC1QSS1TRVJWXFdFTExcQVNTRVRTXFRYNTMxfEhPVC1TUE9UIFRFTVBFUkFUVVJF",
+                    "type": "attribute",
+                    "expanded": true,
+                    "$$hashKey": "object:1798",
+                    "children": []
+                }, {
+                    "title": "Hot-Spot Temperature High",
+                    "category_names": ["Temperature"],
+                    "path": "\\\\osisoft-pi-serv\\Well\\Assets\\TX531|Hot-Spot Temperature High",
+                    "id": "F1AbE3VEt1yTvt0ip6-a5yeEVsg_8XislR47BG2pQAiSDmAeg8dKoKownBlETCEjcisZuigT1NJU09GVC1QSS1TRVJWXFdFTExcQVNTRVRTXFRYNTMxfEhPVC1TUE9UIFRFTVBFUkFUVVJFIEhJR0g",
+                    "url": "https://dku-qa-osi.francecentral.cloudapp.azure.com/piwebapi/attributes/F1AbE3VEt1yTvt0ip6-a5yeEVsg_8XislR47BG2pQAiSDmAeg8dKoKownBlETCEjcisZuigT1NJU09GVC1QSS1TRVJWXFdFTExcQVNTRVRTXFRYNTMxfEhPVC1TUE9UIFRFTVBFUkFUVVJFIEhJR0g",
+                    "type": "attribute",
+                    "expanded": true,
+                    "$$hashKey": "object:1799",
+                    "children": []
+                }, {
+                    "title": "Latitude",
+                    "category_names": ["Location"],
+                    "path": "\\\\osisoft-pi-serv\\Well\\Assets\\TX531|Latitude",
+                    "id": "F1AbE3VEt1yTvt0ip6-a5yeEVsg_8XislR47BG2pQAiSDmAeg_FuZC9BYBVo4-x2fejf2QAT1NJU09GVC1QSS1TRVJWXFdFTExcQVNTRVRTXFRYNTMxfExBVElUVURF",
+                    "url": "https://dku-qa-osi.francecentral.cloudapp.azure.com/piwebapi/attributes/F1AbE3VEt1yTvt0ip6-a5yeEVsg_8XislR47BG2pQAiSDmAeg_FuZC9BYBVo4-x2fejf2QAT1NJU09GVC1QSS1TRVJWXFdFTExcQVNTRVRTXFRYNTMxfExBVElUVURF",
+                    "type": "attribute",
+                    "expanded": true,
+                    "$$hashKey": "object:1800",
+                    "children": []
+                }, {
+                    "title": "Load",
+                    "category_names": ["Energy"],
+                    "has_children": true,
+                    "path": "\\\\osisoft-pi-serv\\Well\\Assets\\TX531|Load",
+                    "id": "F1AbE3VEt1yTvt0ip6-a5yeEVsg_8XislR47BG2pQAiSDmAeg2DaxcEL_DFszh_gjSy1EwAT1NJU09GVC1QSS1TRVJWXFdFTExcQVNTRVRTXFRYNTMxfExPQUQ",
+                    "url": "https://dku-qa-osi.francecentral.cloudapp.azure.com/piwebapi/attributes/F1AbE3VEt1yTvt0ip6-a5yeEVsg_8XislR47BG2pQAiSDmAeg2DaxcEL_DFszh_gjSy1EwAT1NJU09GVC1QSS1TRVJWXFdFTExcQVNTRVRTXFRYNTMxfExPQUQ",
+                    "type": "attribute",
+                    "expanded": true,
+                    "$$hashKey": "object:1801",
+                    "children": []
+                }, {
+                    "title": "Longitude",
+                    "category_names": ["Location"],
+                    "path": "\\\\osisoft-pi-serv\\Well\\Assets\\TX531|Longitude",
+                    "id": "F1AbE3VEt1yTvt0ip6-a5yeEVsg_8XislR47BG2pQAiSDmAegdT4ed1YIs1cmxI5xsoHqxwT1NJU09GVC1QSS1TRVJWXFdFTExcQVNTRVRTXFRYNTMxfExPTkdJVFVERQ",
+                    "url": "https://dku-qa-osi.francecentral.cloudapp.azure.com/piwebapi/attributes/F1AbE3VEt1yTvt0ip6-a5yeEVsg_8XislR47BG2pQAiSDmAegdT4ed1YIs1cmxI5xsoHqxwT1NJU09GVC1QSS1TRVJWXFdFTExcQVNTRVRTXFRYNTMxfExPTkdJVFVERQ",
+                    "type": "attribute",
+                    "expanded": true,
+                    "$$hashKey": "object:1802",
+                    "children": []
+                }, {
+                    "title": "LTC Position",
+                    "category_names": ["Load Tap Changer"],
+                    "has_children": true,
+                    "path": "\\\\osisoft-pi-serv\\Well\\Assets\\TX531|LTC Position",
+                    "id": "F1AbE3VEt1yTvt0ip6-a5yeEVsg_8XislR47BG2pQAiSDmAeguUndBGZrgVIcRrmQT7O8gwT1NJU09GVC1QSS1TRVJWXFdFTExcQVNTRVRTXFRYNTMxfExUQyBQT1NJVElPTg",
+                    "url": "https://dku-qa-osi.francecentral.cloudapp.azure.com/piwebapi/attributes/F1AbE3VEt1yTvt0ip6-a5yeEVsg_8XislR47BG2pQAiSDmAeguUndBGZrgVIcRrmQT7O8gwT1NJU09GVC1QSS1TRVJWXFdFTExcQVNTRVRTXFRYNTMxfExUQyBQT1NJVElPTg",
+                    "type": "attribute",
+                    "expanded": true,
+                    "$$hashKey": "object:1803",
+                    "children": []
+                }, {
+                    "title": "LTC Position Change - 24 Hours",
+                    "category_names": ["Load Tap Changer"],
+                    "path": "\\\\osisoft-pi-serv\\Well\\Assets\\TX531|LTC Position Change - 24 Hours",
+                    "id": "F1AbE3VEt1yTvt0ip6-a5yeEVsg_8XislR47BG2pQAiSDmAegiMFCApLzNVAF9hI8MXRBZQT1NJU09GVC1QSS1TRVJWXFdFTExcQVNTRVRTXFRYNTMxfExUQyBQT1NJVElPTiBDSEFOR0UgLSAyNCBIT1VSUw",
+                    "url": "https://dku-qa-osi.francecentral.cloudapp.azure.com/piwebapi/attributes/F1AbE3VEt1yTvt0ip6-a5yeEVsg_8XislR47BG2pQAiSDmAegiMFCApLzNVAF9hI8MXRBZQT1NJU09GVC1QSS1TRVJWXFdFTExcQVNTRVRTXFRYNTMxfExUQyBQT1NJVElPTiBDSEFOR0UgLSAyNCBIT1VSUw",
+                    "type": "attribute",
+                    "expanded": true,
+                    "$$hashKey": "object:1804",
+                    "children": []
+                }, {
+                    "title": "LTC Unbalanced Time",
+                    "category_names": ["Load Tap Changer"],
+                    "path": "\\\\osisoft-pi-serv\\Well\\Assets\\TX531|LTC Unbalanced Time",
+                    "id": "F1AbE3VEt1yTvt0ip6-a5yeEVsg_8XislR47BG2pQAiSDmAeg72AFGNAqfVYDSqbltOzWmAT1NJU09GVC1QSS1TRVJWXFdFTExcQVNTRVRTXFRYNTMxfExUQyBVTkJBTEFOQ0VEIFRJTUU",
+                    "url": "https://dku-qa-osi.francecentral.cloudapp.azure.com/piwebapi/attributes/F1AbE3VEt1yTvt0ip6-a5yeEVsg_8XislR47BG2pQAiSDmAeg72AFGNAqfVYDSqbltOzWmAT1NJU09GVC1QSS1TRVJWXFdFTExcQVNTRVRTXFRYNTMxfExUQyBVTkJBTEFOQ0VEIFRJTUU",
+                    "type": "attribute",
+                    "expanded": true,
+                    "$$hashKey": "object:1805",
+                    "children": []
+                }, {
+                    "title": "Manufacturer",
+                    "category_names": ["Specifications"],
+                    "path": "\\\\osisoft-pi-serv\\Well\\Assets\\TX531|Manufacturer",
+                    "id": "F1AbE3VEt1yTvt0ip6-a5yeEVsg_8XislR47BG2pQAiSDmAeg2srbLHPuTloSg28TCVnUgQT1NJU09GVC1QSS1TRVJWXFdFTExcQVNTRVRTXFRYNTMxfE1BTlVGQUNUVVJFUg",
+                    "url": "https://dku-qa-osi.francecentral.cloudapp.azure.com/piwebapi/attributes/F1AbE3VEt1yTvt0ip6-a5yeEVsg_8XislR47BG2pQAiSDmAeg2srbLHPuTloSg28TCVnUgQT1NJU09GVC1QSS1TRVJWXFdFTExcQVNTRVRTXFRYNTMxfE1BTlVGQUNUVVJFUg",
+                    "type": "attribute",
+                    "expanded": true,
+                    "$$hashKey": "object:1806",
+                    "children": []
+                }, {
+                    "title": "Model",
+                    "category_names": ["Specifications"],
+                    "path": "\\\\osisoft-pi-serv\\Well\\Assets\\TX531|Model",
+                    "id": "F1AbE3VEt1yTvt0ip6-a5yeEVsg_8XislR47BG2pQAiSDmAegPiN0wWdwOFoPTIELYWGaTAT1NJU09GVC1QSS1TRVJWXFdFTExcQVNTRVRTXFRYNTMxfE1PREVM",
+                    "url": "https://dku-qa-osi.francecentral.cloudapp.azure.com/piwebapi/attributes/F1AbE3VEt1yTvt0ip6-a5yeEVsg_8XislR47BG2pQAiSDmAegPiN0wWdwOFoPTIELYWGaTAT1NJU09GVC1QSS1TRVJWXFdFTExcQVNTRVRTXFRYNTMxfE1PREVM",
+                    "type": "attribute",
+                    "expanded": true,
+                    "$$hashKey": "object:1807",
+                    "children": []
+                }, {
+                    "title": "NÚMERO",
+                    "path": "\\\\osisoft-pi-serv\\Well\\Assets\\TX531|NÚMERO",
+                    "id": "F1AbE3VEt1yTvt0ip6-a5yeEVsg_8XislR47BG2pQAiSDmAegqCDmQiON1UyBSLIfDHyw2gT1NJU09GVC1QSS1TRVJWXFdFTExcQVNTRVRTXFRYNTMxfE7Dmk1FUk8",
+                    "url": "https://dku-qa-osi.francecentral.cloudapp.azure.com/piwebapi/attributes/F1AbE3VEt1yTvt0ip6-a5yeEVsg_8XislR47BG2pQAiSDmAegqCDmQiON1UyBSLIfDHyw2gT1NJU09GVC1QSS1TRVJWXFdFTExcQVNTRVRTXFRYNTMxfE7Dmk1FUk8",
+                    "type": "attribute",
+                    "expanded": true,
+                    "$$hashKey": "object:1808",
+                    "children": []
+                }, {
+                    "title": "Rated Current",
+                    "category_names": ["Energy"],
+                    "path": "\\\\osisoft-pi-serv\\Well\\Assets\\TX531|Rated Current",
+                    "id": "F1AbE3VEt1yTvt0ip6-a5yeEVsg_8XislR47BG2pQAiSDmAegLKxAdlX8t1ItKfd7vA95uAT1NJU09GVC1QSS1TRVJWXFdFTExcQVNTRVRTXFRYNTMxfFJBVEVEIENVUlJFTlQ",
+                    "url": "https://dku-qa-osi.francecentral.cloudapp.azure.com/piwebapi/attributes/F1AbE3VEt1yTvt0ip6-a5yeEVsg_8XislR47BG2pQAiSDmAegLKxAdlX8t1ItKfd7vA95uAT1NJU09GVC1QSS1TRVJWXFdFTExcQVNTRVRTXFRYNTMxfFJBVEVEIENVUlJFTlQ",
+                    "type": "attribute",
+                    "expanded": true,
+                    "$$hashKey": "object:1809",
+                    "children": []
+                }, {
+                    "title": "Rated Hot-Spot Temperature",
+                    "category_names": ["Temperature"],
+                    "path": "\\\\osisoft-pi-serv\\Well\\Assets\\TX531|Rated Hot-Spot Temperature",
+                    "id": "F1AbE3VEt1yTvt0ip6-a5yeEVsg_8XislR47BG2pQAiSDmAegGa_F_3Q0-V8YHwT8JoMLkgT1NJU09GVC1QSS1TRVJWXFdFTExcQVNTRVRTXFRYNTMxfFJBVEVEIEhPVC1TUE9UIFRFTVBFUkFUVVJF",
+                    "url": "https://dku-qa-osi.francecentral.cloudapp.azure.com/piwebapi/attributes/F1AbE3VEt1yTvt0ip6-a5yeEVsg_8XislR47BG2pQAiSDmAegGa_F_3Q0-V8YHwT8JoMLkgT1NJU09GVC1QSS1TRVJWXFdFTExcQVNTRVRTXFRYNTMxfFJBVEVEIEhPVC1TUE9UIFRFTVBFUkFUVVJF",
+                    "type": "attribute",
+                    "expanded": true,
+                    "$$hashKey": "object:1810",
+                    "children": []
+                }, {
+                    "title": "Substation",
+                    "category_names": ["Specifications"],
+                    "path": "\\\\osisoft-pi-serv\\Well\\Assets\\TX531|Substation",
+                    "id": "F1AbE3VEt1yTvt0ip6-a5yeEVsg_8XislR47BG2pQAiSDmAegk5d-wiYxiFgEWw1pBzANZQT1NJU09GVC1QSS1TRVJWXFdFTExcQVNTRVRTXFRYNTMxfFNVQlNUQVRJT04",
+                    "url": "https://dku-qa-osi.francecentral.cloudapp.azure.com/piwebapi/attributes/F1AbE3VEt1yTvt0ip6-a5yeEVsg_8XislR47BG2pQAiSDmAegk5d-wiYxiFgEWw1pBzANZQT1NJU09GVC1QSS1TRVJWXFdFTExcQVNTRVRTXFRYNTMxfFNVQlNUQVRJT04",
+                    "type": "attribute",
+                    "expanded": true,
+                    "$$hashKey": "object:1811",
+                    "children": []
+                }, {
+                    "title": "Temperature High Total Time",
+                    "category_names": ["Temperature"],
+                    "path": "\\\\osisoft-pi-serv\\Well\\Assets\\TX531|Temperature High Total Time",
+                    "id": "F1AbE3VEt1yTvt0ip6-a5yeEVsg_8XislR47BG2pQAiSDmAegt3OXK73CjlIOFCamR2S8sQT1NJU09GVC1QSS1TRVJWXFdFTExcQVNTRVRTXFRYNTMxfFRFTVBFUkFUVVJFIEhJR0ggVE9UQUwgVElNRQ",
+                    "url": "https://dku-qa-osi.francecentral.cloudapp.azure.com/piwebapi/attributes/F1AbE3VEt1yTvt0ip6-a5yeEVsg_8XislR47BG2pQAiSDmAegt3OXK73CjlIOFCamR2S8sQT1NJU09GVC1QSS1TRVJWXFdFTExcQVNTRVRTXFRYNTMxfFRFTVBFUkFUVVJFIEhJR0ggVE9UQUwgVElNRQ",
+                    "type": "attribute",
+                    "expanded": true,
+                    "$$hashKey": "object:1812",
+                    "children": []
+                }, {
+                    "title": "Top-Oil Temperature",
+                    "category_names": ["Temperature"],
+                    "has_children": true,
+                    "path": "\\\\osisoft-pi-serv\\Well\\Assets\\TX531|Top-Oil Temperature",
+                    "id": "F1AbE3VEt1yTvt0ip6-a5yeEVsg_8XislR47BG2pQAiSDmAegf5Ywq1Cq21IFMSjIwhM8nAT1NJU09GVC1QSS1TRVJWXFdFTExcQVNTRVRTXFRYNTMxfFRPUC1PSUwgVEVNUEVSQVRVUkU",
+                    "url": "https://dku-qa-osi.francecentral.cloudapp.azure.com/piwebapi/attributes/F1AbE3VEt1yTvt0ip6-a5yeEVsg_8XislR47BG2pQAiSDmAegf5Ywq1Cq21IFMSjIwhM8nAT1NJU09GVC1QSS1TRVJWXFdFTExcQVNTRVRTXFRYNTMxfFRPUC1PSUwgVEVNUEVSQVRVUkU",
+                    "type": "attribute",
+                    "expanded": true,
+                    "$$hashKey": "object:1813",
+                    "children": []
+                }, {
+                    "title": "Transformer Number",
+                    "category_names": ["Specifications"],
+                    "path": "\\\\osisoft-pi-serv\\Well\\Assets\\TX531|Transformer Number",
+                    "id": "F1AbE3VEt1yTvt0ip6-a5yeEVsg_8XislR47BG2pQAiSDmAegKvnaRuau214SQmLD3MkENwT1NJU09GVC1QSS1TRVJWXFdFTExcQVNTRVRTXFRYNTMxfFRSQU5TRk9STUVSIE5VTUJFUg",
+                    "url": "https://dku-qa-osi.francecentral.cloudapp.azure.com/piwebapi/attributes/F1AbE3VEt1yTvt0ip6-a5yeEVsg_8XislR47BG2pQAiSDmAegKvnaRuau214SQmLD3MkENwT1NJU09GVC1QSS1TRVJWXFdFTExcQVNTRVRTXFRYNTMxfFRSQU5TRk9STUVSIE5VTUJFUg",
+                    "type": "attribute",
+                    "expanded": true,
+                    "$$hashKey": "object:1814",
+                    "children": []
+                }, {
+                    "title": "Winding Exponent",
+                    "category_names": ["Specifications"],
+                    "path": "\\\\osisoft-pi-serv\\Well\\Assets\\TX531|Winding Exponent",
+                    "id": "F1AbE3VEt1yTvt0ip6-a5yeEVsg_8XislR47BG2pQAiSDmAeg_NSGfYvED1YGI1PW58CY0wT1NJU09GVC1QSS1TRVJWXFdFTExcQVNTRVRTXFRYNTMxfFdJTkRJTkcgRVhQT05FTlQ",
+                    "url": "https://dku-qa-osi.francecentral.cloudapp.azure.com/piwebapi/attributes/F1AbE3VEt1yTvt0ip6-a5yeEVsg_8XislR47BG2pQAiSDmAeg_NSGfYvED1YGI1PW58CY0wT1NJU09GVC1QSS1TRVJWXFdFTExcQVNTRVRTXFRYNTMxfFdJTkRJTkcgRVhQT05FTlQ",
+                    "type": "attribute",
+                    "expanded": true,
+                    "$$hashKey": "object:1815",
+                    "children": []
+                }]
+            }, {
+                "title": "TX532",
+                "template_name": "Substation Transformer",
+                "category_names": ["ABB"],
+                "path": "\\\\osisoft-pi-serv\\Well\\Assets\\TX532",
+                "id": "F1Em3VEt1yTvt0ip6-a5yeEVsgDsbislR47BG2pQAiSDmAegT1NJU09GVC1QSS1TRVJWXFdFTExcQVNTRVRTXFRYNTMy",
+                "url": "https://dku-qa-osi.francecentral.cloudapp.azure.com/piwebapi/elements/F1Em3VEt1yTvt0ip6-a5yeEVsgDsbislR47BG2pQAiSDmAegT1NJU09GVC1QSS1TRVJWXFdFTExcQVNTRVRTXFRYNTMy",
+                "type": "element",
+                "expanded": true,
+                "$$hashKey": "object:1771",
+                "children": []
+            }, {
+                "title": "District",
+                "path": "\\\\osisoft-pi-serv\\Well\\California\\Fresno\\Mariposa|District",
+                "id": "F1AbE3VEt1yTvt0ip6-a5yeEVsgX8bislR47BG2pQAiSDmAeg_Y0gFsHYalAkq85MNG9XiQT1NJU09GVC1QSS1TRVJWXFdFTExcQ0FMSUZPUk5JQVxGUkVTTk9cTUFSSVBPU0F8RElTVFJJQ1Q",
+                "url": "https://dku-qa-osi.francecentral.cloudapp.azure.com/piwebapi/attributes/F1AbE3VEt1yTvt0ip6-a5yeEVsgX8bislR47BG2pQAiSDmAeg_Y0gFsHYalAkq85MNG9XiQT1NJU09GVC1QSS1TRVJWXFdFTExcQ0FMSUZPUk5JQVxGUkVTTk9cTUFSSVBPU0F8RElTVFJJQ1Q",
+                "type": "attribute",
+                "expanded": true,
+                "$$hashKey": "object:1772",
+                "children": []
+            }, {
+                "title": "Latitude",
+                "category_names": ["Location"],
+                "path": "\\\\osisoft-pi-serv\\Well\\California\\Fresno\\Mariposa|Latitude",
+                "id": "F1AbE3VEt1yTvt0ip6-a5yeEVsgX8bislR47BG2pQAiSDmAeg2ByTfz4jglws5AQVSZze5QT1NJU09GVC1QSS1TRVJWXFdFTExcQ0FMSUZPUk5JQVxGUkVTTk9cTUFSSVBPU0F8TEFUSVRVREU",
+                "url": "https://dku-qa-osi.francecentral.cloudapp.azure.com/piwebapi/attributes/F1AbE3VEt1yTvt0ip6-a5yeEVsgX8bislR47BG2pQAiSDmAeg2ByTfz4jglws5AQVSZze5QT1NJU09GVC1QSS1TRVJWXFdFTExcQ0FMSUZPUk5JQVxGUkVTTk9cTUFSSVBPU0F8TEFUSVRVREU",
+                "type": "attribute",
+                "expanded": true,
+                "$$hashKey": "object:1773",
+                "children": []
+            }, {
+                "title": "Load",
+                "category_names": ["Energy"],
+                "path": "\\\\osisoft-pi-serv\\Well\\California\\Fresno\\Mariposa|Load",
+                "id": "F1AbE3VEt1yTvt0ip6-a5yeEVsgX8bislR47BG2pQAiSDmAegX5tICOh8l1A3FNzu8uYWxwT1NJU09GVC1QSS1TRVJWXFdFTExcQ0FMSUZPUk5JQVxGUkVTTk9cTUFSSVBPU0F8TE9BRA",
+                "url": "https://dku-qa-osi.francecentral.cloudapp.azure.com/piwebapi/attributes/F1AbE3VEt1yTvt0ip6-a5yeEVsgX8bislR47BG2pQAiSDmAegX5tICOh8l1A3FNzu8uYWxwT1NJU09GVC1QSS1TRVJWXFdFTExcQ0FMSUZPUk5JQVxGUkVTTk9cTUFSSVBPU0F8TE9BRA",
+                "type": "attribute",
+                "expanded": true,
+                "$$hashKey": "object:1774",
+                "children": []
+            }, {
+                "title": "Longitude",
+                "category_names": ["Location"],
+                "path": "\\\\osisoft-pi-serv\\Well\\California\\Fresno\\Mariposa|Longitude",
+                "id": "F1AbE3VEt1yTvt0ip6-a5yeEVsgX8bislR47BG2pQAiSDmAeg1ATGeuiBs1UdQQF_GbSkGAT1NJU09GVC1QSS1TRVJWXFdFTExcQ0FMSUZPUk5JQVxGUkVTTk9cTUFSSVBPU0F8TE9OR0lUVURF",
+                "url": "https://dku-qa-osi.francecentral.cloudapp.azure.com/piwebapi/attributes/F1AbE3VEt1yTvt0ip6-a5yeEVsgX8bislR47BG2pQAiSDmAeg1ATGeuiBs1UdQQF_GbSkGAT1NJU09GVC1QSS1TRVJWXFdFTExcQ0FMSUZPUk5JQVxGUkVTTk9cTUFSSVBPU0F8TE9OR0lUVURF",
+                "type": "attribute",
+                "expanded": true,
+                "$$hashKey": "object:1775",
+                "children": []
+            }, {
+                "title": "Substation Number",
+                "path": "\\\\osisoft-pi-serv\\Well\\California\\Fresno\\Mariposa|Substation Number",
+                "id": "F1AbE3VEt1yTvt0ip6-a5yeEVsgX8bislR47BG2pQAiSDmAegLTIpYYrHAVQ6vEYtbEuDcAT1NJU09GVC1QSS1TRVJWXFdFTExcQ0FMSUZPUk5JQVxGUkVTTk9cTUFSSVBPU0F8U1VCU1RBVElPTiBOVU1CRVI",
+                "url": "https://dku-qa-osi.francecentral.cloudapp.azure.com/piwebapi/attributes/F1AbE3VEt1yTvt0ip6-a5yeEVsgX8bislR47BG2pQAiSDmAegLTIpYYrHAVQ6vEYtbEuDcAT1NJU09GVC1QSS1TRVJWXFdFTExcQ0FMSUZPUk5JQVxGUkVTTk9cTUFSSVBPU0F8U1VCU1RBVElPTiBOVU1CRVI",
+                "type": "attribute",
+                "expanded": true,
+                "$$hashKey": "object:1776",
+                "children": []
+            }]
+        }, {
+            "title": "Merced",
+            "template_name": "Substation",
+            "has_children": true,
+            "path": "\\\\osisoft-pi-serv\\Well\\California\\Fresno\\Merced",
+            "id": "F1Em3VEt1yTvt0ip6-a5yeEVsgZsbislR47BG2pQAiSDmAegT1NJU09GVC1QSS1TRVJWXFdFTExcQ0FMSUZPUk5JQVxGUkVTTk9cTUVSQ0VE",
+            "url": "https://dku-qa-osi.francecentral.cloudapp.azure.com/piwebapi/elements/F1Em3VEt1yTvt0ip6-a5yeEVsgZsbislR47BG2pQAiSDmAegT1NJU09GVC1QSS1TRVJWXFdFTExcQ0FMSUZPUk5JQVxGUkVTTk9cTUVSQ0VE",
+            "type": "element",
+            "expanded": true,
+            "$$hashKey": "object:1746",
+            "children": []
+        }, {
+            "title": "San Luis Obispo",
+            "template_name": "Substation",
+            "has_children": true,
+            "path": "\\\\osisoft-pi-serv\\Well\\California\\Fresno\\San Luis Obispo",
+            "id": "F1Em3VEt1yTvt0ip6-a5yeEVsgbcbislR47BG2pQAiSDmAegT1NJU09GVC1QSS1TRVJWXFdFTExcQ0FMSUZPUk5JQVxGUkVTTk9cU0FOIExVSVMgT0JJU1BP",
+            "url": "https://dku-qa-osi.francecentral.cloudapp.azure.com/piwebapi/elements/F1Em3VEt1yTvt0ip6-a5yeEVsgbcbislR47BG2pQAiSDmAegT1NJU09GVC1QSS1TRVJWXFdFTExcQ0FMSUZPUk5JQVxGUkVTTk9cU0FOIExVSVMgT0JJU1BP",
+            "type": "element",
+            "expanded": true,
+            "$$hashKey": "object:1747",
+            "children": []
+        }, {
+            "title": "Tulare",
+            "template_name": "Substation",
+            "has_children": true,
+            "path": "\\\\osisoft-pi-serv\\Well\\California\\Fresno\\Tulare",
+            "id": "F1Em3VEt1yTvt0ip6-a5yeEVsgdMbislR47BG2pQAiSDmAegT1NJU09GVC1QSS1TRVJWXFdFTExcQ0FMSUZPUk5JQVxGUkVTTk9cVFVMQVJF",
+            "url": "https://dku-qa-osi.francecentral.cloudapp.azure.com/piwebapi/elements/F1Em3VEt1yTvt0ip6-a5yeEVsgdMbislR47BG2pQAiSDmAegT1NJU09GVC1QSS1TRVJWXFdFTExcQ0FMSUZPUk5JQVxGUkVTTk9cVFVMQVJF",
+            "type": "element",
+            "expanded": true,
+            "$$hashKey": "object:1748",
+            "children": []
+        }, {
+            "title": "Load",
+            "category_names": ["Energy"],
+            "path": "\\\\osisoft-pi-serv\\Well\\California\\Fresno|Load",
+            "id": "F1AbE3VEt1yTvt0ip6-a5yeEVsgXMbislR47BG2pQAiSDmAegQYtfhs6oFlcWsqOvZe8M4AT1NJU09GVC1QSS1TRVJWXFdFTExcQ0FMSUZPUk5JQVxGUkVTTk98TE9BRA",
+            "url": "https://dku-qa-osi.francecentral.cloudapp.azure.com/piwebapi/attributes/F1AbE3VEt1yTvt0ip6-a5yeEVsgXMbislR47BG2pQAiSDmAegQYtfhs6oFlcWsqOvZe8M4AT1NJU09GVC1QSS1TRVJWXFdFTExcQ0FMSUZPUk5JQVxGUkVTTk98TE9BRA",
+            "type": "attribute",
+            "expanded": true,
+            "$$hashKey": "object:1749",
+            "children": []
+        }]
+    }, {
+        "title": "Oakland",
+        "template_name": "District",
+        "has_children": true,
+        "path": "\\\\osisoft-pi-serv\\Well\\California\\Oakland",
+        "id": "F1Em3VEt1yTvt0ip6-a5yeEVsgfMbislR47BG2pQAiSDmAegT1NJU09GVC1QSS1TRVJWXFdFTExcQ0FMSUZPUk5JQVxPQUtMQU5E",
+        "url": "https://dku-qa-osi.francecentral.cloudapp.azure.com/piwebapi/elements/F1Em3VEt1yTvt0ip6-a5yeEVsgfMbislR47BG2pQAiSDmAegT1NJU09GVC1QSS1TRVJWXFdFTExcQ0FMSUZPUk5JQVxPQUtMQU5E",
+        "type": "element",
+        "expanded": true,
+        "$$hashKey": "object:1731",
+        "children": []
+    }, {
+        "title": "Load",
+        "category_names": ["Energy"],
+        "path": "\\\\osisoft-pi-serv\\Well\\California|Load",
+        "id": "F1AbE3VEt1yTvt0ip6-a5yeEVsgWcbislR47BG2pQAiSDmAeg-_38lJ35J1MWxXIdxBir1wT1NJU09GVC1QSS1TRVJWXFdFTExcQ0FMSUZPUk5JQXxMT0FE",
+        "url": "https://dku-qa-osi.francecentral.cloudapp.azure.com/piwebapi/attributes/F1AbE3VEt1yTvt0ip6-a5yeEVsgWcbislR47BG2pQAiSDmAeg-_38lJ35J1MWxXIdxBir1wT1NJU09GVC1QSS1TRVJWXFdFTExcQ0FMSUZPUk5JQXxMT0FE",
+        "type": "attribute",
+        "expanded": true,
+        "$$hashKey": "object:1732",
+        "children": []
+    }]
+}, {
+    "title": "PI Data Archive",
+    "template_name": "PI Data Archive",
+    "path": "\\\\osisoft-pi-serv\\Well\\PI Data Archive",
+    "id": "F1Em3VEt1yTvt0ip6-a5yeEVsggPAWdFN47BG2pQAiSDmAegT1NJU09GVC1QSS1TRVJWXFdFTExcUEkgREFUQSBBUkNISVZF",
+    "url": "https://dku-qa-osi.francecentral.cloudapp.azure.com/piwebapi/elements/F1Em3VEt1yTvt0ip6-a5yeEVsggPAWdFN47BG2pQAiSDmAegT1NJU09GVC1QSS1TRVJWXFdFTExcUEkgREFUQSBBUkNISVZF",
+    "type": "element",
+    "expanded": true,
+    "children": []
+}, {
+    "title": "West Texas",
+    "template_name": "Production Area",
+    "has_children": true,
+    "path": "\\\\osisoft-pi-serv\\Well\\West Texas",
+    "id": "F1Em3VEt1yTvt0ip6-a5yeEVsgg_AWdFN47BG2pQAiSDmAegT1NJU09GVC1QSS1TRVJWXFdFTExcV0VTVCBURVhBUw",
+    "url": "https://dku-qa-osi.francecentral.cloudapp.azure.com/piwebapi/elements/F1Em3VEt1yTvt0ip6-a5yeEVsgg_AWdFN47BG2pQAiSDmAegT1NJU09GVC1QSS1TRVJWXFdFTExcV0VTVCBURVhBUw",
+    "type": "element",
+    "expanded": true,
+    "children": []
+}]
