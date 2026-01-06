@@ -858,7 +858,9 @@ class OSIsoftClient(object):
         for path_attribute in path_attributes:
             # print("ALX:extract '{}' from {}".format(path_attribute, json_response))
             item = self.extract_item_with_name(json_response, path_attribute)
-            tree.put(full_path_elements[0:counter], get_item_details(item))
+            item_details = get_item_details(item)
+            item_details["checked"] = True
+            tree.put(full_path_elements[0:counter], item_details)
             counter += 1
             next_url = self.extract_link_with_key(item, "Attributes")
             if next_url:

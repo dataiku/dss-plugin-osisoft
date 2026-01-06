@@ -58,12 +58,29 @@ def do(payload, config, plugin_config, inputs):
         element_name = config.get("element_name")
         attribute_name = config.get("attribute_name")
         root_tree = payload.get("root_tree")
+        root_tree = shorten_tree(root_tree)
         attributes = []
         # https://dku-qa-osi.francecentral.cloudapp.azure.com/piwebapi/assetdatabases/F1RD3VEt1yTvt0ip6-a5yeEVsgbMcrwu_Je0qg9btcZIvPswT1NJU09GVC1QSS1TRVJWXFdFTEw
         database_webid = database_name.split("/")[-1]
+        # element_query_keys = {
+        #     "element_name": "Name:'{}'",
+        #     "search_root_path": "Root:'{}'",
+        #     "element_template": "Template:'{}'",
+        #     "element_type": "Type:'{}'",
+        #     "element_category": "CategoryName:'{}'"
+        # }
+        # attribute_query_keys = {
+        #     "attribute_name": "Name:'{}'",
+        #     "attribute_category": "CategoryName:'{}'",
+        #     "attribute_value_type": "Type:'{}'"
+        # }
         for attribute in client.search_attributes(
-            database_webid, attribute_name=attribute_name, element_name=element_name):
+            database_webid,
+            attribute_name=attribute_name,
+            element_name=element_name
+        ):
             # print("ALX:attribute={}".format(attribute))
+            attribute["checked"] = True
             attributes.append(attribute)
         rebuilt_tree = rebuild_tree(client, attributes, root_tree)
         return {"choices": rebuilt_tree}
@@ -189,3 +206,14 @@ def path_to_list(path):
     if not path:
         return []
     return path.split('|')[0].split('\\')[2:], (path.split('|')[1:])
+
+
+def shorten_tree(tree):
+    if isinstance(tree, list):
+        for node in tree:
+            if "expanded" in node:
+                # node.pop("expanded", None)
+                node["expanded"] = False
+            if "children" in node:
+                shorten_tree(node.get("children", []))
+    return tree

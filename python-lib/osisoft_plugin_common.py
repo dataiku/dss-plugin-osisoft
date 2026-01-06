@@ -660,15 +660,18 @@ class Tree():
         if root_tree:
             self._ingest(root_tree)
 
-    def _ingest(self, root_tree):
+    def _ingest(self, root_tree, parent_path=None):
+        parent_path = parent_path or []
         if isinstance(root_tree, list):
             for item in root_tree:
+                if not parent_path:
+                    path = item.get("path", "")
+                    parent_path = path.split("\\")[2:][0:2]
                 item_children = item.pop("children", [])
-                if item_children:
-                    self._ingest(item_children)
+                title = item.get("title")
+                self._ingest(item_children, parent_path=parent_path + [title])
                 path = item.get("path", "")
-                path_tokens = path.replace("|", "\\").split("\\")[2:]
-                self.put(path_tokens, item)
+                self.put(parent_path + [title], item)
 
     def put(self, path, data):
         if isinstance(path, list):
@@ -741,10 +744,10 @@ def recursive_tree_rebuild(dictionary, records, counter=None):
             children = recursive_tree_rebuild(sub_dictionary, records, counter + 1)
         else:
             children = []
-        context["id"] = str(counter)
+        # context["id"] = str(counter)
         context["title"] = key
         context["expanded"] = True
-        context["checked"] = False
+        # context["checked"] = False
         context["children"] = children
         output.append(context)
     return output

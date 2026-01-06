@@ -156,8 +156,8 @@ app.directive('treeNode', function() {
         <span ng-if="node.children"
               ng-click="toggleExpand(node)"
               style="cursor: pointer; user-select: none;">
-          <strong ng-if="node.expanded">▼</strong>
-          <strong ng-if="!node.expanded">▶</strong>
+          <strong ng-if="node.expanded==true">▼</strong>
+          <strong ng-if="!node.expanded || node.expanded==false">▶</strong>
         </span>
 
         <!-- Espace vide si pas d’enfants -->
@@ -170,7 +170,7 @@ app.directive('treeNode', function() {
       </div>
 
       <!-- Affichage récursif -->
-      <ul ng-if="node.children && node.children.length > 0 && node.expanded" style="margin-left: 20px;">
+      <ul ng-if="node.children && node.children.length > 0 && node.expanded==true" style="margin-left: 20px;">
         <li ng-repeat="child in node.children">
           <tree-node node="child"></tree-node>
         </li>
