@@ -103,11 +103,15 @@ app.controller('AfExplorerFormCtrl', [
     };
       
     $scope.initializeTree = function(){
+        console.log("initialization: ");
+        console.log($scope.config.treeData);
+        if (!$scope.config.treeData || $scope.config.treeData===[]){
       $scope.callPythonDo({method: "get_children_from_db", parent: $scope.config.database_name}).then(function(data){
           console.log("ALX:data2=" + JSON.stringify(data));
           TreeDataService.setTreeData(data.choices);
-           $scope.treeData =  TreeDataService.getTreeData();
+           $scope.config.treeData =  TreeDataService.getTreeData();
       });
+        }
     };
       
         $scope.getChildrenFromDB = function(item){
@@ -138,7 +142,7 @@ app.controller('AfExplorerFormCtrl', [
   $scope.doSearch = function(element_name, attribute_name){
       $scope.callPythonDo({method: "do_search", element_name: element_name, attribute_name: attribute_name, root_tree: $scope.treeData}).then(
         function(data){
-          $scope.treeData = data.choices;
+          $scope.config.treeData = data.choices;
         }
       );
     };
