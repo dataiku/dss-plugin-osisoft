@@ -66,9 +66,6 @@ app.controller('AfExplorerFormCtrl', [
       'mandatory': true
     };
     
-    //$scope.config.treeData = TreeDataService.getTreeData(); 
-     // $scope.config.treeData = TreeDataService.getTreeData();
-    
     $scope.editorOptions = CodeMirrorSettingService.get("text/plain");
 
     $scope.init = function() {
@@ -94,7 +91,7 @@ app.controller('AfExplorerFormCtrl', [
     
     $scope.getServers = function(){
       $scope.callPythonDo({parameterName: "server_name"}).then(function(data){
-        // $scope.config["server_name"] = data.choices;
+        // $scope.config["server_name"] = data.choices; removed to test with no connection to the server --'
         $scope.server_name = data.choices;
       });
     };
@@ -108,8 +105,8 @@ app.controller('AfExplorerFormCtrl', [
     /*  $scope.callPythonDo({method: "get_children_from_db", parent: $scope.config.database_name}).then(function(data){
           console.log("ALX:data2=" + JSON.stringify(data));
           TreeDataService.setTreeData(data.choices);
-           $scope.treeData =  TreeDataService.getTreeData();
-      });*/
+           $scope.treeData =  TreeDataService.getTreeData();  removed to test with no connection to the server --'
+      });*/ removed to test with no connection to the server --'
         console.log("here");
         console.log($scope.config.treeData);
         if(!$scope.config.treeData || $scope.config.treeData===[]){
@@ -146,7 +143,7 @@ app.controller('AfExplorerFormCtrl', [
           child.checked = item.checked;
           child.expanded = false;
         });
-      });*/
+      });*/ //removed to test with no connection to the server --'
     } 
         
         
