@@ -142,7 +142,9 @@ app.controller('AfExplorerFormCtrl', [
   $scope.doSearch = function(element_name, attribute_name){
       $scope.callPythonDo({method: "do_search", element_name: element_name, attribute_name: attribute_name, root_tree: $scope.treeData}).then(
         function(data){
-          $scope.config.treeData = data.choices;
+          //$scope.config.treeData = data.choices;
+          TreeDataService.setTreeData(data.choices);
+          $scope.config.treeData = TreeDataService.getTreeData();
         }
       );
     };
