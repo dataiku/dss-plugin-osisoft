@@ -6,7 +6,7 @@ import dataiku
 
 def do(payload, config, plugin_config, inputs):
     input_tree = None
-    if len(inputs)>0:
+    if len(inputs) > 0:
         input_item = inputs[0]
         input_type = input_item.get("type")
         if input_type == "DATASET":
@@ -57,7 +57,8 @@ def do(payload, config, plugin_config, inputs):
         database_name = config.get("database_name")
         element_name = config.get("element_name")
         attribute_name = config.get("attribute_name")
-        root_tree = payload.get("root_tree")
+        # root_tree = payload.get("root_tree")
+        root_tree = config.get("treeData", [])
         root_tree = shorten_tree(root_tree)
         attributes = []
         # https://dku-qa-osi.francecentral.cloudapp.azure.com/piwebapi/assetdatabases/F1RD3VEt1yTvt0ip6-a5yeEVsgbMcrwu_Je0qg9btcZIvPswT1NJU09GVC1QSS1TRVJWXFdFTEw
@@ -84,6 +85,11 @@ def do(payload, config, plugin_config, inputs):
             attribute["checked"] = True
             attributes.append(attribute)
         attributes = duplicate_linked_attributes(attributes)
+        items = []
+        for attribute in attributes:
+            item = get_item_details(attribute)
+            items.append(item)
+        attributes = set_as_selected(items)
         rebuilt_tree = rebuild_tree(client, attributes, root_tree)
         return {"choices": rebuilt_tree}
 
@@ -127,7 +133,6 @@ def get_query_catalogs(cnx, config):
 
 def get_children_from_db(client, parent_node, database_name=None):
     print("ALX:parent_node={}".format(parent_node))
-    # ALX:parent_node={'show_advanced_parameters': False, 'use_server_url_column': False, 'is_ssl_check_disabled': True, 'must_convert_object_to_string': False, 'is_debug_mode': False, 'credentials': {'auth_type': 'basic', 'can_disable_ssl_check': True, 'ssl_cert_path': '', 'default_server': 'dku-qa-osi.francecentral.cloudapp.azure.com', 'can_override_server_url': True, 'get_parameters': {}, 'post_parameters': {}, 'url_swap': [], 'max_request_size': 1000, 'estimated_density': 6, 'maximum_points_returned': 600, 'osisoft_basic': {'user': 'abourret', 'password': 'S58BirZjtsUDTJ3'}}}
     if isinstance(parent_node, dict):
         url = parent_node.get("url", database_name)
     else:
@@ -171,9 +176,9 @@ def rebuild_tree(client, items, root_tree=None):
     while len(items) > 1:
         item = items.pop()
         if item is None:
-            print("ALX:end")
             break
         find_all_ancestors(client, item, tree)
+        update_item(item, tree)
     result = recursive_tree_rebuild(tree.get_tree(), tree.get_records())
     result = drop_first_levels(result)
     return result
@@ -196,7 +201,7 @@ def drop_first_levels(result):
 
 def find_all_ancestors(client, item, tree):
     # Find all the ancestors of an item
-    elements_paths_tokens, attributes_paths_tokens = path_to_list(item.get("Path"))
+    elements_paths_tokens, attributes_paths_tokens = path_to_list(item.get("path"))
     client.traverse_and_cache(elements_paths_tokens, attributes_paths_tokens, tree)
 
 
@@ -230,5 +235,17 @@ def duplicate_linked_attributes(attributes):
         for path in paths:
             this_attribute = attribute.copy()
             this_attribute["Path"] = path
+            this_attribute["type"] = "attribute" if "|" in path else "element"
             duplicated_attributes.append(this_attribute)
     return duplicated_attributes
+
+
+def set_as_selected(items):
+    for item in items:
+        item["checked"] = True
+    return items
+
+
+def update_item(item, tree):
+    elements_paths_tokens, attributes_paths_tokens = path_to_list(item.get("path"))
+    tree.put(elements_paths_tokens + attributes_paths_tokens, item)

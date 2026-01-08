@@ -818,19 +818,22 @@ class OSIsoftClient(object):
     def traverse_and_cache(self, path_elements, path_attributes, tree):
         print("ALX:traverse_and_cache:path_elements={}, path_attributes={}".format(path_elements, path_attributes))
         full_path_elements = path_elements.copy() + path_attributes.copy()
+        if tree.exists(full_path_elements):
+            # this path has already been retrieved, so skip
+            return
         # Loading piwebapi initial page
         next_url = self.endpoint.get_base_url()
         headers = self.get_requests_headers()
-        json_response = self.get(url=next_url, headers=headers, params={}, error_source="traverse")
+        json_response = self.get(url=next_url, headers=headers, params={}, error_source="traverse_and_cache")
 
         # Asset server page
         next_url = self.extract_link_with_key(json_response, "AssetServers")
-        json_response = self.get(url=next_url, headers=headers, params={}, error_source="traverse")
+        json_response = self.get(url=next_url, headers=headers, params={}, error_source="traverse_and_cache")
 
         item = self.extract_item_with_name(json_response, path_elements.pop(0))
         tree.put(full_path_elements[0:1], get_item_details(item))
         next_url = self.extract_link_with_key(item, "Databases")
-        json_response = self.get(url=next_url, headers=headers, params={}, error_source="traverse")
+        json_response = self.get(url=next_url, headers=headers, params={}, error_source="traverse_and_cache")
 
         # retrieved_from_cache = tree.get(full_path_elements[0:2], {}).get("url")+"/elements"
         # get the database
@@ -838,7 +841,7 @@ class OSIsoftClient(object):
         tree.put(full_path_elements[0:2], get_item_details(item))
         next_url = self.extract_link_with_key(item, "Elements")
         # print("ALX:database:next_url={}, retrieved_from_cache={}".format(next_url, retrieved_from_cache))
-        json_response = self.get(url=next_url, headers=headers, params={}, error_source="traverse")
+        json_response = self.get(url=next_url, headers=headers, params={}, error_source="traverse_and_cache")
 
         # Looping through elements
         counter = 3
@@ -853,20 +856,20 @@ class OSIsoftClient(object):
                 next_url = self.extract_link_with_key(item, "Attributes")
             else:
                 next_url = self.extract_link_with_key(item, "Elements")
-            json_response = self.get(url=next_url, headers=headers, params={}, error_source="traverse")
+            json_response = self.get(url=next_url, headers=headers, params={}, error_source="traverse_and_cache")
             if attribute:
                 item = self.extract_item_with_name(json_response, attribute)
-        json_response = self.get(url=before_last_url, headers=headers, params={}, error_source="traverse")
+        json_response = self.get(url=before_last_url, headers=headers, params={}, error_source="traverse_and_cache")
         for path_attribute in path_attributes:
             # print("ALX:extract '{}' from {}".format(path_attribute, json_response))
             item = self.extract_item_with_name(json_response, path_attribute)
             item_details = get_item_details(item)
-            item_details["checked"] = True
+            # item_details["checked"] = True # That should not be done here
             tree.put(full_path_elements[0:counter], item_details)
             counter += 1
             next_url = self.extract_link_with_key(item, "Attributes")
             if next_url:
-                json_response = self.get(url=next_url, headers=headers, params={}, error_source="traverse")
+                json_response = self.get(url=next_url, headers=headers, params={}, error_source="traverse_and_cache")
             else:
                 break
 

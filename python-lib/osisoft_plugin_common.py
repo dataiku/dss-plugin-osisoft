@@ -639,14 +639,15 @@ class BatchTimeCounter(object):
 def get_item_details(item):
     KEYS_TO_CHECK = {
         "Name": "title", "TemplateName": "template_name", "CategoryNames": "category_names",
-        "HasChildren": "has_children", "Path": "path", "WebId": "id"
-    }
+        "HasChildren": "has_children", "Path": "path", "WebId": "id", "checked": "checked"
+    }  # should we stick to python naming convention or keep pi's ones throughout ?
     details = {}
     for key_to_check in KEYS_TO_CHECK:
         value = item.get(key_to_check)
         if value:
             details[KEYS_TO_CHECK.get(key_to_check)] = value
     details["url"] = item.get("Links", {}).get("Self")
+    details["type"] = "attribute" if "|" in details.get("path", "") else "element"
     return details
 
 
