@@ -15,7 +15,6 @@ def do(payload, config, plugin_config, inputs):
             input_tree = input_dataset.get_dataframe(infer_with_pandas=False)
 
     config["is_ssl_check_disabled"] = True
-    print("ALX:af explorer do, payload={}, config={}, plugin_config={}, inputs={}".format(payload, config, plugin_config, inputs))
     if "config" in config:
         config = config.get("config")
     if "credentials" not in config:
@@ -42,7 +41,6 @@ def do(payload, config, plugin_config, inputs):
 
     is_debug_mode = check_debug_mode(config)
     is_ssl_check_disabled = True
-    print("ALX:is_ssl_check_disabled={}".format(is_ssl_check_disabled))
 
     client = OSIsoftClient(server_url, auth_type, username, password, is_ssl_check_disabled=is_ssl_check_disabled, is_debug_mode=is_debug_mode)
 
@@ -81,7 +79,6 @@ def do(payload, config, plugin_config, inputs):
             element_name=element_name,
             search_associations="Paths"
         ):
-            # print("ALX:attribute={}".format(attribute))
             attribute["checked"] = True
             attributes.append(attribute)
         attributes = duplicate_linked_attributes(attributes)
@@ -89,19 +86,15 @@ def do(payload, config, plugin_config, inputs):
         for attribute in attributes:
             item = get_item_details(attribute)
             items.append(item)
-        attributes = set_as_selected(items)
-        rebuilt_tree = rebuild_tree(client, attributes, root_tree)
+        rebuilt_tree = rebuild_tree(client, items, root_tree)
         return {"choices": rebuilt_tree}
 
     parameter_name = payload.get("parameterName")
 
     if parameter_name == "server_name":
         choices = []
-        print("ALX:do function")
         servers = client.get_asset_servers(can_raise=False)
-        print("ALX:servers={}".format(servers))
         choices.extend(servers)
-        print("ALX:server choices={}".format(choices))
         return build_select_choices(choices)
 
     if parameter_name == "data_server_url":
@@ -124,20 +117,16 @@ def do(payload, config, plugin_config, inputs):
 
 
 def get_query_catalogs(cnx, config):
-    print("ALX:def get_query_catalogs")
-    print("ALX:cnx={}, config={}".format(cnx, config))
     user = config.get("credentials", {}).get("osisoft_basic", {}).get("user")
     password = config.get("credentials", {}).get("osisoft_basic", {}).get("password")
     return {"choices": [user, password]}
 
 
 def get_children_from_db(client, parent_node, database_name=None):
-    print("ALX:parent_node={}".format(parent_node))
     if isinstance(parent_node, dict):
         url = parent_node.get("url", database_name)
     else:
         url = parent_node
-    print("ALX:url to search:{}".format(url))
     this_node = next(client.get_next_item_from_url(url))
     links = this_node.get("Links", {})
     attributes_url = links.get("Attributes")

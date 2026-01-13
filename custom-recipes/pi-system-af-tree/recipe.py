@@ -37,7 +37,6 @@ def next_tree_item(tree_data):
 input_dataset = get_input_names_for_role('input_dataset')
 output_names_stats = get_output_names_for_role('api_output')
 config = get_recipe_config()
-print("ALX:config={}".format(config))
 tree_data = config.get("treeData", [])
 
 logger.info("Initialization with config config={}".format(logger.filter_secrets(config)))

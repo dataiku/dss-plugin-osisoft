@@ -816,7 +816,6 @@ class OSIsoftClient(object):
         return item
 
     def traverse_and_cache(self, path_elements, path_attributes, tree):
-        print("ALX:traverse_and_cache:path_elements={}, path_attributes={}".format(path_elements, path_attributes))
         full_path_elements = path_elements.copy() + path_attributes.copy()
         if tree.exists(full_path_elements):
             # this path has already been retrieved, so skip
@@ -840,40 +839,42 @@ class OSIsoftClient(object):
         item = self.extract_item_with_name(json_response, path_elements.pop(0))
         tree.put(full_path_elements[0:2], get_item_details(item))
         next_url = self.extract_link_with_key(item, "Elements")
-        # print("ALX:database:next_url={}, retrieved_from_cache={}".format(next_url, retrieved_from_cache))
         json_response = self.get(url=next_url, headers=headers, params={}, error_source="traverse_and_cache")
 
         # Looping through elements
         counter = 3
         before_last_url = None
         for path_element in path_elements:
-            element, attribute = self.split_element_attribute(path_element)
+            element, attribute = self.split_element_attribute(path_element)  # <-daxy shtob, attribute ken
             item = self.extract_item_with_name(json_response, element)
             tree.put(full_path_elements[0:counter], get_item_details(item))
             counter += 1
             before_last_url = self.extract_link_with_key(item, "Attributes")
-            if attribute:
-                next_url = self.extract_link_with_key(item, "Attributes")
-            else:
-                next_url = self.extract_link_with_key(item, "Elements")
+            next_url = self.extract_link_with_key(item, "Elements")
             json_response = self.get(url=next_url, headers=headers, params={}, error_source="traverse_and_cache")
-            if attribute:
-                item = self.extract_item_with_name(json_response, attribute)
         json_response = self.get(url=before_last_url, headers=headers, params={}, error_source="traverse_and_cache")
+        before_last_json = None
         for path_attribute in path_attributes:
-            # print("ALX:extract '{}' from {}".format(path_attribute, json_response))
             item = self.extract_item_with_name(json_response, path_attribute)
             item_details = get_item_details(item)
-            # item_details["checked"] = True # That should not be done here
+            item_details["checked"] = True  # That should not be done here
             tree.put(full_path_elements[0:counter], item_details)
             counter += 1
             next_url = self.extract_link_with_key(item, "Attributes")
             if next_url:
+                before_last_json = json_response.copy()
                 json_response = self.get(url=next_url, headers=headers, params={}, error_source="traverse_and_cache")
             else:
                 break
-
+        items = before_last_json.get(OSIsoftConstants.API_ITEM_KEY, [])
+        for item in items:
+            item_details = get_item_details(item)
+            item_details["checked"] = False  # That should not be done here
+            tree.put(full_path_elements[0:counter-2] + [item_details.get("title")], item_details)
         return item
+
+    def cache_all_attributes(self, elements_paths_tokens, tree):
+        pass
 
     def split_element_attribute(self, path_element):
         attribute = None
