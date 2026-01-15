@@ -1,3 +1,7 @@
 .fh.w800.oa {
     width: 100% !important;
 }
+
+#qa_recipe_run-button.btn.btn--success.btn--wide.btn--dku-icon{
+    color:red;
+}
