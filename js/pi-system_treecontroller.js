@@ -224,7 +224,7 @@ app.directive('treeNode', function() {
         }
 
         return scope.$parent.config.attributeList.some(child => {
-          const expected = node.title + "|" + child.name;
+          const expected = node.title + "|" + child.title;
         return child.path.endsWith(expected);
         });
       };
