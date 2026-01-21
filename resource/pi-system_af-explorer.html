@@ -64,5 +64,13 @@
         </li>
     </ul>
     </div>
+    <div class="attribute-tab">
+        <table>
+            <tr ng-repeat="attribute in config.attributeList track by $index">
+            <td><input type="checkbox" ng-model="attribute.checked" ng-change="updateAttributeToOutput(attribute)"> </td>
+            <td>{{attribute.title}}</td>
+            <td>{{attribute.path}}</td>
+        </table>
+    </div>
 </div>
 

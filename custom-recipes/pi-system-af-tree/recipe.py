@@ -60,9 +60,10 @@ schema = [
 ]
 output_dataset.write_schema(schema)
 
+selectedAttributes = config.get("selectedAttributes", [])
 with output_dataset.get_writer() as writer:
-    for item in next_tree_item(tree_data):
-        if item.get("checked", False) is True:
+    for item in selectedAttributes :
+        if item.get("checked", True) is True:
             writer.write_row_dict(item)
 
 processing_timer.stop()

@@ -27,7 +27,8 @@ app.controller('AfExplorerFormCtrl', [
     };
     
     $scope.treeData = TreeDataService.getTreeData();
-    $scope.attributeList = $scope.attributeList || [];
+    $scope.config.attributeList = $scope.config.attributeList || [];
+    $scope.config.selectedAttributes = $scope.config.selectedAttributes || [];
     
     $scope.editorOptions = CodeMirrorSettingService.get("text/plain");
 
@@ -82,8 +83,7 @@ app.controller('AfExplorerFormCtrl', [
         console.log("ALX:data1=" + JSON.stringify(data));
         item.children = data.choices;
         item.children.forEach(child => {
-          child.checked = item.checked;
-          child.expanded = item.expanded;
+          child.expanded = false;
         });
         console.log(item);
         return item;
@@ -98,67 +98,65 @@ app.controller('AfExplorerFormCtrl', [
       $scope.getChildrenFromDB(node);
     if (node.children && node.children.length) {
       node.children.forEach(function(child) {
-        child.checked = node.checked;
-        //child.expanded = !child.expanded;
-        //$scope.toggleChildren(child);
+        child.expanded = !child.expanded;
         $scope.getChildrenFromDB(child);
       });
     }
-      console.log(node);
-      console.log($scope.config.treeData);
       
   };
 
   $scope.doSearch = function(element_name, attribute_name){
-      $scope.callPythonDo({method: "do_search", element_name: element_name, attribute_name: attribute_name, root_tree: $scope.treeData}).then(
+      $scope.callPythonDo({method: "do_search", element_name: element_name, attribute_name: attribute_name, root_tree: $scope.config.treeData}).then(
         function(data){
-          //$scope.config.treeData = data.choices;
           TreeDataService.setTreeData(data.choices);
           $scope.config.treeData = TreeDataService.getTreeData();
+          $scope.config.attributeList = data.attributes;
+          $scope.config.selectedAttributes = [];
         }
       );
     };
-      
-    $scope.displayAttributes = function(node) {
-        console.log("in display attributes");
-        if (Array.isArray(node)) {
-            node.forEach(child => $scope.displayAttributes(child));
-            return;
-        }
-        if (node.type === "attribute") {
-            console.log("Attribute found:", node.title, "Path:", node.path);
-            $scope.attributeList.push({"name": node.title, "path": node.path});
-        }
-        if (node.children && node.children.length > 0) {
-            node.children.forEach(child => $scope.displayAttributes(child));
-        }
-    
-    
-}
+
+  $scope.updateAttributeToOutput = function (attribute) {
+    if (attribute.checked && $scope.config.selectedAttributes.includes(attribute)) {
+      $scope.config.selectedAttributes = $scope.config.selectedAttributes.filter(attr => attr.path !== attribute.path);
+    }
+    else {
+      console.log("Adding attribute to output:", attribute);
+
+      if (!$scope.config || !$scope.config.attributeList || $scope.config.selectedAttributes.includes(attribute)) {
+        return;
+      }
+      const attrInConfig = $scope.config.attributeList.find(attr => attr.path === attribute.path);
+
+      if (attrInConfig) {
+        $scope.config.selectedAttributes.push(attribute);
+        attrInConfig.checked = true;
+      } else {
+        console.warn("Attribute not found in config:", attribute.path);
+      }
+    }
+  };
+
 
 $scope.newDisplayAttributes = function(node) {
-  console.log("in new display attributes for node:");
-    if (node.has_children === false) return;
 
-    if (node.has_children === true && (!node.children || node.children.length === 0)) {
-        console.log("Searching for children of node:", node);
-
+    if (!node.children || node.children.length === 0) {
         $scope.getChildrenFromDB(node).then(newNode => {
-            console.log("After getting children, node is:", newNode);
-            processNode(newNode);
+        processNode(newNode);
         });
     } else {
         processNode(node);
-    }
-};
+    };
+  }
 
 function processNode(node) {
-    $scope.attributeList = [];
+    $scope.config.attributeList =  [];
+    $scope.config.selectedAttributes =  [];
     node.children.forEach(child => {
         if (child.type === "attribute") {
-            $scope.attributeList.push({
-                name: child.title,
-                path: child.path
+            $scope.config.attributeList.push({
+                "name": child.title,
+                "path": child.path
             });
         }
     });
@@ -174,10 +172,8 @@ app.directive('treeNode', function() {
     template: `
       <div style="display: flex; align-items: center; gap: 6px;">
         
-        <span ng-if="node.children && node.children.length > 0 && node.children.some(isElement)"
-"
-              ng-click="toggleExpand(node)"
-              style="cursor: pointer; user-select: none;">
+        <span ng-click="$event.stopPropagation();toggleExpand(node)"
+              style="cursor: pointer;">
           <strong ng-if="node.expanded">▼</strong>
           <strong ng-if="!node.expanded">▶</strong>
         </span>
@@ -190,24 +186,13 @@ app.directive('treeNode', function() {
         </label>-->
 
         <div class="tree-node">
-  <!-- putting aside until next spec is updated 
-<input
-    type="checkbox"
-    ng-model="node.checked"
-    ng-change="toggleChildren(node)"
-    ng-click="$event.stopPropagation()"
-  >-->
 
-  <span ng-if="node.type==='element'"
-    class="tree-node__label"
-    ng-click="newDisplayAttributes(node)"
-  >
-    {{ node.title }}
-  </span>
-  <span ng-repeat="attr in node.attributes" class="tree-node__attribute">
-    [{{attr.name}}: {{attr.value}}]
-  </span>
-</div>
+          <span ng-if="node.type==='element'"
+            class="tree-node__label"
+            ng-click="displayAttributes(node)"
+            ng-class="{'tree-node__label--clickable': hasAttributes(node)}"
+          >{{ node.title }}</span>
+        </div>
 
 
       </div>
@@ -222,17 +207,31 @@ app.directive('treeNode', function() {
       scope.toggleChildren = scope.$parent.toggleChildren;
       scope.getChildrenFromDB = scope.$parent.getChildrenFromDB;
       scope.doSearch = scope.$parent.doSearch;
-      scope.attributeList = scope.$parent.attributeList || [];
-      scope.newDisplayAttributes = scope.$parent.newDisplayAttributes;
+      scope.config = scope.$parent.config;
+      scope.attributeList = scope.config.attributeList || [];
+      scope.displayAttributes = scope.$parent.displayAttributes;
       scope.toggleExpand = function(node) {
-        console.log("ALX:expand !" + JSON.stringify(node));
         node.expanded = !node.expanded;
-        scope.getChildrenFromDB(node);
+
+        if (node.expanded && (!node.children || !node.children.length)) {
+          scope.getChildrenFromDB(node);
+        }
       };
+
+      scope.hasAttributes = function(node) {
+        if (!Array.isArray(scope.$parent.config.attributeList) || scope.$parent.config.attributeList.length === 0) {
+          return false;
+        }
+
+        return scope.$parent.config.attributeList.some(child => {
+          const expected = node.title + "|" + child.name;
+        return child.path.endsWith(expected);
+        });
+      };
+
       scope.isElement = function(child) {
         return child.type === 'element';
       }
-
     }
   };
 });

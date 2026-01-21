@@ -79,15 +79,16 @@ def do(payload, config, plugin_config, inputs):
             element_name=element_name,
             search_associations="Paths"
         ):
-            attribute["checked"] = True
+            attribute["checked"] = False
             attributes.append(attribute)
         attributes = duplicate_linked_attributes(attributes)
         items = []
         for attribute in attributes:
             item = get_item_details(attribute)
             items.append(item)
+        attributesCopy = items.copy()
         rebuilt_tree = rebuild_tree(client, items, root_tree)
-        return {"choices": rebuilt_tree}
+        return {"choices": rebuilt_tree, "attributes": attributesCopy}
 
     parameter_name = payload.get("parameterName")
 

@@ -2,7 +2,6 @@
     width: 100% !important;
 }
 
-#qa_recipe_run-button.btn.btn--success.btn--wide.btn--dku-icon{
-    color:red;
-    float:right;
+.tree-node__label--clickable{
+    background-color: yellow;
 }
