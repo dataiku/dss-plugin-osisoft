@@ -138,7 +138,7 @@ app.controller('AfExplorerFormCtrl', [
   };
 
 
-$scope.newDisplayAttributes = function(node) {
+$scope.displayAttributes = function(node) {
 
     if (!node.children || node.children.length === 0) {
         $scope.getChildrenFromDB(node).then(newNode => {
