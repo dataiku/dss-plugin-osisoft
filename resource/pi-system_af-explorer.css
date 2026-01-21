@@ -1,0 +1,16 @@
+.fh.w800.oa {
+    width: 100% !important;
+}
+
+.tree-node__label--clickable{
+    background-color: yellow;
+}
+.pi-system-explorer__main {
+    display: grid;
+    grid-template-columns: 500px auto;
+    column-gap: 50px;
+    margin-top: 20px;
+}
+.pi-system-explorer__tree-view, .pi-system-explorer__center-view {
+    border: 1px solid #ccc; padding: 10px; border-radius: 5px;
+}

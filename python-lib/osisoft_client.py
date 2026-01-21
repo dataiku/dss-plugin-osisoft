@@ -13,6 +13,7 @@ from osisoft_plugin_common import (
     iso_to_epoch, RecordsLimit, is_iso8601, get_next_page_url, change_key_in_dict,
     BatchTimeCounter
 )
+from osisoft_plugin_common import get_item_details
 from osisoft_pagination import OffsetPagination
 from safe_logger import SafeLogger
 
@@ -732,6 +733,8 @@ class OSIsoftClient(object):
             "query": query,
             "databaseWebId": database_webid
         }
+        if "search_associations" in kwargs:
+            params["associations"] = kwargs.get("search_associations")
         json_response = self.get(url=search_attributes_base_url, headers=headers, params=params)
         if OSIsoftConstants.DKU_ERROR_KEY in json_response:
             yield json_response
@@ -810,8 +813,68 @@ class OSIsoftClient(object):
             json_response = self.get(url=next_url, headers=headers, params={}, error_source="traverse")
             if attribute:
                 item = self.extract_item_with_name(json_response, attribute)
-
         return item
+
+    def traverse_and_cache(self, path_elements, path_attributes, tree):
+        full_path_elements = path_elements.copy() + path_attributes.copy()
+        if tree.exists(full_path_elements):
+            # this path has already been retrieved, so skip
+            return
+        # Loading piwebapi initial page
+        next_url = self.endpoint.get_base_url()
+        headers = self.get_requests_headers()
+        json_response = self.get(url=next_url, headers=headers, params={}, error_source="traverse_and_cache")
+
+        # Asset server page
+        next_url = self.extract_link_with_key(json_response, "AssetServers")
+        json_response = self.get(url=next_url, headers=headers, params={}, error_source="traverse_and_cache")
+
+        item = self.extract_item_with_name(json_response, path_elements.pop(0))
+        tree.put(full_path_elements[0:1], get_item_details(item))
+        next_url = self.extract_link_with_key(item, "Databases")
+        json_response = self.get(url=next_url, headers=headers, params={}, error_source="traverse_and_cache")
+
+        # retrieved_from_cache = tree.get(full_path_elements[0:2], {}).get("url")+"/elements"
+        # get the database
+        item = self.extract_item_with_name(json_response, path_elements.pop(0))
+        tree.put(full_path_elements[0:2], get_item_details(item))
+        next_url = self.extract_link_with_key(item, "Elements")
+        json_response = self.get(url=next_url, headers=headers, params={}, error_source="traverse_and_cache")
+
+        # Looping through elements
+        counter = 3
+        before_last_url = None
+        for path_element in path_elements:
+            element, attribute = self.split_element_attribute(path_element)  # <-daxy shtob, attribute ken
+            item = self.extract_item_with_name(json_response, element)
+            tree.put(full_path_elements[0:counter], get_item_details(item))
+            counter += 1
+            before_last_url = self.extract_link_with_key(item, "Attributes")
+            next_url = self.extract_link_with_key(item, "Elements")
+            json_response = self.get(url=next_url, headers=headers, params={}, error_source="traverse_and_cache")
+        json_response = self.get(url=before_last_url, headers=headers, params={}, error_source="traverse_and_cache")
+        before_last_json = None
+        for path_attribute in path_attributes:
+            item = self.extract_item_with_name(json_response, path_attribute)
+            item_details = get_item_details(item)
+            item_details["checked"] = True  # That should not be done here
+            tree.put(full_path_elements[0:counter], item_details)
+            counter += 1
+            next_url = self.extract_link_with_key(item, "Attributes")
+            if next_url:
+                before_last_json = json_response.copy()
+                json_response = self.get(url=next_url, headers=headers, params={}, error_source="traverse_and_cache")
+            else:
+                break
+        items = before_last_json.get(OSIsoftConstants.API_ITEM_KEY, [])
+        for item in items:
+            item_details = get_item_details(item)
+            item_details["checked"] = False  # That should not be done here
+            tree.put(full_path_elements[0:counter-2] + [item_details.get("title")], item_details)
+        return item
+
+    def cache_all_attributes(self, elements_paths_tokens, tree):
+        pass
 
     def split_element_attribute(self, path_element):
         attribute = None

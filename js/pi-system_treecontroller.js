@@ -14,41 +14,6 @@ app.service('TreeDataService', function() {
   };
 });
 
-app.controller('TreeCtrl', ['$scope', '$http','CreateModalFromTemplate', 'TreeDataService', function($scope, $http, CreateModalFromTemplate, TreeDataService) {
-$scope.init = function() {
-    $http.get('/plugins/pi-system/resource/tree.json')
-  .then(function(response) {
-        TreeDataService.setTreeData(response.data);
-        $scope.treeData = TreeDataService.getTreeData();
-  })
-}
-
-
-  // Toggle récursif des checkboxes
-  $scope.toggleChildren = function(node) {
-    console.log("ALX:tc:" + JSON.stringify(node));
-    if (node.children && node.children.length) {
-      node.children.forEach(function(child) {
-        child.checked = node.checked;
-        $scope.toggleChildren(child);
-      });
-    }
-  };
-
-  $scope.getChildrenFromDB = function(item){
-    console.log("ALX:gcfd:" + JSON.stringify(item));
-    $scope.callPythonDo({ method: "get_children_from_db", parent: item })
-      .then(function (data) {
-        console.log("ALX:data1=" + JSON.stringify(data));
-        item.children = data.choices;
-        item.children.forEach(child => {
-          child.checked = item.checked;
-          child.expanded = item.expanded;
-        });
-      });
-    }
-}]);
-
 app.controller('AfExplorerFormCtrl', [
   '$scope', 
   '$stateParams', 
@@ -62,6 +27,8 @@ app.controller('AfExplorerFormCtrl', [
     };
     
     $scope.treeData = TreeDataService.getTreeData();
+    $scope.config.attributeList = $scope.config.attributeList || [];
+    $scope.config.selectedAttributes = $scope.config.selectedAttributes || [];
     
     $scope.editorOptions = CodeMirrorSettingService.get("text/plain");
 
@@ -86,41 +53,40 @@ app.controller('AfExplorerFormCtrl', [
         }).error(setErrorInScope.bind($scope.errorScope));
     };
     
-    $scope.getServers = function(noken){
-      console.log("ALX:get servers");
-      console.log("ALX:" + JSON.stringify(noken));
+    $scope.getServers = function(){
       $scope.callPythonDo({parameterName: "server_name"}).then(function(data){
-        console.log("ALX:getServers return:"+JSON.stringify(data))
-        // $scope.config["server_name"] = data.choices;
         $scope.server_name = data.choices;
       });
     };
     $scope.getDatabases = function() {
       $scope.callPythonDo({parameterName: "database_name"}).then(function(data){
-        console.log("ALX:getDatabases return:"+JSON.stringify(data))
         $scope.database_name = data.choices;
       });
     };
       
     $scope.initializeTree = function(){
-      console.log("ALX:initializeTree:scope=" + JSON.stringify($scope.config.database_name));
+        console.log("initialization: ");
+        console.log($scope.config.treeData);
+        if (!$scope.config.treeData || $scope.config.treeData.length === 0){
       $scope.callPythonDo({method: "get_children_from_db", parent: $scope.config.database_name}).then(function(data){
           console.log("ALX:data2=" + JSON.stringify(data));
           TreeDataService.setTreeData(data.choices);
-           $scope.treeData =  TreeDataService.getTreeData();
+           $scope.config.treeData =  TreeDataService.getTreeData();
       });
+        }
     };
       
         $scope.getChildrenFromDB = function(item){
     console.log("ALX:gcfd:" + JSON.stringify(item));
-    $scope.callPythonDo({ method: "get_children_from_db", parent: item })
+    return $scope.callPythonDo({ method: "get_children_from_db", parent: item })
       .then(function (data) {
         console.log("ALX:data1=" + JSON.stringify(data));
         item.children = data.choices;
         item.children.forEach(child => {
-          child.checked = item.checked;
           child.expanded = false;
         });
+        console.log(item);
+        return item;
       });
     } 
         
@@ -128,13 +94,74 @@ app.controller('AfExplorerFormCtrl', [
   // Toggle récursif des checkboxes
   $scope.toggleChildren = function(node) {
     console.log("ALX:tc:" + JSON.stringify(node));
+      node.expanded = !node.expanded;
+      $scope.getChildrenFromDB(node);
     if (node.children && node.children.length) {
       node.children.forEach(function(child) {
-        child.checked = node.checked;
-        $scope.toggleChildren(child);
+        child.expanded = !child.expanded;
+        $scope.getChildrenFromDB(child);
       });
     }
+      
   };
+
+  $scope.doSearch = function(element_name, attribute_name){
+      $scope.callPythonDo({method: "do_search", element_name: element_name, attribute_name: attribute_name, root_tree: $scope.config.treeData}).then(
+        function(data){
+          TreeDataService.setTreeData(data.choices);
+          $scope.config.treeData = TreeDataService.getTreeData();
+          $scope.config.attributeList = data.attributes;
+          $scope.config.selectedAttributes = [];
+        }
+      );
+    };
+
+  $scope.updateAttributeToOutput = function (attribute) {
+    if (attribute.checked && $scope.config.selectedAttributes.includes(attribute)) {
+      $scope.config.selectedAttributes = $scope.config.selectedAttributes.filter(attr => attr.path !== attribute.path);
+    }
+    else {
+      console.log("Adding attribute to output:", attribute);
+
+      if (!$scope.config || !$scope.config.attributeList || $scope.config.selectedAttributes.includes(attribute)) {
+        return;
+      }
+      const attrInConfig = $scope.config.attributeList.find(attr => attr.path === attribute.path);
+
+      if (attrInConfig) {
+        $scope.config.selectedAttributes.push(attribute);
+        attrInConfig.checked = true;
+      } else {
+        console.warn("Attribute not found in config:", attribute.path);
+      }
+    }
+  };
+
+
+$scope.displayAttributes = function(node) {
+
+    if (!node.children || node.children.length === 0) {
+        $scope.getChildrenFromDB(node).then(newNode => {
+        processNode(newNode);
+        });
+    } else {
+        processNode(node);
+    };
+  }
+
+function processNode(node) {
+    $scope.config.attributeList =  [];
+    $scope.config.selectedAttributes =  [];
+    node.children.forEach(child => {
+        if (child.type === "attribute") {
+            $scope.config.attributeList.push({
+                "name": child.title,
+                "path": child.path
+            });
+        }
+    });
+}
+
 
 }]);
 
@@ -145,40 +172,66 @@ app.directive('treeNode', function() {
     template: `
       <div style="display: flex; align-items: center; gap: 6px;">
         
-        <!-- Flèche si le noeud possède des enfants -->
-        <span ng-if="node.children"
-              ng-click="toggleExpand(node)"
-              style="cursor: pointer; user-select: none;">
+        <span ng-click="$event.stopPropagation();toggleExpand(node)"
+              style="cursor: pointer;">
           <strong ng-if="node.expanded">▼</strong>
           <strong ng-if="!node.expanded">▶</strong>
         </span>
 
-        <!-- Espace vide si pas d’enfants -->
         <!--<span ng-if="!node.children || node.children.length === 0" style="width: 12px;"></span>-->
 
-        <label>
+        <!--<label>
           <input type="checkbox" ng-model="node.checked" ng-change="toggleChildren(node)">
           {{ node.title }}
-        </label>
+        </label>-->
+
+        <div class="tree-node">
+
+          <span ng-if="node.type==='element'"
+            class="tree-node__label"
+            ng-click="displayAttributes(node)"
+            ng-class="{'tree-node__label--clickable': hasAttributes(node)}"
+          >{{ node.title }}</span>
+        </div>
+
+
       </div>
 
-      <!-- Affichage récursif -->
       <ul ng-if="node.children && node.children.length > 0 && node.expanded" style="margin-left: 20px;">
-        <li ng-repeat="child in node.children">
+        <li ng-repeat="child in node.children" ng-if="child.type=='element'">
           <tree-node node="child"></tree-node>
         </li>
       </ul>
     `,
     link: function(scope) {
-      // Récupère la fonction toggleChildren du parent
       scope.toggleChildren = scope.$parent.toggleChildren;
       scope.getChildrenFromDB = scope.$parent.getChildrenFromDB;
-      // Simple toggle du expand (plus de chargement HTTP)
+      scope.doSearch = scope.$parent.doSearch;
+      scope.config = scope.$parent.config;
+      scope.attributeList = scope.config.attributeList || [];
+      scope.displayAttributes = scope.$parent.displayAttributes;
       scope.toggleExpand = function(node) {
-        console.log("ALX:expand !" + JSON.stringify(node));
         node.expanded = !node.expanded;
-        scope.getChildrenFromDB(node);
+
+        if (node.expanded && (!node.children || !node.children.length)) {
+          scope.getChildrenFromDB(node);
+        }
       };
+
+      scope.hasAttributes = function(node) {
+        if (!Array.isArray(scope.$parent.config.attributeList) || scope.$parent.config.attributeList.length === 0) {
+          return false;
+        }
+
+        return scope.$parent.config.attributeList.some(child => {
+          const expected = node.title + "|" + child.title;
+        return child.path.endsWith(expected);
+        });
+      };
+
+      scope.isElement = function(child) {
+        return child.type === 'element';
+      }
     }
   };
 });

@@ -1,3 +1,4 @@
+<link rel="stylesheet" href="/plugins/pi-system/resource/pi-system_af-explorer.css">
 <div ng-controller="AfExplorerFormCtrl" ng-init="init()" style="margin: 10px 0px;">
     <div class="control-group">
         <label class="control-label" for="pi-system-credentials">Pi System connection</label>
@@ -38,12 +39,55 @@
        </div>
        
    </div>
-    <div ng-if="config.database_name" ng-init="initializeTree()">
-    <ul ng-if="treeData.length">
-    <li ng-repeat="node in treeData track by node.id">
-      <tree-node node="node"></tree-node>
-    </li>
-  </ul>
+       <div class="control-group removed-if-manual-query"  ng-show="false" ng-if="config.database_name">
+       <label class="control-label">Tree</label>
+       <div class="controls">
+           <select dku-bs-select
+                   ng-model="config.treeData"
+                   ng-options="dbn.value as dbn.label for dbn in [config.treeData]"
+                   ng-init="initializeTree();"> 
+           </select>
+       </div>
+
+   </div>
+    <div class="pi-system-explorer__main">
+        <div ng-if="config.database_name" ng-init="initializeTree()" class="pi-system-explorer__tree-view">
+            <div><strong>Elements</strong></div>
+            <div style="margin-bottom:8px;">
+                <input id="ReturnsName" ng-model="config.element_name" type="text" data-container="body" data-html="true"
+                    data-placement="right" data-toggle="tooltip" title="blaa" placeholder="Search element" />
+                <button ng-click="doSearch(config.element_name, config.attribute_name)" class="btn btn--secondary link-like"
+                    id="get-query-dim-prop">Search</button>
+            </div>
+            <ul ng-if="config.treeData.length">
+                <li ng-repeat="node in config.treeData track by node.id">
+                    <tree-node node="node"></tree-node>
+                </li>
+            </ul>
+        </div>
+    
+        <!-- Attributes Section -->
+        <div class="attribute-tab pi-system-explorer__center-view">
+            <div><strong>Attributes</strong></div>
+            <div style="margin-bottom:8px;">
+                <input id="ReturnsType" list="datatypes" ng-model="config.attribute_name" type="text" data-container="body"
+                    data-html="true" data-placement="right" data-toggle="tooltip" title="" placeholder="Search attribute" />
+                <button ng-click="doSearch(config.element_name, config.attribute_name)" class="btn btn--secondary link-like"
+                    id="get-query-dim-prop">Search</button>
+            </div>
+            <table>
+                <tr ng-repeat="attribute in config.attributeList track by $index">
+                    <td>
+                        <input type="checkbox" ng-model="attribute.checked" ng-change="updateAttributeToOutput(attribute)">
+                    </td>
+                    <td>{{attribute.title}}</td>
+                    <td>{{attribute.path}}</td>
+                </tr>
+            </table>
+        </div>
+    
     </div>
+
+
 </div>
 

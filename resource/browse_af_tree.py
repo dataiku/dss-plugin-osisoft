@@ -1,11 +1,12 @@
 from osisoft_client import OSIsoftClient
 from osisoft_plugin_common import get_credentials, build_select_choices, check_debug_mode
+from osisoft_plugin_common import get_item_details, Tree, recursive_tree_rebuild
 import dataiku
 
 
 def do(payload, config, plugin_config, inputs):
     input_tree = None
-    if len(inputs)>0:
+    if len(inputs) > 0:
         input_item = inputs[0]
         input_type = input_item.get("type")
         if input_type == "DATASET":
@@ -14,7 +15,6 @@ def do(payload, config, plugin_config, inputs):
             input_tree = input_dataset.get_dataframe(infer_with_pandas=False)
 
     config["is_ssl_check_disabled"] = True
-    print("ALX:af explorer do, payload={}, config={}, plugin_config={}, inputs={}".format(payload, config, plugin_config, inputs))
     if "config" in config:
         config = config.get("config")
     if "credentials" not in config:
@@ -41,7 +41,6 @@ def do(payload, config, plugin_config, inputs):
 
     is_debug_mode = check_debug_mode(config)
     is_ssl_check_disabled = True
-    print("ALX:is_ssl_check_disabled={}".format(is_ssl_check_disabled))
 
     client = OSIsoftClient(server_url, auth_type, username, password, is_ssl_check_disabled=is_ssl_check_disabled, is_debug_mode=is_debug_mode)
 
@@ -56,24 +55,47 @@ def do(payload, config, plugin_config, inputs):
         database_name = config.get("database_name")
         element_name = config.get("element_name")
         attribute_name = config.get("attribute_name")
+        # root_tree = payload.get("root_tree")
+        root_tree = config.get("treeData", [])
+        root_tree = shorten_tree(root_tree)
         attributes = []
         # https://dku-qa-osi.francecentral.cloudapp.azure.com/piwebapi/assetdatabases/F1RD3VEt1yTvt0ip6-a5yeEVsgbMcrwu_Je0qg9btcZIvPswT1NJU09GVC1QSS1TRVJWXFdFTEw
         database_webid = database_name.split("/")[-1]
+        # element_query_keys = {
+        #     "element_name": "Name:'{}'",
+        #     "search_root_path": "Root:'{}'",
+        #     "element_template": "Template:'{}'",
+        #     "element_type": "Type:'{}'",
+        #     "element_category": "CategoryName:'{}'"
+        # }
+        # attribute_query_keys = {
+        #     "attribute_name": "Name:'{}'",
+        #     "attribute_category": "CategoryName:'{}'",
+        #     "attribute_value_type": "Type:'{}'"
+        # }
         for attribute in client.search_attributes(
-            database_webid, attribute_name=attribute_name, element_name=element_name):
-            print("ALX:attribute={}".format(attribute))
+            database_webid,
+            attribute_name=attribute_name,
+            element_name=element_name,
+            search_associations="Paths"
+        ):
+            attribute["checked"] = False
             attributes.append(attribute)
-        return {"choices": attributes}
+        attributes = duplicate_linked_attributes(attributes)
+        items = []
+        for attribute in attributes:
+            item = get_item_details(attribute)
+            items.append(item)
+        attributesCopy = items.copy()
+        rebuilt_tree = rebuild_tree(client, items, root_tree)
+        return {"choices": rebuilt_tree, "attributes": attributesCopy}
 
     parameter_name = payload.get("parameterName")
 
     if parameter_name == "server_name":
         choices = []
-        print("ALX:do function")
         servers = client.get_asset_servers(can_raise=False)
-        print("ALX:servers={}".format(servers))
         choices.extend(servers)
-        print("ALX:server choices={}".format(choices))
         return build_select_choices(choices)
 
     if parameter_name == "data_server_url":
@@ -89,26 +111,23 @@ def do(payload, config, plugin_config, inputs):
             return build_select_choices(choices)
         else:
             return build_select_choices()
+    if parameter_name == "treeData":
+        return {"choices": config.get("treeData")}
 
     return build_select_choices()
 
 
 def get_query_catalogs(cnx, config):
-    print("ALX:def get_query_catalogs")
-    print("ALX:cnx={}, config={}".format(cnx, config))
     user = config.get("credentials", {}).get("osisoft_basic", {}).get("user")
     password = config.get("credentials", {}).get("osisoft_basic", {}).get("password")
     return {"choices": [user, password]}
 
 
 def get_children_from_db(client, parent_node, database_name=None):
-    print("ALX:parent_node={}".format(parent_node))
-    # ALX:parent_node={'show_advanced_parameters': False, 'use_server_url_column': False, 'is_ssl_check_disabled': True, 'must_convert_object_to_string': False, 'is_debug_mode': False, 'credentials': {'auth_type': 'basic', 'can_disable_ssl_check': True, 'ssl_cert_path': '', 'default_server': 'dku-qa-osi.francecentral.cloudapp.azure.com', 'can_override_server_url': True, 'get_parameters': {}, 'post_parameters': {}, 'url_swap': [], 'max_request_size': 1000, 'estimated_density': 6, 'maximum_points_returned': 600, 'osisoft_basic': {'user': 'abourret', 'password': 'S58BirZjtsUDTJ3'}}}
     if isinstance(parent_node, dict):
         url = parent_node.get("url", database_name)
     else:
         url = parent_node
-    print("ALX:url to search:{}".format(url))
     this_node = next(client.get_next_item_from_url(url))
     links = this_node.get("Links", {})
     attributes_url = links.get("Attributes")
@@ -118,6 +137,7 @@ def get_children_from_db(client, parent_node, database_name=None):
         elements = client.get_next_item_from_url(elements_url)
         for element in elements:
             child = get_item_details(element)
+            # child["title"] = "🧩{}".format(child.get("title"))
             child["type"] = "element"
             child["children"] = []
             children.append(child)
@@ -125,6 +145,7 @@ def get_children_from_db(client, parent_node, database_name=None):
         attributes = client.get_next_item_from_url(attributes_url)
         for attribute in attributes:
             child = get_item_details(attribute)
+            # child["title"] = "🏷️{}".format(child.get("title"))
             child["type"] = "attribute"
             if child.get("has_children"):
                 child["children"] = []
@@ -132,13 +153,89 @@ def get_children_from_db(client, parent_node, database_name=None):
 
     return {"choices": children}
 
+# method2:
+# we dig, but this time it's index[token name], and we store as we go in the child, with the real data indexed in a list and just the rank pointing to it
+# to build the final tree, we browse the index, get the index data, rebuild the struct from there
+# Tree class ? put(path, data), get(path, data)
 
-def get_item_details(item):
-    KEYS_TO_CHECK = {"Name": "title", "TemplateName": "template_name", "CategoryNames": "category_names", "HasChildren": "has_children", "Path": "path", "WebId": "id"}
-    details = {}
-    for key_to_check in KEYS_TO_CHECK:
-        value = item.get(key_to_check)
-        if value:
-            details[KEYS_TO_CHECK.get(key_to_check)] = value
-    details["url"] = item.get("Links", {}).get("Self")
-    return details
+
+def rebuild_tree(client, items, root_tree=None):
+    # builds an active tree containing all the items and their parent up to the root
+    tree = Tree(root_tree=root_tree)
+    tree.print()
+    while len(items) > 1:
+        item = items.pop()
+        if item is None:
+            break
+        find_all_ancestors(client, item, tree)
+        update_item(item, tree)
+    result = recursive_tree_rebuild(tree.get_tree(), tree.get_records())
+    result = drop_first_levels(result)
+    return result
+
+
+def drop_first_levels(result):
+    # recursively removes the 2 first levels of the returned tree
+    # (server and DB)
+    output_result = []
+    for item in result:
+        path = item.get("path", "")
+        path_length = len(path.split("\\"))
+        if path_length >= 5:
+            output_result.append(item)
+        else:
+            children = item.get("children", [])
+            output_result = drop_first_levels(children)
+    return output_result
+
+
+def find_all_ancestors(client, item, tree):
+    # Find all the ancestors of an item
+    elements_paths_tokens, attributes_paths_tokens = path_to_list(item.get("path"))
+    client.traverse_and_cache(elements_paths_tokens, attributes_paths_tokens, tree)
+
+
+def combine_trees(final_tree, all_item_s_ancestors):
+    # combine two trees with partial overlap and common root ancestor
+    return final_tree
+
+
+# elements, attributes
+def path_to_list(path):
+    if not path:
+        return []
+    return path.split('|')[0].split('\\')[2:], (path.split('|')[1:])
+
+
+def shorten_tree(tree):
+    if isinstance(tree, list):
+        for node in tree:
+            if "expanded" in node:
+                # node.pop("expanded", None)
+                node["expanded"] = False
+            if "children" in node:
+                shorten_tree(node.get("children", []))
+    return tree
+
+
+def duplicate_linked_attributes(attributes):
+    duplicated_attributes = []
+    for attribute in attributes:
+        paths = attribute.pop("Paths", [attribute.get("Path")])
+        for path in paths:
+            this_attribute = attribute.copy()
+            this_attribute["Path"] = path
+            this_attribute["type"] = "attribute" if "|" in path else "element"
+            duplicated_attributes.append(this_attribute)
+    return duplicated_attributes
+
+
+def set_as_selected(items):
+    for item in items:
+        item["checked"] = True
+    return items
+
+
+def update_item(item, tree):
+    elements_paths_tokens, attributes_paths_tokens = path_to_list(item.get("path"))
+    tree.put(elements_paths_tokens + attributes_paths_tokens, item)
