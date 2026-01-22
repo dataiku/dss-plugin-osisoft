@@ -32,7 +32,7 @@
        <div class="controls">
            <select dku-bs-select
                    ng-model="config.database_name"
-                   ng-change="initializeTree()"
+                   ng-change="initializeTree();getTemplatesFromDB()"
                    ng-options="dbn.value as dbn.label for dbn in database_name"
                    ng-init="getDatabases()"> 
            </select>
@@ -45,6 +45,24 @@
                       title="blaa" placeholder="Element name search..."/>
     <input id="ReturnsType" list="datatypes" ng-model="config.attribute_name" type="text" data-container="body" data-html="true" data-placement="right"
         data-toggle="tooltip" title="" placeholder="Attribute name search..." />
+    <div class="control-group removed-if-manual-query" ng-if="config.database_name">
+       <label class="control-label">Template</label>
+       <div class="controls">
+           <select dku-bs-select
+                   ng-model="config.template"
+                   ng-options="dbn.title as dbn.title for dbn in config.templates"
+                   ng-init="getTemplatesFromDB()">
+           </select>
+       </div>
+       <label class="control-label">Categories</label>
+       <div class="controls">
+           <select dku-bs-select
+                   ng-model="config.category"
+                   ng-options="dbn.title as dbn.title for dbn in config.categories"
+                   ng-init="getCategoriesFromDB()">
+           </select>
+       </div>
+   </div>
     <button ng-click="doSearch(config.element_name, config.attribute_name)" class="btn btn--primary link-like" id="get-query-dim-prop">Search...</button>
        <div class="control-group removed-if-manual-query"  ng-show="false" ng-if="config.database_name">
        <label class="control-label">Tree</label>

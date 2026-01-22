@@ -50,15 +50,38 @@ def do(payload, config, plugin_config, inputs):
     if method == "get_children_from_db":
         database_name = config.get("database_name")
         parent = payload.get("parent", {})
+        database_webid = database_name.split("/")[-1]
+        # test = client.search_elements(database_webid, name="TX5*", description=None, category="Westinghouse", template="Substation transformer")
+        # print("ALX:test={}".format(test))
+        # for item in test:
+        #     print("ALX:item={}".format(item))
         return get_children_from_db(client, parent, database_name=database_name)
+    if method == "get_templates_from_db":
+        database_name = config.get("database_name")
+        parent = payload.get("parent", {})
+        ret = get_templates_from_db(client, parent, database_name=database_name)
+        return ret
+    if method == "get_attribute_categories_from_db":
+        database_name = config.get("database_name")
+        parent = payload.get("parent", {})
+        ret = get_attribute_categories_from_db(client, parent, database_name=database_name)
+        return ret
+    if method == "get_element_categories_from_db":
+        database_name = config.get("database_name")
+        parent = payload.get("parent", {})
+        ret = get_element_categories_from_db(client, parent, database_name=database_name)
+        return ret
     if method == "do_search":
+        template_name = config.get("template", None)
+        category_name = config.get("category", None)
+        if template_name == "-- Any --":
+            template_name = None
         database_name = config.get("database_name")
         element_name = config.get("element_name")
         attribute_name = config.get("attribute_name")
         # root_tree = payload.get("root_tree")
         root_tree = config.get("treeData", [])
         root_tree = shorten_tree(root_tree)
-        attributes = []
         # https://dku-qa-osi.francecentral.cloudapp.azure.com/piwebapi/assetdatabases/F1RD3VEt1yTvt0ip6-a5yeEVsgbMcrwu_Je0qg9btcZIvPswT1NJU09GVC1QSS1TRVJWXFdFTEw
         database_webid = database_name.split("/")[-1]
         # element_query_keys = {
@@ -73,14 +96,20 @@ def do(payload, config, plugin_config, inputs):
         #     "attribute_category": "CategoryName:'{}'",
         #     "attribute_value_type": "Type:'{}'"
         # }
-        for attribute in client.search_attributes(
-            database_webid,
-            attribute_name=attribute_name,
-            element_name=element_name,
-            search_associations="Paths"
-        ):
-            attribute["checked"] = True
-            attributes.append(attribute)
+        attributes = []
+        if template_name or category_name:
+            for attribute in client.search_elements(database_webid, name=element_name, template=template_name, category=category_name, full_search=True):
+                attribute["checked"] = True
+                attributes.append(attribute)
+        else:
+            for attribute in client.search_attributes(
+                database_webid,
+                attribute_name=attribute_name,
+                element_name=element_name,
+                search_associations="Paths"
+            ):
+                attribute["checked"] = True
+                attributes.append(attribute)
         attributes = duplicate_linked_attributes(attributes)
         items = []
         for attribute in attributes:
@@ -107,9 +136,10 @@ def do(payload, config, plugin_config, inputs):
         next_url = config.get("server_name")
         if next_url:
             choices.extend(client.get_next_choices(next_url, "Self"))
-            return build_select_choices(choices)
+            ret = build_select_choices(choices)
         else:
-            return build_select_choices()
+            ret = build_select_choices()
+        return ret
     if parameter_name == "treeData":
         return {"choices": config.get("treeData")}
 
@@ -120,6 +150,61 @@ def get_query_catalogs(cnx, config):
     user = config.get("credentials", {}).get("osisoft_basic", {}).get("user")
     password = config.get("credentials", {}).get("osisoft_basic", {}).get("password")
     return {"choices": [user, password]}
+
+
+#  Todo: factorize
+def get_templates_from_db(client, parent_node, database_name=None):
+    if isinstance(parent_node, dict):
+        url = parent_node.get("url", database_name)
+    else:
+        url = parent_node
+    this_node = next(client.get_next_item_from_url(url))
+    links = this_node.get("Links", {})
+    element_templates_url = links.get("ElementTemplates")
+    templates = [{"title": "-- Any --"}]
+    if element_templates_url:
+        items = client.get_next_item_from_url(element_templates_url)
+        for template in items:
+            template = get_item_details(template)
+            template["type"] = "element_template"
+            templates.append(template)
+    return {"choices": templates}
+
+
+def get_attribute_categories_from_db(client, parent_node, database_name=None):
+    if isinstance(parent_node, dict):
+        url = parent_node.get("url", database_name)
+    else:
+        url = parent_node
+    this_node = next(client.get_next_item_from_url(url))
+    links = this_node.get("Links", {})
+    element_templates_url = links.get("AttributeCategories")
+    templates = []
+    if element_templates_url:
+        items = client.get_next_item_from_url(element_templates_url)
+        for template in items:
+            template = get_item_details(template)
+            template["type"] = "attribute_category"
+            templates.append(template)
+    return {"choices": templates}
+
+
+def get_element_categories_from_db(client, parent_node, database_name=None):
+    if isinstance(parent_node, dict):
+        url = parent_node.get("url", database_name)
+    else:
+        url = parent_node
+    this_node = next(client.get_next_item_from_url(url))
+    links = this_node.get("Links", {})
+    element_templates_url = links.get("ElementCategories")
+    templates = []
+    if element_templates_url:
+        items = client.get_next_item_from_url(element_templates_url)
+        for template in items:
+            template = get_item_details(template)
+            template["type"] = "element_category"
+            templates.append(template)
+    return {"choices": templates}
 
 
 def get_children_from_db(client, parent_node, database_name=None):
@@ -162,7 +247,7 @@ def rebuild_tree(client, items, root_tree=None):
     # builds an active tree containing all the items and their parent up to the root
     tree = Tree(root_tree=root_tree)
     tree.print()
-    while len(items) > 1:
+    while len(items) > 0:
         item = items.pop()
         if item is None:
             break

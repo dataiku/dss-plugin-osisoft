@@ -748,6 +748,41 @@ class OSIsoftClient(object):
             else:
                 json_response = None
 
+    def search_elements(self, database_webid, name=None, description=None, category=None, template=None, full_search=True):
+        headers = self.get_requests_headers()
+        tempo_maxcount = OSIsoftConstants.DEFAULT_MAXCOUNT
+        params = {
+            "maxCount": tempo_maxcount,
+            "associations": "Paths",
+        }
+        # # https://dku-qa-osi.francecentral.cloudapp.azure.com/piwebapi/assetdatabases/F1RD3VEt1yTvt0ip6-/elements?TemplateName=Substation transformer&categoryName=Westinghouse&nameFilter=TX26*&searchFullHierarchy=true
+        url = self.endpoint.get_base_url() + "/assetdatabases/{}/elements".format(database_webid)
+        if name:
+            params["nameFilter"] = name
+        if description:
+            params["descriptionFilter"] = description
+        if category:
+            params["categoryName"] = category
+        if template:
+            params["templateName"] = template
+        if full_search:
+            params["searchFullHierarchy"] = True
+        json_response = self.get(url=url, headers=headers, params=params)
+        if OSIsoftConstants.DKU_ERROR_KEY in json_response:
+            yield json_response
+        start_index = 0
+        while json_response:
+            items = json_response.get(OSIsoftConstants.API_ITEM_KEY, [])
+            for item in items:
+                yield item
+            if len(items) < tempo_maxcount:
+                logger.info("No more result items")
+                return
+            start_index += tempo_maxcount
+            logger.info("Trying again with startIndex={}".format(start_index))
+            params["startIndex"] = start_index
+            json_response = self.get(url=url, headers=headers, params=params)
+
     def build_element_query(self, **kwargs):
         element_query_keys = {
             "element_name": "Name:'{}'",
@@ -844,9 +879,9 @@ class OSIsoftClient(object):
         # Looping through elements
         counter = 3
         before_last_url = None
+        print("ALX:path_elements={}".format(path_elements))  # ['California', 'Fresno', 'Mariposa', 'TX531']
         for path_element in path_elements:
-            element, attribute = self.split_element_attribute(path_element)  # <-daxy shtob, attribute ken
-            item = self.extract_item_with_name(json_response, element)
+            item = self.extract_item_with_name(json_response, path_element)
             tree.put(full_path_elements[0:counter], get_item_details(item))
             counter += 1
             before_last_url = self.extract_link_with_key(item, "Attributes")
@@ -855,7 +890,7 @@ class OSIsoftClient(object):
         json_response = self.get(url=before_last_url, headers=headers, params={}, error_source="traverse_and_cache")
         before_last_json = None
         for path_attribute in path_attributes:
-            item = self.extract_item_with_name(json_response, path_attribute)
+            item = self.extract_item_with_name(json_response, path_attribute) #<- could loop in each name instead and only check when path_attribute=name ?
             item_details = get_item_details(item)
             item_details["checked"] = True  # That should not be done here
             tree.put(full_path_elements[0:counter], item_details)
@@ -866,6 +901,8 @@ class OSIsoftClient(object):
                 json_response = self.get(url=next_url, headers=headers, params={}, error_source="traverse_and_cache")
             else:
                 break
+        if not before_last_json:
+            return None
         items = before_last_json.get(OSIsoftConstants.API_ITEM_KEY, [])
         for item in items:
             item_details = get_item_details(item)

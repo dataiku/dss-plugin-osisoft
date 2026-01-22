@@ -43,7 +43,6 @@ $scope.init = function() {
     console.log("ALX:gcfd:" + JSON.stringify(item));
     $scope.callPythonDo({ method: "get_children_from_db", parent: item })
       .then(function (data) {
-        console.log("ALX:data1=" + JSON.stringify(data));
         item.children = data.choices;
         item.children.forEach(child => {
           child.checked = item.checked;
@@ -107,26 +106,37 @@ app.controller('AfExplorerFormCtrl', [
         console.log($scope.config.treeData);
         if (!$scope.config.treeData || $scope.config.treeData===[]){
       $scope.callPythonDo({method: "get_children_from_db", parent: $scope.config.database_name}).then(function(data){
-          console.log("ALX:data2=" + JSON.stringify(data));
           TreeDataService.setTreeData(data.choices);
            $scope.config.treeData =  TreeDataService.getTreeData();
       });
         }
     };
       
-        $scope.getChildrenFromDB = function(item){
-    console.log("ALX:gcfd:" + JSON.stringify(item));
-    $scope.callPythonDo({ method: "get_children_from_db", parent: item })
-      .then(function (data) {
-        console.log("ALX:data1=" + JSON.stringify(data));
+    $scope.getChildrenFromDB = function(item){
+      $scope.callPythonDo({ method: "get_children_from_db", parent: item })
+    .then(function (data) {
         item.children = data.choices;
         item.children.forEach(child => {
           child.checked = item.checked;
           child.expanded = false;
         });
       });
-    } 
-        
+    }
+
+    $scope.getTemplatesFromDB = function() {
+      $scope.callPythonDo({method: "get_templates_from_db"}).then(function(data){
+        $scope.config.templates = data.choices;
+      });
+    }
+    $scope.getCategoriesFromDB = function(){
+      $scope.config.categories = [];
+      $scope.callPythonDo({method: "get_attribute_categories_from_db"}).then(function(data){
+        $scope.config.categories = $scope.config.categories.concat(data.choices);
+      });
+      $scope.callPythonDo({method: "get_element_categories_from_db"}).then(function(data){
+        $scope.config.categories = $scope.config.categories.concat(data.choices);
+      });
+    }
         
   // Toggle récursif des checkboxes
   $scope.toggleChildren = function(node) {
