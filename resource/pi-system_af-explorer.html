@@ -56,9 +56,20 @@
             <div style="margin-bottom:8px;">
                 <input id="ReturnsName" ng-model="config.element_name" type="text" data-container="body" data-html="true"
                     data-placement="right" data-toggle="tooltip" title="blaa" placeholder="Search element" />
+                <select dku-bs-select
+                        ng-model="config.template"
+                        ng-options="dbn.title as dbn.title for dbn in config.templates"
+                        ng-init="getTemplatesFromDB()">
+                </select>
+                <select dku-bs-select
+                            ng-model="config.element_category"
+                            ng-options="dbn.title as dbn.title for dbn in config.element_categories"
+                            ng-init="getCategoriesFromDB()">
+                    </select>
                 <button ng-click="doSearch(config.element_name, config.attribute_name)" class="btn btn--secondary link-like"
                     id="get-query-dim-prop">Search</button>
             </div>
+
             <ul ng-if="config.treeData.length">
                 <li ng-repeat="node in config.treeData track by node.id">
                     <tree-node node="node"></tree-node>
@@ -72,6 +83,11 @@
             <div style="margin-bottom:8px;">
                 <input id="ReturnsType" list="datatypes" ng-model="config.attribute_name" type="text" data-container="body"
                     data-html="true" data-placement="right" data-toggle="tooltip" title="" placeholder="Search attribute" />
+                    <select dku-bs-select
+                            ng-model="config.attribute_category"
+                            ng-options="dbn.title as dbn.title for dbn in config.attribute_categories"
+                            ng-init="getCategoriesFromDB()">
+                    </select>
                 <button ng-click="doSearch(config.element_name, config.attribute_name)" class="btn btn--secondary link-like"
                     id="get-query-dim-prop">Search</button>
             </div>

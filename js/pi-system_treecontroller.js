@@ -89,8 +89,24 @@ app.controller('AfExplorerFormCtrl', [
         return item;
       });
     } 
-        
-        
+
+    $scope.getTemplatesFromDB = function() {
+      $scope.callPythonDo({method: "get_templates_from_db"}).then(function(data){
+        $scope.config.templates = data.choices;
+      });
+    }
+
+    $scope.getCategoriesFromDB = function(){
+      $scope.config.attribute_categories = [];
+      $scope.config.element_categories = [];
+      $scope.callPythonDo({method: "get_attribute_categories_from_db"}).then(function(data){
+        $scope.config.attribute_categories = data.choices;
+      });
+      $scope.callPythonDo({method: "get_element_categories_from_db"}).then(function(data){
+        $scope.config.element_categories = data.choices;
+      });
+    }
+
   // Toggle récursif des checkboxes
   $scope.toggleChildren = function(node) {
     console.log("ALX:tc:" + JSON.stringify(node));
@@ -110,6 +126,7 @@ app.controller('AfExplorerFormCtrl', [
         function(data){
           TreeDataService.setTreeData(data.choices);
           $scope.config.treeData = TreeDataService.getTreeData();
+          console.log("ALX:", JSON.stringify($scope.config.treeData));
           $scope.config.attributeList = data.attributes;
           $scope.config.selectedAttributes = [];
         }

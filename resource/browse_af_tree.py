@@ -51,7 +51,28 @@ def do(payload, config, plugin_config, inputs):
         database_name = config.get("database_name")
         parent = payload.get("parent", {})
         return get_children_from_db(client, parent, database_name=database_name)
+    if method == "get_templates_from_db":
+        database_name = config.get("database_name")
+        parent = payload.get("parent", {})
+        ret = get_items_from_db(client, parent, "ElementTemplates", database_name=database_name)
+        return ret
+    if method == "get_attribute_categories_from_db":
+        database_name = config.get("database_name")
+        parent = payload.get("parent", {})
+        ret = get_items_from_db(client, parent, "AttributeCategories", database_name=database_name)
+        return ret
+    if method == "get_element_categories_from_db":
+        database_name = config.get("database_name")
+        parent = payload.get("parent", {})
+        ret = get_items_from_db(client, parent, "ElementCategories", database_name=database_name)
+        return ret
     if method == "do_search":
+        template_name = config.get("template", None)
+        category_name = config.get("element_category", None)
+        if template_name == "-- Any --":
+            template_name = None
+        if category_name == "-- Any --":
+            category_name = None
         database_name = config.get("database_name")
         element_name = config.get("element_name")
         attribute_name = config.get("attribute_name")
@@ -73,14 +94,29 @@ def do(payload, config, plugin_config, inputs):
         #     "attribute_category": "CategoryName:'{}'",
         #     "attribute_value_type": "Type:'{}'"
         # }
-        for attribute in client.search_attributes(
-            database_webid,
-            attribute_name=attribute_name,
-            element_name=element_name,
-            search_associations="Paths"
-        ):
-            attribute["checked"] = False
-            attributes.append(attribute)
+        # for attribute in client.search_attributes(
+        #     database_webid,
+        #     attribute_name=attribute_name,
+        #     element_name=element_name,
+        #     search_associations="Paths"
+        # ):
+        #     attribute["checked"] = False
+        #     attributes.append(attribute)
+        attributes = []
+        if template_name or category_name:
+            for attribute in client.search_elements(database_webid, name=element_name, template=template_name, category=category_name, full_search=True):
+                attribute["checked"] = True
+                attributes.append(attribute)
+        else:
+            for attribute in client.search_attributes(
+                database_webid,
+                attribute_name=attribute_name,
+                element_name=element_name,
+                search_associations="Paths"
+            ):
+                attribute["checked"] = True
+                attributes.append(attribute)
+
         attributes = duplicate_linked_attributes(attributes)
         items = []
         for attribute in attributes:
@@ -121,6 +157,25 @@ def get_query_catalogs(cnx, config):
     user = config.get("credentials", {}).get("osisoft_basic", {}).get("user")
     password = config.get("credentials", {}).get("osisoft_basic", {}).get("password")
     return {"choices": [user, password]}
+
+
+def get_items_from_db(client, parent_node, link_key, database_name=None):
+    default_choice = {"title": "-- Any --"}
+    if isinstance(parent_node, dict):
+        url = parent_node.get("url", database_name)
+    else:
+        url = parent_node
+    this_node = next(client.get_next_item_from_url(url))
+    links = this_node.get("Links", {})
+    items_url = links.get(link_key)
+    items = []
+    items.append(default_choice)
+    if items_url:
+        for item in client.get_next_item_from_url(items_url):
+            item = get_item_details(item)
+            item["type"] = link_key
+            items.append(item)
+    return {"choices": items}
 
 
 def get_children_from_db(client, parent_node, database_name=None):
