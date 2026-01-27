@@ -785,8 +785,9 @@ class OSIsoftClient(object):
 
     def batched_search(self, element_name, attribute_name, element_category, attribute_category, template):
         attribute_query = {
-                                "searchFullHierarchy": "true",
-                                "selectedFields": "Items.WebId;Items.Path"}
+            "searchFullHierarchy": "true",
+            "associations": "Paths"
+        }
         if attribute_name:
             attribute_query["nameFilter"] = attribute_name
         if attribute_category:
@@ -804,7 +805,7 @@ class OSIsoftClient(object):
                         "categoryName": element_category,
                         "nameFilter": element_name,
                         "searchFullHierarchy": "true",
-                        "selectedFields": "Items.WebId;Items.Path;Items.Links"
+                        "associations": "Paths"
                         }
                     )
                 ),
