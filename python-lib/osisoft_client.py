@@ -783,6 +783,61 @@ class OSIsoftClient(object):
             params["startIndex"] = start_index
             json_response = self.get(url=url, headers=headers, params=params)
 
+    def batched_search(self, element_name, attribute_name, element_category, attribute_category, template):
+        attribute_query = {
+                                "searchFullHierarchy": "true",
+                                "selectedFields": "Items.WebId;Items.Path"}
+        if attribute_name:
+            attribute_query["nameFilter"] = attribute_name
+        if attribute_category:
+            attribute_query["categoryName"] = attribute_category
+        request_body = {
+            "database": {
+                "Method": "GET",
+                "Resource": "https://dku-qa-osi.francecentral.cloudapp.azure.com/piwebapi/assetdatabases?path=\\\\osisoft-pi-serv\\Well&selectedFields=WebId;Path;Links"
+            },
+            "elements": {
+                "Method": "GET",
+                "Resource": "{{0}}{}".format(
+                    build_query_string("", {
+                        "templateName": template,
+                        "categoryName": element_category,
+                        "nameFilter": element_name,
+                        "searchFullHierarchy": "true",
+                        "selectedFields": "Items.WebId;Items.Path;Items.Links"
+                        }
+                    )
+                ),
+                "ParentIds": ["database"],
+                "Parameters": ["$.database.Content.Links.Elements"]
+            },
+            "attributes": {
+                "Method": "GET",
+                "RequestTemplate": {
+                    "Resource": "{{0}}{}".format(
+                        build_query_string("", attribute_query)
+                    )  #?searchFullHierarchy=true&selectedFields=Items.WebId;Items.Path"
+                },  # build_attribute_query(attribute_name, attribute_category)
+                "ParentIds": ["elements"],
+                "Parameters": ["$.elements.Content.Items[*].Links.Attributes"]
+            }
+        }
+        url = self.endpoint.get_batch_endpoint()
+        headers = OSIsoftConstants.WRITE_HEADERS
+        response = self.post(url, headers=headers, data=request_body, params={})
+        json_response = response.json()
+        attributes = json_response.get("attributes", {})
+        attributes_content = attributes.get("Content", {})
+        if not isinstance(attributes_content, dict):
+            # the search returned nothing
+            return
+        attributes_content_items = attributes_content.get("Items", [])
+        for attributes_content_item in attributes_content_items:
+            content = attributes_content_item.get("Content", {})
+            sub_items = content.get("Items", [])
+            for sub_item in sub_items:
+                yield sub_item
+
     def build_element_query(self, **kwargs):
         element_query_keys = {
             "element_name": "Name:'{}'",
@@ -1152,7 +1207,7 @@ def build_query_string(url, params):
         if isinstance(value, list):
             for element in value:
                 tokens.append(key+"="+str(element))
-        else:
+        elif value is not None:
             tokens.append(key+"="+str(value))
     if len(tokens) > 0:
         return url + "?" + "&".join(tokens)
