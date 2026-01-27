@@ -877,7 +877,7 @@ class OSIsoftWriter(object):
         The last element is a dict of columns not found in the schema
         """
         if self.timestamp_rank is not None:
-            timestamp = self.timestamp_convertion(row[self.timestamp_rank])
+            timestamp = self.timestamp_conversion(row[self.timestamp_rank])
         else:
             timestamp = datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%S.%fZ")
         if not row[self.value_rank]:
