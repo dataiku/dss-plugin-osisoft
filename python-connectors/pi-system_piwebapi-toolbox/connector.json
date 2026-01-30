@@ -8,10 +8,28 @@
     "writable": true,
     "params": [
         {
+            "name": "credentials_type",
+            "label": "Credentials type",
+            "type": "SELECT",
+            "selectChoices":[
+                {"value": "basic_auth", "label": "User / Password"},
+                {"value": "oauth_sso", "label": "Single Sign On"}
+            ],
+            "defaultValue": "basic_auth"
+        },
+        {
             "name": "credentials",
             "label": "User preset",
             "type": "PRESET",
-            "parameterSetId": "basic-auth"
+            "parameterSetId": "basic-auth",
+            "visibilityCondition": "model.credentials_type=='basic_auth'"
+        },
+        {
+            "name": "oauth_credentials",
+            "label": "User preset",
+            "type": "PRESET",
+            "parameterSetId": "oauth-sso",
+            "visibilityCondition": "model.credentials_type=='oauth_sso'"
         },
         {
             "name": "show_advanced_parameters",

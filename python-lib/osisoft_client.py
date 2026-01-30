@@ -12,6 +12,7 @@ from osisoft_plugin_common import (
     is_filtered_out, is_server_throttling, escape, epoch_to_iso,
     iso_to_epoch, RecordsLimit, is_iso8601, get_next_page_url, change_key_in_dict
 )
+from osisoft_plugin_auth import get_auth
 from osisoft_pagination import OffsetPagination
 from safe_logger import SafeLogger
 
@@ -29,7 +30,7 @@ class OSIsoftClient(object):
         if can_raise:
             assert_server_url_ok(server_url)
         self.session = requests.Session()
-        self.session.auth = self.get_auth(auth_type, username, password)
+        self.session.auth = get_auth(auth_type, username, password)
         self.session.verify = (not is_ssl_check_disabled)
         logger.info("Initialization server_url={}, is_ssl_check_disabled={}".format(server_url, is_ssl_check_disabled))
         self.endpoint = OSIsoftEndpoints(server_url)
@@ -38,14 +39,6 @@ class OSIsoftClient(object):
         self.is_debug_mode = is_debug_mode
         self.debug_level = None
         self.network_timer = network_timer
-
-    def get_auth(self, auth_type, username, password):
-        if auth_type == "basic":
-            return (username, password)
-        elif auth_type == "ntlm":
-            return HttpNtlmAuth(username, password)
-        else:
-            return None
 
     def recursive_get_rows_from_webid(self, webid, data_type, **kwargs):
         # Split the time range until no more HTTP 400
