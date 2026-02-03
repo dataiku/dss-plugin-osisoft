@@ -153,7 +153,8 @@ app.controller('AfExplorerFormCtrl', [
           TreeDataService.setTreeData(data.choices);
           $scope.config.treeData = TreeDataService.getTreeData();
           console.log("ALX:", JSON.stringify($scope.config.treeData));
-          $scope.config.attributeList = data.attributes;
+          //todo: correct fix is to not have checked:true in the backend in the first place
+          $scope.config.attributeList = data.attributes.map(el=>({...el, checked:false})); 
           $scope.config.selectedAttributes = [];
         }
       );
@@ -193,12 +194,15 @@ $scope.displayAttributes = function(node) {
   }
 
 function processNode(node) {
+    if (node.title !== $scope.config.element_name) {
+      $scope.config.element_name = "";
+    }
     $scope.config.attributeList =  [];
     $scope.config.selectedAttributes =  [];
     node.children.forEach(child => {
         if (child.type === "attribute") {
             $scope.config.attributeList.push({
-                "name": child.title,
+                "title": child.title,
                 "path": child.path
             });
         }
