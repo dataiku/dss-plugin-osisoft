@@ -203,7 +203,8 @@ app.controller('AfExplorerFormCtrl', [
         if (child.type === "attribute") {
           $scope.config.attributeList.push({
             "title": child.title,
-            "path": child.path
+            "path": child.path,
+            "description": child.description
           });
         }
       });

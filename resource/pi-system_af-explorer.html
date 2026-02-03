@@ -90,16 +90,27 @@
                 <button ng-click="doSearch(config.element_name, config.attribute_name)"
                     class="btn btn--secondary link-like" id="get-query-dim-prop">Search</button>
             </div>
-            <table>
-                <tr ng-repeat="attribute in config.attributeList track by $index">
-                    <td>
-                        <input type="checkbox" ng-model="attribute.checked"
-                            ng-change="updateAttributeToOutput(attribute)">
-                    </td>
-                    <td>{{attribute.title}}</td>
-                    <td>{{attribute.path}}</td>
-                </tr>
-            </table>
+<table class="custom-table">
+    <thead>
+        <tr>
+            <th>Select</th>
+            <th>Title</th>
+            <th>Description</th>
+        </tr>
+    </thead>
+
+    <tbody>
+        <tr ng-repeat="attribute in config.attributeList track by $index">
+            <td>
+                <input type="checkbox"
+                       ng-model="attribute.checked"
+                       ng-change="updateAttributeToOutput(attribute)">
+            </td>
+            <td>{{attribute.title}}</td>
+            <td>{{attribute.description}}</td>
+        </tr>
+    </tbody>
+</table>
         </div>
 
     </div>

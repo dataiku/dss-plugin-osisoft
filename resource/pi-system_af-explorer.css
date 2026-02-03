@@ -27,3 +27,29 @@
 .pi-system-explorer__authentication-body {
     border: 1px solid #ccc; padding: 10px; border-radius: 5px;
 }
+
+.custom-table {
+    border-collapse: collapse;
+    width: 100%;
+    font-family: Arial, sans-serif;
+}
+
+.custom-table th,
+.custom-table td {
+    border: 1px solid #ccc;
+    padding: 8px 12px;
+    text-align: left;
+}
+
+.custom-table th {
+    background-color: #f4f4f4;
+    font-weight: bold;
+}
+
+.custom-table tr:nth-child(even) {
+    background-color: #fafafa;
+}
+
+.custom-table tr:hover {
+    background-color: #f1f7ff;
+}

@@ -154,6 +154,7 @@ def build_requests_params(**kwargs):
         "boundary_type": "syncTimeBoundaryType",
         "name_filter": "nameFilter",
         "category_name": "categoryName",
+        "description": "descriptionFilter",
         "template_name": "templateName",
         "referenced_element_name_filter": "referencedElementNameFilter",
         "referenced_element_template": "referencedElementTemplate",
@@ -638,7 +639,7 @@ class BatchTimeCounter(object):
 
 def get_item_details(item):
     KEYS_TO_CHECK = {
-        "Name": "title", "TemplateName": "template_name", "CategoryNames": "category_names",
+        "Name": "title", "TemplateName": "template_name", "CategoryNames": "category_names", "Description": "description",
         "HasChildren": "has_children", "Path": "path", "WebId": "id", "checked": "checked"
     }  # should we stick to python naming convention or keep pi's ones throughout ?
     details = {}
