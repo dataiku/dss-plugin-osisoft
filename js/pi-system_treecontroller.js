@@ -51,6 +51,10 @@ app.controller('AfExplorerFormCtrl', [
                 return p.description || '<em>No description</em>';
             });
         }).error(setErrorInScope.bind($scope.errorScope));
+        if($scope.authConfigured() === true){
+          $scope.authSectionVisible = false;
+          $scope.showTreeData = true;
+        }
     };
     
     $scope.getServers = function(){
@@ -63,6 +67,28 @@ app.controller('AfExplorerFormCtrl', [
         $scope.database_name = data.choices;
       });
     };
+
+    $scope.authSectionVisible = $scope.authSectionVisible || true;
+
+    $scope.toggleAuthSection = function() {
+      $scope.authSectionVisible = !$scope.authSectionVisible;
+    };
+
+    $scope.authConfigured = function(){
+      console.log('authConfigured check');
+      return $scope.hasPreset() && $scope.config.database_name && $scope.config.database_name.length > 0 && $scope.config.server_name && $scope.config.server_name.length > 0 ;
+    }
+    $scope.explore = function() {
+      console.log("coucou");
+      if ($scope.authConfigured()) {
+        console.log("here");
+        $scope.showTreeData = true;
+      }
+    };
+
+    $scope.hasPreset = function() {
+      return $scope.config.credentials && $scope.config.credentials.mode && $scope.config.credentials.mode!=='NONE' && $scope.config.credentials.name
+    }
       
     $scope.initializeTree = function(){
         console.log("initialization: ");

@@ -14,3 +14,16 @@
 .pi-system-explorer__tree-view, .pi-system-explorer__center-view {
     border: 1px solid #ccc; padding: 10px; border-radius: 5px;
 }
+
+.pi-system-explorer__authentication-header {
+    background-color: #f0f0f0;
+    padding: 10px;
+    cursor: pointer;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    font-weight: bold;
+}
+
+.pi-system-explorer__authentication-body {
+    border: 1px solid #ccc; padding: 10px; border-radius: 5px;
+}
