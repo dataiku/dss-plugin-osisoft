@@ -783,7 +783,7 @@ class OSIsoftClient(object):
             params["startIndex"] = start_index
             json_response = self.get(url=url, headers=headers, params=params)
 
-    def batched_search(self, element_name, attribute_name, element_category, attribute_category, template):
+    def batched_search(self, database, element_name, attribute_name, element_category, attribute_category, template):
         attribute_query = {
             "searchFullHierarchy": "true",
             "associations": "Paths"
@@ -792,14 +792,13 @@ class OSIsoftClient(object):
             attribute_query["nameFilter"] = attribute_name
         if attribute_category:
             attribute_query["categoryName"] = attribute_category
+        elements_url = "{}/elements".format(database)
+        print("ALX:fetching direct from {}".format(elements_url))
         request_body = {
-            "database": {
-                "Method": "GET",
-                "Resource": "https://dku-qa-osi.francecentral.cloudapp.azure.com/piwebapi/assetdatabases?path=\\\\osisoft-pi-serv\\Well&selectedFields=WebId;Path;Links"
-            },
             "elements": {
                 "Method": "GET",
-                "Resource": "{{0}}{}".format(
+                "Resource": "{}{}".format(
+                    elements_url,
                     build_query_string("", {
                         "templateName": template,
                         "categoryName": element_category,
@@ -808,9 +807,7 @@ class OSIsoftClient(object):
                         "associations": "Paths"
                         }
                     )
-                ),
-                "ParentIds": ["database"],
-                "Parameters": ["$.database.Content.Links.Elements"]
+                )
             },
             "attributes": {
                 "Method": "GET",
@@ -823,6 +820,37 @@ class OSIsoftClient(object):
                 "Parameters": ["$.elements.Content.Items[*].Links.Attributes"]
             }
         }
+        # request_body = {
+        #     "database": {
+        #         "Method": "GET",
+        #         "Resource": "https://osisoft/piwebapi/assetdatabases?path=\\\\osisoft-pi-serv\\Well&selectedFields=WebId;Path;Links"
+        #     },
+        #     "elements": {
+        #         "Method": "GET",
+        #         "Resource": "{{0}}{}".format(
+        #             build_query_string("", {
+        #                 "templateName": template,
+        #                 "categoryName": element_category,
+        #                 "nameFilter": element_name,
+        #                 "searchFullHierarchy": "true",
+        #                 "associations": "Paths"
+        #                 }
+        #             )
+        #         ),
+        #         "ParentIds": ["database"],
+        #         "Parameters": ["$.database.Content.Links.Elements"]
+        #     },
+        #     "attributes": {
+        #         "Method": "GET",
+        #         "RequestTemplate": {
+        #             "Resource": "{{0}}{}".format(
+        #                 build_query_string("", attribute_query)
+        #             )  #?searchFullHierarchy=true&selectedFields=Items.WebId;Items.Path"
+        #         },  # build_attribute_query(attribute_name, attribute_category)
+        #         "ParentIds": ["elements"],
+        #         "Parameters": ["$.elements.Content.Items[*].Links.Attributes"]
+        #     }
+        # }
         url = self.endpoint.get_batch_endpoint()
         headers = OSIsoftConstants.WRITE_HEADERS
         response = self.post(url, headers=headers, data=request_body, params={})

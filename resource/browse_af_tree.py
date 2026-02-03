@@ -90,7 +90,7 @@ def do(payload, config, plugin_config, inputs):
         database_webid = database_name.split("/")[-1]
 
         attributes = []
-        for result in client.batched_search(element_name, attribute_name, element_category, attribute_category, template_name):
+        for result in client.batched_search(database_name, element_name, attribute_name, element_category, attribute_category, template_name):
             result["checked"] = True
             attributes.append(result)
 
