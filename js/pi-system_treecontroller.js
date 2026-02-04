@@ -55,6 +55,7 @@ app.controller('AfExplorerFormCtrl', [
         $scope.authSectionVisible = false;
         $scope.showTreeData = true;
       }
+      $scope.config.template = $scope.config.template || "-- Any --";
     };
 
     $scope.getServers = function () {
@@ -121,6 +122,12 @@ app.controller('AfExplorerFormCtrl', [
         $scope.config.templates = data.choices;
       });
     }
+
+    $scope.activeTab = 'element'; // tab par défaut
+
+    $scope.setTab = function(tab) {
+        $scope.activeTab = tab;
+    };
 
     $scope.getCategoriesFromDB = function () {
       $scope.config.attribute_categories = [];

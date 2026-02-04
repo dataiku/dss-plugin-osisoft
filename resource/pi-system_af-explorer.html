@@ -14,9 +14,10 @@
                         inline-plugin-params="inlinePluginParams" error-scope="errorScope" required>
                     </div>
                 </div>
-                <div>
-                    <input type="checkbox" ng-model="config.is_ssl_check_disabled" ng-change="getServers();"/> Disable SSL check
-                </div>
+                <label>
+                    <span>Disable SSL Check</span>
+                    <input type="checkbox" style="vertical-align: baseline" ng-model="config.is_ssl_check_disabled" ng-change="getServers();" /> 
+                </label>
             </div>
             <div class="control-group removed-if-manual-query"
                 ng-if="config.credentials && config.credentials.mode && config.credentials.mode!=='NONE' && config.credentials.name">
@@ -30,7 +31,8 @@
             <div class="control-group removed-if-manual-query" ng-if="config.server_name">
                 <label class="control-label">Database</label>
                 <div class="controls">
-                    <select dku-bs-select ng-model="config.database_name" ng-change="initializeTree();getTemplatesFromDB();getCategoriesFromDB();"
+                    <select dku-bs-select ng-model="config.database_name"
+                        ng-change="initializeTree();getTemplatesFromDB();getCategoriesFromDB();"
                         ng-options="dbn.value as dbn.label for dbn in database_name" ng-init="getDatabases()">
                     </select>
                 </div>
@@ -51,22 +53,37 @@
     </div>
     <div class="pi-system-explorer__main" ng-if="showTreeData">
         <div ng-if="config.database_name" ng-init="initializeTree()" class="pi-system-explorer__tree-view">
-            <div><strong>Elements</strong></div>
-            <div style="margin-bottom:8px;">
-                <input id="ReturnsName" ng-model="config.element_name" type="text" data-container="body"
-                    data-html="true" data-placement="right" data-toggle="tooltip" title="blaa"
-                    placeholder="Search element" />
-                <select dku-bs-select ng-model="config.template"
-                    ng-options="dbn.title as dbn.title for dbn in config.templates" ng-init="getTemplatesFromDB()">
-                </select>
-                <select dku-bs-select ng-model="config.element_category"
-                    ng-options="dbn.title as dbn.title for dbn in config.element_categories"
-                    ng-init="getCategoriesFromDB()">
-                </select>
-                <button ng-click="doSearch(config.element_name, config.attribute_name)"
-                    class="btn btn--secondary link-like" id="get-query-dim-prop">Search</button>
+            <div class="tab-container">
+                <ul class="tab-header">
+                    <li ng-click="setTab('element')" ng-class="{active: activeTab === 'element'}">
+                        Element
+                    </li>
+                    <li ng-click="setTab('template')" ng-class="{active: activeTab === 'template'}">
+                        Template
+                    </li>
+                </ul>
+                <div class="tab-content" style="margin-bottom:8px;">
+                    <input ng-if="activeTab === 'element'" id="ReturnsName" ng-model="config.element_name" type="text"
+                        data-container="body" data-html="true"
+                        placeholder="Search element" />
+                    <select ng-if="activeTab === 'template'" dku-bs-select ng-model="config.template"
+                        ng-options="dbn.title as dbn.title for dbn in config.templates" ng-init="getTemplatesFromDB()"
+                        required>
+                    </select>
+                    <button ng-click="doSearch(config.element_name, config.attribute_name)"
+                        class="btn btn--secondary link-like" id="get-query-dim-prop">Search</button>
+                </div>
             </div>
 
+            <div class="control-group">
+                <label class="control-label">Filter by category</label>
+                <div class="controls">
+                    <select dku-bs-select ng-model="config.element_category"
+                        ng-options="dbn.title as dbn.title for dbn in config.element_categories"
+                        ng-init="getCategoriesFromDB()"
+                        ng-change="doSearch(config.element_name, config.attribute_name)" />
+                </div>
+            </div>
             <ul ng-if="config.treeData.length">
                 <li ng-repeat="node in config.treeData track by node.id">
                     <tree-node node="node" get-children-from-db="getChildrenFromDB"
@@ -75,45 +92,47 @@
                 </li>
             </ul>
         </div>
-
         <!-- Attributes Section -->
         <div class="attribute-tab pi-system-explorer__center-view">
             <div><strong>Attributes</strong></div>
-            <div style="margin-bottom:8px;">
+            <div style="padding-top:30px; margin-bottom:8px;">
                 <input id="ReturnsType" list="datatypes" ng-model="config.attribute_name" type="text"
                     data-container="body" data-html="true" data-placement="right" data-toggle="tooltip" title=""
                     placeholder="Search attribute" />
-                <select dku-bs-select ng-model="config.attribute_category"
-                    ng-options="dbn.title as dbn.title for dbn in config.attribute_categories"
-                    ng-init="getCategoriesFromDB()">
-                </select>
                 <button ng-click="doSearch(config.element_name, config.attribute_name)"
                     class="btn btn--secondary link-like" id="get-query-dim-prop">Search</button>
+
+                <div class="control-group">
+                    <label class="control-label">Filter by category</label>
+                    <div class="controls">
+                        <select dku-bs-select ng-model="config.attribute_category"
+                            ng-options="dbn.title as dbn.title for dbn in config.attribute_categories"
+                            ng-init="getCategoriesFromDB()"
+                            ng-change="doSearch(config.element_name, config.attribute_name)" />
+                    </div>
+                </div>
             </div>
-<table class="custom-table">
-    <thead>
-        <tr>
-            <th>Select</th>
-            <th>Title</th>
-            <th>Description</th>
-        </tr>
-    </thead>
+            <table class="custom-table">
+                <thead>
+                    <tr>
+                        <th>Select</th>
+                        <th>Title</th>
+                        <th>Description</th>
+                    </tr>
+                </thead>
 
-    <tbody>
-        <tr ng-repeat="attribute in config.attributeList track by $index">
-            <td>
-                <input type="checkbox"
-                       ng-model="attribute.checked"
-                       ng-change="updateAttributeToOutput(attribute)">
-            </td>
-            <td>{{attribute.title}}</td>
-            <td>{{attribute.description}}</td>
-        </tr>
-    </tbody>
-</table>
+                <tbody>
+                    <tr ng-repeat="attribute in config.attributeList track by $index">
+                        <td>
+                            <input type="checkbox" ng-model="attribute.checked"
+                                ng-change="updateAttributeToOutput(attribute)">
+                        </td>
+                        <td>{{attribute.title}}</td>
+                        <td>{{attribute.description}}</td>
+                    </tr>
+                </tbody>
+            </table>
         </div>
-
     </div>
-
-
+</div>
 </div>
