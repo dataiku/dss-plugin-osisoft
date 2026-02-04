@@ -14,7 +14,6 @@ def do(payload, config, plugin_config, inputs):
             input_dataset = dataiku.Dataset(input_dataset_name)
             input_tree = input_dataset.get_dataframe(infer_with_pandas=False)
 
-    config["is_ssl_check_disabled"] = True
     if "config" in config:
         config = config.get("config")
     if "credentials" not in config:
@@ -23,6 +22,7 @@ def do(payload, config, plugin_config, inputs):
         return {"choices": [{"label": "Pick a credential"}]}
 
     auth_type, username, password, server_url, is_ssl_check_disabled, credential_error = get_credentials(config, can_raise=False)
+    is_ssl_check_disabled = config.get("is_ssl_check_disabled", False)  # Because no advanced parameter switch
 
     if credential_error:
         return build_select_choices(credential_error)
@@ -40,7 +40,6 @@ def do(payload, config, plugin_config, inputs):
         return build_select_choices("Fill in the server address")
 
     is_debug_mode = check_debug_mode(config)
-    is_ssl_check_disabled = True
 
     client = OSIsoftClient(server_url, auth_type, username, password, is_ssl_check_disabled=is_ssl_check_disabled, is_debug_mode=is_debug_mode)
 

@@ -42,6 +42,7 @@ tree_data = config.get("treeData", [])
 logger.info("Initialization with config config={}".format(logger.filter_secrets(config)))
 
 auth_type, username, password, server_url, is_ssl_check_disabled = get_credentials(config)
+is_ssl_check_disabled = config.get("is_ssl_check_disabled", False)  # Because no advanced parameter switch
 
 network_timer = PerformanceTimer()
 processing_timer = PerformanceTimer()

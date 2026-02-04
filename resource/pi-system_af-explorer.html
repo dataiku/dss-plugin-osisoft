@@ -14,6 +14,9 @@
                         inline-plugin-params="inlinePluginParams" error-scope="errorScope" required>
                     </div>
                 </div>
+                <div>
+                    <input type="checkbox" ng-model="config.is_ssl_check_disabled" ng-change="getServers();"/> Disable SSL check
+                </div>
             </div>
             <div class="control-group removed-if-manual-query"
                 ng-if="config.credentials && config.credentials.mode && config.credentials.mode!=='NONE' && config.credentials.name">
@@ -27,12 +30,9 @@
             <div class="control-group removed-if-manual-query" ng-if="config.server_name">
                 <label class="control-label">Database</label>
                 <div class="controls">
-                    <select dku-bs-select ng-model="config.database_name" ng-change="initializeTree()"
+                    <select dku-bs-select ng-model="config.database_name" ng-change="initializeTree();getTemplatesFromDB();getCategoriesFromDB();"
                         ng-options="dbn.value as dbn.label for dbn in database_name" ng-init="getDatabases()">
                     </select>
-                </div>
-                <div>
-                    <input type="checkbox" ng-model="config.use_ssl"> Use SSL
                 </div>
             </div>
 
