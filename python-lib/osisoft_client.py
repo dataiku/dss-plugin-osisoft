@@ -755,7 +755,6 @@ class OSIsoftClient(object):
             "maxCount": tempo_maxcount,
             "associations": "Paths",
         }
-        # # https://dku-qa-osi.francecentral.cloudapp.azure.com/piwebapi/assetdatabases/F1RD3VEt1yTvt0ip6-/elements?TemplateName=Substation transformer&categoryName=Westinghouse&nameFilter=TX26*&searchFullHierarchy=true
         url = self.endpoint.get_base_url() + "/assetdatabases/{}/elements".format(database_webid)
         if name:
             params["nameFilter"] = name
@@ -976,7 +975,7 @@ class OSIsoftClient(object):
         for path_attribute in path_attributes:
             item = self.extract_item_with_name(json_response, path_attribute)
             item_details = get_item_details(item)
-            item_details["checked"] = True  # That should not be done here
+            # item_details["checked"] = True  # That should not be done here
             tree.put(full_path_elements[0:counter], item_details)
             counter += 1
             next_url = self.extract_link_with_key(item, "Attributes")
@@ -1212,7 +1211,7 @@ class OSIsoftBatchWriter(object):
 
 
 def validate_timestamp(timestamp):
-    valid_formats=["%Y-%m-%dT%H:%M:%S.%fZ", "%Y-%m-%dT%H:%M:%SZ"]
+    valid_formats = ["%Y-%m-%dT%H:%M:%S.%fZ", "%Y-%m-%dT%H:%M:%SZ"]
     for valid_format in valid_formats:
         try:
             datetime.strptime(timestamp, valid_format)

@@ -91,7 +91,7 @@ def do(payload, config, plugin_config, inputs):
 
         attributes = []
         for result in client.batched_search(database_name, element_name, attribute_name, element_category, attribute_category, template_name):
-            result["checked"] = True
+            # result["checked"] = True
             attributes.append(result)
 
         attributes = duplicate_linked_attributes(attributes)

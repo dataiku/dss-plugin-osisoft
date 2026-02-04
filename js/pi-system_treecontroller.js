@@ -152,9 +152,7 @@ app.controller('AfExplorerFormCtrl', [
         function (data) {
           TreeDataService.setTreeData(data.choices);
           $scope.config.treeData = TreeDataService.getTreeData();
-          console.log("ALX:", JSON.stringify($scope.config.treeData));
-          //todo: correct fix is to not have checked:true in the backend in the first place
-          $scope.config.attributeList = data.attributes.map(el => ({ ...el, checked: false }));
+          $scope.config.attributeList = data.attributes;
           $scope.config.selectedAttributes = [];
         }
       );
