@@ -53,7 +53,8 @@ def do(payload, config, plugin_config, inputs):
     if method == "get_templates_from_db":
         database_name = config.get("database_name")
         parent = payload.get("parent", {})
-        ret = get_items_from_db(client, parent, "ElementTemplates", database_name=database_name)
+        # ret = get_items_from_db(client, parent, "ElementTemplates", database_name=database_name)
+        ret = get_template_hierarchy_from_db(client, parent, database_name=database_name)
         return ret
     if method == "get_attribute_categories_from_db":
         database_name = config.get("database_name")
@@ -181,19 +182,50 @@ def get_children_from_db(client, parent_node, database_name=None):
             if child.get("has_children"):
                 child["children"] = []
             children.append(child)
-
     return {"choices": children}
 
-# method2:
-# we dig, but this time it's index[token name], and we store as we go in the child, with the real data indexed in a list and just the rank pointing to it
-# to build the final tree, we browse the index, get the index data, rebuild the struct from there
-# Tree class ? put(path, data), get(path, data)
+
+def get_template_hierarchy_from_db(client, parent_node, database_name=None):
+    if isinstance(parent_node, dict):
+        url = parent_node.get("url", database_name)
+    else:
+        url = parent_node
+    default_choice = {"title": "-- Any --"}
+    this_node = next(client.get_next_item_from_url(url))
+    links = this_node.get("Links", {})
+    element_templates_url = links.get("ElementTemplates")
+    children = [default_choice]
+    rebuilt_tree = []
+    if element_templates_url:
+        element_templates = client.get_next_item_from_url(element_templates_url)
+        for element_template in element_templates:
+            child = get_item_details(element_template)
+            child["type"] = "template"
+            child["children"] = []
+            children.append(child)
+        rebuilt_tree = nest_children(children)
+    return {"choices": rebuilt_tree}
+
+
+def nest_children(items):
+    name_to_item = {item["title"]: item for item in items}
+    tree = []
+    for item in items:
+        parent_name = item.get("BaseTemplate")
+        if parent_name is None or parent_name not in name_to_item:
+            tree.append(item)
+        else:
+            parent = name_to_item[parent_name]
+            if "children" not in parent:
+                parent["children"] = []
+            parent["children"].append(item)
+    return tree
 
 
 def rebuild_tree(client, items, root_tree=None):
     # builds an active tree containing all the items and their parent up to the root
     tree = Tree(root_tree=root_tree)
-    tree.print()
+    # tree.print()
     while len(items) > 1:
         item = items.pop()
         if item is None:

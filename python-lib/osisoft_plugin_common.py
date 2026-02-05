@@ -640,7 +640,7 @@ class BatchTimeCounter(object):
 def get_item_details(item):
     KEYS_TO_CHECK = {
         "Name": "title", "TemplateName": "template_name", "CategoryNames": "category_names", "Description": "description",
-        "HasChildren": "has_children", "Path": "path", "WebId": "id", "checked": "checked"
+        "HasChildren": "has_children", "Path": "path", "WebId": "id", "checked": "checked", "BaseTemplate": "BaseTemplate"
     }  # should we stick to python naming convention or keep pi's ones throughout ?
     details = {}
     for key_to_check in KEYS_TO_CHECK:
