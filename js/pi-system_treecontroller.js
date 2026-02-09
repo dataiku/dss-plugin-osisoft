@@ -29,6 +29,7 @@ app.controller('AfExplorerFormCtrl', [
     $scope.treeData = TreeDataService.getTreeData();
     $scope.config.attributeList = $scope.config.attributeList || [];
     $scope.config.selectedAttributes = $scope.config.selectedAttributes || [];
+    $scope.config.clickedNodes = $scope.config.clickedNodes || [];
 
     $scope.editorOptions = CodeMirrorSettingService.get("text/plain");
 
@@ -218,79 +219,112 @@ app.controller('AfExplorerFormCtrl', [
 
   }]);
 
-app.directive('treeNode', function () {
-  return {
-    restrict: 'E',
-    scope: {
-      node: '=',                  // mutable object (tree structure changes)
-      getChildrenFromDB: '<',     // function reference
-      displayAttributes: '<',     // function reference
-      config: '<'                 // read/write nested properties only
-    },
 
-    template: `
-      <div style="display: flex; align-items: center; gap: 6px;">
 
-        <span ng-click="$event.stopPropagation(); toggleExpand(node)"
-              style="cursor: pointer;">
-          <strong ng-if="node.expanded">▼</strong>
-          <strong ng-if="!node.expanded">▶</strong>
+app.component('treeNode', {
+  bindings: {
+    node: '=',
+    getChildrenFromDb: '<',
+    displayAttributes: '<',
+    config: '<',
+    clickedNodes: '='
+  },
+
+  controllerAs: 'ctrl',
+
+  controller: function () {
+    const ctrl = this;
+
+    ctrl.toggleExpand = function (node, $event) {
+      if ($event) {
+        $event.stopPropagation();
+      }
+
+      node.expanded = !node.expanded;
+
+      if (node.expanded && (!node.children || !node.children.length)) {
+        // Call function reference directly
+        ctrl.getChildrenFromDb(node);
+      }
+    };
+
+    ctrl.onNodeClick = function (node) {
+      const index = ctrl.clickedNodes.indexOf(node.url);
+      if (index > -1) {
+        ctrl.clickedNodes.splice(index, 1);
+      } else {
+        ctrl.clickedNodes.push(node.url);
+      }
+      console.log('Clicked nodes:', ctrl.clickedNodes);
+
+      ctrl.displayAttributes(node);
+    };
+
+    ctrl.hasAttributes = function (node) {
+      if (
+        !Array.isArray(ctrl.config?.attributeList) ||
+        !ctrl.config.attributeList.length
+      ) {
+        return false;
+      }
+
+      return ctrl.config.attributeList.some(attr => {
+        const expected = node.title + '|' + attr.title;
+        return attr.path.endsWith(expected);
+      });
+    };
+
+    ctrl.isNodeClicked = function (node) {
+      return ctrl.clickedNodes.includes(node.url);
+    };
+  },
+
+  template: `
+    <div style="display: flex; align-items: center; gap: 6px;">
+
+      <span
+        ng-click="ctrl.toggleExpand(ctrl.node, $event)"
+        style="cursor: pointer;"
+      >
+        <strong ng-if="ctrl.node.expanded">▼</strong>
+        <strong ng-if="!ctrl.node.expanded">▶</strong>
+      </span>
+
+      <div class="tree-node">
+        <span
+          ng-if="ctrl.node.type === 'element'"
+          class="tree-node__label"
+          ng-click="ctrl.onNodeClick(ctrl.node)"
+          ng-class="{
+            'tree-node__label--clickable':
+              ctrl.isNodeClicked(ctrl.node)
+          }"
+        >
+          {{ ctrl.node.title }}
         </span>
-
-        <div class="tree-node">
-          <span ng-if="node.type === 'element'"
-                class="tree-node__label"
-                ng-click="displayAttributes(node)"
-                ng-class="{'tree-node__label--clickable': hasAttributes(node)}">
-            {{ node.title }}
-          </span>
-        </div>
-
       </div>
 
-      <ul ng-if="node.children && node.children.length && node.expanded"
-          style="margin-left: 20px;">
+    </div>
 
-        <li ng-repeat="child in node.children track by child.path"
-            ng-if="child.type === 'element'">
-
-          <tree-node
-            node="child"
-            get-children-from-db="getChildrenFromDB"
-            display-attributes="displayAttributes"
-            config="config">
-          </tree-node>
-
-        </li>
-
-      </ul>
-    `,
-
-    link: function (scope) {
-
-      // Toggle expansion + lazy loading
-      scope.toggleExpand = function (node) {
-        node.expanded = !node.expanded;
-
-        if (node.expanded && (!node.children || !node.children.length)) {
-          scope.getChildrenFromDB(node);
-        }
-      };
-
-
-      scope.hasAttributes = function (node) {
-        if (!Array.isArray(scope.config.attributeList) ||
-          !scope.config.attributeList.length) {
-          return false;
-        }
-
-        return scope.config.attributeList.some(attr => {
-          const expected = node.title + "|" + attr.title;
-          return attr.path.endsWith(expected);
-        });
-      };
-
-    }
-  };
+    <ul
+      ng-if="ctrl.node.children && ctrl.node.children.length && ctrl.node.expanded"
+      style="margin-left: 20px;"
+    >
+      <li
+        ng-repeat="child in ctrl.node.children track by child.path"
+        ng-if="child.type === 'element'"
+      >
+        <tree-node
+          node="child"
+          get-children-from-db="ctrl.getChildrenFromDb"
+          display-attributes="ctrl.displayAttributes"
+          config="ctrl.config"
+          clicked-nodes="ctrl.clickedNodes"
+        >
+        </tree-node>
+      </li>
+    </ul>
+  `
 });
+
 

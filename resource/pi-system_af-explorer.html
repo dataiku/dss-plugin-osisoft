@@ -86,8 +86,12 @@
             </div>
             <ul ng-if="config.treeData.length">
                 <li ng-repeat="node in config.treeData track by node.id">
-                    <tree-node node="node" get-children-from-db="getChildrenFromDB"
-                        display-attributes="displayAttributes" config="config">
+                    <tree-node
+                      node="node"
+                      get-children-from-db="getChildrenFromDB"
+                      display-attributes="displayAttributes"
+                      config="config"
+                      clicked-nodes="config.clickedNodes">
                     </tree-node>
                 </li>
             </ul>
