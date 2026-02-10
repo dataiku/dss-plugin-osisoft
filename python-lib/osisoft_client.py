@@ -4,7 +4,6 @@ import copy
 import json
 import simplejson
 from datetime import datetime
-from requests_ntlm import HttpNtlmAuth
 from osisoft_constants import OSIsoftConstants
 from osisoft_endpoints import OSIsoftEndpoints
 from osisoft_plugin_common import (
@@ -870,7 +869,7 @@ class OSIsoftWriter(object):
         The last element is a dict of columns not found in the schema
         """
         if self.timestamp_rank is not None:
-            timestamp = self.timestamp_convertion(row[self.timestamp_rank])
+            timestamp = self.timestamp_conversion(row[self.timestamp_rank])
         else:
             timestamp = datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%S.%fZ")
         if not row[self.value_rank]:
@@ -986,7 +985,7 @@ class OSIsoftBatchWriter(object):
 
 
 def validate_timestamp(timestamp):
-    valid_formats=["%Y-%m-%dT%H:%M:%S.%fZ", "%Y-%m-%dT%H:%M:%SZ"]
+    valid_formats = ["%Y-%m-%dT%H:%M:%S.%fZ", "%Y-%m-%dT%H:%M:%SZ"]
     for valid_format in valid_formats:
         try:
             datetime.strptime(timestamp, valid_format)

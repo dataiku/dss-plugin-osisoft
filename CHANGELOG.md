@@ -4,7 +4,11 @@
 
 - Add blank OAuth SSO preset
 
-## [Version 1.4.0](https://github.com/dataiku/dss-plugin-pi-server/releases/tag/v1.3.1) - Bugfix release - 2025-05-24
+## [Version 1.4.1](https://github.com/dataiku/dss-plugin-pi-server/releases/tag/v1.4.1) - Bugfix release - 2026-01-27
+
+- Fix issue with writing
+
+## [Version 1.4.0](https://github.com/dataiku/dss-plugin-pi-server/releases/tag/v1.4.0) - Bugfix release - 2025-05-24
 
 - Add write recipe
 
