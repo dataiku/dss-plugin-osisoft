@@ -1,5 +1,9 @@
 # Changelog
 
+## [Version 1.5.0](https://github.com/dataiku/dss-plugin-pi-server/releases/tag/v1.5.0) - Bugfix release - 2026-02-02
+
+- Add blank OAuth SSO preset
+
 ## [Version 1.4.1](https://github.com/dataiku/dss-plugin-pi-server/releases/tag/v1.4.1) - Bugfix release - 2026-01-27
 
 - Fix issue with writing
