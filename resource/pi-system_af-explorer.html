@@ -15,9 +15,25 @@
                     </div>
                 </div>
                 <label>
-                    <span>Disable SSL Check</span>
-                    <input type="checkbox" style="vertical-align: baseline" ng-model="config.is_ssl_check_disabled" ng-change="getServers();" /> 
+                    <span>Advanced parameters</span>
+                    <input type="checkbox" style="vertical-align: baseline" ng-model="config.show_advanced_parameters" ng-change="onAdvancedToggle();" />
                 </label>
+                <label ng-show="config.show_advanced_parameters">
+                    <span>Disable SSL Check</span>
+                    <input type="checkbox" style="vertical-align: baseline" ng-model="config.is_ssl_check_disabled" ng-change="getServers();" />
+                </label>
+                <div class="control-group" ng-show="config.show_advanced_parameters">
+                    <label class="control-label">Elements max count</label>
+                    <div class="controls">
+                        <input type="number" ng-model="config.elements_max_count" placeholder="100" />
+                    </div>
+                </div>
+                <div class="control-group" ng-show="config.show_advanced_parameters">
+                    <label class="control-label">Attributes max count</label>
+                    <div class="controls">
+                        <input type="number" ng-model="config.attributes_max_count" placeholder="100" />
+                    </div>
+                </div>
             </div>
             <div class="control-group removed-if-manual-query"
                 ng-if="config.credentials && config.credentials.mode && config.credentials.mode!=='NONE' && config.credentials.name">

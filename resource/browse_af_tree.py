@@ -69,6 +69,7 @@ def do(payload, config, plugin_config, inputs):
     if method == "do_search":
         template_name = config.get("template", None)
         category_name = config.get("element_category", None)
+        clicked_nodes = config.get("clickedNodes", [])
         if template_name == "-- Any --":
             template_name = None
         if category_name == "-- Any --":
@@ -88,9 +89,12 @@ def do(payload, config, plugin_config, inputs):
         attributes = []
         # https://dku-qa-osi.francecentral.cloudapp.azure.com/piwebapi/assetdatabases/F1RD3VEt1yTvt0ip6-a5yeEVsgbMcrwu_Je0qg9btcZIvPswT1NJU09GVC1QSS1TRVJWXFdFTEw
         database_webid = database_name.split("/")[-1]
+        elements_max_count, attributes_max_count = get_max_counts(config)
 
         attributes = []
-        for result in client.batched_search(database_name, element_name, attribute_name, element_category, attribute_category, template_name):
+        for result in client.batched_search(database_name, element_name, attribute_name,
+                                            element_category, attribute_category, template_name, clicked_nodes,
+                                            elements_max_count=elements_max_count, attributes_max_count=attributes_max_count):
             # result["checked"] = True
             attributes.append(result)
 
@@ -302,3 +306,24 @@ def set_as_selected(items):
 def update_item(item, tree):
     elements_paths_tokens, attributes_paths_tokens = path_to_list(item.get("path"))
     tree.put(elements_paths_tokens + attributes_paths_tokens, item)
+
+
+def get_max_counts(config):
+    show_advanced_parameters = config.get("show_advanced_parameters", False)
+    if not show_advanced_parameters:
+        return 100, 100
+
+    def parse_max_count(value, default):
+        if value is None or value == "":
+            return default
+        try:
+            value = int(value)
+        except (TypeError, ValueError):
+            return default
+        if value <= 0:
+            return None
+        return value
+
+    elements_max_count = parse_max_count(config.get("elements_max_count"), 100)
+    attributes_max_count = parse_max_count(config.get("attributes_max_count"), 100)
+    return elements_max_count, attributes_max_count

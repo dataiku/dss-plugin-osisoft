@@ -33,7 +33,23 @@ app.controller('AfExplorerFormCtrl', [
 
     $scope.editorOptions = CodeMirrorSettingService.get("text/plain");
 
+    $scope.onAdvancedToggle = function () {
+      if (!$scope.config.show_advanced_parameters) {
+        $scope.config.is_ssl_check_disabled = false;
+        $scope.config.elements_max_count = null;
+        $scope.config.attributes_max_count = null;
+      } else {
+        if ($scope.config.elements_max_count === null || $scope.config.elements_max_count === undefined || $scope.config.elements_max_count === "") {
+          $scope.config.elements_max_count = 100;
+        }
+        if ($scope.config.attributes_max_count === null || $scope.config.attributes_max_count === undefined || $scope.config.attributes_max_count === "") {
+          $scope.config.attributes_max_count = 100;
+        }
+      }
+    };
+
     $scope.init = function () {
+      $scope.config.show_advanced_parameters = $scope.config.show_advanced_parameters || false;
       DataikuAPI.plugins.listAccessiblePresets('pi-system', $stateParams.projectKey, 'basic-auth').success(function (data) {
         $scope.inlineParams = data.inlineParams;
         $scope.inlinePluginParams = data.inlinePluginParams;
@@ -57,6 +73,7 @@ app.controller('AfExplorerFormCtrl', [
         $scope.showTreeData = true;
       }
       $scope.config.template = $scope.config.template || "-- Any --";
+      $scope.onAdvancedToggle();
     };
 
     $scope.getServers = function () {
@@ -326,5 +343,4 @@ app.component('treeNode', {
     </ul>
   `
 });
-
 
