@@ -1,7 +1,10 @@
 from osisoft_client import OSIsoftClient
+from safe_logger import SafeLogger
 from osisoft_plugin_common import get_credentials, build_select_choices, check_debug_mode
-from osisoft_plugin_common import get_item_details, Tree, recursive_tree_rebuild
+from osisoft_plugin_common import get_item_details, Tree, recursive_tree_rebuild, PerformanceTimer
 import dataiku
+
+logger = SafeLogger("PI System plugin", ["user", "password"])
 
 
 def do(payload, config, plugin_config, inputs):
@@ -41,7 +44,13 @@ def do(payload, config, plugin_config, inputs):
 
     is_debug_mode = check_debug_mode(config)
 
-    client = OSIsoftClient(server_url, auth_type, username, password, is_ssl_check_disabled=is_ssl_check_disabled, is_debug_mode=is_debug_mode)
+    network_timer = PerformanceTimer()
+
+    client = OSIsoftClient(
+        server_url, auth_type, username, password,
+        is_ssl_check_disabled=is_ssl_check_disabled, is_debug_mode=is_debug_mode,
+        network_timer=network_timer
+    )
 
     method = payload.get("method")
     if method == "get_query_catalogs":
@@ -105,6 +114,7 @@ def do(payload, config, plugin_config, inputs):
             items.append(item)
         attributesCopy = items.copy()
         rebuilt_tree = rebuild_tree(client, items, root_tree)
+        logger.info("Search network timer:{}".format(network_timer.get_report()))
         return {"choices": rebuilt_tree, "attributes": attributesCopy}
 
     parameter_name = payload.get("parameterName")
