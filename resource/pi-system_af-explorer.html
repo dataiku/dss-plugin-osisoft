@@ -71,18 +71,18 @@
         <div ng-if="config.database_name" ng-init="initializeTree()" class="pi-system-explorer__tree-view">
             <div class="tab-container">
                 <ul class="tab-header">
-                    <li ng-click="setTab('element')" ng-class="{active: activeTab === 'element'}">
+                    <li ng-click="setTab('element')" ng-class="{active: config.activeTab === 'element'}">
                         Element
                     </li>
-                    <li ng-click="setTab('template')" ng-class="{active: activeTab === 'template'}">
+                    <li ng-click="setTab('template')" ng-class="{active: config.activeTab === 'template'}">
                         Template
                     </li>
                 </ul>
                 <div class="tab-content" style="margin-bottom:8px;">
-                    <input ng-if="activeTab === 'element'" id="ReturnsName" ng-model="config.element_name" type="text"
+                    <input ng-if="config.activeTab === 'element'" id="ReturnsName" ng-model="config.element_name" type="text"
                         data-container="body" data-html="true"
                         placeholder="Search element" />
-                    <button ng-if="activeTab === 'element'" ng-click="doSearch(config.element_name, config.attribute_name)"
+                    <button ng-if="config.activeTab === 'element'" ng-click="doSearch(config.element_name, config.attribute_name)"
                         class="btn btn--secondary link-like" id="get-query-dim-prop">Search</button>
                 </div>
             </div>
@@ -96,7 +96,7 @@
                         ng-change="doSearch(config.element_name, config.attribute_name)" />
                 </div>
             </div>
-            <ul ng-if="activeTab === 'element' && config.treeData && config.treeData.length">
+            <ul ng-if="config.activeTab === 'element' && config.treeData && config.treeData.length">
                 <li ng-repeat="node in config.treeData track by node.id">
                     <tree-node
                       node="node"
@@ -107,7 +107,7 @@
                     </tree-node>
                 </li>
             </ul>
-            <ul ng-if="activeTab === 'template' && config.templateTreeData && config.templateTreeData.length">
+            <ul ng-if="config.activeTab === 'template' && config.templateTreeData && config.templateTreeData.length">
                 <li ng-repeat="node in config.templateTreeData track by node.id">
                     <tree-node
                       node="node"
@@ -149,6 +149,11 @@
                 </thead>
 
                 <tbody>
+                    <tr ng-if="config.attributeList.length>0">
+                        <td>
+                            <input type="checkbox" ng-init="config.selectAllAttributes = false" ng-model="config.selectAllAttributes" ng-change="toggleSelectAllAttributes()" >
+                        </td>
+                    </tr>
                     <tr ng-repeat="attribute in config.attributeList track by $index">
                         <td>
                             <input type="checkbox" ng-model="attribute.checked"

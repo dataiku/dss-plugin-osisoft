@@ -60,6 +60,7 @@ app.controller('AfExplorerFormCtrl', [
 
     $scope.init = function () {
       $scope.config.show_advanced_parameters = $scope.config.show_advanced_parameters || false;
+      $scope.config.activeTab = $scope.config.activeTab || 'element';
       DataikuAPI.plugins.listAccessiblePresets('pi-system', $stateParams.projectKey, 'basic-auth').success(function (data) {
         $scope.inlineParams = data.inlineParams;
         $scope.inlinePluginParams = data.inlinePluginParams;
@@ -167,10 +168,8 @@ app.controller('AfExplorerFormCtrl', [
       });
     }
 
-    $scope.activeTab = 'element'; // tab par défaut
-
     $scope.setTab = function(tab) {
-        $scope.activeTab = tab;
+        $scope.config.activeTab = tab;
     };
 
     $scope.getCategoriesFromDB = function () {
@@ -209,37 +208,59 @@ app.controller('AfExplorerFormCtrl', [
       );
     };
 
+    $scope.toggleSelectAllAttributes = function () {
+      if ($scope.config.selectAllAttributes) {
+        $scope.config.selectedAttributes = [...$scope.config.attributeList];
+        $scope.config.attributeList.forEach(attr => attr.checked = true);
+      } else {
+        $scope.config.selectedAttributes = [];
+        $scope.config.attributeList.forEach(attr => attr.checked = false);
+      }
+    }
+
     $scope.updateAttributeToOutput = function (attribute) {
-      if (attribute.checked && $scope.config.selectedAttributes.includes(attribute)) {
-        $scope.config.selectedAttributes = $scope.config.selectedAttributes.filter(attr => attr.path !== attribute.path);
-      }
-      else {
-        console.log("Adding attribute to output:", attribute);
+  if (!$scope.config || !$scope.config.attributeList) return;
 
-        if (!$scope.config || !$scope.config.attributeList || $scope.config.selectedAttributes.includes(attribute)) {
-          return;
-        }
-        const attrInConfig = $scope.config.attributeList.find(attr => attr.path === attribute.path);
+  const selectedAttributes = $scope.config.selectedAttributes;
+  const attributeList = $scope.config.attributeList;
 
-        if (attrInConfig) {
-          $scope.config.selectedAttributes.push(attribute);
-          attrInConfig.checked = true;
-        } else {
-          console.warn("Attribute not found in config:", attribute.path);
-        }
-      }
-    };
+  const index = selectedAttributes.findIndex(attr => attr.path === attribute.path);
+
+  if (index !== -1) {
+    selectedAttributes.splice(index, 1);
+
+    const attrInConfig = attributeList.find(attr => attr.path === attribute.path);
+    if (attrInConfig) attrInConfig.checked = false;
+
+    $scope.config.selectAllAttributes = false;
+    return;
+  }
+
+  const attrInConfig = attributeList.find(attr => attr.path === attribute.path);
+
+  if (!attrInConfig) {
+    console.warn("Attribute not found in config:", attribute.path);
+    return;
+  }
+
+  selectedAttributes.push(attribute);
+  attrInConfig.checked = true;
+
+  $scope.config.selectAllAttributes = selectedAttributes.length === attributeList.length;
+};
+
 
 
     $scope.displayAttributes = function (node) {
       if (!node.children || node.children.length === 0) {
 
         if (node.type === "element") {
-
+          $scope.config.template = "-- Any --";
           $scope.getChildrenFromDB(node).then(newNode => {
             processNode(newNode);
           });
         } else if (node.type === "template") {
+          $scope.config.element_name = "*";
           $scope.config.template = node.title;
           $scope.doSearch($scope.config.element_name, $scope.config.attribute_name);
         }
