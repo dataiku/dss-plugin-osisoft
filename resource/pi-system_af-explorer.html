@@ -82,11 +82,7 @@
                     <input ng-if="activeTab === 'element'" id="ReturnsName" ng-model="config.element_name" type="text"
                         data-container="body" data-html="true"
                         placeholder="Search element" />
-                    <select ng-if="activeTab === 'template'" dku-bs-select ng-model="config.template"
-                        ng-options="dbn.title as dbn.title for dbn in config.templates" ng-init="getTemplatesFromDB()"
-                        required>
-                    </select>
-                    <button ng-click="doSearch(config.element_name, config.attribute_name)"
+                    <button ng-if="activeTab === 'element'" ng-click="doSearch(config.element_name, config.attribute_name)"
                         class="btn btn--secondary link-like" id="get-query-dim-prop">Search</button>
                 </div>
             </div>
@@ -100,8 +96,19 @@
                         ng-change="doSearch(config.element_name, config.attribute_name)" />
                 </div>
             </div>
-            <ul ng-if="config.treeData.length">
+            <ul ng-if="activeTab === 'element' && config.treeData && config.treeData.length">
                 <li ng-repeat="node in config.treeData track by node.id">
+                    <tree-node
+                      node="node"
+                      get-children-from-db="getChildrenFromDB"
+                      display-attributes="displayAttributes"
+                      config="config"
+                      clicked-nodes="config.clickedNodes">
+                    </tree-node>
+                </li>
+            </ul>
+            <ul ng-if="activeTab === 'template' && config.templateTreeData && config.templateTreeData.length">
+                <li ng-repeat="node in config.templateTreeData track by node.id">
                     <tree-node
                       node="node"
                       get-children-from-db="getChildrenFromDB"
