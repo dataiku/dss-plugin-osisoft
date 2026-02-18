@@ -3,6 +3,7 @@ var app = angular.module('piSystemTreeApp.module', []);
 app.service('TreeDataService', function () {
   // This will store the shared tree data
   this.treeData = [];
+  this.templateTreeData = [];
 
   // Optional: helper methods
   this.setTreeData = function (data) {
@@ -11,6 +12,14 @@ app.service('TreeDataService', function () {
 
   this.getTreeData = function () {
     return this.treeData;
+  };
+
+  this.setTemplateTreeData = function (data) {
+    this.templateTreeData = data;
+  };
+
+  this.getTemplateTreeData = function () {
+    return this.templateTreeData;
   };
 });
 
@@ -27,6 +36,7 @@ app.controller('AfExplorerFormCtrl', [
     };
 
     $scope.treeData = TreeDataService.getTreeData();
+    $scope.templateTreeData = TreeDataService.getTemplateTreeData();
     $scope.config.attributeList = $scope.config.attributeList || [];
     $scope.config.selectedAttributes = $scope.config.selectedAttributes || [];
     $scope.config.clickedNodes = $scope.config.clickedNodes || [];
@@ -71,6 +81,7 @@ app.controller('AfExplorerFormCtrl', [
       if ($scope.authConfigured() === true) {
         $scope.authSectionVisible = false;
         $scope.showTreeData = true;
+        $scope.showTemplateTreeData = true;
       }
       $scope.config.template = $scope.config.template || "-- Any --";
       $scope.onAdvancedToggle();
@@ -98,10 +109,9 @@ app.controller('AfExplorerFormCtrl', [
       return $scope.hasPreset() && $scope.config.database_name && $scope.config.database_name.length > 0 && $scope.config.server_name && $scope.config.server_name.length > 0;
     }
     $scope.explore = function () {
-      console.log("coucou");
       if ($scope.authConfigured()) {
-        console.log("here");
         $scope.showTreeData = true;
+        $scope.showTemplateTreeData = true;
       }
     };
 
@@ -135,9 +145,25 @@ app.controller('AfExplorerFormCtrl', [
         });
     }
 
+    $scope.getTemplateHierarchyFromDB = function (item) {
+      console.log("ALX:gthfd:" + JSON.stringify(item));
+      return $scope.callPythonDo({ method: "get_template_hierarchy_from_db", parent: item })
+        .then(function (data) {
+          console.log("ALX:data1=" + JSON.stringify(data));
+          item.children = data.choices;
+          item.children.forEach(child => {
+            child.expanded = false;
+          });
+          console.log(item);
+          return item;
+        });
+    }
+
     $scope.getTemplatesFromDB = function () {
-      $scope.callPythonDo({ method: "get_templates_from_db" }).then(function (data) {
+       $scope.callPythonDo({ method: "get_templates_from_db" }).then(function (data) {
         $scope.config.templates = data.choices;
+        TreeDataService.setTemplateTreeData(data.choices);
+        $scope.config.templateTreeData = TreeDataService.getTemplateTreeData();
       });
     }
 
@@ -206,12 +232,18 @@ app.controller('AfExplorerFormCtrl', [
 
 
     $scope.displayAttributes = function (node) {
-
       if (!node.children || node.children.length === 0) {
-        $scope.getChildrenFromDB(node).then(newNode => {
-          processNode(newNode);
-        });
-      } else {
+
+        if (node.type === "element") {
+
+          $scope.getChildrenFromDB(node).then(newNode => {
+            processNode(newNode);
+          });
+        } else if (node.type === "template") {
+          $scope.config.template = node.title;
+          $scope.doSearch($scope.config.element_name, $scope.config.attribute_name);
+        }
+      }  else {
         processNode(node);
       };
     }
@@ -266,15 +298,14 @@ app.component('treeNode', {
     };
 
     ctrl.onNodeClick = function (node) {
-      const index = ctrl.clickedNodes.indexOf(node.url);
-      if (index > -1) {
-        ctrl.clickedNodes.splice(index, 1);
-      } else {
-        ctrl.clickedNodes.push(node.url);
-      }
-      console.log('Clicked nodes:', ctrl.clickedNodes);
-
+      ctrl.config.clickedNodes = []; // TODO remove when you want to use multiselect 
       ctrl.displayAttributes(node);
+      const index = ctrl.config.clickedNodes.indexOf(node.url);
+      if (index > -1) {
+        ctrl.config.clickedNodes.splice(index, 1);
+      } else {
+        ctrl.config.clickedNodes.push(node.url);
+      }
     };
 
     ctrl.hasAttributes = function (node) {
@@ -292,7 +323,7 @@ app.component('treeNode', {
     };
 
     ctrl.isNodeClicked = function (node) {
-      return ctrl.clickedNodes.includes(node.url);
+      return ctrl.config.clickedNodes.includes(node.url);
     };
   },
 
@@ -303,13 +334,13 @@ app.component('treeNode', {
         ng-click="ctrl.toggleExpand(ctrl.node, $event)"
         style="cursor: pointer;"
       >
-        <strong ng-if="ctrl.node.has_children && ctrl.node.expanded">▼</strong>
-        <strong ng-if="ctrl.node.has_children && !ctrl.node.expanded">▶</strong>
+        <strong ng-if="ctrl.node.children && ctrl.node.children.length>0 && ctrl.node.expanded">▼</strong>
+        <strong ng-if="ctrl.node.children && ctrl.node.children.length>0 && !ctrl.node.expanded">▶</strong>
       </span>
 
       <div class="tree-node">
         <span
-          ng-if="ctrl.node.type === 'element'"
+          ng-if="ctrl.node.type === 'element' || ctrl.node.type==='template'"
           class="tree-node__label"
           ng-click="ctrl.onNodeClick(ctrl.node)"
           ng-class="{
@@ -329,14 +360,14 @@ app.component('treeNode', {
     >
       <li
         ng-repeat="child in ctrl.node.children track by child.path"
-        ng-if="child.type === 'element'"
+        ng-if="child.type === 'element' || child.type === 'template'"
       >
         <tree-node
           node="child"
           get-children-from-db="ctrl.getChildrenFromDb"
           display-attributes="ctrl.displayAttributes"
           config="ctrl.config"
-          clicked-nodes="ctrl.clickedNodes"
+          clicked-nodes="ctrl.config.clickedNodes"
         >
         </tree-node>
       </li>

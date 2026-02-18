@@ -204,7 +204,7 @@ def get_template_hierarchy_from_db(client, parent_node, database_name=None):
         url = parent_node.get("url", database_name)
     else:
         url = parent_node
-    default_choice = {"title": "-- Any --"}
+    default_choice = {"title": "-- Any --", "id:": ""}
     this_node = next(client.get_next_item_from_url(url))
     links = this_node.get("Links", {})
     element_templates_url = links.get("ElementTemplates")
