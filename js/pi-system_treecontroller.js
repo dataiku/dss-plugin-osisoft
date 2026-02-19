@@ -355,8 +355,8 @@ app.component('treeNode', {
         ng-click="ctrl.toggleExpand(ctrl.node, $event)"
         style="cursor: pointer;"
       >
-        <strong ng-if="ctrl.node.children && ctrl.node.children.length>0 && ctrl.node.expanded">▼</strong>
-        <strong ng-if="ctrl.node.children && ctrl.node.children.length>0 && !ctrl.node.expanded">▶</strong>
+        <strong ng-if="ctrl.node.has_children && ctrl.node.expanded">▼</strong>
+        <strong ng-if="ctrl.node.has_children && !ctrl.node.expanded">▶</strong>
       </span>
 
       <div class="tree-node">

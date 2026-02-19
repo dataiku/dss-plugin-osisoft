@@ -233,6 +233,7 @@ def nest_children(items):
             if "children" not in parent:
                 parent["children"] = []
             parent["children"].append(item)
+            parent["has_children"] = True
     return tree
 
 
