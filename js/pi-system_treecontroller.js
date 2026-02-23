@@ -332,16 +332,20 @@ app.component('treeNode', {
       }
     };
 
-    ctrl.onNodeClick = function (node) {
-      ctrl.config.clickedNodes = []; // TODO remove when you want to use multiselect 
-      ctrl.displayAttributes(node);
-      const index = ctrl.config.clickedNodes.indexOf(node.url);
-      if (index > -1) {
-        ctrl.config.clickedNodes.splice(index, 1);
-      } else {
-        ctrl.config.clickedNodes.push(node.url);
-      }
-    };
+
+  ctrl.onNodeClick = function (node) {
+    const url = node.url;
+    const clicked = ctrl.config.clickedNodes;
+
+    if (clicked[0] === url) {
+      clicked.length = 0;
+    } else {
+      clicked.length = 0; // todo - remove to make the multiselect
+      clicked.push(url);
+    }
+
+    ctrl.displayAttributes(node);
+  };
 
     ctrl.hasAttributes = function (node) {
       if (
