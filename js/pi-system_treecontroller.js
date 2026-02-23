@@ -266,6 +266,7 @@ app.controller('AfExplorerFormCtrl', [
 
 
     $scope.displayAttributes = function (node) {
+      $scope.config.selectAllAttributes = false;
       if (!node.children || node.children.length === 0) {
 
         if (node.type === "element") {
