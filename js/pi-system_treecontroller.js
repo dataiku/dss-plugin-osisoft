@@ -120,9 +120,14 @@ app.controller('AfExplorerFormCtrl', [
       return $scope.config.credentials && $scope.config.credentials.mode && $scope.config.credentials.mode !== 'NONE' && $scope.config.credentials.name
     }
 
+    $scope.cleanTree = function () {
+      $scope.config.treeData = [];
+      $scope.config.clickedNodes = [];
+      $scope.config.attributeList = [];
+    }
+
     $scope.initializeTree = function () {
       console.log("initialization: ");
-      console.log($scope.config.treeData);
       if (!$scope.config.treeData || $scope.config.treeData.length === 0) {
         $scope.callPythonDo({ method: "get_children_from_db", parent: $scope.config.database_name }).then(function (data) {
           console.log("ALX:data2=" + JSON.stringify(data));
@@ -130,7 +135,16 @@ app.controller('AfExplorerFormCtrl', [
           $scope.config.treeData = TreeDataService.getTreeData();
         });
       }
+      
     };
+
+    $scope.updateDatas = function () {
+      $scope.cleanTree();
+      $scope.initializeTree();
+      $scope.getTemplatesFromDB();
+      $scope.getCategoriesFromDB();
+      $scope.showTreeData = false;
+    }
 
     $scope.getChildrenFromDB = function (item) {
       console.log("ALX:gcfd:" + JSON.stringify(item));
