@@ -292,11 +292,7 @@ app.controller('AfExplorerFormCtrl', [
       $scope.config.selectedAttributes = [];
       node.children.forEach(child => {
         if (child.type === "attribute") {
-          $scope.config.attributeList.push({
-            "title": child.title,
-            "path": child.path,
-            "description": child.description
-          });
+          $scope.config.attributeList.push(child);
         }
       });
     }
