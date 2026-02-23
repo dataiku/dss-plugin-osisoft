@@ -1,5 +1,5 @@
 import dataiku
-from dataiku.customrecipe import get_input_names_for_role, get_recipe_config, get_output_names_for_role
+from dataiku.customrecipe import get_recipe_config, get_output_names_for_role
 from safe_logger import SafeLogger
 from osisoft_plugin_common import (
     get_credentials, PerformanceTimer
@@ -34,7 +34,6 @@ def next_tree_item(tree_data):
         yield item
 
 
-input_dataset = get_input_names_for_role('input_dataset')
 output_names_stats = get_output_names_for_role('api_output')
 config = get_recipe_config()
 tree_data = config.get("treeData", [])

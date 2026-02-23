@@ -8,15 +8,6 @@ logger = SafeLogger("PI System plugin", ["user", "password"])
 
 
 def do(payload, config, plugin_config, inputs):
-    input_tree = None
-    if len(inputs) > 0:
-        input_item = inputs[0]
-        input_type = input_item.get("type")
-        if input_type == "DATASET":
-            input_dataset_name = input_item.get("fullName")
-            input_dataset = dataiku.Dataset(input_dataset_name)
-            input_tree = input_dataset.get_dataframe(infer_with_pandas=False)
-
     if "config" in config:
         config = config.get("config")
     if "credentials" not in config:
