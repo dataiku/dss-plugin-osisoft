@@ -705,6 +705,8 @@ class Tree():
         return self.tree
 
     def get_record(self, index):
+        if index is None:
+            return None
         if index < len(self.index):
             return self.index[index]
         return None

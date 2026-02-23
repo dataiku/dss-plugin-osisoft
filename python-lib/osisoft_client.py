@@ -937,25 +937,44 @@ class OSIsoftClient(object):
             # this path has already been retrieved, so skip
             return
         # Loading piwebapi initial page
-        next_url = self.endpoint.get_base_url()
+        # if we have full_path_elements[0:1], then no need to do all this:
+        cache = tree.get(full_path_elements[0:1]) or {}
+        asset_server_url = cache.get("url")
         headers = self.get_requests_headers()
-        json_response = self.get(url=next_url, headers=headers, params={}, error_source="traverse_and_cache")
+        if asset_server_url:
+            logger.info("skipping search {}".format(asset_server_url))
+            next_url = asset_server_url + "/assetdatabases"
+            print("ALX:1:{}".format(next_url))
+            path_elements.pop(0)
+        else:
+            logger.info("searching")
+            next_url = self.endpoint.get_base_url()
+            json_response = self.get(url=next_url, headers=headers, params={}, error_source="traverse_and_cache")
 
-        # Asset server page
-        next_url = self.extract_link_with_key(json_response, "AssetServers")
-        json_response = self.get(url=next_url, headers=headers, params={}, error_source="traverse_and_cache")
+            # Asset server page
+            next_url = self.extract_link_with_key(json_response, "AssetServers")
+            json_response = self.get(url=next_url, headers=headers, params={}, error_source="traverse_and_cache")
 
-        item = self.extract_item_with_name(json_response, path_elements.pop(0))
-        tree.put(full_path_elements[0:1], get_item_details(item))
-        next_url = self.extract_link_with_key(item, "Databases")
-        json_response = self.get(url=next_url, headers=headers, params={}, error_source="traverse_and_cache")
+            item = self.extract_item_with_name(json_response, path_elements.pop(0))
+            tree.put(full_path_elements[0:1], get_item_details(item))
+            next_url = self.extract_link_with_key(item, "Databases")
+        cache = tree.get(full_path_elements[0:2]) or {}
+        database_url = cache.get("url")
+        if database_url:
+            logger.info("skipping search {}".format(database_url))
+            next_url = database_url + "/elements"
+            path_elements.pop(0)
+        else:
+            json_response = self.get(url=next_url, headers=headers, params={}, error_source="traverse_and_cache")
 
-        # retrieved_from_cache = tree.get(full_path_elements[0:2], {}).get("url")+"/elements"
-        # get the database
-        item = self.extract_item_with_name(json_response, path_elements.pop(0))
-        tree.put(full_path_elements[0:2], get_item_details(item))
-        next_url = self.extract_link_with_key(item, "Elements")
+            # retrieved_from_cache = tree.get(full_path_elements[0:2], {}).get("url")+"/elements"
+            # get the database
+            item = self.extract_item_with_name(json_response, path_elements.pop(0))
+            tree.put(full_path_elements[0:2], get_item_details(item))
+            next_url = self.extract_link_with_key(item, "Elements")
+        print("ALX:before (next is {})".format(path_elements))
         json_response = self.get(url=next_url, headers=headers, params={}, error_source="traverse_and_cache")
+        print("ALX:after {}".format(json_response))
 
         # Looping through elements
         counter = 3
