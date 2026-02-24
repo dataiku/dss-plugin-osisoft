@@ -51,7 +51,7 @@ output_dataset = dataiku.Dataset(output_names_stats[0])
 schema = [
     {'name': 'title', 'type': 'string'},
     {'name': 'template_name', 'type': 'string'},
-    {'name': 'category_names', 'type': 'array'},
+    {'name': 'category_names', 'type': 'string'},
     {'name': 'path', 'type': 'string'},
     {'name': 'id', 'type': 'string'},
     {'name': 'url', 'type': 'string'},
