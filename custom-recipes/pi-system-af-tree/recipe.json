@@ -12,7 +12,7 @@
     "outputRoles": [
         {
             "name": "api_output",
-            "label": "Main output displayed name",
+            "label": "Attributes dataset",
             "description": "",
             "arity": "UNARY",
             "required": true,
