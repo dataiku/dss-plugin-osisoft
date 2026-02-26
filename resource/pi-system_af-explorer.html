@@ -144,20 +144,14 @@
         <table class="custom-table">
             <thead>
                 <tr>
-                    <th>Select</th>
+                    <th> <input type="checkbox" ng-init="config.selectAllAttributes = false"
+                            ng-model="config.selectAllAttributes" ng-change="toggleSelectAllAttributes()"></th>
                     <th>Title</th>
                     <th>Description</th>
                 </tr>
             </thead>
 
             <tbody>
-                <tr ng-if="config.attributeList.length>0">
-                    <td>
-                        <input type="checkbox" ng-init="config.selectAllAttributes = false"
-                            ng-model="config.selectAllAttributes" ng-change="toggleSelectAllAttributes()">
-                    </td>
-                    <td><strong>Select All</strong></td>
-                </tr>
                 <tr ng-repeat="attribute in config.attributeList track by $index">
                     <td>
                         <input type="checkbox" ng-model="attribute.checked"
