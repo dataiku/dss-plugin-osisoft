@@ -1,20 +1,13 @@
 from osisoft_client import OSIsoftClient
+from safe_logger import SafeLogger
 from osisoft_plugin_common import get_credentials, build_select_choices, check_debug_mode
-from osisoft_plugin_common import get_item_details, Tree, recursive_tree_rebuild
+from osisoft_plugin_common import get_item_details, Tree, recursive_tree_rebuild, PerformanceTimer
 import dataiku
+
+logger = SafeLogger("PI System plugin", ["user", "password"])
 
 
 def do(payload, config, plugin_config, inputs):
-    input_tree = None
-    if len(inputs) > 0:
-        input_item = inputs[0]
-        input_type = input_item.get("type")
-        if input_type == "DATASET":
-            input_dataset_name = input_item.get("fullName")
-            input_dataset = dataiku.Dataset(input_dataset_name)
-            input_tree = input_dataset.get_dataframe(infer_with_pandas=False)
-
-    config["is_ssl_check_disabled"] = True
     if "config" in config:
         config = config.get("config")
     if "credentials" not in config:
@@ -23,6 +16,7 @@ def do(payload, config, plugin_config, inputs):
         return {"choices": [{"label": "Pick a credential"}]}
 
     auth_type, username, password, server_url, is_ssl_check_disabled, credential_error = get_credentials(config, can_raise=False)
+    is_ssl_check_disabled = config.get("is_ssl_check_disabled", False)  # Because no advanced parameter switch
 
     if credential_error:
         return build_select_choices(credential_error)
@@ -40,9 +34,14 @@ def do(payload, config, plugin_config, inputs):
         return build_select_choices("Fill in the server address")
 
     is_debug_mode = check_debug_mode(config)
-    is_ssl_check_disabled = True
 
-    client = OSIsoftClient(server_url, auth_type, username, password, is_ssl_check_disabled=is_ssl_check_disabled, is_debug_mode=is_debug_mode)
+    network_timer = PerformanceTimer()
+
+    client = OSIsoftClient(
+        server_url, auth_type, username, password,
+        is_ssl_check_disabled=is_ssl_check_disabled, is_debug_mode=is_debug_mode,
+        network_timer=network_timer
+    )
 
     method = payload.get("method")
     if method == "get_query_catalogs":
@@ -51,7 +50,36 @@ def do(payload, config, plugin_config, inputs):
         database_name = config.get("database_name")
         parent = payload.get("parent", {})
         return get_children_from_db(client, parent, database_name=database_name)
+    if method == "get_templates_from_db":
+        database_name = config.get("database_name")
+        parent = payload.get("parent", {})
+        # ret = get_items_from_db(client, parent, "ElementTemplates", database_name=database_name)
+        ret = get_template_hierarchy_from_db(client, parent, database_name=database_name)
+        return ret
+    if method == "get_attribute_categories_from_db":
+        database_name = config.get("database_name")
+        parent = payload.get("parent", {})
+        ret = get_items_from_db(client, parent, "AttributeCategories", database_name=database_name)
+        return ret
+    if method == "get_element_categories_from_db":
+        database_name = config.get("database_name")
+        parent = payload.get("parent", {})
+        ret = get_items_from_db(client, parent, "ElementCategories", database_name=database_name)
+        return ret
     if method == "do_search":
+        template_name = config.get("template", None)
+        category_name = config.get("element_category", None)
+        clicked_nodes = config.get("clickedNodes", [])
+        if template_name == "-- Any --":
+            template_name = None
+        if category_name == "-- Any --":
+            category_name = None
+        element_category = config.get("element_category", None)
+        if element_category == "-- Any --":
+            element_category = None
+        attribute_category = config.get("attribute_category", None)
+        if attribute_category == "-- Any --":
+            attribute_category = None
         database_name = config.get("database_name")
         element_name = config.get("element_name")
         attribute_name = config.get("attribute_name")
@@ -61,26 +89,15 @@ def do(payload, config, plugin_config, inputs):
         attributes = []
         # https://dku-qa-osi.francecentral.cloudapp.azure.com/piwebapi/assetdatabases/F1RD3VEt1yTvt0ip6-a5yeEVsgbMcrwu_Je0qg9btcZIvPswT1NJU09GVC1QSS1TRVJWXFdFTEw
         database_webid = database_name.split("/")[-1]
-        # element_query_keys = {
-        #     "element_name": "Name:'{}'",
-        #     "search_root_path": "Root:'{}'",
-        #     "element_template": "Template:'{}'",
-        #     "element_type": "Type:'{}'",
-        #     "element_category": "CategoryName:'{}'"
-        # }
-        # attribute_query_keys = {
-        #     "attribute_name": "Name:'{}'",
-        #     "attribute_category": "CategoryName:'{}'",
-        #     "attribute_value_type": "Type:'{}'"
-        # }
-        for attribute in client.search_attributes(
-            database_webid,
-            attribute_name=attribute_name,
-            element_name=element_name,
-            search_associations="Paths"
-        ):
-            attribute["checked"] = False
-            attributes.append(attribute)
+        elements_max_count, attributes_max_count = get_max_counts(config)
+
+        attributes = []
+        for result in client.batched_search(database_name, element_name, attribute_name,
+                                            element_category, attribute_category, template_name, clicked_nodes,
+                                            elements_max_count=elements_max_count, attributes_max_count=attributes_max_count):
+            # result["checked"] = True
+            attributes.append(result)
+
         attributes = duplicate_linked_attributes(attributes)
         items = []
         for attribute in attributes:
@@ -88,6 +105,7 @@ def do(payload, config, plugin_config, inputs):
             items.append(item)
         attributesCopy = items.copy()
         rebuilt_tree = rebuild_tree(client, items, root_tree)
+        logger.info("Search network timer:{}".format(network_timer.get_report()))
         return {"choices": rebuilt_tree, "attributes": attributesCopy}
 
     parameter_name = payload.get("parameterName")
@@ -123,6 +141,25 @@ def get_query_catalogs(cnx, config):
     return {"choices": [user, password]}
 
 
+def get_items_from_db(client, parent_node, link_key, database_name=None):
+    default_choice = {"title": "-- Any --"}
+    if isinstance(parent_node, dict):
+        url = parent_node.get("url", database_name)
+    else:
+        url = parent_node
+    this_node = next(client.get_next_item_from_url(url))
+    links = this_node.get("Links", {})
+    items_url = links.get(link_key)
+    items = []
+    items.append(default_choice)
+    if items_url:
+        for item in client.get_next_item_from_url(items_url):
+            item = get_item_details(item)
+            item["type"] = link_key
+            items.append(item)
+    return {"choices": items}
+
+
 def get_children_from_db(client, parent_node, database_name=None):
     if isinstance(parent_node, dict):
         url = parent_node.get("url", database_name)
@@ -150,19 +187,51 @@ def get_children_from_db(client, parent_node, database_name=None):
             if child.get("has_children"):
                 child["children"] = []
             children.append(child)
-
     return {"choices": children}
 
-# method2:
-# we dig, but this time it's index[token name], and we store as we go in the child, with the real data indexed in a list and just the rank pointing to it
-# to build the final tree, we browse the index, get the index data, rebuild the struct from there
-# Tree class ? put(path, data), get(path, data)
+
+def get_template_hierarchy_from_db(client, parent_node, database_name=None):
+    if isinstance(parent_node, dict):
+        url = parent_node.get("url", database_name)
+    else:
+        url = parent_node
+    default_choice = {"title": "-- Any --", "id:": ""}
+    this_node = next(client.get_next_item_from_url(url))
+    links = this_node.get("Links", {})
+    element_templates_url = links.get("ElementTemplates")
+    children = [default_choice]
+    rebuilt_tree = []
+    if element_templates_url:
+        element_templates = client.get_next_item_from_url(element_templates_url)
+        for element_template in element_templates:
+            child = get_item_details(element_template)
+            child["type"] = "template"
+            child["children"] = []
+            children.append(child)
+        rebuilt_tree = nest_children(children)
+    return {"choices": rebuilt_tree}
+
+
+def nest_children(items):
+    name_to_item = {item["title"]: item for item in items}
+    tree = []
+    for item in items:
+        parent_name = item.get("BaseTemplate")
+        if parent_name is None or parent_name not in name_to_item:
+            tree.append(item)
+        else:
+            parent = name_to_item[parent_name]
+            if "children" not in parent:
+                parent["children"] = []
+            parent["children"].append(item)
+            parent["has_children"] = True
+    return tree
 
 
 def rebuild_tree(client, items, root_tree=None):
     # builds an active tree containing all the items and their parent up to the root
     tree = Tree(root_tree=root_tree)
-    tree.print()
+    # tree.print()
     while len(items) > 1:
         item = items.pop()
         if item is None:
@@ -239,3 +308,24 @@ def set_as_selected(items):
 def update_item(item, tree):
     elements_paths_tokens, attributes_paths_tokens = path_to_list(item.get("path"))
     tree.put(elements_paths_tokens + attributes_paths_tokens, item)
+
+
+def get_max_counts(config):
+    show_advanced_parameters = config.get("show_advanced_parameters", False)
+    if not show_advanced_parameters:
+        return 100, 100
+
+    def parse_max_count(value, default):
+        if value is None or value == "":
+            return default
+        try:
+            value = int(value)
+        except (TypeError, ValueError):
+            return default
+        if value <= 0:
+            return None
+        return value
+
+    elements_max_count = parse_max_count(config.get("elements_max_count"), 100)
+    attributes_max_count = parse_max_count(config.get("attributes_max_count"), 100)
+    return elements_max_count, attributes_max_count

@@ -14,3 +14,78 @@
 .pi-system-explorer__tree-view, .pi-system-explorer__center-view {
     border: 1px solid #ccc; padding: 10px; border-radius: 5px;
 }
+
+.pi-system-explorer__authentication-header {
+    background-color: #f0f0f0;
+    padding: 10px;
+    cursor: pointer;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    font-weight: bold;
+}
+
+.pi-system-explorer__authentication-body {
+    border: 1px solid #ccc; padding: 10px; border-radius: 5px;
+}
+
+.pi-system-config--mandatory {
+    display: flex;
+    gap: 32px;
+}
+
+.custom-table {
+    border-collapse: collapse;
+    width: 100%;
+    font-family: Arial, sans-serif;
+}
+
+.custom-table th,
+.custom-table td {
+    border: 1px solid #ccc;
+    padding: 8px 12px;
+    text-align: left;
+}
+
+.custom-table th {
+    background-color: #f4f4f4;
+    font-weight: bold;
+}
+
+.custom-table tr:nth-child(even) {
+    background-color: #fafafa;
+}
+
+.custom-table tr:hover {
+    background-color: #f1f7ff;
+}
+
+.tab-container {
+    font-family: Arial, sans-serif;
+}
+
+.tab-header {
+    list-style: none;
+    padding: 0;
+    margin: 0 0 6px 0;
+    display: flex;
+    border-bottom: 2px solid #ddd;
+}
+
+.tab-header li {
+    padding: 8px 16px;
+    cursor: pointer;
+    background: #f5f5f5;
+    border: 1px solid #ddd;
+    border-bottom: none;
+    margin-right: 4px;
+}
+
+.tab-header li.active {
+    background: #fff;
+    font-weight: bold;
+}
+
+.tab-content {
+    border-top: none;
+    padding: 10px;
+}

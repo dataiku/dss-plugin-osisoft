@@ -1,5 +1,5 @@
 import dataiku
-from dataiku.customrecipe import get_input_names_for_role, get_recipe_config, get_output_names_for_role
+from dataiku.customrecipe import get_recipe_config, get_output_names_for_role
 from safe_logger import SafeLogger
 from osisoft_plugin_common import (
     get_credentials, PerformanceTimer
@@ -34,7 +34,6 @@ def next_tree_item(tree_data):
         yield item
 
 
-input_dataset = get_input_names_for_role('input_dataset')
 output_names_stats = get_output_names_for_role('api_output')
 config = get_recipe_config()
 tree_data = config.get("treeData", [])
@@ -42,6 +41,7 @@ tree_data = config.get("treeData", [])
 logger.info("Initialization with config config={}".format(logger.filter_secrets(config)))
 
 auth_type, username, password, server_url, is_ssl_check_disabled = get_credentials(config)
+is_ssl_check_disabled = config.get("is_ssl_check_disabled", False)  # Because no advanced parameter switch
 
 network_timer = PerformanceTimer()
 processing_timer = PerformanceTimer()
@@ -51,7 +51,7 @@ output_dataset = dataiku.Dataset(output_names_stats[0])
 schema = [
     {'name': 'title', 'type': 'string'},
     {'name': 'template_name', 'type': 'string'},
-    {'name': 'category_names', 'type': 'array'},
+    {'name': 'category_names', 'type': 'string'},
     {'name': 'path', 'type': 'string'},
     {'name': 'id', 'type': 'string'},
     {'name': 'url', 'type': 'string'},

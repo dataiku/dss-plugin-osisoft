@@ -1,93 +1,167 @@
 <link rel="stylesheet" href="/plugins/pi-system/resource/pi-system_af-explorer.css">
 <div ng-controller="AfExplorerFormCtrl" ng-init="init()" style="margin: 10px 0px;">
-    <div class="control-group">
-        <label class="control-label" for="pi-system-credentials">Pi System connection</label>
-        <div class="dib">
-            <div autoconfig-preset-element
-                param-desc="paramDesc"
-                model="config.credentials"
-                plugin-id="pi-system"
-                accessible-parameter-set-descriptions="accessibleParameterSetDescriptions"
-                accessible-presets="accessiblePresets"
-                inline-params="inlineParams"
-                inline-plugin-params="inlinePluginParams"
-                error-scope="errorScope"
-                required>
+    <div class="pi-system-explorer__authentication">
+        <div class="pi-system-explorer__authentication-header" ng-click="toggleAuthSection()">
+            <strong>Welcome to Pi System Plugin</strong>
+        </div>
+        <div class="pi-system-explorer__authentication-body" ng-show="authSectionVisible">
+            <div class="pi-system-config--mandatory">
+                <div class="">
+                    <label for="pi-system-credentials">Pi System connection</label>
+                    <div class="">
+                        <div autoconfig-preset-element param-desc="paramDesc" model="config.credentials"
+                            plugin-id="pi-system"
+                            accessible-parameter-set-descriptions="accessibleParameterSetDescriptions"
+                            accessible-presets="accessiblePresets" inline-params="inlineParams"
+                            inline-plugin-params="inlinePluginParams" error-scope="errorScope" required>
+                        </div>
+                    </div>
+                </div>
+                <div class="removed-if-manual-query"
+                    ng-if="config.credentials && config.credentials.mode && config.credentials.mode!=='NONE' && config.credentials.name">
+                    <label>Server</label>
+                    <div class="">
+                        <select dku-bs-select ng-model="config.server_name"
+                            ng-options="sv.value as sv.label for sv in server_name" ng-init="getServers()">
+                        </select>
+                    </div>
+                </div>
+                <div class="removed-if-manual-query" ng-if="config.server_name">
+                    <label>Database</label>
+                    <div class="">
+                <select dku-bs-select
+                        ng-init="getDatabases()"
+                        ng-model="config.database_name"
+                        ng-change="updateDatas()"
+                        ng-options="dbn.value as dbn.label for dbn in database_name">
+                </select>
+                    </div>
+                </div>
             </div>
+            <div class="control-group">
+                <label class="control-label">Advanced parameters</label>
+                <div class="controls">
+                    <input type="checkbox" style="vertical-align: baseline" ng-model="config.show_advanced_parameters"
+                        ng-change="onAdvancedToggle();"/>
+                </div>
+            </div>
+            <div class="pi-system-config--advanced" ng-if="config.show_advanced_parameters">
+            <div class="control-group">
+            <label class="control-label">Disable SSL Check</label>
+            <div class="controls">   
+                <input type="checkbox" style="vertical-align: baseline" ng-model="config.is_ssl_check_disabled"
+                    ng-change="getServers();"/>
+            </div> 
+            </div>
+            <div class="control-group">
+                <label class="control-label">Elements max count</label>
+                <div class="controls">
+                    <input type="number" ng-model="config.elements_max_count" placeholder="100" />
+                </div>
+            </div>
+            <div class="control-group">
+                <label class="control-label">Attributes max count</label>
+                <div class="controls">
+                    <input type="number" ng-model="config.attributes_max_count" placeholder="100" />
+                </div>
+            </div>
+            </div>
+
+            <button ng-click="explore()" class="btn btn--secondary link-like" id="load-tree-data">Explore
+            </button>
         </div>
     </div>
-    <div class="control-group removed-if-manual-query" ng-if="config.credentials && config.credentials.mode && config.credentials.mode!=='NONE' && config.credentials.name">
-       <label class="control-label">Server</label>
-       <div class="controls">
-           <select dku-bs-select
-                   ng-model="config.server_name"
-                   ng-options="sv.value as sv.label for sv in server_name"
-                   ng-init="getServers()"
-           > 
-           </select>
-       </div>
-   </div>
-   <div class="control-group removed-if-manual-query" ng-if="config.server_name">
-       <label class="control-label">Database</label>
-       <div class="controls">
-           <select dku-bs-select
-                   ng-model="config.database_name"
-                   ng-change="initializeTree()"
-                   ng-options="dbn.value as dbn.label for dbn in database_name"
-                   ng-init="getDatabases()"> 
-           </select>
-       </div>
-       
-   </div>
-       <div class="control-group removed-if-manual-query"  ng-show="false" ng-if="config.database_name">
-       <label class="control-label">Tree</label>
-       <div class="controls">
-           <select dku-bs-select
-                   ng-model="config.treeData"
-                   ng-options="dbn.value as dbn.label for dbn in [config.treeData]"
-                   ng-init="initializeTree();"> 
-           </select>
-       </div>
-
-   </div>
-    <div class="pi-system-explorer__main">
-        <div ng-if="config.database_name" ng-init="initializeTree()" class="pi-system-explorer__tree-view">
-            <div><strong>Elements</strong></div>
-            <div style="margin-bottom:8px;">
-                <input id="ReturnsName" ng-model="config.element_name" type="text" data-container="body" data-html="true"
-                    data-placement="right" data-toggle="tooltip" title="blaa" placeholder="Search element" />
-                <button ng-click="doSearch(config.element_name, config.attribute_name)" class="btn btn--secondary link-like"
-                    id="get-query-dim-prop">Search</button>
-            </div>
-            <ul ng-if="config.treeData.length">
-                <li ng-repeat="node in config.treeData track by node.id">
-                    <tree-node node="node"></tree-node>
+    <div class="control-group removed-if-manual-query" ng-show="false" ng-if="config.database_name">
+        <label class="control-label">Tree</label>
+        <div class="controls">
+            <select dku-bs-select ng-model="config.treeData"
+                ng-options="dbn.value as dbn.label for dbn in [config.treeData]" ng-init="initializeTree();">
+            </select>
+        </div>
+    </div>
+<div class="pi-system-explorer__main" ng-if="showTreeData">
+    <div ng-if="config.database_name" ng-init="initializeTree()" class="pi-system-explorer__tree-view">
+        <div class="tab-container">
+            <ul class="tab-header">
+                <li ng-click="setTab('element')" ng-class="{active: config.activeTab === 'element'}">
+                    Element
+                </li>
+                <li ng-click="setTab('template')" ng-class="{active: config.activeTab === 'template'}">
+                    Template
                 </li>
             </ul>
-        </div>
-    
-        <!-- Attributes Section -->
-        <div class="attribute-tab pi-system-explorer__center-view">
-            <div><strong>Attributes</strong></div>
-            <div style="margin-bottom:8px;">
-                <input id="ReturnsType" list="datatypes" ng-model="config.attribute_name" type="text" data-container="body"
-                    data-html="true" data-placement="right" data-toggle="tooltip" title="" placeholder="Search attribute" />
-                <button ng-click="doSearch(config.element_name, config.attribute_name)" class="btn btn--secondary link-like"
+            <div class="tab-content" style="margin-bottom:8px;">
+                <input ng-if="config.activeTab === 'element'" id="ReturnsName" ng-model="config.element_name"
+                    type="text" data-container="body" data-html="true" placeholder="Search element" />
+                <button ng-if="config.activeTab === 'element'"
+                    ng-click="doSearch(config.element_name, config.attribute_name)" class="btn btn--secondary link-like"
                     id="get-query-dim-prop">Search</button>
             </div>
-            <table>
+        </div>
+
+        <div class="control-group">
+            <label class="control-label">Filter by category</label>
+            <div class="controls">
+                <select dku-bs-select ng-model="config.element_category"
+                    ng-options="dbn.title as dbn.title for dbn in config.element_categories"
+                    ng-init="getCategoriesFromDB()" ng-change="doSearch(config.element_name, config.attribute_name)" />
+            </div>
+        </div>
+        <ul ng-if="config.activeTab === 'element' && config.treeData && config.treeData.length">
+            <li ng-repeat="node in config.treeData track by node.id">
+                <tree-node node="node" get-children-from-db="getChildrenFromDB" display-attributes="displayAttributes"
+                    config="config" clicked-nodes="config.clickedNodes">
+                </tree-node>
+            </li>
+        </ul>
+        <ul ng-if="config.activeTab === 'template' && config.templateTreeData && config.templateTreeData.length">
+            <li ng-repeat="node in config.templateTreeData track by node.id">
+                <tree-node node="node" get-children-from-db="getChildrenFromDB" display-attributes="displayAttributes"
+                    config="config" clicked-nodes="config.clickedNodes">
+                </tree-node>
+            </li>
+        </ul>
+    </div>
+    <!-- Attributes Section -->
+    <div class="attribute-tab pi-system-explorer__center-view">
+        <div><strong>Attributes</strong></div>
+        <div style="padding-top:30px; margin-bottom:8px;">
+            <input id="ReturnsType" list="datatypes" ng-model="config.attribute_name" type="text" data-container="body"
+                data-html="true" data-placement="right" data-toggle="tooltip" title="" placeholder="Search attribute" />
+            <button ng-click="doSearch(config.element_name, config.attribute_name)" class="btn btn--secondary link-like"
+                id="get-query-dim-prop">Search</button>
+
+            <div class="control-group">
+                <label class="control-label">Filter by category</label>
+                <div class="controls">
+                    <select dku-bs-select ng-model="config.attribute_category"
+                        ng-options="dbn.title as dbn.title for dbn in config.attribute_categories"
+                        ng-init="getCategoriesFromDB()"
+                        ng-change="doSearch(config.element_name, config.attribute_name)" />
+                </div>
+            </div>
+        </div>
+        <table class="custom-table">
+            <thead>
+                <tr>
+                    <th> <input type="checkbox" ng-init="config.selectAllAttributes = false"
+                            ng-model="config.selectAllAttributes" ng-change="toggleSelectAllAttributes()"></th>
+                    <th>Title</th>
+                    <th>Description</th>
+                </tr>
+            </thead>
+
+            <tbody>
                 <tr ng-repeat="attribute in config.attributeList track by $index">
                     <td>
-                        <input type="checkbox" ng-model="attribute.checked" ng-change="updateAttributeToOutput(attribute)">
+                        <input type="checkbox" ng-model="attribute.checked"
+                            ng-change="updateAttributeToOutput(attribute)">
                     </td>
                     <td>{{attribute.title}}</td>
-                    <td>{{attribute.path}}</td>
+                    <td>{{attribute.description}}</td>
                 </tr>
-            </table>
-        </div>
-    
+            </tbody>
+        </table>
     </div>
-
-
 </div>
-
+</div>

@@ -748,6 +748,122 @@ class OSIsoftClient(object):
             else:
                 json_response = None
 
+    def search_elements(self, database_webid, name=None, description=None, category=None, template=None, full_search=True):
+        headers = self.get_requests_headers()
+        tempo_maxcount = OSIsoftConstants.DEFAULT_MAXCOUNT
+        params = {
+            "maxCount": tempo_maxcount,
+            "associations": "Paths",
+        }
+        url = self.endpoint.get_base_url() + "/assetdatabases/{}/elements".format(database_webid)
+        if name:
+            params["nameFilter"] = name
+        if description:
+            params["descriptionFilter"] = description
+        if category:
+            params["categoryName"] = category
+        if template:
+            params["templateName"] = template
+        if full_search:
+            params["searchFullHierarchy"] = True
+        json_response = self.get(url=url, headers=headers, params=params)
+        if OSIsoftConstants.DKU_ERROR_KEY in json_response:
+            yield json_response
+        start_index = 0
+        while json_response:
+            items = json_response.get(OSIsoftConstants.API_ITEM_KEY, [])
+            for item in items:
+                yield item
+            if len(items) < tempo_maxcount:
+                logger.info("No more result items")
+                return
+            start_index += tempo_maxcount
+            logger.info("Trying again with startIndex={}".format(start_index))
+            params["startIndex"] = start_index
+            json_response = self.get(url=url, headers=headers, params=params)
+
+    def batched_search(self, database, element_name, attribute_name, element_category,
+                       attribute_category, template, restrict_to_elements,
+                       elements_max_count=None, attributes_max_count=None):
+        elements_query = {
+            "templateName": template,
+            "categoryName": element_category,
+            "nameFilter": element_name,
+            "searchFullHierarchy": "true",
+            "associations": "Paths"
+        }
+        if elements_max_count:
+            elements_query["maxCount"] = elements_max_count
+        attribute_query = {
+            "searchFullHierarchy": "true",
+            "associations": "Paths"
+        }
+        if attribute_name:
+            attribute_query["nameFilter"] = attribute_name
+        if attribute_category:
+            attribute_query["categoryName"] = attribute_category
+        if attributes_max_count:
+            attribute_query["maxCount"] = attributes_max_count
+        elements_url = "{}/elements".format(database)
+        if not restrict_to_elements:
+            request_body = {
+                "elements": {
+                    "Method": "GET",
+                    "Resource": "{}{}".format(
+                        elements_url,
+                        build_query_string("", elements_query)
+                    )
+                },
+                "attributes": {
+                    "Method": "GET",
+                    "RequestTemplate": {
+                        "Resource": "{{0}}{}".format(
+                            build_query_string("", attribute_query)
+                        )
+                    },
+                    "ParentIds": ["elements"],
+                    "Parameters": ["$.elements.Content.Items[*].Links.Attributes"]
+                }
+            }
+            url = self.endpoint.get_batch_endpoint()
+            headers = OSIsoftConstants.WRITE_HEADERS
+            response = self.post(url, headers=headers, data=request_body, params={})
+            json_response = response.json()
+            attributes = json_response.get("attributes", {})
+            attributes_content = attributes.get("Content", {})
+            if not isinstance(attributes_content, dict):
+                # the search returned nothing
+                return
+            attributes_content_items = attributes_content.get("Items", [])
+            for attributes_content_item in attributes_content_items:
+                content = attributes_content_item.get("Content", {})
+                sub_items = content.get("Items", [])
+                for sub_item in sub_items:
+                    yield sub_item
+        else:
+            count = 1
+            request_body = {}
+            for restrict_to_element in restrict_to_elements:
+                job_tag = "J_{}".format(count)
+                request_body[job_tag] = {
+                    "Method": "GET",
+                    "Resource": "{}/attributes{}".format(
+                        restrict_to_element,
+                        build_query_string("", attribute_query)
+                    )
+                }
+                count = 1
+            url = self.endpoint.get_batch_endpoint()
+            headers = OSIsoftConstants.WRITE_HEADERS
+            response = self.post(url, headers=headers, data=request_body, params={})
+            json_response = response.json()
+            for job_tag in json_response:
+                job_result = json_response.get(job_tag)
+                content = job_result.get("Content", {})
+                sub_items = content.get("Items", [])
+                for sub_item in sub_items:
+                    yield sub_item
+
     def build_element_query(self, **kwargs):
         element_query_keys = {
             "element_name": "Name:'{}'",
@@ -857,7 +973,7 @@ class OSIsoftClient(object):
         for path_attribute in path_attributes:
             item = self.extract_item_with_name(json_response, path_attribute)
             item_details = get_item_details(item)
-            item_details["checked"] = True  # That should not be done here
+            # item_details["checked"] = True  # That should not be done here
             tree.put(full_path_elements[0:counter], item_details)
             counter += 1
             next_url = self.extract_link_with_key(item, "Attributes")
@@ -866,6 +982,8 @@ class OSIsoftClient(object):
                 json_response = self.get(url=next_url, headers=headers, params={}, error_source="traverse_and_cache")
             else:
                 break
+        if not before_last_json:
+            return None
         items = before_last_json.get(OSIsoftConstants.API_ITEM_KEY, [])
         for item in items:
             item_details = get_item_details(item)
@@ -1091,7 +1209,7 @@ class OSIsoftBatchWriter(object):
 
 
 def validate_timestamp(timestamp):
-    valid_formats=["%Y-%m-%dT%H:%M:%S.%fZ", "%Y-%m-%dT%H:%M:%SZ"]
+    valid_formats = ["%Y-%m-%dT%H:%M:%S.%fZ", "%Y-%m-%dT%H:%M:%SZ"]
     for valid_format in valid_formats:
         try:
             datetime.strptime(timestamp, valid_format)
@@ -1115,7 +1233,7 @@ def build_query_string(url, params):
         if isinstance(value, list):
             for element in value:
                 tokens.append(key+"="+str(element))
-        else:
+        elif value is not None:
             tokens.append(key+"="+str(value))
     if len(tokens) > 0:
         return url + "?" + "&".join(tokens)

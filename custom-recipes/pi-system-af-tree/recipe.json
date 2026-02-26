@@ -5,23 +5,14 @@
         "icon": "icon-pi-system icon-cogs"
     },
     "kind": "PYTHON",
-    "selectableFromDataset": "input_dataset",
     "paramsPythonSetup": "browse_af_tree.py",
     "inputRoles": [
-        {
-            "name": "input_dataset",
-            "label": "Dataset containing paths or tags",
-            "description": "",
-            "arity": "UNARY",
-            "required": false,
-            "acceptsDataset": true
-        }
     ],
 
     "outputRoles": [
         {
             "name": "api_output",
-            "label": "Main output displayed name",
+            "label": "Attributes dataset",
             "description": "",
             "arity": "UNARY",
             "required": true,
