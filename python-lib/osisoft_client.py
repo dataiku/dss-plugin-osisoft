@@ -40,6 +40,7 @@ class OSIsoftClient(object):
         self.is_debug_mode = is_debug_mode
         self.debug_level = None
         self.network_timer = network_timer
+        self.cache = {}
 
     def get_auth(self, auth_type, username, password):
         if auth_type == "basic":
@@ -931,7 +932,49 @@ class OSIsoftClient(object):
                 item = self.extract_item_with_name(json_response, attribute)
         return item
 
-    def traverse_and_cache(self, path_elements, path_attributes, tree):
+    def traverse_and_cache(self, ex_path_elements, ex_path_attributes, tree):
+        path_elements = ex_path_elements.copy()
+        path_attributes = ex_path_attributes.copy()
+        full_path_elements = path_elements.copy() + path_attributes.copy()
+        if tree.exists(full_path_elements):
+            sending_back = tree.get(full_path_elements)
+            return sending_back
+        if path_attributes:
+            attribute_to_search = path_attributes.pop()
+            cached_item = self.traverse_and_cache(path_elements, path_attributes, tree)
+            last_know_url = cached_item.get("url") + "/attributes"
+            headers = self.get_requests_headers()
+            # json_response = self.cached_get(url=last_know_url, headers=headers, params={}, error_source="recursive traverse_and_cache")
+            json_response = self.get(url=last_know_url, headers=headers, params={}, error_source="recursive traverse_and_cache")
+            for item in json_response.get(OSIsoftConstants.API_ITEM_KEY, []):
+                item_name = item.get("Name")
+                tree.put(path_elements + path_attributes + [item_name], get_item_details(item))
+            item = self.extract_item_with_name(json_response, attribute_to_search)
+            # tree.put(path_elements + path_attributes + [attribute_to_search], get_item_details(item))
+            return get_item_details(item)
+
+        element_to_search = path_elements.pop()
+        cached_item = self.traverse_and_cache(path_elements, [], tree)
+        last_know_url = cached_item.get("url") + "/elements"
+        headers = self.get_requests_headers()
+        # json_response = self.cached_get(url=last_know_url, headers=headers, params={}, error_source="recursive traverse_and_cache")
+        json_response = self.get(url=last_know_url, headers=headers, params={}, error_source="recursive traverse_and_cache")
+        for item in json_response.get(OSIsoftConstants.API_ITEM_KEY, []):
+            item_name = item.get("Name")
+            tree.put(path_elements + [item_name], get_item_details(item))
+        item = self.extract_item_with_name(json_response, element_to_search)
+        # tree.put(path_elements + [element_to_search], get_item_details(item))
+        return get_item_details(item)
+
+    def cached_get(self, url, headers, params, error_source):
+        if url in self.cache:
+            return self.cache.get(url)
+        else:
+            json_response = self.get(url=url, headers=headers, params=params, error_source=error_source)
+            self.cache[url] = json_response
+            return json_response
+
+    def traverse_and_cache_2(self, path_elements, path_attributes, tree):
         full_path_elements = path_elements.copy() + path_attributes.copy()
         if tree.exists(full_path_elements):
             # this path has already been retrieved, so skip
