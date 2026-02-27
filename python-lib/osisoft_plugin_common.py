@@ -705,6 +705,8 @@ class Tree():
         return self.tree
 
     def get_record(self, index):
+        if index is None:
+            return None
         if index < len(self.index):
             return self.index[index]
         return None
@@ -725,6 +727,9 @@ class Tree():
     def print(self):
         print("Tree {}".format(self.tree))
         print("Tree content {}".format(self.index))
+
+    def size(self):
+        return len(self.index)
 
 
 def recursive_tree_rebuild(dictionary, records, counter=None):
