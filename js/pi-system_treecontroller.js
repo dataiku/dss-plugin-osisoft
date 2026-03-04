@@ -331,13 +331,14 @@ app.component('treeNode', {
     
     ctrl.onNodeClick = function (node) {
       const index = ctrl.config.clickedNodes.indexOf(node.url);
-      ctrl.config.clickedNodes = []; // TODO remove when you want to use multiselect 
-      ctrl.displayAttributes(node);
       if (index > -1) {
         ctrl.config.clickedNodes.splice(index, 1);
       } else {
         ctrl.config.clickedNodes.push(node.url);
+        ctrl.displayAttributes(node);
       }
+
+      console.log("ctrl.config.clickedNodes: " + JSON.stringify(ctrl.config.clickedNodes));
     };
 
     ctrl.hasAttributes = function (node) {
