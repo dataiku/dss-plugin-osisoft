@@ -5,32 +5,126 @@
 .tree-node__label--clickable{
     background-color: yellow;
 }
-.pi-system-explorer__main {
-    display: grid;
-    grid-template-columns: 500px auto;
-    column-gap: 50px;
-    margin-top: 20px;
+.generic-class {
+    display: flex;
+    align-items: flex-start;
+    flex: 1 0 0;
+    align-self: stretch;
+    flex-direction: row-reverse;
 }
-.pi-system-explorer__tree-view, .pi-system-explorer__center-view {
-    border: 1px solid #ccc; padding: 10px; border-radius: 5px;
+.pi-system-explorer__main {
+    display: flex;
+    padding: 16px;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 16px;
+    flex: 1 0 0;
+    align-self: stretch;
+}
+.pi-system-explorer__tree-view-container {
+    display: flex;
+width: 252px;
+padding: 16px 12px;
+flex-direction: column;
+align-items: flex-start;
+gap: 12px;
+align-self: stretch;
+border-right: 1px solid #BBB;
+background: #FFF;
 }
 
+.pi-system-explorer__tree-view {
+    padding: 10px; 
+}
+
+.pi-system-explorer__authentication {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    align-self: stretch;
+}
 .pi-system-explorer__authentication-header {
-    background-color: #f0f0f0;
-    padding: 10px;
+    display: flex;
+    height: 32px;
+    padding: 0 12px;
+    justify-content: space-between;
+    align-items: center;
+    align-self: stretch;
+    border: 1px solid #999;
+    background: linear-gradient(0deg, rgba(242, 242,242,0.50) 100%), #FFFFFF;
+    /*flex-direction: column;
+    align-items: flex-start;
+    align-self: stretch;
     cursor: pointer;
     border: 1px solid #ccc;
     border-radius: 5px;
     font-weight: bold;
+    background-color: #f0f0f0;*/
+    /*background-color: #f0f0f0;
+    padding: 10px;
+    cursor: pointer;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    font-weight: bold;*/
+
+
 }
 
 .pi-system-explorer__authentication-body {
-    border: 1px solid #ccc; padding: 10px; border-radius: 5px;
+    display: flex;
+    padding: 16px 12px;
+    flex-direction: column;
+    justify-content: center;
+    align-items: flex-start;
+    gap: 16px;
+    align-self: stretch;
+    border-right: 1px solid var(--Greyscale-grey-lighten-4, #999);
+    border-bottom: 1px solid var(--Greyscale-grey-lighten-4, #999);
+    border-left: 1px solid var(--Greyscale-grey-lighten-4, #999);
+    background: #FFF;
+
+
+    /*flex-direction: column;
+    align-items: flex-end;
+    gap: 8px;
+    align-self: stretch;
+    border: 1px solid #ccc; padding: 10px; border-radius: 5px;*/
+}
+
+.pi-system-explorer__authentication__submit {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 8px;
+    align-self: stretch;
+}
+
+.pi-system-config--toggle-advanced, .pi-system-config--ssl-check {
+    display: flex;
+    padding-bottom: 4px;
+    align-items: flex-start;
+    gap: 8px;
+    width: 220px;
+}
+
+.pi-system-config--params-advanced {
+    display: flex;
+    gap: 64px;
 }
 
 .pi-system-config--mandatory {
     display: flex;
-    gap: 32px;
+    gap: 64px;
+}
+
+.attribute-section__search {
+    display: flex;
+    padding: 16px;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 16px;
+    flex: 1 0 0;
+    align-self: stretch;
 }
 
 .custom-table {
@@ -59,6 +153,46 @@
     background-color: #f1f7ff;
 }
 
+.tree-view__tabs{
+    display: flex;
+    align-items: center;
+    align-self: stretch;
+    border: 1px solid #BBB;
+}
+
+.tree-view__tab {
+    display: flex;
+    align-items: flex-start;
+    flex: 1 0 0;
+    border-top: 1px solid #BBB;
+    border-right: 0.5px solid #BBB;
+    border-bottom: 1px solid  #BBB;
+    border-left: 1px solid #BBB;
+    &:hover, &:active {
+        background-color: #E7F3FF;
+    }
+}
+
+.tree-view__tab-content {
+    display: flex;
+    padding: 12px 23px;
+    justify-content: center;
+    align-items: center;
+    gap: 4px;
+    flex: 1 0 0;
+    color: #000;
+    font-family: "Source Sans Pro";
+    font-size: 14px;
+    font-style: normal;
+    font-weight: 600;
+    line-height: normal;
+}
+
+.tree-view__content {
+    gap: 8px;
+    display: flex;
+    flex-direction: column;
+}
 .tab-container {
     font-family: Arial, sans-serif;
 }
@@ -88,4 +222,8 @@
 .tab-content {
     border-top: none;
     padding: 10px;
+}
+
+.recipe-editor-page .formbased-recipe-infozone h1, .recipe-editor-page .recipe-settings-section1 h1, .recipe-editor-page .formbased-recipe-infozone .recipe-settings-section2, .recipe-editor-page .recipe-settings-section1 .recipe-settings-section2{
+        padding: 0px !important;
 }
