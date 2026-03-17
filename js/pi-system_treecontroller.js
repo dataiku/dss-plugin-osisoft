@@ -89,12 +89,14 @@ app.controller('AfExplorerFormCtrl', [
     };
 
     $scope.getServers = function () {
-      $scope.callPythonDo({ parameterName: "server_name" }).then(function (data) {
+      console.log("ALX:getServers");
+      return $scope.callPythonDo({ parameterName: "server_name" }).then(function (data) {
         $scope.server_name = data.choices;
       });
     };
     $scope.getDatabases = function () {
-      $scope.callPythonDo({ parameterName: "database_name" }).then(function (data) {
+      console.log("ALX:getDatabases");
+      return $scope.callPythonDo({ parameterName: "database_name" }).then(function (data) {
         $scope.database_name = data.choices;
       });
     };
@@ -120,8 +122,63 @@ app.controller('AfExplorerFormCtrl', [
       return $scope.config.credentials && $scope.config.credentials.mode && $scope.config.credentials.mode !== 'NONE' && $scope.config.credentials.name
     }
 
+    function hasChoiceWithValue(choices, value) {
+      return Array.isArray(choices) && choices.some(function (choice) {
+        return choice && choice.value === value;
+      });
+    }
+
+    function clearDatabaseDependentState() {
+      $scope.database_name = [];
+      $scope.config.database_name = null;
+      $scope.config.treeData = [];
+      $scope.config.templateTreeData = [];
+      $scope.config.templates = [];
+      $scope.config.attributeList = [];
+      $scope.config.selectedAttributes = [];
+      $scope.config.attribute_categories = [];
+      $scope.config.element_categories = [];
+    }
+
+    $scope.$watch(function () {
+      return angular.toJson($scope.config.credentials) + '|' + ($scope.config.is_ssl_check_disabled ? '1' : '0');
+    }, function (newValue, oldValue) {
+      if (newValue === oldValue) {
+        return;
+      }
+
+      $scope.server_name = [];
+      $scope.config.server_name = null;
+      clearDatabaseDependentState();
+
+      if (!$scope.hasPreset()) {
+        return;
+      }
+
+      $scope.getServers();
+    });
+
+    $scope.$watch('config.server_name', function (newValue, oldValue) {
+      if (newValue === oldValue) {
+        return;
+      }
+
+      clearDatabaseDependentState();
+
+      if (!newValue) {
+        return;
+      }
+
+      $scope.getDatabases().then(function () {
+        if (!hasChoiceWithValue($scope.database_name, $scope.config.database_name)) {
+          $scope.config.database_name = null;
+        }
+      });
+    });
+
     $scope.initializeTree = function () {
       console.log("initialization: ");
+      $scope.config.treeData = []
       console.log($scope.config.treeData);
       if (!$scope.config.treeData || $scope.config.treeData.length === 0) {
         $scope.callPythonDo({ method: "get_children_from_db", parent: $scope.config.database_name }).then(function (data) {
@@ -395,4 +452,3 @@ app.component('treeNode', {
     </ul>
   `
 });
-
