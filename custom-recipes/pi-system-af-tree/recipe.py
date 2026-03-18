@@ -53,6 +53,7 @@ schema = [
     {'name': 'template_name', 'type': 'string'},
     {'name': 'category_names', 'type': 'string'},
     {'name': 'path', 'type': 'string'},
+    {'name': 'paths', 'type': 'string'},
     {'name': 'id', 'type': 'string'},
     {'name': 'url', 'type': 'string'},
     {'name': 'checked', 'type': 'boolean'},
