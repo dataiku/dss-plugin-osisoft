@@ -102,8 +102,9 @@ def do(payload, config, plugin_config, inputs):
         for attribute in attributes:
             item = get_item_details(attribute)
             items.append(item)
-        attributesCopy = items.copy()
-        rebuilt_tree = rebuild_tree(client, items, root_tree)
+        items = expand_items_by_paths(items)
+        attributesCopy = [dict(item) for item in items]
+        rebuilt_tree = rebuild_tree(client, items.copy(), root_tree)
         logger.info("Search network timer:{}".format(network_timer.get_report()))
         return {"choices": rebuilt_tree, "attributes": attributesCopy}
 
@@ -231,7 +232,7 @@ def rebuild_tree(client, items, root_tree=None):
     # builds an active tree containing all the items and their parent up to the root
     tree = Tree(root_tree=root_tree)
     # tree.print()
-    while len(items) > 1:
+    while items:
         item = items.pop()
         if item is None:
             break
@@ -271,7 +272,7 @@ def combine_trees(final_tree, all_item_s_ancestors):
 # elements, attributes
 def path_to_list(path):
     if not path:
-        return []
+        return [], []
     return path.split('|')[0].split('\\')[2:], (path.split('|')[1:])
 
 
@@ -295,6 +296,37 @@ def split_real_from_linked_paths(attributes):
     return attributes
 
 
+def expand_items_by_paths(items):
+    expanded_items = []
+    seen = set()
+    for item in items:
+        if not isinstance(item, dict):
+            continue
+        current_path = item.get("path")
+        linked_paths = item.get("paths", [])
+        candidate_paths = []
+        if current_path:
+            candidate_paths.append(current_path)
+        if isinstance(linked_paths, list):
+            for linked_path in linked_paths:
+                if linked_path and linked_path not in candidate_paths:
+                    candidate_paths.append(linked_path)
+        if not candidate_paths:
+            candidate_paths = [None]
+        for candidate_path in candidate_paths:
+            expanded_item = dict(item)
+            if candidate_path:
+                expanded_item["path"] = candidate_path
+            if isinstance(linked_paths, list):
+                expanded_item["paths"] = [path for path in candidate_paths if path and path != candidate_path]
+            dedupe_key = (expanded_item.get("id"), expanded_item.get("path"), expanded_item.get("title"))
+            if dedupe_key in seen:
+                continue
+            seen.add(dedupe_key)
+            expanded_items.append(expanded_item)
+    return expanded_items
+
+
 def set_as_selected(items):
     for item in items:
         item["checked"] = True
@@ -303,6 +335,8 @@ def set_as_selected(items):
 
 def update_item(item, tree):
     elements_paths_tokens, attributes_paths_tokens = path_to_list(item.get("path"))
+    if not elements_paths_tokens and not attributes_paths_tokens:
+        return
     tree.put(elements_paths_tokens + attributes_paths_tokens, item)
 
 

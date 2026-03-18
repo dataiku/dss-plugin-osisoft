@@ -317,6 +317,15 @@ app.component('treeNode', {
   controller: function () {
     const ctrl = this;
 
+    ctrl.hasRenderableChildren = function (node) {
+      if (!node || !Array.isArray(node.children) || !node.children.length) {
+        return false;
+      }
+      return node.children.some(function (child) {
+        return child && child.type !== 'attribute';
+      });
+    };
+
     ctrl.toggleExpand = function (node, $event) {
       if ($event) {
         $event.stopPropagation();
@@ -324,7 +333,7 @@ app.component('treeNode', {
 
       node.expanded = !node.expanded;
 
-      if (node.expanded && (!node.children || !node.children.length)) {
+      if (node.expanded && (!node.children || !node.children.length || !ctrl.hasRenderableChildren(node))) {
         // Call function reference directly
         ctrl.getChildrenFromDb(node);
       }
@@ -374,7 +383,7 @@ app.component('treeNode', {
 
       <div class="tree-node">
         <span
-          ng-if="ctrl.node.type === 'element' || ctrl.node.type==='template'"
+          ng-if="ctrl.node.type !== 'attribute'"
           class="tree-node__label"
           ng-click="ctrl.onNodeClick(ctrl.node)"
           ng-class="{
@@ -393,8 +402,8 @@ app.component('treeNode', {
       style="margin-left: 20px;"
     >
       <li
-        ng-repeat="child in ctrl.node.children track by child.path"
-        ng-if="child.type === 'element' || child.type === 'template'"
+        ng-repeat="child in ctrl.node.children track by (child.id || child.path || (child.title + '_' + $index))"
+        ng-if="child.type !== 'attribute'"
       >
         <tree-node
           node="child"
@@ -408,4 +417,3 @@ app.component('treeNode', {
     </ul>
   `
 });
-

@@ -852,7 +852,7 @@ class OSIsoftClient(object):
                         build_query_string("", attribute_query)
                     )
                 }
-                count = 1
+                count += 1
             url = self.endpoint.get_batch_endpoint()
             headers = OSIsoftConstants.WRITE_HEADERS
             response = self.post(url, headers=headers, data=request_body, params={})
@@ -969,7 +969,6 @@ class OSIsoftClient(object):
             next_url = self.extract_link_with_key(item, "Elements")
             json_response = self.get(url=next_url, headers=headers, params={}, error_source="traverse_and_cache")
         json_response = self.get(url=before_last_url, headers=headers, params={}, error_source="traverse_and_cache")
-        before_last_json = None
         for path_attribute in path_attributes:
             item = self.extract_item_with_name(json_response, path_attribute)
             item_details = get_item_details(item)
@@ -978,17 +977,9 @@ class OSIsoftClient(object):
             counter += 1
             next_url = self.extract_link_with_key(item, "Attributes")
             if next_url:
-                before_last_json = json_response.copy()
                 json_response = self.get(url=next_url, headers=headers, params={}, error_source="traverse_and_cache")
             else:
                 break
-        if not before_last_json:
-            return None
-        items = before_last_json.get(OSIsoftConstants.API_ITEM_KEY, [])
-        for item in items:
-            item_details = get_item_details(item)
-            item_details["checked"] = False  # That should not be done here
-            tree.put(full_path_elements[0:counter-2] + [item_details.get("title")], item_details)
         return item
 
     def cache_all_attributes(self, elements_paths_tokens, tree):
