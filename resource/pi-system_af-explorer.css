@@ -33,10 +33,6 @@ border-right: 1px solid #BBB;
 background: #FFF;
 }
 
-.pi-system-explorer__tree-view {
-    padding: 10px; 
-}
-
 .pi-system-explorer__authentication {
     display: flex;
     flex-direction: column;
@@ -193,6 +189,27 @@ background: #FFF;
     display: flex;
     flex-direction: column;
 }
+
+.pi-system-explorer__tree-view-container{
+    .pi-system-explorer__tree-view {
+        .tree-view__search-container{
+            display:flex;
+            align-items:center;
+            gap: 8px;
+            align-self: stretch;
+        }
+        .tree-view__search-box {
+            display: flex;
+            height: 26px;
+            padding: 0 8px;
+            flex-direction: column;
+            justify-content: center;
+            align-items: flex-start;
+            flex: 1 0 0;
+        }
+    }
+}
+
 .tab-container {
     font-family: Arial, sans-serif;
 }

@@ -1,6 +1,6 @@
 <link rel="stylesheet" href="/plugins/pi-system/resource/pi-system_af-explorer.css">
 <div class="generic-class" ng-controller="AfExplorerFormCtrl" ng-init="init()">
-    <div class="pi-system-explorer__main" ng-if="showTreeData">
+    <div class="pi-system-explorer__main">
         <div class="pi-system-explorer__authentication">
             <div class="pi-system-explorer__authentication-header" ng-click="toggleAuthSection()">
                 <strong>Welcome to Pi System Plugin</strong>
@@ -71,7 +71,7 @@
         </div>
     </div>
     <!-- Attributes Section -->
-    <div class="attribute-tab pi-system-explorer__center-view">
+    <div class="attribute-tab pi-system-explorer__center-view" ng-if="showTreeData">
         <div class="attribute-section__search">
         <div><strong>Attributes and templates</strong></div>
         <div>
@@ -113,7 +113,7 @@
         </table>
     </div>
     </div>
-    <div class="pi-system-explorer__tree-view-container">
+    <div class="pi-system-explorer__tree-view-container" ng-if="showTreeData">
 <div ng-if="config.database_name" ng-init="initializeTree()" class="pi-system-explorer__tree-view">
     <div class="tree-view__tabs">
         <div class="tree-view__tab" ng-click="setTab('element')" ng-class="{active: config.activeTab === 'element'}"><div class="tree-view__tab-content">Element</div></div>

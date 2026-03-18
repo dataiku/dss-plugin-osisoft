@@ -97,8 +97,7 @@ def do(payload, config, plugin_config, inputs):
                                             elements_max_count=elements_max_count, attributes_max_count=attributes_max_count):
             # result["checked"] = True
             attributes.append(result)
-
-        attributes = duplicate_linked_attributes(attributes)
+        attributes = split_real_from_linked_paths(attributes)
         items = []
         for attribute in attributes:
             item = get_item_details(attribute)
@@ -287,16 +286,13 @@ def shorten_tree(tree):
     return tree
 
 
-def duplicate_linked_attributes(attributes):
-    duplicated_attributes = []
+def split_real_from_linked_paths(attributes):
     for attribute in attributes:
-        paths = attribute.pop("Paths", [attribute.get("Path")])
-        for path in paths:
-            this_attribute = attribute.copy()
-            this_attribute["Path"] = path
-            this_attribute["type"] = "attribute" if "|" in path else "element"
-            duplicated_attributes.append(this_attribute)
-    return duplicated_attributes
+        current_path = attribute.get("path", attribute.get("Path"))
+        paths = attribute.get("Paths")
+        if isinstance(paths, list):
+            attribute["Paths"] = [path for path in paths if path != current_path]
+    return attributes
 
 
 def set_as_selected(items):

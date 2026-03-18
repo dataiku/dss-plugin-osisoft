@@ -113,6 +113,7 @@ app.controller('AfExplorerFormCtrl', [
       if ($scope.authConfigured()) {
         $scope.showTreeData = true;
         $scope.showTemplateTreeData = true;
+        $scope.toggleAuthSection(); 
       }
     };
 
