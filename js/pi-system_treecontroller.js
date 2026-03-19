@@ -262,12 +262,14 @@ app.controller('AfExplorerFormCtrl', [
     };
 
     $scope.doSearch = function (element_name, attribute_name) {
+      $scope.config.attributeList = [];
+      $scope.config.selectedAttributes = [];
+      $scope.config.clickedNodes = [];
       $scope.callPythonDo({ method: "do_search", element_name: element_name, attribute_name: attribute_name, root_tree: $scope.config.treeData }).then(
         function (data) {
           TreeDataService.setTreeData(data.choices);
           $scope.config.treeData = TreeDataService.getTreeData();
           $scope.config.attributeList = data.attributes;
-          $scope.config.selectedAttributes = [];
         }
       );
     };
