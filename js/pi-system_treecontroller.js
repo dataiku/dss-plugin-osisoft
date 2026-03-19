@@ -127,6 +127,55 @@ app.controller('AfExplorerFormCtrl', [
       $scope.config.attributeList = [];
     }
 
+    $scope.resetDatasourceState = function () {
+      $scope.server_name = [];
+      $scope.database_name = [];
+      $scope.config.server_name = null;
+      $scope.config.database_name = null;
+      $scope.config.templates = [];
+      $scope.config.templateTreeData = [];
+      $scope.config.attribute_categories = [];
+      $scope.config.element_categories = [];
+      $scope.config.attributeList = [];
+      $scope.config.selectedAttributes = [];
+      $scope.showTreeData = false;
+      $scope.showTemplateTreeData = false;
+      $scope.cleanTree();
+    };
+
+    var presetWatchInitialized = false;
+    $scope.$watchGroup(
+      [
+        function () {
+          return $scope.config && $scope.config.credentials ? $scope.config.credentials.mode : null;
+        },
+        function () {
+          return $scope.config && $scope.config.credentials ? $scope.config.credentials.name : null;
+        }
+      ],
+      function (newValues, oldValues) {
+        if (!presetWatchInitialized) {
+          presetWatchInitialized = true;
+          return;
+        }
+
+        var mode = newValues[0];
+        var name = newValues[1];
+        var oldMode = oldValues ? oldValues[0] : null;
+        var oldName = oldValues ? oldValues[1] : null;
+
+        if (mode === oldMode && name === oldName) {
+          return;
+        }
+
+        $scope.resetDatasourceState();
+
+        if ($scope.hasPreset()) {
+          $scope.getServers();
+        }
+      }
+    );
+
     $scope.initializeTree = function () {
       console.log("initialization: ");
       if (!$scope.config.treeData || $scope.config.treeData.length === 0) {
