@@ -931,59 +931,36 @@ class OSIsoftClient(object):
                 item = self.extract_item_with_name(json_response, attribute)
         return item
 
-    def traverse_and_cache(self, path_elements, path_attributes, tree):
+    def traverse_and_cache(self, ex_path_elements, ex_path_attributes, tree, trim_siblings=True):
+        path_elements = ex_path_elements.copy()
+        path_attributes = ex_path_attributes.copy()
         full_path_elements = path_elements.copy() + path_attributes.copy()
         if tree.exists(full_path_elements):
-            # this path has already been retrieved, so skip
-            return
-        # Loading piwebapi initial page
-        next_url = self.endpoint.get_base_url()
+            sending_back = tree.get(full_path_elements)
+            return sending_back
+        if path_attributes:
+            attribute_to_search = path_attributes.pop()
+            cached_item = self.traverse_and_cache(path_elements, path_attributes, tree, trim_siblings=trim_siblings)
+            last_know_url = cached_item.get("url") + "/attributes"
+            headers = self.get_requests_headers()
+            json_response = self.get(url=last_know_url, headers=headers, params={}, error_source="recursive traverse_and_cache")
+            for item in json_response.get(OSIsoftConstants.API_ITEM_KEY, []):
+                item_name = item.get("Name")
+                tree.put(path_elements + path_attributes + [item_name], get_item_details(item))
+            item = self.extract_item_with_name(json_response, attribute_to_search)
+            return get_item_details(item)
+
+        element_to_search = path_elements.pop()
+        cached_item = self.traverse_and_cache(path_elements, [], tree, trim_siblings=trim_siblings)
+        last_know_url = cached_item.get("url") + "/elements"
         headers = self.get_requests_headers()
-        json_response = self.get(url=next_url, headers=headers, params={}, error_source="traverse_and_cache")
-
-        # Asset server page
-        next_url = self.extract_link_with_key(json_response, "AssetServers")
-        json_response = self.get(url=next_url, headers=headers, params={}, error_source="traverse_and_cache")
-
-        item = self.extract_item_with_name(json_response, path_elements.pop(0))
-        tree.put(full_path_elements[0:1], get_item_details(item))
-        next_url = self.extract_link_with_key(item, "Databases")
-        json_response = self.get(url=next_url, headers=headers, params={}, error_source="traverse_and_cache")
-
-        # retrieved_from_cache = tree.get(full_path_elements[0:2], {}).get("url")+"/elements"
-        # get the database
-        item = self.extract_item_with_name(json_response, path_elements.pop(0))
-        tree.put(full_path_elements[0:2], get_item_details(item))
-        next_url = self.extract_link_with_key(item, "Elements")
-        json_response = self.get(url=next_url, headers=headers, params={}, error_source="traverse_and_cache")
-
-        # Looping through elements
-        counter = 3
-        before_last_url = None
-        for path_element in path_elements:
-            element, attribute = self.split_element_attribute(path_element)  # <-daxy shtob, attribute ken
-            item = self.extract_item_with_name(json_response, element)
-            tree.put(full_path_elements[0:counter], get_item_details(item))
-            counter += 1
-            before_last_url = self.extract_link_with_key(item, "Attributes")
-            next_url = self.extract_link_with_key(item, "Elements")
-            json_response = self.get(url=next_url, headers=headers, params={}, error_source="traverse_and_cache")
-        json_response = self.get(url=before_last_url, headers=headers, params={}, error_source="traverse_and_cache")
-        for path_attribute in path_attributes:
-            item = self.extract_item_with_name(json_response, path_attribute)
-            item_details = get_item_details(item)
-            # item_details["checked"] = True  # That should not be done here
-            tree.put(full_path_elements[0:counter], item_details)
-            counter += 1
-            next_url = self.extract_link_with_key(item, "Attributes")
-            if next_url:
-                json_response = self.get(url=next_url, headers=headers, params={}, error_source="traverse_and_cache")
-            else:
-                break
-        return item
-
-    def cache_all_attributes(self, elements_paths_tokens, tree):
-        pass
+        json_response = self.get(url=last_know_url, headers=headers, params={}, error_source="recursive traverse_and_cache")
+        for item in json_response.get(OSIsoftConstants.API_ITEM_KEY, []):
+            item_name = item.get("Name")
+            if not trim_siblings or item_name in ex_path_elements:
+                tree.put(path_elements + [item_name], get_item_details(item))
+        item = self.extract_item_with_name(json_response, element_to_search)
+        return get_item_details(item)
 
     def split_element_attribute(self, path_element):
         attribute = None
