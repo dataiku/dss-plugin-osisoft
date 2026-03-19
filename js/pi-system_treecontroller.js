@@ -274,6 +274,13 @@ app.controller('AfExplorerFormCtrl', [
       );
     };
 
+    $scope.onSearchInputKeydown = function ($event) {
+      if ($event && ($event.key === "Enter" || $event.keyCode === 13)) {
+        $event.preventDefault();
+        $scope.doSearch($scope.config.element_name, $scope.config.attribute_name);
+      }
+    };
+
     $scope.toggleSelectAllAttributes = function () {
       if ($scope.config.selectAllAttributes) {
         $scope.config.selectedAttributes = [...$scope.config.attributeList];
