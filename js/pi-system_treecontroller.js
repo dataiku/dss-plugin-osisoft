@@ -324,8 +324,39 @@ app.controller('AfExplorerFormCtrl', [
 
 
 
-    $scope.displayAttributes = function (node) {
+    function getNodeAttributePaths(node) {
+      if (!node || !Array.isArray(node.children)) {
+        return [];
+      }
+      return node.children
+        .filter(child => child.type === "attribute" && child.path)
+        .map(child => child.path);
+    }
+
+    function removeNodeAttributes(node) {
+      const attributePaths = getNodeAttributePaths(node);
+      if (!attributePaths.length) {
+        return;
+      }
+
+      $scope.config.attributeList = ($scope.config.attributeList || []).filter(
+        attr => !attributePaths.includes(attr.path)
+      );
+      $scope.config.selectedAttributes = ($scope.config.selectedAttributes || []).filter(
+        attr => !attributePaths.includes(attr.path)
+      );
+      $scope.config.selectAllAttributes =
+        $scope.config.attributeList.length > 0 &&
+        $scope.config.selectedAttributes.length === $scope.config.attributeList.length;
+    }
+
+    $scope.displayAttributes = function (node, shouldAdd = true) {
       $scope.config.selectAllAttributes = false;
+      if (!shouldAdd) {
+        removeNodeAttributes(node);
+        return;
+      }
+
       if (!node.children || node.children.length === 0) {
 
         if (node.type === "element") {
@@ -347,11 +378,12 @@ app.controller('AfExplorerFormCtrl', [
       if (node.title !== $scope.config.element_name) {
         $scope.config.element_name = "";
       }
-      $scope.config.attributeList = [];
-      $scope.config.selectedAttributes = [];
       node.children.forEach(child => {
         if (child.type === "attribute") {
-          $scope.config.attributeList.push(child);
+          const isAlreadyPresent = $scope.config.attributeList.some(attr => attr.path === child.path);
+          if (!isAlreadyPresent) {
+            $scope.config.attributeList.push(child);
+          }
         }
       });
     }
@@ -401,6 +433,7 @@ app.component('treeNode', {
       const index = ctrl.config.clickedNodes.indexOf(node.url);
       if (index > -1) {
         ctrl.config.clickedNodes.splice(index, 1);
+        ctrl.displayAttributes(node,false);
       } else {
         ctrl.config.clickedNodes.push(node.url);
         ctrl.displayAttributes(node);
