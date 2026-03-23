@@ -40,6 +40,7 @@ app.controller('AfExplorerFormCtrl', [
     $scope.config.attributeList = $scope.config.attributeList || [];
     $scope.config.selectedAttributes = $scope.config.selectedAttributes || [];
     $scope.config.clickedNodes = $scope.config.clickedNodes || [];
+    $scope.config.searchMatchedElementPaths = $scope.config.searchMatchedElementPaths || [];
 
     $scope.editorOptions = CodeMirrorSettingService.get("text/plain");
 
@@ -125,6 +126,8 @@ app.controller('AfExplorerFormCtrl', [
       $scope.config.treeData = [];
       $scope.config.clickedNodes = [];
       $scope.config.attributeList = [];
+      $scope.config.selectedAttributes = [];
+      $scope.config.searchMatchedElementPaths = [];
     }
 
     $scope.resetDatasourceState = function () {
@@ -205,6 +208,7 @@ app.controller('AfExplorerFormCtrl', [
           item.children.forEach(child => {
             child.expanded = false;
           });
+          markSearchResults(item.children, $scope.config.searchMatchedElementPaths || []);
           console.log(item);
           return item;
         });
@@ -265,14 +269,49 @@ app.controller('AfExplorerFormCtrl', [
       $scope.config.attributeList = [];
       $scope.config.selectedAttributes = [];
       $scope.config.clickedNodes = [];
+      $scope.config.searchMatchedElementPaths = [];
       $scope.callPythonDo({ method: "do_search", element_name: element_name, attribute_name: attribute_name, root_tree: $scope.config.treeData }).then(
         function (data) {
           TreeDataService.setTreeData(data.choices);
           $scope.config.treeData = TreeDataService.getTreeData();
-          $scope.config.attributeList = data.attributes;
+          const matchedElementPaths = getMatchedElementPaths(data.attributes || []);
+          $scope.config.searchMatchedElementPaths = matchedElementPaths;
+          markSearchResults($scope.config.treeData, matchedElementPaths);
         }
       );
     };
+
+    function getMatchedElementPaths(attributes) {
+      const matchedPathSet = new Set();
+      attributes.forEach(attribute => {
+        const fullPath = attribute && attribute.path;
+        if (!fullPath || typeof fullPath !== "string") {
+          return;
+        }
+        const elementPath = fullPath.includes("|") ? fullPath.split("|")[0] : fullPath;
+        matchedPathSet.add(elementPath);
+      });
+      return Array.from(matchedPathSet);
+    }
+
+    function markSearchResults(nodes, matchedElementPaths) {
+      if (!Array.isArray(nodes)) {
+        return;
+      }
+      const matchedPathSet = new Set(matchedElementPaths || []);
+
+      nodes.forEach(node => {
+        node.searchHighlighted =
+          node &&
+          node.type !== "attribute" &&
+          !!node.path &&
+          matchedPathSet.has(node.path);
+
+        if (Array.isArray(node.children) && node.children.length > 0) {
+          markSearchResults(node.children, matchedElementPaths);
+        }
+      });
+    }
 
     $scope.onSearchInputKeydown = function ($event) {
       if ($event && ($event.key === "Enter" || $event.keyCode === 13)) {
@@ -350,6 +389,11 @@ app.controller('AfExplorerFormCtrl', [
         $scope.config.selectedAttributes.length === $scope.config.attributeList.length;
     }
 
+    function hasAttributeChildren(node) {
+      return Array.isArray(node && node.children) &&
+        node.children.some(child => child.type === "attribute");
+    }
+
     $scope.displayAttributes = function (node, shouldAdd = true) {
       $scope.config.selectAllAttributes = false;
       if (!shouldAdd) {
@@ -357,27 +401,29 @@ app.controller('AfExplorerFormCtrl', [
         return;
       }
 
-      if (!node.children || node.children.length === 0) {
+      const shouldLoadChildrenFromDb =
+        node.type === "element" &&
+        (
+          !Array.isArray(node.children) ||
+          node.children.length === 0 ||
+          !hasAttributeChildren(node)
+        );
 
-        if (node.type === "element") {
-          $scope.config.template = "-- Any --";
-          $scope.getChildrenFromDB(node).then(newNode => {
-            processNode(newNode);
-          });
-        } else if (node.type === "template") {
-          $scope.config.element_name = "*";
-          $scope.config.template = node.title;
-          $scope.doSearch($scope.config.element_name, $scope.config.attribute_name);
-        }
-      }  else {
+      if (shouldLoadChildrenFromDb) {
+        $scope.config.template = "-- Any --";
+        $scope.getChildrenFromDB(node).then(newNode => {
+          processNode(newNode);
+        });
+      } else if (node.type === "template") {
+        $scope.config.element_name = "*";
+        $scope.config.template = node.title;
+        $scope.doSearch($scope.config.element_name, $scope.config.attribute_name);
+      } else {
         processNode(node);
-      };
+      }
     }
 
     function processNode(node) {
-      if (node.title !== $scope.config.element_name) {
-        $scope.config.element_name = "";
-      }
       node.children.forEach(child => {
         if (child.type === "attribute") {
           const isAlreadyPresent = $scope.config.attributeList.some(attr => attr.path === child.path);
@@ -459,6 +505,10 @@ app.component('treeNode', {
     ctrl.isNodeClicked = function (node) {
       return ctrl.config.clickedNodes.includes(node.url);
     };
+
+    ctrl.isSearchResult = function (node) {
+      return !!node.searchHighlighted;
+    };
   },
 
   template: `
@@ -478,6 +528,8 @@ app.component('treeNode', {
           class="tree-node__label"
           ng-click="ctrl.onNodeClick(ctrl.node)"
           ng-class="{
+            'tree-node__label--search-result':
+              ctrl.isSearchResult(ctrl.node),
             'tree-node__label--clickable':
               ctrl.isNodeClicked(ctrl.node)
           }"

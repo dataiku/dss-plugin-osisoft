@@ -2,8 +2,24 @@
     width: 100% !important;
 }
 
-.tree-node__label--clickable{
+.tree-node__label--search-result{
     background-color: yellow;
+}
+
+.tree-node__label--clickable {
+    box-shadow: inset 0 0 0 1px #2e7d32;
+    border-radius: 2px;
+}
+
+.tree-node__label--clickable::after {
+    content: "";
+    display: inline-block;
+    width: 6px;
+    height: 6px;
+    margin-left: 6px;
+    border-radius: 50%;
+    background-color: #2e7d32;
+    vertical-align: middle;
 }
 .generic-class {
     display: flex;
