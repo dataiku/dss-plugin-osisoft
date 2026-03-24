@@ -81,8 +81,17 @@ def do(payload, config, plugin_config, inputs):
         if attribute_category == "-- Any --":
             attribute_category = None
         database_name = config.get("database_name")
-        element_name = config.get("element_name")
-        attribute_name = config.get("attribute_name")
+        element_name = config.get("element_name").strip()
+        attribute_name = config.get("attribute_name").strip()
+        if element_name == "":
+            element_name = None
+        if attribute_name == "":
+            attribute_name = None
+
+        has_attribute_filter = attribute_name is not None
+        has_element_filter = element_name is not None
+        if not (has_attribute_filter and not has_element_filter):
+            clicked_nodes = []
         # root_tree = payload.get("root_tree")
         root_tree = config.get("treeData", [])
         root_tree = shorten_tree(root_tree)
