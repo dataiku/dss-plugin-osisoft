@@ -39,8 +39,11 @@ app.controller('AfExplorerFormCtrl', [
     $scope.templateTreeData = TreeDataService.getTemplateTreeData();
     $scope.config.attributeList = $scope.config.attributeList || [];
     $scope.config.selectedAttributes = $scope.config.selectedAttributes || [];
+    $scope.config.outputSelectedAttributes = $scope.config.outputSelectedAttributes || [];
     $scope.config.clickedNodes = $scope.config.clickedNodes || [];
     $scope.config.searchMatchedElementPaths = $scope.config.searchMatchedElementPaths || [];
+    $scope.config.searchMatchedAttributePaths = $scope.config.searchMatchedAttributePaths || [];
+    $scope.config.currentSearchRestrictsAttributes = $scope.config.currentSearchRestrictsAttributes || false;
 
     $scope.editorOptions = CodeMirrorSettingService.get("text/plain");
 
@@ -127,7 +130,10 @@ app.controller('AfExplorerFormCtrl', [
       $scope.config.clickedNodes = [];
       $scope.config.attributeList = [];
       $scope.config.selectedAttributes = [];
+      $scope.config.outputSelectedAttributes = [];
       $scope.config.searchMatchedElementPaths = [];
+      $scope.config.searchMatchedAttributePaths = [];
+      $scope.config.currentSearchRestrictsAttributes = false;
     }
 
     $scope.resetDatasourceState = function () {
@@ -141,6 +147,7 @@ app.controller('AfExplorerFormCtrl', [
       $scope.config.element_categories = [];
       $scope.config.attributeList = [];
       $scope.config.selectedAttributes = [];
+      $scope.config.outputSelectedAttributes = [];
       $scope.showTreeData = false;
       $scope.showTemplateTreeData = false;
       $scope.cleanTree();
@@ -266,20 +273,53 @@ app.controller('AfExplorerFormCtrl', [
     };
 
     $scope.doSearch = function (element_name, attribute_name) {
-      $scope.config.attributeList = [];
-      $scope.config.selectedAttributes = [];
-      $scope.config.clickedNodes = [];
+      const hasElementFilter = !!(element_name && element_name.trim());
+      const hasClickedNodes = Array.isArray($scope.config.clickedNodes) && $scope.config.clickedNodes.length > 0;
+      const hasAttributeFilter = !!(attribute_name && attribute_name.trim());
+      const isRestrictedAttributeSearch = hasClickedNodes && hasAttributeFilter && !hasElementFilter;
+      const shouldDisplaySearchAttributesDirectly = hasAttributeFilter && !hasElementFilter;
+      $scope.config.currentSearchRestrictsAttributes = isRestrictedAttributeSearch;
+
+      if (!isRestrictedAttributeSearch) {
+        $scope.config.attributeList = [];
+        $scope.config.selectedAttributes = [];
+      }
       $scope.config.searchMatchedElementPaths = [];
+      $scope.config.searchMatchedAttributePaths = [];
       $scope.callPythonDo({ method: "do_search", element_name: element_name, attribute_name: attribute_name, root_tree: $scope.config.treeData }).then(
         function (data) {
           TreeDataService.setTreeData(data.choices);
           $scope.config.treeData = TreeDataService.getTreeData();
-          const matchedElementPaths = getMatchedElementPaths(data.attributes || []);
+          const matchedAttributes = data.attributes || [];
+          const matchedElementPaths = getMatchedElementPaths(matchedAttributes);
+          $scope.config.searchMatchedAttributePaths = getMatchedAttributePaths(matchedAttributes);
           $scope.config.searchMatchedElementPaths = matchedElementPaths;
           markSearchResults($scope.config.treeData, matchedElementPaths);
+          if (isRestrictedAttributeSearch || shouldDisplaySearchAttributesDirectly) {
+            applySearchAttributesToList(matchedAttributes);
+          }
         }
       );
     };
+
+    function applySearchAttributesToList(attributes) {
+      const preservedSelectedPathSet = new Set(getOutputSelectedAttributes().map(attr => attr.path));
+      const seen = new Set();
+      const deduped = [];
+
+      attributes.forEach(attribute => {
+        if (!attribute || !attribute.path || seen.has(attribute.path)) {
+          return;
+        }
+        seen.add(attribute.path);
+        const attrCopy = { ...attribute };
+        attrCopy.checked = preservedSelectedPathSet.has(attrCopy.path);
+        deduped.push(attrCopy);
+      });
+
+      $scope.config.attributeList = deduped;
+      syncVisibleSelectionFromOutput();
+    }
 
     function getMatchedElementPaths(attributes) {
       const matchedPathSet = new Set();
@@ -290,6 +330,16 @@ app.controller('AfExplorerFormCtrl', [
         }
         const elementPath = fullPath.includes("|") ? fullPath.split("|")[0] : fullPath;
         matchedPathSet.add(elementPath);
+      });
+      return Array.from(matchedPathSet);
+    }
+
+    function getMatchedAttributePaths(attributes) {
+      const matchedPathSet = new Set();
+      attributes.forEach(attribute => {
+        if (attribute && attribute.path) {
+          matchedPathSet.add(attribute.path);
+        }
       });
       return Array.from(matchedPathSet);
     }
@@ -323,10 +373,16 @@ app.controller('AfExplorerFormCtrl', [
     $scope.toggleSelectAllAttributes = function () {
       if ($scope.config.selectAllAttributes) {
         $scope.config.selectedAttributes = [...$scope.config.attributeList];
-        $scope.config.attributeList.forEach(attr => attr.checked = true);
+        $scope.config.attributeList.forEach(attr => {
+          attr.checked = true;
+          upsertOutputSelectedAttribute(attr, true);
+        });
       } else {
         $scope.config.selectedAttributes = [];
-        $scope.config.attributeList.forEach(attr => attr.checked = false);
+        $scope.config.attributeList.forEach(attr => {
+          attr.checked = false;
+          upsertOutputSelectedAttribute(attr, false);
+        });
       }
     }
 
@@ -343,6 +399,7 @@ app.controller('AfExplorerFormCtrl', [
 
     const attrInConfig = attributeList.find(attr => attr.path === attribute.path);
     if (attrInConfig) attrInConfig.checked = false;
+    upsertOutputSelectedAttribute(attribute, false);
 
     $scope.config.selectAllAttributes = false;
     return;
@@ -357,6 +414,7 @@ app.controller('AfExplorerFormCtrl', [
 
   selectedAttributes.push(attribute);
   attrInConfig.checked = true;
+  upsertOutputSelectedAttribute(attribute, true);
 
   $scope.config.selectAllAttributes = selectedAttributes.length === attributeList.length;
 };
@@ -384,9 +442,7 @@ app.controller('AfExplorerFormCtrl', [
       $scope.config.selectedAttributes = ($scope.config.selectedAttributes || []).filter(
         attr => !attributePaths.includes(attr.path)
       );
-      $scope.config.selectAllAttributes =
-        $scope.config.attributeList.length > 0 &&
-        $scope.config.selectedAttributes.length === $scope.config.attributeList.length;
+      syncVisibleSelectionFromOutput();
     }
 
     function hasAttributeChildren(node) {
@@ -424,14 +480,83 @@ app.controller('AfExplorerFormCtrl', [
     }
 
     function processNode(node) {
+      const selectedPaths = new Set(getOutputSelectedAttributes().map(attr => attr.path));
+      const hasAttributeFilter = !!($scope.config.attribute_name && $scope.config.attribute_name.trim());
+      const shouldRestrictDisplayedAttributes = hasAttributeFilter;
+
       node.children.forEach(child => {
         if (child.type === "attribute") {
+          if (shouldRestrictDisplayedAttributes && !attributeMatchesCurrentSearch(child)) {
+            return;
+          }
           const isAlreadyPresent = $scope.config.attributeList.some(attr => attr.path === child.path);
           if (!isAlreadyPresent) {
+            child.checked = selectedPaths.has(child.path);
             $scope.config.attributeList.push(child);
           }
         }
       });
+
+      syncVisibleSelectionFromOutput();
+    }
+
+    function attributeMatchesCurrentSearch(attribute) {
+      const rawFilter = ($scope.config.attribute_name || "").trim();
+      if (!rawFilter) {
+        return true;
+      }
+
+      const attributeTitle = (attribute && attribute.title ? attribute.title : "").toLowerCase();
+      const filter = rawFilter.toLowerCase();
+
+      if (filter.includes("*")) {
+        const regexPattern = "^" + escapeRegex(filter).replace(/\\\*/g, ".*") + "$";
+        return new RegExp(regexPattern).test(attributeTitle);
+      }
+
+      return attributeTitle.includes(filter);
+    }
+
+    function escapeRegex(input) {
+      return input.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    }
+
+    function getOutputSelectedAttributes() {
+      if (!Array.isArray($scope.config.outputSelectedAttributes)) {
+        $scope.config.outputSelectedAttributes = [];
+      }
+      return $scope.config.outputSelectedAttributes;
+    }
+
+    function upsertOutputSelectedAttribute(attribute, isChecked) {
+      if (!attribute || !attribute.path) {
+        return;
+      }
+
+      const outputSelectedAttributes = getOutputSelectedAttributes();
+      const index = outputSelectedAttributes.findIndex(attr => attr.path === attribute.path);
+
+      if (isChecked) {
+        const attributeToStore = { ...attribute, checked: true };
+        if (index === -1) {
+          outputSelectedAttributes.push(attributeToStore);
+        } else {
+          outputSelectedAttributes[index] = attributeToStore;
+        }
+      } else if (index !== -1) {
+        outputSelectedAttributes.splice(index, 1);
+      }
+    }
+
+    function syncVisibleSelectionFromOutput() {
+      const outputSelectedPathSet = new Set(getOutputSelectedAttributes().map(attr => attr.path));
+      $scope.config.attributeList.forEach(attr => {
+        attr.checked = outputSelectedPathSet.has(attr.path);
+      });
+      $scope.config.selectedAttributes = $scope.config.attributeList.filter(attr => attr.checked);
+      $scope.config.selectAllAttributes =
+        $scope.config.attributeList.length > 0 &&
+        $scope.config.selectedAttributes.length === $scope.config.attributeList.length;
     }
 
 

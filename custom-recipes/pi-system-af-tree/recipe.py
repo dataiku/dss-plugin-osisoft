@@ -61,9 +61,9 @@ schema = [
 ]
 output_dataset.write_schema(schema)
 
-selectedAttributes = config.get("selectedAttributes", [])
+selectedAttributes = config.get("outputSelectedAttributes", config.get("selectedAttributes", []))
 with output_dataset.get_writer() as writer:
-    for item in selectedAttributes :
+    for item in selectedAttributes:
         if item.get("checked", True) is True:
             writer.write_row_dict(item)
 
