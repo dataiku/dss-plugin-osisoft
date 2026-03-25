@@ -44,6 +44,7 @@ app.controller('AfExplorerFormCtrl', [
     $scope.config.searchMatchedElementPaths = $scope.config.searchMatchedElementPaths || [];
     $scope.config.searchMatchedAttributePaths = $scope.config.searchMatchedAttributePaths || [];
     $scope.config.currentSearchRestrictsAttributes = $scope.config.currentSearchRestrictsAttributes || false;
+    $scope.config.lastSearchedElementName = $scope.config.lastSearchedElementName || "";
 
     $scope.editorOptions = CodeMirrorSettingService.get("text/plain");
 
@@ -134,6 +135,7 @@ app.controller('AfExplorerFormCtrl', [
       $scope.config.searchMatchedElementPaths = [];
       $scope.config.searchMatchedAttributePaths = [];
       $scope.config.currentSearchRestrictsAttributes = false;
+      $scope.config.lastSearchedElementName = "";
     }
 
     $scope.resetDatasourceState = function () {
@@ -274,11 +276,19 @@ app.controller('AfExplorerFormCtrl', [
 
     $scope.doSearch = function (element_name, attribute_name) {
       const hasElementFilter = !!(element_name && element_name.trim());
+      const hadPreviousElementFilter = !!($scope.config.lastSearchedElementName && $scope.config.lastSearchedElementName.trim());
+
+      // If user clears element filter after a scoped search, release previous click-based scope.
+      if (!hasElementFilter && hadPreviousElementFilter) {
+        $scope.config.clickedNodes = [];
+      }
+
       const hasClickedNodes = Array.isArray($scope.config.clickedNodes) && $scope.config.clickedNodes.length > 0;
       const hasAttributeFilter = !!(attribute_name && attribute_name.trim());
       const isRestrictedAttributeSearch = hasClickedNodes && hasAttributeFilter && !hasElementFilter;
-      const shouldDisplaySearchAttributesDirectly = hasAttributeFilter && !hasElementFilter;
+      const shouldDisplaySearchAttributesDirectly = hasAttributeFilter;
       $scope.config.currentSearchRestrictsAttributes = isRestrictedAttributeSearch;
+      $scope.config.lastSearchedElementName = element_name || "";
 
       if (!isRestrictedAttributeSearch) {
         $scope.config.attributeList = [];

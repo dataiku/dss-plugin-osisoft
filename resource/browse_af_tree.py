@@ -81,12 +81,16 @@ def do(payload, config, plugin_config, inputs):
         if attribute_category == "-- Any --":
             attribute_category = None
         database_name = config.get("database_name")
-        element_name = config.get("element_name").strip()
-        attribute_name = config.get("attribute_name").strip()
-        if element_name == "":
-            element_name = None
-        if attribute_name == "":
-            attribute_name = None
+        element_name = config.get("element_name")
+        attribute_name = config.get("attribute_name")
+        if isinstance(element_name, str): 
+            element_name = element_name.strip()
+            if element_name == "":
+                element_name = None
+        if isinstance(attribute_name, str):
+            attribute_name = attribute_name.strip()
+            if attribute_name == "":
+                attribute_name = None
 
         has_attribute_filter = attribute_name is not None
         has_element_filter = element_name is not None
