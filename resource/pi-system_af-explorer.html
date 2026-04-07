@@ -23,7 +23,8 @@
                         <label>Server</label>
                         <div class="">
                             <select dku-bs-select ng-model="config.server_name"
-                                ng-options="sv.value as sv.label for sv in server_name" ng-init="getServers()">
+                                ng-options="sv.value as sv.label for sv in server_name" ng-init="getServers()"
+                                ng-change="onServerChanged()">
                             </select>
                         </div>
                     </div>
@@ -31,7 +32,7 @@
                         <label>Database</label>
                         <div class="">
                             <select dku-bs-select ng-init="getDatabases()" ng-model="config.database_name"
-                                ng-change="updateDatas()" ng-options="dbn.value as dbn.label for dbn in database_name">
+                                ng-change="onDatabaseChanged()" ng-options="dbn.value as dbn.label for dbn in database_name">
                             </select>
                         </div>
                     </div>
@@ -66,7 +67,7 @@
         <label class="control-label">Tree</label>
         <div class="controls">
             <select dku-bs-select ng-model="config.treeData"
-                ng-options="dbn.value as dbn.label for dbn in [config.treeData]" ng-init="initializeTree();">
+                ng-options="dbn.value as dbn.label for dbn in [config.treeData]">
             </select>
         </div>
     </div>
@@ -116,7 +117,7 @@
     </div>
     </div>
     <div class="pi-system-explorer__tree-view-container" ng-if="showTreeData">
-<div ng-if="config.database_name" ng-init="initializeTree()" class="pi-system-explorer__tree-view">
+<div ng-if="config.database_name" class="pi-system-explorer__tree-view">
     <div class="tree-view__tabs">
         <div class="tree-view__tab" ng-click="setTab('element')" ng-class="{active: config.activeTab === 'element'}"><div class="tree-view__tab-content">Element</div></div>
         <div class="tree-view__tab" ng-click="setTab('template')" ng-class="{active: config.activeTab === 'template'}"><div class="tree-view__tab-content">Template</div></div>
@@ -126,7 +127,7 @@
         data-container="body" data-html="true" placeholder="Search element"
         ng-keydown="onSearchInputKeydown($event)" />
     <button ng-if="config.activeTab === 'element'"
-        ng-click="doSearch(config.element_name, config.attribute_name)" class="btn btn--secondary link-like"
+        ng-click="searchFromElement()" class="btn btn--secondary link-like"
         id="get-query-dim-prop">Search</button>
     </div>
     <!--<div class="tab-container">

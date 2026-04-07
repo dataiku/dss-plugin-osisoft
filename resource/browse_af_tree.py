@@ -70,8 +70,16 @@ def do(payload, config, plugin_config, inputs):
         template_name = config.get("template", None)
         category_name = config.get("element_category", None)
         clicked_nodes = config.get("clickedNodes", [])
+        active_tab = config.get("activeTab")
+        selected_template_names = config.get("selectedTemplateNames", [])
         if template_name == "-- Any --":
             template_name = None
+        if not isinstance(selected_template_names, list):
+            selected_template_names = []
+        selected_template_names = [
+            template_name_item for template_name_item in selected_template_names
+            if isinstance(template_name_item, str) and template_name_item and template_name_item != "-- Any --"
+        ]
         if category_name == "-- Any --":
             category_name = None
         element_category = config.get("element_category", None)
@@ -94,7 +102,12 @@ def do(payload, config, plugin_config, inputs):
 
         has_attribute_filter = attribute_name is not None
         has_element_filter = element_name is not None
-        if not (has_attribute_filter and not has_element_filter):
+        is_template_tab = active_tab == "template"
+        is_template_search_with_selected_nodes = (
+            is_template_tab and len(selected_template_names) > 0
+        )
+
+        if not (has_attribute_filter and not has_element_filter) and not is_template_search_with_selected_nodes:
             clicked_nodes = []
         # root_tree = payload.get("root_tree")
         root_tree = config.get("treeData", [])
@@ -105,11 +118,22 @@ def do(payload, config, plugin_config, inputs):
         elements_max_count, attributes_max_count = get_max_counts(config)
 
         attributes = []
-        for result in client.batched_search(database_name, element_name, attribute_name,
-                                            element_category, attribute_category, template_name, clicked_nodes,
-                                            elements_max_count=elements_max_count, attributes_max_count=attributes_max_count):
-            # result["checked"] = True
-            attributes.append(result)
+        if is_template_search_with_selected_nodes:
+            # In template tab with selected template nodes, scope searches to all selected templates.
+            # We ignore element_name here to avoid stale "*" from single-template click behavior.
+            for selected_template_name in selected_template_names:
+                for result in client.batched_search(
+                    database_name, None, attribute_name,
+                    element_category, attribute_category, selected_template_name, [],
+                    elements_max_count=elements_max_count, attributes_max_count=attributes_max_count
+                ):
+                    attributes.append(result)
+        else:
+            for result in client.batched_search(database_name, element_name, attribute_name,
+                                                element_category, attribute_category, template_name, clicked_nodes,
+                                                elements_max_count=elements_max_count, attributes_max_count=attributes_max_count):
+                # result["checked"] = True
+                attributes.append(result)
         attributes = split_real_from_linked_paths(attributes)
         items = []
         for attribute in attributes:

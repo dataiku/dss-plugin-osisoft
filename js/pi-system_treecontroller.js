@@ -45,6 +45,8 @@ app.controller('AfExplorerFormCtrl', [
     $scope.config.searchMatchedAttributePaths = $scope.config.searchMatchedAttributePaths || [];
     $scope.config.currentSearchRestrictsAttributes = $scope.config.currentSearchRestrictsAttributes || false;
     $scope.config.lastSearchedElementName = $scope.config.lastSearchedElementName || "";
+    $scope.config.pendingTabContextReset = $scope.config.pendingTabContextReset || false;
+    $scope.config.selectedTemplateNames = $scope.config.selectedTemplateNames || [];
 
     $scope.editorOptions = CodeMirrorSettingService.get("text/plain");
 
@@ -116,9 +118,10 @@ app.controller('AfExplorerFormCtrl', [
     }
     $scope.explore = function () {
       if ($scope.authConfigured()) {
+        $scope.updateDatas();
         $scope.showTreeData = true;
         $scope.showTemplateTreeData = true;
-        $scope.toggleAuthSection(); 
+        $scope.authSectionVisible = false;
       }
     };
 
@@ -136,6 +139,8 @@ app.controller('AfExplorerFormCtrl', [
       $scope.config.searchMatchedAttributePaths = [];
       $scope.config.currentSearchRestrictsAttributes = false;
       $scope.config.lastSearchedElementName = "";
+      $scope.config.pendingTabContextReset = false;
+      $scope.config.selectedTemplateNames = [];
     }
 
     $scope.resetDatasourceState = function () {
@@ -147,9 +152,34 @@ app.controller('AfExplorerFormCtrl', [
       $scope.config.templateTreeData = [];
       $scope.config.attribute_categories = [];
       $scope.config.element_categories = [];
+      $scope.config.loadedDatabaseName = null;
       $scope.config.attributeList = [];
       $scope.config.selectedAttributes = [];
       $scope.config.outputSelectedAttributes = [];
+      $scope.showTreeData = false;
+      $scope.showTemplateTreeData = false;
+      $scope.cleanTree();
+    };
+
+    $scope.onServerChanged = function () {
+      $scope.config.database_name = null;
+      $scope.config.templates = [];
+      $scope.config.templateTreeData = [];
+      $scope.config.attribute_categories = [];
+      $scope.config.element_categories = [];
+      $scope.config.loadedDatabaseName = null;
+      $scope.showTreeData = false;
+      $scope.showTemplateTreeData = false;
+      $scope.cleanTree();
+      $scope.getDatabases();
+    };
+
+    $scope.onDatabaseChanged = function () {
+      $scope.config.templates = [];
+      $scope.config.templateTreeData = [];
+      $scope.config.attribute_categories = [];
+      $scope.config.element_categories = [];
+      $scope.config.loadedDatabaseName = null;
       $scope.showTreeData = false;
       $scope.showTemplateTreeData = false;
       $scope.cleanTree();
@@ -205,7 +235,9 @@ app.controller('AfExplorerFormCtrl', [
       $scope.initializeTree();
       $scope.getTemplatesFromDB();
       $scope.getCategoriesFromDB();
-      $scope.showTreeData = false;
+      $scope.config.loadedDatabaseName = $scope.config.database_name || null;
+      $scope.showTreeData = true;
+      $scope.showTemplateTreeData = true;
     }
 
     $scope.getChildrenFromDB = function (item) {
@@ -245,7 +277,36 @@ app.controller('AfExplorerFormCtrl', [
       });
     }
 
+    function resetRightPanelForCurrentTabContext() {
+      $scope.config.attribute_name = "";
+      $scope.config.clickedNodes = [];
+      $scope.config.attributeList = [];
+      $scope.config.selectedAttributes = [];
+      $scope.config.selectAllAttributes = false;
+      $scope.config.searchMatchedElementPaths = [];
+      $scope.config.searchMatchedAttributePaths = [];
+      $scope.config.currentSearchRestrictsAttributes = false;
+      $scope.config.selectedTemplateNames = [];
+      if ($scope.config.activeTab === "element") {
+        $scope.config.template = "-- Any --";
+      } else if ($scope.config.activeTab === "template") {
+        $scope.config.element_name = "";
+      }
+    }
+
+    function consumePendingTabContextReset() {
+      if (!$scope.config.pendingTabContextReset) {
+        return;
+      }
+      resetRightPanelForCurrentTabContext();
+      $scope.config.pendingTabContextReset = false;
+    }
+
     $scope.setTab = function(tab) {
+        const previousTab = $scope.config.activeTab;
+        if (tab !== previousTab) {
+          $scope.config.pendingTabContextReset = true;
+        }
         $scope.config.activeTab = tab;
     };
 
@@ -275,6 +336,8 @@ app.controller('AfExplorerFormCtrl', [
     };
 
     $scope.doSearch = function (element_name, attribute_name) {
+      consumePendingTabContextReset();
+
       const hasElementFilter = !!(element_name && element_name.trim());
       const hadPreviousElementFilter = !!($scope.config.lastSearchedElementName && $scope.config.lastSearchedElementName.trim());
 
@@ -286,9 +349,28 @@ app.controller('AfExplorerFormCtrl', [
       const hasClickedNodes = Array.isArray($scope.config.clickedNodes) && $scope.config.clickedNodes.length > 0;
       const hasAttributeFilter = !!(attribute_name && attribute_name.trim());
       const isRestrictedAttributeSearch = hasClickedNodes && hasAttributeFilter && !hasElementFilter;
-      const shouldDisplaySearchAttributesDirectly = hasAttributeFilter;
+      const hasTemplateFilter = !!(
+        $scope.config.template &&
+        $scope.config.template !== "-- Any --"
+      );
+      const isTemplateScopedSearch =
+        hasTemplateFilter &&
+        ($scope.config.activeTab === "template");
+      const shouldDisplaySearchAttributesDirectly =
+        hasAttributeFilter || isTemplateScopedSearch;
       $scope.config.currentSearchRestrictsAttributes = isRestrictedAttributeSearch;
       $scope.config.lastSearchedElementName = element_name || "";
+      if ($scope.config.activeTab === "template") {
+        $scope.config.selectedTemplateNames = getSelectedTemplateNamesFromClickedNodes();
+      } else {
+        $scope.config.selectedTemplateNames = [];
+      }
+      const hasSelectedTemplateNodes = (
+        $scope.config.activeTab === "template" &&
+        Array.isArray($scope.config.selectedTemplateNames) &&
+        $scope.config.selectedTemplateNames.length > 0
+      );
+      const shouldShowTemplateSelectionAttributes = hasSelectedTemplateNodes;
 
       if (!isRestrictedAttributeSearch) {
         $scope.config.attributeList = [];
@@ -305,7 +387,11 @@ app.controller('AfExplorerFormCtrl', [
           $scope.config.searchMatchedAttributePaths = getMatchedAttributePaths(matchedAttributes);
           $scope.config.searchMatchedElementPaths = matchedElementPaths;
           markSearchResults($scope.config.treeData, matchedElementPaths);
-          if (isRestrictedAttributeSearch || shouldDisplaySearchAttributesDirectly) {
+          if (
+            isRestrictedAttributeSearch ||
+            shouldDisplaySearchAttributesDirectly ||
+            shouldShowTemplateSelectionAttributes
+          ) {
             applySearchAttributesToList(matchedAttributes);
           }
         }
@@ -354,6 +440,46 @@ app.controller('AfExplorerFormCtrl', [
       return Array.from(matchedPathSet);
     }
 
+    function collectTemplateTitlesByClickedUrls(nodes, clickedUrlSet, outputSet) {
+      if (!Array.isArray(nodes) || !clickedUrlSet || !outputSet) {
+        return;
+      }
+
+      nodes.forEach(function (node) {
+        if (!node) {
+          return;
+        }
+        if (
+          clickedUrlSet.has(node.url) &&
+          node.type === "template" &&
+          node.title &&
+          node.title !== "-- Any --"
+        ) {
+          outputSet.add(node.title);
+        }
+        if (Array.isArray(node.children) && node.children.length > 0) {
+          collectTemplateTitlesByClickedUrls(node.children, clickedUrlSet, outputSet);
+        }
+      });
+    }
+
+    function getSelectedTemplateNamesFromClickedNodes() {
+      const clickedUrls = Array.isArray($scope.config.clickedNodes)
+        ? $scope.config.clickedNodes
+        : [];
+      if (!clickedUrls.length) {
+        return [];
+      }
+
+      const selectedTemplateNames = new Set();
+      collectTemplateTitlesByClickedUrls(
+        $scope.config.templateTreeData,
+        new Set(clickedUrls),
+        selectedTemplateNames
+      );
+      return Array.from(selectedTemplateNames);
+    }
+
     function markSearchResults(nodes, matchedElementPaths) {
       if (!Array.isArray(nodes)) {
         return;
@@ -378,6 +504,15 @@ app.controller('AfExplorerFormCtrl', [
         $event.preventDefault();
         $scope.doSearch($scope.config.element_name, $scope.config.attribute_name);
       }
+    };
+
+    $scope.searchFromElement = function () {
+      if (!$scope.config) {
+        return;
+      }
+
+      // Left search always resets right-side filter/template search.
+      $scope.doSearch($scope.config.element_name, "");
     };
 
     $scope.toggleSelectAllAttributes = function () {
@@ -481,8 +616,22 @@ app.controller('AfExplorerFormCtrl', [
           processNode(newNode);
         });
       } else if (node.type === "template") {
+        const selectedTemplateNames = getSelectedTemplateNamesFromClickedNodes();
+        if (!selectedTemplateNames.length) {
+          $scope.config.template = "-- Any --";
+          $scope.config.attributeList = [];
+          $scope.config.selectedAttributes = [];
+          $scope.config.searchMatchedElementPaths = [];
+          $scope.config.searchMatchedAttributePaths = [];
+          return;
+        }
+
+        // Keep previous single-template behavior in config when only one is selected.
+        // For multi-select, backend will use selectedTemplateNames.
+        $scope.config.template = selectedTemplateNames.length === 1
+          ? selectedTemplateNames[0]
+          : "-- Any --";
         $scope.config.element_name = "*";
-        $scope.config.template = node.title;
         $scope.doSearch($scope.config.element_name, $scope.config.attribute_name);
       } else {
         processNode(node);
@@ -588,6 +737,74 @@ app.component('treeNode', {
   controller: function () {
     const ctrl = this;
 
+    function consumePendingTabContextReset() {
+      if (!ctrl.config || !ctrl.config.pendingTabContextReset) {
+        return;
+      }
+
+      ctrl.config.attribute_name = "";
+      ctrl.config.clickedNodes = [];
+      ctrl.config.attributeList = [];
+      ctrl.config.selectedAttributes = [];
+      ctrl.config.selectAllAttributes = false;
+      ctrl.config.searchMatchedElementPaths = [];
+      ctrl.config.searchMatchedAttributePaths = [];
+      ctrl.config.currentSearchRestrictsAttributes = false;
+
+      if (ctrl.config.activeTab === "element") {
+        ctrl.config.template = "-- Any --";
+      } else if (ctrl.config.activeTab === "template") {
+        ctrl.config.element_name = "";
+      }
+
+      ctrl.config.pendingTabContextReset = false;
+    }
+
+    function findNodeByUrl(nodes, targetUrl) {
+      if (!Array.isArray(nodes) || !targetUrl) {
+        return null;
+      }
+
+      for (let i = 0; i < nodes.length; i += 1) {
+        const node = nodes[i];
+        if (!node) {
+          continue;
+        }
+        if (node.url === targetUrl) {
+          return node;
+        }
+        const childMatch = findNodeByUrl(node.children, targetUrl);
+        if (childMatch) {
+          return childMatch;
+        }
+      }
+
+      return null;
+    }
+
+    function rebuildAttributesFromClickedNodes() {
+      const clickedUrls = Array.isArray(ctrl.config && ctrl.config.clickedNodes)
+        ? ctrl.config.clickedNodes
+        : [];
+
+      ctrl.config.attributeList = [];
+      ctrl.config.selectedAttributes = [];
+      ctrl.config.selectAllAttributes = false;
+
+      if (!clickedUrls.length) {
+        return;
+      }
+
+      clickedUrls.forEach(function (url) {
+        const node =
+          findNodeByUrl(ctrl.config.treeData, url) ||
+          findNodeByUrl(ctrl.config.templateTreeData, url);
+        if (node) {
+          ctrl.displayAttributes(node, true);
+        }
+      });
+    }
+
     ctrl.hasRenderableChildren = function (node) {
       if (!node || !Array.isArray(node.children) || !node.children.length) {
         return false;
@@ -611,12 +828,41 @@ app.component('treeNode', {
     };
     
     ctrl.onNodeClick = function (node) {
+      consumePendingTabContextReset();
+
+      const hadRightSearch = !!(
+        ctrl.config &&
+        ctrl.config.attribute_name &&
+        ctrl.config.attribute_name.trim()
+      );
+
+      if (ctrl.config) {
+        // Clicking a left node resets right-side attribute/template search.
+        ctrl.config.attribute_name = "";
+        if (node && node.type === "element") {
+          ctrl.config.template = "-- Any --";
+        }
+      }
+
       const index = ctrl.config.clickedNodes.indexOf(node.url);
       if (index > -1) {
         ctrl.config.clickedNodes.splice(index, 1);
-        ctrl.displayAttributes(node,false);
       } else {
         ctrl.config.clickedNodes.push(node.url);
+      }
+
+      if (node && node.type === "template") {
+        // Template clicks should always rebuild right-side content from the full template selection.
+        ctrl.displayAttributes(node, true);
+        console.log("ctrl.config.clickedNodes: " + JSON.stringify(ctrl.config.clickedNodes));
+        return;
+      }
+
+      if (hadRightSearch) {
+        rebuildAttributesFromClickedNodes();
+      } else if (index > -1) {
+        ctrl.displayAttributes(node, false);
+      } else {
         ctrl.displayAttributes(node);
       }
 
