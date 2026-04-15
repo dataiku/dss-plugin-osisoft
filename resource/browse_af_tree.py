@@ -146,22 +146,35 @@ def do(payload, config, plugin_config, inputs):
 
         has_attribute_filter = attribute_name is not None
         is_template_tab = active_tab == "template"
-        use_clicked_nodes_scope = (
+        has_clicked_element_nodes = len(clicked_nodes) > 0
+        # clicked_nodes scope is only for element-node URLs (batched_search restrict_to_elements).
+        # Template-node selections are scoped via selected_template_names.
+        use_clicked_element_nodes_scope = (
             has_attribute_filter and
             not is_template_tab and
-            len(clicked_nodes) > 0
+            has_clicked_element_nodes
         )
-        if use_clicked_nodes_scope:
-            # When users selected elements in the tree and search attributes,
-            # use the explicit selection as scope instead of the left input text.
+        if has_attribute_filter and not is_template_tab:
+            # Attribute search scope in element tab:
+            # - with selected nodes => restrict to selected nodes
+            # - without selected nodes => global search on the full tree
+            # In both cases, element text input is not a scope for attributes.
             element_name = None
+        elif has_attribute_filter and is_template_tab:
+            # Attribute search scope in template tab:
+            # - with selected template nodes => restrict to selected templates
+            # - without selected template nodes => global search on the full tree
+            # Ignore stale element/template text filters for attribute-only searches.
+            element_name = None
+            if len(selected_template_names) == 0:
+                template_name = None
 
         has_element_filter = element_name is not None
-        is_template_search_with_selected_nodes = (
+        use_selected_template_names_scope = (
             is_template_tab and len(selected_template_names) > 0
         )
 
-        if not (has_attribute_filter and not has_element_filter) and not is_template_search_with_selected_nodes:
+        if not use_clicked_element_nodes_scope and not use_selected_template_names_scope:
             clicked_nodes = []
         # root_tree = payload.get("root_tree")
         root_tree = config.get("treeData", [])
@@ -172,7 +185,7 @@ def do(payload, config, plugin_config, inputs):
         elements_max_count, attributes_max_count = get_max_counts(config)
 
         attributes = []
-        if is_template_search_with_selected_nodes:
+        if use_selected_template_names_scope:
             # In template tab with selected template nodes, scope searches to all selected templates.
             # We ignore element_name here to avoid stale "*" from single-template click behavior.
             for selected_template_name in selected_template_names:
