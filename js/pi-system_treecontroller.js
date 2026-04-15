@@ -1014,15 +1014,18 @@ app.component('treeNode', {
     ctrl.onNodeClick = function (node) {
       consumePendingTabContextReset();
 
-      const hadRightSearch = !!(
+      const hasActiveAttributeSearch = !!(
         ctrl.config &&
         ctrl.config.attribute_name &&
         ctrl.config.attribute_name.trim()
       );
 
       if (ctrl.config) {
-        // Clicking a left node resets right-side attribute/template search.
-        ctrl.config.attribute_name = "";
+        // Keep right-side attribute search when active so multi-node clicks can
+        // enrich results with the same filter (ex: "Load" on California + Fresno).
+        if (!hasActiveAttributeSearch) {
+          ctrl.config.attribute_name = "";
+        }
         if (node && node.type === "element") {
           ctrl.config.template = "-- Any --";
         }
@@ -1042,7 +1045,7 @@ app.component('treeNode', {
         return;
       }
 
-      if (hadRightSearch) {
+      if (hasActiveAttributeSearch) {
         rebuildAttributesFromClickedNodes();
       } else if (index > -1) {
         ctrl.displayAttributes(node, false);
