@@ -3,8 +3,42 @@ from safe_logger import SafeLogger
 from osisoft_plugin_common import get_credentials, build_select_choices, check_debug_mode
 from osisoft_plugin_common import get_item_details, Tree, recursive_tree_rebuild, PerformanceTimer
 import dataiku
+import time
 
 logger = SafeLogger("PI System plugin", ["user", "password"])
+
+
+def _run_and_log_login_call(method_name, api_call):
+    started_at = time.time()
+    try:
+        response = api_call()
+        choices = response.get("choices") if isinstance(response, dict) else None
+        choice_count = len(choices) if isinstance(choices, list) else "n/a"
+        preview_titles = []
+        if isinstance(choices, list):
+            for choice in choices[:3]:
+                if isinstance(choice, dict):
+                    preview_titles.append(choice.get("title", "<no-title>"))
+                else:
+                    preview_titles.append(str(choice))
+        logger.info(
+            "[LOGIN] {} ok | {}ms | choices_count={} | preview_titles={}".format(
+                method_name,
+                int((time.time() - started_at) * 1000),
+                choice_count,
+                preview_titles
+            )
+        )
+        return response
+    except Exception as error:
+        logger.error(
+            "[LOGIN] {} failed | {}ms | error={}".format(
+                method_name,
+                int((time.time() - started_at) * 1000),
+                error
+            )
+        )
+        raise
 
 
 def do(payload, config, plugin_config, inputs):
@@ -49,23 +83,31 @@ def do(payload, config, plugin_config, inputs):
     if method == "get_children_from_db":
         database_name = config.get("database_name")
         parent = payload.get("parent", {})
-        return get_children_from_db(client, parent, database_name=database_name)
+        return _run_and_log_login_call(
+            "get_children_from_db",
+            lambda: get_children_from_db(client, parent, database_name=database_name)
+        )
     if method == "get_templates_from_db":
         database_name = config.get("database_name")
         parent = payload.get("parent", {})
-        # ret = get_items_from_db(client, parent, "ElementTemplates", database_name=database_name)
-        ret = get_template_hierarchy_from_db(client, parent, database_name=database_name)
-        return ret
+        return _run_and_log_login_call(
+            "get_templates_from_db",
+            lambda: get_template_hierarchy_from_db(client, parent, database_name=database_name)
+        )
     if method == "get_attribute_categories_from_db":
         database_name = config.get("database_name")
         parent = payload.get("parent", {})
-        ret = get_items_from_db(client, parent, "AttributeCategories", database_name=database_name)
-        return ret
+        return _run_and_log_login_call(
+            "get_attribute_categories_from_db",
+            lambda: get_items_from_db(client, parent, "AttributeCategories", database_name=database_name)
+        )
     if method == "get_element_categories_from_db":
         database_name = config.get("database_name")
         parent = payload.get("parent", {})
-        ret = get_items_from_db(client, parent, "ElementCategories", database_name=database_name)
-        return ret
+        return _run_and_log_login_call(
+            "get_element_categories_from_db",
+            lambda: get_items_from_db(client, parent, "ElementCategories", database_name=database_name)
+        )
     if method == "do_search":
         template_name = config.get("template", None)
         category_name = config.get("element_category", None)

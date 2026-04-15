@@ -30,6 +30,7 @@ class OSIsoftClient(object):
     def __init__(self, server_url, auth_type, username, password, is_ssl_check_disabled=False, can_raise=True, is_debug_mode=False, network_timer=None):
         if can_raise:
             assert_server_url_ok(server_url)
+        requests.packages.urllib3.disable_warnings()
         self.session = requests.Session()
         self.session.auth = self.get_auth(auth_type, username, password)
         self.session.verify = (not is_ssl_check_disabled)

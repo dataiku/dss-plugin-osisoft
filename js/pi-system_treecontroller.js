@@ -26,9 +26,10 @@ app.service('TreeDataService', function () {
 app.controller('AfExplorerFormCtrl', [
   '$scope',
   '$stateParams',
+  '$q',
   'CodeMirrorSettingService',
   'TreeDataService',
-  function ($scope, $stateParams, CodeMirrorSettingService, TreeDataService) {
+  function ($scope, $stateParams, $q, CodeMirrorSettingService, TreeDataService) {
 
     $scope.paramDesc = {
       'parameterSetId': 'basic-auth',
@@ -89,9 +90,11 @@ app.controller('AfExplorerFormCtrl', [
         });
       }).error(setErrorInScope.bind($scope.errorScope));
       if ($scope.authConfigured() === true) {
-        $scope.authSectionVisible = false;
-        $scope.showTreeData = true;
-        $scope.showTemplateTreeData = true;
+        var hasTreeData = Array.isArray($scope.config.treeData) && $scope.config.treeData.length > 0;
+        var hasTemplateTreeData = Array.isArray($scope.config.templateTreeData) && $scope.config.templateTreeData.length > 0;
+        $scope.authSectionVisible = !hasTreeData;
+        $scope.showTreeData = hasTreeData;
+        $scope.showTemplateTreeData = hasTemplateTreeData;
       }
       $scope.config.template = $scope.config.template || "-- Any --";
       $scope.onAdvancedToggle();
@@ -115,16 +118,44 @@ app.controller('AfExplorerFormCtrl', [
     };
 
     $scope.authConfigured = function () {
-      console.log('authConfigured check');
-      return $scope.hasPreset() && $scope.config.database_name && $scope.config.database_name.length > 0 && $scope.config.server_name && $scope.config.server_name.length > 0;
+      return $scope.hasPreset() && !!$scope.config.database_name && !!$scope.config.server_name;
     }
     $scope.explore = function () {
-      if ($scope.authConfigured()) {
-        $scope.updateDatas();
-        $scope.showTreeData = true;
-        $scope.showTemplateTreeData = true;
-        $scope.authSectionVisible = false;
+      var hasPreset = $scope.hasPreset();
+      var hasServer = !!$scope.config.server_name;
+      var hasDatabase = !!$scope.config.database_name;
+      console.info("[LOGIN][UI] click", {
+        hasPreset: hasPreset,
+        hasServer: hasServer,
+        hasDatabase: hasDatabase
+      });
+
+      if (!$scope.authConfigured()) {
+        console.warn("[LOGIN][UI] blocked: missing required fields");
+        return;
       }
+
+      console.info("[LOGIN][UI] dispatching login API calls", {
+        server_name: $scope.config.server_name,
+        database_name: $scope.config.database_name
+      });
+      $scope.updateDatas().then(
+        function () {
+          $scope.showTreeData = true;
+          $scope.showTemplateTreeData = true;
+          $scope.authSectionVisible = false;
+          console.info("[LOGIN][UI] success", {
+            tree_count: Array.isArray($scope.config.treeData) ? $scope.config.treeData.length : 0,
+            template_tree_count: Array.isArray($scope.config.templateTreeData) ? $scope.config.templateTreeData.length : 0
+          });
+        },
+        function (error) {
+          $scope.showTreeData = false;
+          $scope.showTemplateTreeData = false;
+          $scope.authSectionVisible = true;
+          console.error("[LOGIN][UI] failed", error);
+        }
+      );
     };
 
     $scope.hasPreset = function () {
@@ -223,25 +254,26 @@ app.controller('AfExplorerFormCtrl', [
     );
 
     $scope.initializeTree = function () {
-      console.log("initialization: ");
       if (!$scope.config.treeData || $scope.config.treeData.length === 0) {
-        $scope.callPythonDo({ method: "get_children_from_db", parent: $scope.config.database_name }).then(function (data) {
-          console.log("ALX:data2=" + JSON.stringify(data));
+        return $scope.callPythonDo({ method: "get_children_from_db", parent: $scope.config.database_name }).then(function (data) {
           TreeDataService.setTreeData(data.choices);
           $scope.config.treeData = TreeDataService.getTreeData();
+          return data;
         });
       }
-      
+      return $q.when({ choices: $scope.config.treeData || [] });
     };
 
     $scope.updateDatas = function () {
       $scope.cleanTree();
-      $scope.initializeTree();
-      $scope.getTemplatesFromDB();
-      $scope.getCategoriesFromDB();
-      $scope.config.loadedDatabaseName = $scope.config.database_name || null;
-      $scope.showTreeData = true;
-      $scope.showTemplateTreeData = true;
+      return $q.all([
+        $scope.initializeTree(),
+        $scope.getTemplatesFromDB(),
+        $scope.getCategoriesFromDB()
+      ]).then(function (results) {
+        $scope.config.loadedDatabaseName = $scope.config.database_name || null;
+        return results;
+      });
     }
 
     $scope.getChildrenFromDB = function (item) {
@@ -274,7 +306,7 @@ app.controller('AfExplorerFormCtrl', [
     }
 
     $scope.getTemplatesFromDB = function () {
-       $scope.callPythonDo({ method: "get_templates_from_db" }).then(function (data) {
+      return $scope.callPythonDo({ method: "get_templates_from_db" }).then(function (data) {
         $scope.config.templates = data.choices;
         TreeDataService.setTemplateTreeData(data.choices);
         $scope.config.templateTreeData = TreeDataService.getTemplateTreeData();
@@ -319,12 +351,15 @@ app.controller('AfExplorerFormCtrl', [
     $scope.getCategoriesFromDB = function () {
       $scope.config.attribute_categories = [];
       $scope.config.element_categories = [];
-      $scope.callPythonDo({ method: "get_attribute_categories_from_db" }).then(function (data) {
+      var attributeCategoriesPromise = $scope.callPythonDo({ method: "get_attribute_categories_from_db" }).then(function (data) {
         $scope.config.attribute_categories = data.choices;
+        return data;
       });
-      $scope.callPythonDo({ method: "get_element_categories_from_db" }).then(function (data) {
+      var elementCategoriesPromise = $scope.callPythonDo({ method: "get_element_categories_from_db" }).then(function (data) {
         $scope.config.element_categories = data.choices;
+        return data;
       });
+      return $q.all([attributeCategoriesPromise, elementCategoriesPromise]);
     }
 
     // Toggle récursif des checkboxes
