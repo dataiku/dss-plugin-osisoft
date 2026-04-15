@@ -70,6 +70,8 @@ def do(payload, config, plugin_config, inputs):
         template_name = config.get("template", None)
         category_name = config.get("element_category", None)
         clicked_nodes = config.get("clickedNodes", [])
+        if not isinstance(clicked_nodes, list):
+            clicked_nodes = []
         active_tab = config.get("activeTab")
         selected_template_names = config.get("selectedTemplateNames", [])
         if template_name == "-- Any --":
@@ -101,8 +103,18 @@ def do(payload, config, plugin_config, inputs):
                 attribute_name = None
 
         has_attribute_filter = attribute_name is not None
-        has_element_filter = element_name is not None
         is_template_tab = active_tab == "template"
+        use_clicked_nodes_scope = (
+            has_attribute_filter and
+            not is_template_tab and
+            len(clicked_nodes) > 0
+        )
+        if use_clicked_nodes_scope:
+            # When users selected elements in the tree and search attributes,
+            # use the explicit selection as scope instead of the left input text.
+            element_name = None
+
+        has_element_filter = element_name is not None
         is_template_search_with_selected_nodes = (
             is_template_tab and len(selected_template_names) > 0
         )

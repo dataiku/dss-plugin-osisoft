@@ -47,6 +47,8 @@ app.controller('AfExplorerFormCtrl', [
     $scope.config.lastSearchedElementName = $scope.config.lastSearchedElementName || "";
     $scope.config.pendingTabContextReset = $scope.config.pendingTabContextReset || false;
     $scope.config.selectedTemplateNames = $scope.config.selectedTemplateNames || [];
+    $scope.config.selectAllWithoutTemplateAttributes = $scope.config.selectAllWithoutTemplateAttributes || false;
+    $scope.config.selectAllTemplateAttributes = $scope.config.selectAllTemplateAttributes || false;
 
     $scope.editorOptions = CodeMirrorSettingService.get("text/plain");
 
@@ -141,6 +143,8 @@ app.controller('AfExplorerFormCtrl', [
       $scope.config.lastSearchedElementName = "";
       $scope.config.pendingTabContextReset = false;
       $scope.config.selectedTemplateNames = [];
+      $scope.config.selectAllWithoutTemplateAttributes = false;
+      $scope.config.selectAllTemplateAttributes = false;
     }
 
     $scope.resetDatasourceState = function () {
@@ -283,6 +287,8 @@ app.controller('AfExplorerFormCtrl', [
       $scope.config.attributeList = [];
       $scope.config.selectedAttributes = [];
       $scope.config.selectAllAttributes = false;
+      $scope.config.selectAllWithoutTemplateAttributes = false;
+      $scope.config.selectAllTemplateAttributes = false;
       $scope.config.searchMatchedElementPaths = [];
       $scope.config.searchMatchedAttributePaths = [];
       $scope.config.currentSearchRestrictsAttributes = false;
@@ -375,6 +381,10 @@ app.controller('AfExplorerFormCtrl', [
       if (!isRestrictedAttributeSearch) {
         $scope.config.attributeList = [];
         $scope.config.selectedAttributes = [];
+        $scope.config.selectAllAttributes = false;
+        // Right-side display is reset: both table-level select-all checkboxes must be cleared.
+        $scope.config.selectAllWithoutTemplateAttributes = false;
+        $scope.config.selectAllTemplateAttributes = false;
       }
       $scope.config.searchMatchedElementPaths = [];
       $scope.config.searchMatchedAttributePaths = [];
@@ -502,6 +512,11 @@ app.controller('AfExplorerFormCtrl', [
     $scope.onSearchInputKeydown = function ($event) {
       if ($event && ($event.key === "Enter" || $event.keyCode === 13)) {
         $event.preventDefault();
+        const targetId = $event.target && $event.target.id ? $event.target.id : "";
+        if (targetId === "ReturnsName") {
+          $scope.searchFromElement();
+          return;
+        }
         $scope.doSearch($scope.config.element_name, $scope.config.attribute_name);
       }
     };
@@ -512,24 +527,64 @@ app.controller('AfExplorerFormCtrl', [
       }
 
       // Left search always resets right-side filter/template search.
-      $scope.doSearch($scope.config.element_name, "");
+      $scope.config.clickedNodes = [];
+      $scope.config.selectedTemplateNames = [];
+      $scope.config.attribute_name = "";
+      $scope.doSearch($scope.config.element_name, $scope.config.attribute_name);
     };
 
-    $scope.toggleSelectAllAttributes = function () {
-      if ($scope.config.selectAllAttributes) {
-        $scope.config.selectedAttributes = [...$scope.config.attributeList];
-        $scope.config.attributeList.forEach(attr => {
-          attr.checked = true;
-          upsertOutputSelectedAttribute(attr, true);
-        });
-      } else {
-        $scope.config.selectedAttributes = [];
-        $scope.config.attributeList.forEach(attr => {
-          attr.checked = false;
-          upsertOutputSelectedAttribute(attr, false);
-        });
+    function setAttributesChecked(attributes, isChecked) {
+      if (!Array.isArray(attributes)) {
+        return;
       }
+      attributes.forEach(attribute => {
+        if (!attribute || !attribute.path) {
+          return;
+        }
+        attribute.checked = !!isChecked;
+        upsertOutputSelectedAttribute(attribute, !!isChecked);
+      });
+      syncVisibleSelectionFromOutput();
     }
+
+    $scope.toggleSelectAllAttributes = function () {
+      setAttributesChecked($scope.config.attributeList, !!$scope.config.selectAllAttributes);
+    };
+
+    $scope.toggleSelectAllWithoutTemplateAttributes = function () {
+      setAttributesChecked($scope.getAttributesWithoutTemplate(), !!$scope.config.selectAllWithoutTemplateAttributes);
+    };
+
+    function getAllTemplatedAttributes() {
+      const templateGroups = getGroupedAttributesByTemplate().templateGroups;
+      const templatedAttributes = [];
+      templateGroups.forEach(group => {
+        if (!group || !Array.isArray(group.attributes)) {
+          return;
+        }
+        templatedAttributes.push.apply(templatedAttributes, group.attributes);
+      });
+      return templatedAttributes;
+    }
+
+    $scope.toggleSelectAllTemplateAttributes = function () {
+      setAttributesChecked(getAllTemplatedAttributes(), !!$scope.config.selectAllTemplateAttributes);
+    };
+
+    $scope.isTemplateGroupChecked = function (group) {
+      if (!group || !Array.isArray(group.attributes) || !group.attributes.length) {
+        return false;
+      }
+      return group.attributes.every(attribute => !!attribute.checked);
+    };
+
+    $scope.toggleTemplateGroupAttributes = function (group) {
+      if (!group || !Array.isArray(group.attributes)) {
+        return;
+      }
+      const shouldCheck = !$scope.isTemplateGroupChecked(group);
+      setAttributesChecked(group.attributes, shouldCheck);
+    };
 
     $scope.updateAttributeToOutput = function (attribute) {
   if (!$scope.config || !$scope.config.attributeList) return;
@@ -545,8 +600,7 @@ app.controller('AfExplorerFormCtrl', [
     const attrInConfig = attributeList.find(attr => attr.path === attribute.path);
     if (attrInConfig) attrInConfig.checked = false;
     upsertOutputSelectedAttribute(attribute, false);
-
-    $scope.config.selectAllAttributes = false;
+    syncVisibleSelectionFromOutput();
     return;
   }
 
@@ -560,8 +614,7 @@ app.controller('AfExplorerFormCtrl', [
   selectedAttributes.push(attribute);
   attrInConfig.checked = true;
   upsertOutputSelectedAttribute(attribute, true);
-
-  $scope.config.selectAllAttributes = selectedAttributes.length === attributeList.length;
+  syncVisibleSelectionFromOutput();
 };
 
 
@@ -597,6 +650,8 @@ app.controller('AfExplorerFormCtrl', [
 
     $scope.displayAttributes = function (node, shouldAdd = true) {
       $scope.config.selectAllAttributes = false;
+      $scope.config.selectAllWithoutTemplateAttributes = false;
+      $scope.config.selectAllTemplateAttributes = false;
       if (!shouldAdd) {
         removeNodeAttributes(node);
         return;
@@ -621,6 +676,8 @@ app.controller('AfExplorerFormCtrl', [
           $scope.config.template = "-- Any --";
           $scope.config.attributeList = [];
           $scope.config.selectedAttributes = [];
+          $scope.config.selectAllWithoutTemplateAttributes = false;
+          $scope.config.selectAllTemplateAttributes = false;
           $scope.config.searchMatchedElementPaths = [];
           $scope.config.searchMatchedAttributePaths = [];
           return;
@@ -642,9 +699,13 @@ app.controller('AfExplorerFormCtrl', [
       const selectedPaths = new Set(getOutputSelectedAttributes().map(attr => attr.path));
       const hasAttributeFilter = !!($scope.config.attribute_name && $scope.config.attribute_name.trim());
       const shouldRestrictDisplayedAttributes = hasAttributeFilter;
+      const parentTemplateName = node && node.template_name ? node.template_name : null;
 
       node.children.forEach(child => {
         if (child.type === "attribute") {
+          if (!child.parent_template_name && parentTemplateName) {
+            child.parent_template_name = parentTemplateName;
+          }
           if (shouldRestrictDisplayedAttributes && !attributeMatchesCurrentSearch(child)) {
             return;
           }
@@ -658,6 +719,82 @@ app.controller('AfExplorerFormCtrl', [
 
       syncVisibleSelectionFromOutput();
     }
+
+    function getAttributeTemplateName(attribute) {
+      if (!attribute) {
+        return "";
+      }
+      const templateName = attribute.parent_template_name || attribute.template_name || "";
+      return typeof templateName === "string" ? templateName.trim() : "";
+    }
+
+    function groupAttributesByTemplate(attributes) {
+      const attributesByTemplate = new Map();
+      const attributesWithoutTemplate = [];
+
+      attributes.forEach(attribute => {
+        if (!attribute || !attribute.path) {
+          return;
+        }
+        const templateName = getAttributeTemplateName(attribute);
+        if (!templateName) {
+          attributesWithoutTemplate.push(attribute);
+          return;
+        }
+        if (!attributesByTemplate.has(templateName)) {
+          attributesByTemplate.set(templateName, []);
+        }
+        attributesByTemplate.get(templateName).push(attribute);
+      });
+
+      const templateGroups = [];
+      attributesByTemplate.forEach((templateAttributes, templateName) => {
+        templateGroups.push({
+          groupKey: "template:" + templateName,
+          templateName: templateName,
+          attributes: templateAttributes
+        });
+      });
+
+      return {
+        attributesWithoutTemplate: attributesWithoutTemplate,
+        templateGroups: templateGroups
+      };
+    }
+
+    function buildTemplateGroupingKey(attributes) {
+      return attributes
+        .filter(attribute => attribute && attribute.path)
+        .map(attribute => attribute.path + "::" + getAttributeTemplateName(attribute))
+        .join("||");
+    }
+
+    let templateGroupingKey = null;
+    let templateGroupingSource = null;
+    let groupedAttributesByTemplate = {
+      attributesWithoutTemplate: [],
+      templateGroups: []
+    };
+
+    function getGroupedAttributesByTemplate() {
+      const attributes = Array.isArray($scope.config.attributeList) ? $scope.config.attributeList : [];
+      const nextTemplateGroupingKey = buildTemplateGroupingKey(attributes);
+      if (attributes === templateGroupingSource && nextTemplateGroupingKey === templateGroupingKey) {
+        return groupedAttributesByTemplate;
+      }
+      templateGroupingSource = attributes;
+      templateGroupingKey = nextTemplateGroupingKey;
+      groupedAttributesByTemplate = groupAttributesByTemplate(attributes);
+      return groupedAttributesByTemplate;
+    }
+
+    $scope.getAttributesWithoutTemplate = function () {
+      return getGroupedAttributesByTemplate().attributesWithoutTemplate;
+    };
+
+    $scope.getTemplateGroups = function () {
+      return getGroupedAttributesByTemplate().templateGroups;
+    };
 
     function attributeMatchesCurrentSearch(attribute) {
       const rawFilter = ($scope.config.attribute_name || "").trim();
@@ -716,6 +853,14 @@ app.controller('AfExplorerFormCtrl', [
       $scope.config.selectAllAttributes =
         $scope.config.attributeList.length > 0 &&
         $scope.config.selectedAttributes.length === $scope.config.attributeList.length;
+      const attributesWithoutTemplate = getGroupedAttributesByTemplate().attributesWithoutTemplate;
+      $scope.config.selectAllWithoutTemplateAttributes =
+        attributesWithoutTemplate.length > 0 &&
+        attributesWithoutTemplate.every(attribute => !!attribute.checked);
+      const templatedAttributes = getAllTemplatedAttributes();
+      $scope.config.selectAllTemplateAttributes =
+        templatedAttributes.length > 0 &&
+        templatedAttributes.every(attribute => !!attribute.checked);
     }
 
 
@@ -747,6 +892,8 @@ app.component('treeNode', {
       ctrl.config.attributeList = [];
       ctrl.config.selectedAttributes = [];
       ctrl.config.selectAllAttributes = false;
+      ctrl.config.selectAllWithoutTemplateAttributes = false;
+      ctrl.config.selectAllTemplateAttributes = false;
       ctrl.config.searchMatchedElementPaths = [];
       ctrl.config.searchMatchedAttributePaths = [];
       ctrl.config.currentSearchRestrictsAttributes = false;
@@ -790,6 +937,8 @@ app.component('treeNode', {
       ctrl.config.attributeList = [];
       ctrl.config.selectedAttributes = [];
       ctrl.config.selectAllAttributes = false;
+      ctrl.config.selectAllWithoutTemplateAttributes = false;
+      ctrl.config.selectAllTemplateAttributes = false;
 
       if (!clickedUrls.length) {
         return;

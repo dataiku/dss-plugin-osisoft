@@ -165,6 +165,29 @@ background: #FFF;
     background-color: #f1f7ff;
 }
 
+.custom-table tr.custom-table__group-row td {
+    background-color: #e8f0fb;
+    font-weight: 600;
+}
+
+.custom-table tr.custom-table__group-row:hover td {
+    background-color: #e8f0fb;
+}
+
+.custom-table tr.custom-table__empty-row td {
+    color: #666;
+    font-style: italic;
+}
+
+.attribute-table-block {
+    width: 100%;
+    margin-bottom: 14px;
+}
+
+.attribute-table-block__title {
+    margin-bottom: 6px;
+}
+
 .tree-view__tabs{
     display: flex;
     align-items: center;

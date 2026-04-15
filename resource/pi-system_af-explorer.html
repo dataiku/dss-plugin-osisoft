@@ -91,29 +91,71 @@
                 </div>
             </div>
 </div>
-        <table class="custom-table">
-            <thead>
-                <tr>
-                    <th> <input type="checkbox" ng-init="config.selectAllAttributes = false"
-                            ng-model="config.selectAllAttributes" ng-change="toggleSelectAllAttributes()"></th>
-                    <th>Title</th>
-                    <th>Description</th>
-                    <th>Path</th>
-                </tr>
-            </thead>
-
-            <tbody>
-                <tr ng-repeat="attribute in config.attributeList track by $index">
-                    <td>
-                        <input type="checkbox" ng-model="attribute.checked"
-                            ng-change="updateAttributeToOutput(attribute)">
-                    </td>
-                    <td>{{attribute.title}}</td>
-                    <td>{{attribute.description}}</td>
-                    <td>{{attribute.path}}</td>
-                </tr>
-            </tbody>
-        </table>
+        <div class="attribute-table-block">
+            <div class="attribute-table-block__title"><strong>Attributes</strong></div>
+            <table class="custom-table">
+                <thead>
+                    <tr>
+                        <th><input type="checkbox" ng-model="config.selectAllWithoutTemplateAttributes"
+                                ng-change="toggleSelectAllWithoutTemplateAttributes()"></th>
+                        <th>Title</th>
+                        <th>Description</th>
+                        <th>Path</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr ng-if="!getAttributesWithoutTemplate().length" class="custom-table__empty-row">
+                        <td colspan="4">No attributes without template</td>
+                    </tr>
+                    <tr ng-repeat="attribute in getAttributesWithoutTemplate() track by attribute.path">
+                        <td>
+                            <input type="checkbox" ng-model="attribute.checked"
+                                ng-change="updateAttributeToOutput(attribute)">
+                        </td>
+                        <td>{{attribute.title}}</td>
+                        <td>{{attribute.description}}</td>
+                        <td>{{attribute.path}}</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        <div class="attribute-table-block">
+            <div class="attribute-table-block__title"><strong>Templates</strong></div>
+            <table class="custom-table">
+                <thead>
+                    <tr>
+                        <th><input type="checkbox" ng-model="config.selectAllTemplateAttributes"
+                                ng-change="toggleSelectAllTemplateAttributes()"></th>
+                        <th>Title</th>
+                        <th>Description</th>
+                        <th>Path</th>
+                    </tr>
+                </thead>
+                <tbody ng-if="!getTemplateGroups().length">
+                    <tr class="custom-table__empty-row">
+                        <td colspan="4">No templated attributes</td>
+                    </tr>
+                </tbody>
+                <tbody ng-repeat="group in getTemplateGroups() track by group.groupKey">
+                    <tr class="custom-table__group-row">
+                        <td>
+                            <input type="checkbox" ng-checked="isTemplateGroupChecked(group)"
+                                ng-click="toggleTemplateGroupAttributes(group)">
+                        </td>
+                        <td colspan="3">{{group.templateName}}</td>
+                    </tr>
+                    <tr ng-repeat="attribute in group.attributes track by attribute.path">
+                        <td>
+                            <input type="checkbox" ng-model="attribute.checked"
+                                ng-change="updateAttributeToOutput(attribute)">
+                        </td>
+                        <td>{{attribute.title}}</td>
+                        <td>{{attribute.description}}</td>
+                        <td>{{attribute.path}}</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
     </div>
     </div>
     <div class="pi-system-explorer__tree-view-container" ng-if="showTreeData">
