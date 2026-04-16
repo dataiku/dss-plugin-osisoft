@@ -1,4 +1,4 @@
-var app = angular.module('piSystemTreeApp.module', []);
+let app = angular.module('piSystemTreeApp.module', []);
 
 app.service('TreeDataService', function () {
   // This will store the shared tree data
@@ -83,8 +83,8 @@ app.controller('AfExplorerFormCtrl', [
         });
       }).error(setErrorInScope.bind($scope.errorScope));
       if ($scope.authConfigured() === true) {
-        var hasTreeData = Array.isArray($scope.config.treeData) && $scope.config.treeData.length > 0;
-        var hasTemplateTreeData = Array.isArray($scope.config.templateTreeData) && $scope.config.templateTreeData.length > 0;
+        let hasTreeData = Array.isArray($scope.config.treeData) && $scope.config.treeData.length > 0;
+        let hasTemplateTreeData = Array.isArray($scope.config.templateTreeData) && $scope.config.templateTreeData.length > 0;
         $scope.authSectionVisible = !hasTreeData;
         $scope.showTreeData = hasTreeData;
       }
@@ -113,9 +113,9 @@ app.controller('AfExplorerFormCtrl', [
       return $scope.hasPreset() && !!$scope.config.database_name && !!$scope.config.server_name;
     }
     $scope.explore = function () {
-      var hasPreset = $scope.hasPreset();
-      var hasServer = !!$scope.config.server_name;
-      var hasDatabase = !!$scope.config.database_name;
+      let hasPreset = $scope.hasPreset();
+      let hasServer = !!$scope.config.server_name;
+      let hasDatabase = !!$scope.config.database_name;
       console.info("[LOGIN][UI] click", {
         hasPreset: hasPreset,
         hasServer: hasServer,
@@ -205,7 +205,7 @@ app.controller('AfExplorerFormCtrl', [
       $scope.cleanTree();
     };
 
-    var presetWatchInitialized = false;
+    let presetWatchInitialized = false;
     $scope.$watchGroup(
       [
         function () {
@@ -221,10 +221,10 @@ app.controller('AfExplorerFormCtrl', [
           return;
         }
 
-        var mode = newValues[0];
-        var name = newValues[1];
-        var oldMode = oldValues ? oldValues[0] : null;
-        var oldName = oldValues ? oldValues[1] : null;
+        let mode = newValues[0];
+        let name = newValues[1];
+        let oldMode = oldValues ? oldValues[0] : null;
+        let oldName = oldValues ? oldValues[1] : null;
 
         if (mode === oldMode && name === oldName) {
           return;
@@ -320,11 +320,11 @@ app.controller('AfExplorerFormCtrl', [
     $scope.getCategoriesFromDB = function () {
       $scope.config.attribute_categories = [];
       $scope.config.element_categories = [];
-      var attributeCategoriesPromise = $scope.callPythonDo({ method: "get_attribute_categories_from_db" }).then(function (data) {
+      let attributeCategoriesPromise = $scope.callPythonDo({ method: "get_attribute_categories_from_db" }).then(function (data) {
         $scope.config.attribute_categories = data.choices;
         return data;
       });
-      var elementCategoriesPromise = $scope.callPythonDo({ method: "get_element_categories_from_db" }).then(function (data) {
+      let elementCategoriesPromise = $scope.callPythonDo({ method: "get_element_categories_from_db" }).then(function (data) {
         $scope.config.element_categories = data.choices;
         return data;
       });
