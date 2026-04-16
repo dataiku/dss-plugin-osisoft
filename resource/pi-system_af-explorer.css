@@ -39,14 +39,14 @@
 }
 .pi-system-explorer__tree-view-container {
     display: flex;
-width: 252px;
-padding: 16px 12px;
-flex-direction: column;
-align-items: flex-start;
-gap: 12px;
-align-self: stretch;
-border-right: 1px solid #BBB;
-background: #FFF;
+    width: 252px;
+    padding: 16px 12px;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+    align-self: stretch;
+    border-right: 1px solid #BBB;
+    background: #FFF;
 }
 
 .pi-system-explorer__authentication {
@@ -64,22 +64,6 @@ background: #FFF;
     align-self: stretch;
     border: 1px solid #999;
     background: linear-gradient(0deg, rgba(242, 242,242,0.50) 100%), #FFFFFF;
-    /*flex-direction: column;
-    align-items: flex-start;
-    align-self: stretch;
-    cursor: pointer;
-    border: 1px solid #ccc;
-    border-radius: 5px;
-    font-weight: bold;
-    background-color: #f0f0f0;*/
-    /*background-color: #f0f0f0;
-    padding: 10px;
-    cursor: pointer;
-    border: 1px solid #ccc;
-    border-radius: 5px;
-    font-weight: bold;*/
-
-
 }
 
 .pi-system-explorer__authentication-body {
@@ -94,13 +78,6 @@ background: #FFF;
     border-bottom: 1px solid var(--Greyscale-grey-lighten-4, #999);
     border-left: 1px solid var(--Greyscale-grey-lighten-4, #999);
     background: #FFF;
-
-
-    /*flex-direction: column;
-    align-items: flex-end;
-    gap: 8px;
-    align-self: stretch;
-    border: 1px solid #ccc; padding: 10px; border-radius: 5px;*/
 }
 
 .pi-system-explorer__authentication__submit {
