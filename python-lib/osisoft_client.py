@@ -542,7 +542,10 @@ class OSIsoftClient(object):
         return response
 
     def prepare_post_all_values(self, webid, buffer):
-        url = self.endpoint.get_stream_record_url(webid)
+        if isinstance(buffer, list):
+            url = self.endpoint.get_stream_record_url(webid)
+        else:
+            url = self.endpoint.get_stream_value_url(webid)
         headers = OSIsoftConstants.WRITE_HEADERS
         params = {}
         requests_kwargs = self.generic_get_kwargs(url=url, headers=headers, params=params, data=buffer)
