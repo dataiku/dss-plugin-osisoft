@@ -868,7 +868,7 @@ app.component('treeNode', {
         ctrl.config.element_name = "";
       }
 
-      ctrl.config.pendingTabContextReset = false; 
+      ctrl.config.pendingTabContextReset = false;
     }
 
     function findNodeByUrl(nodes, targetUrl) {
@@ -930,15 +930,16 @@ app.component('treeNode', {
       if ($event) {
         $event.stopPropagation();
       }
-
-      node.expanded = !node.expanded;
-
-      if (node.expanded && (!node.children || !node.children.length || !ctrl.hasRenderableChildren(node))) {
-        // Call function reference directly
-        ctrl.getChildrenFromDb(node);
+      // Loading children before toggling the node
+      if (!node.expanded && (!node.children?.length || !ctrl.hasRenderableChildren(node))) {
+        ctrl.getChildrenFromDb(node).then(() => {
+          node.expanded = true;
+        });
+        return;
       }
+      node.expanded = !node.expanded;
     };
-    
+
     ctrl.onNodeClick = function (node) {
       consumePendingTabContextReset();
 
