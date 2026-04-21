@@ -149,7 +149,7 @@ app.controller('AfExplorerFormCtrl', [
     };
 
     $scope.hasPreset = function () {
-      return $scope.config.credentials && $scope.config.credentials.mode && $scope.config.credentials.mode !== 'NONE' && $scope.config.credentials.name
+      return $scope.config.credentials?.mode && $scope.config.credentials.mode !== 'NONE' && $scope.config.credentials.name
     }
 
     $scope.cleanTree = function () { // utile quand on change de serveur ou de db dans la config 
@@ -209,10 +209,10 @@ app.controller('AfExplorerFormCtrl', [
     $scope.$watchGroup(
       [
         function () {
-          return $scope.config && $scope.config.credentials ? $scope.config.credentials.mode : null;
+          return $scope.config?.credentials?.mode ?? null;
         },
         function () {
-          return $scope.config && $scope.config.credentials ? $scope.config.credentials.name : null;
+          return $scope.config?.credentials?.name ?? null;
         }
       ],
       function (newValues, oldValues) {
@@ -334,8 +334,8 @@ app.controller('AfExplorerFormCtrl', [
     $scope.doSearch = function (element_name, attribute_name) {
       consumePendingTabContextReset();
 
-      const hasElementFilter = !!(element_name && element_name.trim());
-      const hadPreviousElementFilter = !!($scope.config.lastSearchedElementName && $scope.config.lastSearchedElementName.trim());
+      const hasElementFilter = !!(element_name?.trim());
+      const hadPreviousElementFilter = !!($scope.config.lastSearchedElementName?.trim());
 
       // If user clears element filter after a scoped search, release previous click-based scope.
       if (!hasElementFilter && hadPreviousElementFilter) {
@@ -343,7 +343,7 @@ app.controller('AfExplorerFormCtrl', [
       }
 
       const hasClickedNodes = Array.isArray($scope.config.clickedNodes) && $scope.config.clickedNodes.length > 0;
-      const hasAttributeFilter = !!(attribute_name && attribute_name.trim());
+      const hasAttributeFilter = !!(attribute_name?.trim());
       const isRestrictedAttributeSearch = hasClickedNodes && hasAttributeFilter && !hasElementFilter;
       const hasTemplateFilter = !!(
         $scope.config.template &&
@@ -400,7 +400,7 @@ app.controller('AfExplorerFormCtrl', [
       const deduped = [];
 
       attributes.forEach(attribute => {
-        if (!attribute || !attribute.path || seen.has(attribute.path)) {
+        if (!attribute?.path || seen.has(attribute.path)) {
           return;
         }
         seen.add(attribute.path);
@@ -416,7 +416,7 @@ app.controller('AfExplorerFormCtrl', [
     function getMatchedElementPaths(attributes) {
       const matchedPathSet = new Set();
       attributes.forEach(attribute => {
-        const fullPath = attribute && attribute.path;
+        const fullPath = attribute?.path;
         if (!fullPath || typeof fullPath !== "string") {
           return;
         }
@@ -489,7 +489,7 @@ app.controller('AfExplorerFormCtrl', [
     $scope.onSearchInputKeydown = function ($event) {
       if ($event && ($event.key === "Enter" || $event.keyCode === 13)) {
         $event.preventDefault();
-        const targetId = $event.target && $event.target.id ? $event.target.id : "";
+        const targetId = $event.target?.id || "";
         if (targetId === "ReturnsName") {
           $scope.searchFromElement();
           return;
@@ -515,7 +515,7 @@ app.controller('AfExplorerFormCtrl', [
         return;
       }
       attributes.forEach(attribute => {
-        if (!attribute || !attribute.path) {
+        if (!attribute?.path) {
           return;
         }
         attribute.checked = !!isChecked;
@@ -617,7 +617,7 @@ app.controller('AfExplorerFormCtrl', [
     }
 
     function hasAttributeChildren(node) {
-      return Array.isArray(node && node.children) &&
+      return Array.isArray(node?.children) &&
         node.children.some(child => child.type === "attribute");
     }
 
@@ -668,9 +668,9 @@ app.controller('AfExplorerFormCtrl', [
 
     function processNode(node) {
       const selectedPaths = new Set(getOutputSelectedAttributes().map(attr => attr.path));
-      const hasAttributeFilter = !!($scope.config.attribute_name && $scope.config.attribute_name.trim());
+      const hasAttributeFilter = !!($scope.config.attribute_name?.trim());
       const shouldRestrictDisplayedAttributes = hasAttributeFilter;
-      const parentTemplateName = node && node.template_name ? node.template_name : null;
+      const parentTemplateName = node?.template_name ? node.template_name : null;
 
       node.children.forEach(child => {
         if (child.type === "attribute") {
@@ -735,7 +735,7 @@ app.controller('AfExplorerFormCtrl', [
 
     function buildTemplateGroupingKey(attributes) {
       return attributes
-        .filter(attribute => attribute && attribute.path)
+        .filter(attribute => attribute?.path)
         .map(attribute => attribute.path + "::" + getAttributeTemplateName(attribute))
         .join("||");
     }
@@ -773,7 +773,7 @@ app.controller('AfExplorerFormCtrl', [
         return true;
       }
 
-      const attributeTitle = (attribute && attribute.title ? attribute.title : "").toLowerCase();
+      const attributeTitle = (attribute?.title ? attribute.title : "").toLowerCase();
       const filter = rawFilter.toLowerCase();
 
       if (filter.includes("*")) {
@@ -894,7 +894,7 @@ app.component('treeNode', {
     }
 
     function rebuildAttributesFromClickedNodes() {
-      const clickedUrls = Array.isArray(ctrl.config && ctrl.config.clickedNodes)
+      const clickedUrls = Array.isArray(ctrl.config?.clickedNodes)
         ? ctrl.config.clickedNodes
         : [];
 
@@ -943,9 +943,7 @@ app.component('treeNode', {
       consumePendingTabContextReset();
 
       const hasActiveAttributeSearch = !!(
-        ctrl.config &&
-        ctrl.config.attribute_name &&
-        ctrl.config.attribute_name.trim()
+        ctrl.config?.attribute_name?.trim()
       );
 
       if (ctrl.config) {
@@ -954,7 +952,7 @@ app.component('treeNode', {
         if (!hasActiveAttributeSearch) {
           ctrl.config.attribute_name = "";
         }
-        if (node && node.type === "element") {
+        if (node?.type === "element") {
           ctrl.config.template = "-- Any --";
         }
       }
@@ -966,7 +964,7 @@ app.component('treeNode', {
         ctrl.config.clickedNodes.push(node.url);
       }
 
-      if (node && node.type === "template") {
+      if (node?.type === "template") {
         // Template clicks should always rebuild right-side content from the full template selection.
         ctrl.displayAttributes(node, true);
         console.log("ctrl.config.clickedNodes: " + JSON.stringify(ctrl.config.clickedNodes));
