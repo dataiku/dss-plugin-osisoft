@@ -704,7 +704,7 @@ app.controller('AfExplorerFormCtrl', [
       const attributesWithoutTemplate = [];
 
       attributes.forEach(attribute => {
-        if (!attribute || !attribute.path) {
+        if (!attribute?.path) {
           return;
         }
         const templateName = getAttributeTemplateName(attribute);
