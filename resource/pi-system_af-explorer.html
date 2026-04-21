@@ -80,7 +80,7 @@
                 data-html="true" data-placement="right" data-toggle="tooltip" title="" placeholder="Search attribute or template name"
                 ng-keydown="onSearchInputKeydown($event)" />
             <button ng-click="doSearch(config.element_name, config.attribute_name)" class="btn btn--secondary link-like"
-                id="get-query-dim-prop">Search</button>
+                id="get-query-dim-prop" ng-disabled="!config.attribute_name">Search</button>
 
                 <div>
                     Filter by category
@@ -167,10 +167,10 @@
     <div class="tab-content" style="margin-bottom:8px;">
     <input ng-if="config.activeTab === 'element'" id="ReturnsName" ng-model="config.element_name" type="text"
         data-container="body" data-html="true" placeholder="Search element"
-        ng-keydown="onSearchInputKeydown($event)" />
+        ng-keydown="onSearchInputKeydown($event)"/>
     <button ng-if="config.activeTab === 'element'"
         ng-click="searchFromElement()" class="btn btn--secondary link-like"
-        id="get-query-dim-prop">Search</button>
+        id="get-query-dim-prop" ng-disabled="!config.element_name">Search</button>
     </div>
     <!--<div class="tab-container">
         <ul class="tab-header">
