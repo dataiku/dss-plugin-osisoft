@@ -850,7 +850,7 @@ app.component('treeNode', {
     const ctrl = this;
 
     function consumePendingTabContextReset() {
-      if (!ctrl.config || !ctrl.config.pendingTabContextReset) {
+      if (!ctrl.config?.pendingTabContextReset) {
         return;
       }
 
