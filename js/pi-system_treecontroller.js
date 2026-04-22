@@ -615,26 +615,24 @@ app.controller('AfExplorerFormCtrl', [
             syncVisibleSelectionFromOutput();
         }
 
+        // TODO: double check the logic
         function hasAttributeChildren(node) {
-            return Array.isArray(node?.children) &&
-                node.children.some(child => child.type === "attribute");
+            if (!Array.isArray(node.children) || node.children.length === 0) {
+                return false
+            }
+            return node.children.some(child => child.type === "attribute");
         }
 
-        $scope.displayAttributes = function(node, shouldAdd = true) {
+        // TODO: cleanup
+        $scope.displayAttributes = function(node, remove = true) {
             $scope.config.selectAllWithoutTemplateAttributes = false;
             $scope.config.selectAllTemplateAttributes = false;
-            if (!shouldAdd) {
+            if (!remove) {
                 removeNodeAttributes(node);
                 return;
             }
 
-            const shouldLoadChildrenFromDb =
-                node.type === "element" &&
-                (
-                    !Array.isArray(node.children) ||
-                    node.children.length === 0 ||
-                    !hasAttributeChildren(node)
-                );
+            const shouldLoadChildrenFromDb = node.type === "element" && !hasAttributeChildren(node);
 
             if (shouldLoadChildrenFromDb) {
                 $scope.config.template = "-- Any --";
@@ -668,7 +666,6 @@ app.controller('AfExplorerFormCtrl', [
         function processNode(node) {
             const selectedPaths = new Set(getOutputSelectedAttributes().map(attr => attr.path));
             const hasAttributeFilter = !!($scope.config.attribute_name?.trim());
-            const shouldRestrictDisplayedAttributes = hasAttributeFilter;
             const parentTemplateName = node?.template_name ? node.template_name : null;
 
             node.children.forEach(child => {
@@ -676,7 +673,7 @@ app.controller('AfExplorerFormCtrl', [
                     if (!child.parent_template_name && parentTemplateName) {
                         child.parent_template_name = parentTemplateName;
                     }
-                    if (shouldRestrictDisplayedAttributes && !attributeMatchesCurrentSearch(child)) {
+                    if (hasAttributeFilter && !attributeMatchesCurrentSearch(child)) {
                         return;
                     }
                     const isAlreadyPresent = $scope.config.attributeList.some(attr => attr.path === child.path);
@@ -891,6 +888,7 @@ app.component('treeNode', {
             return null;
         }
 
+        // TODO: understand why the logic is different from displayAttributes (merge them if possible)
         function rebuildAttributesFromClickedNodes() {
             const clickedUrls = Array.isArray(ctrl.config?.clickedNodes)
                 ? ctrl.config.clickedNodes
@@ -941,28 +939,31 @@ app.component('treeNode', {
         ctrl.onNodeClick = function(node) {
             consumePendingTabContextReset();
 
+            // TODO: factorize this check
             const hasActiveAttributeSearch = !!(
                 ctrl.config?.attribute_name?.trim()
             );
 
-            if (ctrl.config) {
-                // Keep right-side attribute search when active so multi-node clicks can
-                // enrich results with the same filter (ex: "Load" on California + Fresno).
-                if (!hasActiveAttributeSearch) {
-                    ctrl.config.attribute_name = "";
-                }
-                if (node?.type === "element") {
-                    ctrl.config.template = "-- Any --";
-                }
+            // Keep right-side attribute search when active so multi-node clicks can
+            // enrich results with the same filter (ex: "Load" on California + Fresno).
+            // TODO: understand why we need a reset if the attribute search is empty
+            if (!hasActiveAttributeSearch) {
+                ctrl.config.attribute_name = "";
+            }
+            if (node?.type === "element") {
+                // TODO: factorize this reset
+                ctrl.config.template = "-- Any --";
             }
 
-            const index = ctrl.config.clickedNodes.indexOf(node.url);
-            if (index > -1) {
-                ctrl.config.clickedNodes.splice(index, 1);
+            const indexClickedNode = ctrl.config.clickedNodes.indexOf(node.url);
+            // If the node is already clicked, remove it from clicked nodes - else add it
+            if (indexClickedNode > -1) {
+                ctrl.config.clickedNodes.splice(indexClickedNode, 1);
             } else {
                 ctrl.config.clickedNodes.push(node.url);
             }
 
+            // TODO: split element/template logic
             if (node?.type === "template") {
                 // Template clicks should always rebuild right-side content from the full template selection.
                 ctrl.displayAttributes(node, true);
@@ -972,7 +973,7 @@ app.component('treeNode', {
 
             if (hasActiveAttributeSearch) {
                 rebuildAttributesFromClickedNodes();
-            } else if (index > -1) {
+            } else if (indexClickedNode > -1) {
                 ctrl.displayAttributes(node, false);
             } else {
                 ctrl.displayAttributes(node);
