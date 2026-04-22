@@ -129,8 +129,8 @@
                 <table class="custom-table">
                     <thead>
                     <tr>
-                        <th><input type="checkbox" ng-model="config.selectAllTemplateAttributes"
-                                   ng-change="toggleSelectAllTemplateAttributes()"></th>
+<!--                        <th><input type="checkbox" ng-model="config.selectAllTemplateAttributes"-->
+<!--                                   ng-change="toggleSelectAllTemplateAttributes()"></th>-->
                         <th>Name</th>
                         <th>Description</th>
                         <th>Path</th>
@@ -141,22 +141,26 @@
                         <td colspan="4">No templated attributes</td>
                     </tr>
                     </tbody>
-                    <tbody ng-repeat="group in getTemplateGroups() track by group.groupKey">
+                    <tbody ng-repeat="group in templateAggregatedAttributes track by group.groupKey">
                     <tr class="custom-table__group-row">
-                        <td>
-                            <input type="checkbox" ng-checked="isTemplateGroupChecked(group)"
-                                   ng-click="toggleTemplateGroupAttributes(group)">
-                        </td>
+<!--                        <td>-->
+<!--                            <input type="checkbox" ng-checked="isTemplateGroupChecked(group)"-->
+<!--                                   ng-click="toggleTemplateGroupAttributes(group)">-->
+<!--                        </td>-->
                         <td colspan="3">{{group.templateName}}</td>
                     </tr>
-                    <tr ng-repeat="attribute in group.attributes track by attribute.path">
-                        <td>
-                            <input type="checkbox" ng-model="attribute.checked"
-                                   ng-change="updateAttributeToOutput(attribute)">
-                        </td>
+                    <tr ng-repeat="attribute in group.attributes track by attribute.title">
+<!--                        <td>-->
+<!--                            <input type="checkbox" ng-model="getCheckboxStatus(attribute.checked)"-->
+<!--                                   ng-change="updateAttributeToOutput(attribute)">-->
+<!--                        </td>-->
                         <td>{{attribute.title}}</td>
                         <td>{{attribute.description}}</td>
-                        <td>{{attribute.path}}</td>
+                        <td>
+                            <span ng-repeat="path in attribute.paths">
+                                {{path}}<br/>
+                            </span>
+                        </td>
                     </tr>
                     </tbody>
                 </table>
