@@ -762,41 +762,44 @@ app.controller('AfExplorerFormCtrl', [
         // TODO: investigate why it is called very frequently
         $scope.getTemplateGroups = function() {
             const groupedAttributes = getGroupedAttributesByTemplate();
+            console.log("groupedAttributes", groupedAttributes)
             const templateGroups = groupedAttributes.templateGroups;
-            const templateGroupsDeduplicated = templateGroups.reduce((acc, group) => {
-                group.attributes.forEach((attr) => {
-                    const key = attr.title;
+            console.log("templateGroups", templateGroups)
+            const templateGroupsDeduplicated = templateGroups.map(templateGroup => {
+                    return templateGroup.attributes.reduce((acc, attr) => {
+                            const key = attr.title;
 
-                    if (!acc[key]) {
-                        acc[key] = {
-                            title: attr.title,
-                            description: attr.description,
-                            attributes: [],
-                            checked: [],
-                        };
-                    }
+                            if (!acc[key]) {
+                                acc[key] = {
+                                    title: attr.title,
+                                    description: attr.description,
+                                    attributes: [],
+                                    checked: [],
+                                };
+                            }
 
-                    acc[key].attributes.push({
-                        category_names: attr.category_names,
-                        has_children: attr.has_children,
-                        path: attr.path,
-                        id: attr.id,
-                        url: attr.url,
-                        type: attr.type,
-                        children: attr.children,
-                        expanded: attr.expanded,
-                        searchHighlighted: attr.searchHighlighted,
-                        parent_template_name: attr.parent_template_name,
-                        checked: attr.checked
-                    });
+                            acc[key].attributes.push({
+                                category_names: attr.category_names,
+                                has_children: attr.has_children,
+                                path: attr.path,
+                                id: attr.id,
+                                url: attr.url,
+                                type: attr.type,
+                                children: attr.children,
+                                expanded: attr.expanded,
+                                searchHighlighted: attr.searchHighlighted,
+                                parent_template_name: attr.parent_template_name,
+                                checked: attr.checked
+                            });
 
-                    acc[key].checked.push(attr.checked)
+                            acc[key].checked.push(attr.checked)
 
-                });
-
-                return acc;
-            }, {});
-            return templateGroupsDeduplicated;
+                        return acc;
+                    }, {})
+                }
+            )
+            console.log("templateGroupsDeduplicated", templateGroupsDeduplicated)
+            return templateGroups;
         };
 
 
