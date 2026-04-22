@@ -560,7 +560,7 @@ app.controller('AfExplorerFormCtrl', [
         };
 
         $scope.updateAttributeToOutput = function(attribute) {
-            if (!$scope.config || !$scope.config.attributeList) return;
+            if (!$scope.config?.attributeList) return;
 
             const selectedAttributes = $scope.config.selectedAttributes;
             const attributeList = $scope.config.attributeList;
