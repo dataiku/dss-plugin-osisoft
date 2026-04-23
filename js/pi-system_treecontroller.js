@@ -545,22 +545,22 @@ app.controller('AfExplorerFormCtrl', [
         };
 
         $scope.isTemplateGroupChecked = function(group) {
-            if (!group || !Array.isArray(group.attributes) || !group.attributes.length) {
+            if (!group || !Array.isArray(group?.mergedAttributes) || !group.mergedAttributes.length) {
                 return false;
             }
-            return group.attributes.every(attribute => !!attribute.checked);
+            return group.mergedAttributes.every(attribute => !!attribute.checked);
         };
 
         $scope.toggleTemplateGroupAttributes = function(group) {
-            if (!group || !Array.isArray(group.attributes)) {
+            if (!group || !Array.isArray(group?.mergedAttributes)) {
                 return;
             }
             const shouldCheck = !$scope.isTemplateGroupChecked(group);
-            setAttributesChecked(group.attributes, shouldCheck);
+            setAttributesChecked(group.mergedAttributes, shouldCheck);
         };
 
-        $scope.checkAttribute = function(attributeAggregate) {
-            attributeAggregate.attributes.forEach((attribute) => {
+        $scope.checkAttribute = function(attributeList) {
+            attributeList.attributes.forEach((attribute) => {
                     $scope.updateAttributeToOutput(attribute)
                 }
             )
@@ -770,7 +770,7 @@ app.controller('AfExplorerFormCtrl', [
             const groupedAttributes = getGroupedAttributesByTemplate();
             return groupedAttributes.templateGroups.map(templateGroup => ({
                     ...templateGroup,
-                    attributes: templateGroup.attributes.reduce((acc, attr) => {
+                    mergedAttributes: templateGroup.attributes.reduce((acc, attr) => {
                         const key = attr.title;
 
                         if (!acc[key]) {
@@ -798,20 +798,20 @@ app.controller('AfExplorerFormCtrl', [
         };
 
         // TODO: use once checkbox handles partial check
-        // const CheckboxStatus = Object.freeze({
-        //     CHECKED: 'CHECKED',
-        //     UNCHECKED: 'UNCHECKED',
-        //     PARTIAL_CHECK: 'PARTIAL_CHECK',
-        // });
-        //
-        // $scope.getCheckboxStatus = function(checkboxStatuses) {
-        //     if (checkboxStatuses.every(Boolean)) {
-        //         return checkboxStatuses.CHECKED;
-        //     } else if (checkboxStatuses.some(Boolean)) {
-        //         return checkboxStatuses.PARTIAL_CHECK;
-        //     }
-        //     return checkboxStatuses.UNCHECKED;
-        // }
+        const CheckboxStatus = Object.freeze({
+            CHECKED: 'CHECKED',
+            UNCHECKED: 'UNCHECKED',
+            PARTIAL_CHECK: 'PARTIAL_CHECK',
+        });
+
+        $scope.getCheckboxStatus = function(checkboxStatuses) {
+            if (checkboxStatuses.every(Boolean)) {
+                return checkboxStatuses.CHECKED;
+            } else if (checkboxStatuses.some(Boolean)) {
+                return checkboxStatuses.PARTIAL_CHECK;
+            }
+            return checkboxStatuses.UNCHECKED;
+        }
 
         $scope.$watch('config.attributeList', function(newVal, oldVal) {
             $scope.templateAggregatedAttributes = $scope.getTemplateGroups();

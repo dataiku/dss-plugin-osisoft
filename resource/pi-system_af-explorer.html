@@ -141,23 +141,23 @@
                         <td colspan="4">No templated attributes</td>
                     </tr>
                     </tbody>
-                    <tbody ng-repeat="group in templateAggregatedAttributes track by group.groupKey">
+                    <tbody ng-repeat="template in templateAggregatedAttributes track by template.groupKey">
                     <tr class="custom-table__group-row">
                         <td>
-                            <input type="checkbox" ng-checked="isTemplateGroupChecked(group)"
-                                   ng-click="toggleTemplateGroupAttributes(group)">
+                            <input type="checkbox" ng-checked="isTemplateGroupChecked(template)"
+                                   ng-click="toggleTemplateGroupAttributes(template)">
                         </td>
-                        <td colspan="3">{{group.templateName}}</td>
+                        <td colspan="3">{{template.templateName}}</td>
                     </tr>
-                    <tr ng-repeat="attribute in group.attributes track by attribute.title">
+                    <tr ng-repeat="mergedAttribute in template.mergedAttributes track by mergedAttribute.title">
                         <td>
-                            <input type="checkbox" ng-model="attribute.allChecked"
-                                   ng-change="checkAttribute(attribute)">
+                            <input type="checkbox" ng-model="mergedAttribute.allChecked"
+                                   ng-change="checkAttribute(mergedAttribute)">
                         </td>
-                        <td>{{attribute.title}}</td>
-                        <td>{{attribute.description}}</td>
+                        <td>{{mergedAttribute.title}}</td>
+                        <td>{{mergedAttribute.description}}</td>
                         <td>
-                            <span ng-repeat="path in attribute.paths">
+                            <span ng-repeat="path in mergedAttribute.paths">
                                 {{path}}<br/>
                             </span>
                         </td>
