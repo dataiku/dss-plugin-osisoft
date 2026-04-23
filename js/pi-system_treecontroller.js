@@ -559,6 +559,13 @@ app.controller('AfExplorerFormCtrl', [
             setAttributesChecked(group.attributes, shouldCheck);
         };
 
+        $scope.checkAttribute = function(attributeAggregate) {
+            attributeAggregate.attributes.forEach((attribute) => {
+                    $scope.updateAttributeToOutput(attribute)
+                }
+            )
+        };
+
         $scope.updateAttributeToOutput = function(attribute) {
             if (!$scope.config?.attributeList) return;
 
@@ -759,7 +766,6 @@ app.controller('AfExplorerFormCtrl', [
             return getGroupedAttributesByTemplate().attributesWithoutTemplate;
         };
 
-        // TODO: investigate why it is called very frequently
         $scope.getTemplateGroups = function() {
             const groupedAttributes = getGroupedAttributesByTemplate();
             return groupedAttributes.templateGroups.map(templateGroup => ({
@@ -771,28 +777,19 @@ app.controller('AfExplorerFormCtrl', [
                             acc[key] = {
                                 title: attr.title,
                                 description: attr.description,
+                                checked: null,
+                                allChecked: attr.checked,
                                 attributes: [],
-                                checked: [],
+                                checkStates: [],
                                 paths: []
                             };
                         }
 
-                        acc[key].attributes.push({
-                            category_names: attr.category_names,
-                            has_children: attr.has_children,
-                            path: attr.path,
-                            id: attr.id,
-                            url: attr.url,
-                            type: attr.type,
-                            children: attr.children,
-                            expanded: attr.expanded,
-                            searchHighlighted: attr.searchHighlighted,
-                            parent_template_name: attr.parent_template_name,
-                            checked: attr.checked
-                        });
-
-                        acc[key].checked.push(attr.checked)
+                        acc[key].checkStates.push(attr.checked)
                         acc[key].paths.push(attr.path)
+                        acc[key].allChecked = acc[key].checked && attr.checked
+                        acc[key].checked = $scope.getCheckboxStatus(acc[key].checkStates); // TODO maybe move out
+                        acc[key].attributes.push(attr);
 
                         return acc;
                     }, {})
