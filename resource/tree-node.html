@@ -1,0 +1,46 @@
+<div style="display: flex; align-items: center; gap: 6px;">
+
+      <span
+              ng-click="ctrl.toggleExpand(ctrl.node, $event)"
+              style="cursor: pointer;"
+      >
+        <i ng-if="ctrl.node.has_children && ctrl.node.expanded" class="dku-icon-chevron-down-16"></i>
+        <i ng-if="ctrl.node.has_children && !ctrl.node.expanded" class="dku-icon-chevron-right-16"></i>
+      </span>
+
+    <div class="tree-node">
+        <span
+                ng-if="ctrl.node.type !== 'attribute'"
+                class="tree-node__label"
+                ng-click="ctrl.onNodeClick(ctrl.node)"
+                ng-class="{
+            'tree-node__label--search-result':
+              ctrl.isSearchResult(ctrl.node),
+            'tree-node__label--clickable':
+              ctrl.isNodeClicked(ctrl.node)
+          }"
+        >
+          {{ ctrl.node.title }}
+        </span>
+    </div>
+
+</div>
+
+<ul
+        ng-if="ctrl.node.children && ctrl.node.children.length && ctrl.node.expanded"
+        style="margin-left: 20px;"
+>
+    <li
+            ng-repeat="child in ctrl.node.children track by (child.id || child.path || (child.title + '_' + $index))"
+            ng-if="child.type !== 'attribute'"
+    >
+        <tree-node
+                node="child"
+                get-children-from-db="ctrl.getChildrenFromDb"
+                display-attributes="ctrl.displayAttributes"
+                config="ctrl.config"
+                clicked-nodes="ctrl.config.clickedNodes"
+        >
+        </tree-node>
+    </li>
+</ul>
