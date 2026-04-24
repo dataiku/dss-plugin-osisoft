@@ -152,10 +152,11 @@
                     <tr ng-repeat="mergedAttribute in template.mergedAttributes track by mergedAttribute.title">
                         <td>
                             <input type="checkbox" ng-model="mergedAttribute.allChecked"
-                                   ng-change="checkAttribute(mergedAttribute)">
+                                   ng-change="checkAttribute(mergedAttribute)" indeterminate="mergedAttribute.checked">
                         </td>
                         <td>{{mergedAttribute.title}}</td>
-                        <td>{{mergedAttribute.description}}</td>
+                        <td>{{mergedAttribute.checked}}</td>
+<!--                        <td>{{mergedAttribute.description}}</td>-->
                         <td>
                             <span ng-repeat="path in mergedAttribute.paths">
                                 {{path}}<br/>

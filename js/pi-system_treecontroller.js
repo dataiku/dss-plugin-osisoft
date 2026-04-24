@@ -1,5 +1,12 @@
 const app = angular.module('piSystemTreeApp.module', []);
 
+//TODO: divide at least into a tree component + a results/right panel component + welcome component
+const CheckboxStatus = Object.freeze({
+    CHECKED: 'CHECKED',
+    UNCHECKED: 'UNCHECKED',
+    PARTIAL_CHECK: 'PARTIAL_CHECK',
+});
+
 app.service('TreeDataService', function() {
     // This will store the shared tree data
     this.treeData = [];
@@ -78,6 +85,7 @@ app.controller('AfExplorerFormCtrl', [
                 data.presets.forEach(function(p) {
                     $scope.accessiblePresets.push({ name: "PRESET " + p.name, label: p.name, usable: p.usable, description: p.description });
                 });
+                // TODO: why injection
                 $scope.accessibleParameterSetDescriptions = $scope.accessiblePresets.map(function(p) {
                     return p.description || '<em>No description</em>';
                 });
@@ -206,6 +214,7 @@ app.controller('AfExplorerFormCtrl', [
         };
 
         let presetWatchInitialized = false;
+        // TODO: move this to an ng-change
         $scope.$watchGroup(
             [
                 function() {
@@ -787,7 +796,7 @@ app.controller('AfExplorerFormCtrl', [
 
                         acc[key].checkStates.push(attr.checked)
                         acc[key].paths.push(attr.path)
-                        acc[key].allChecked = acc[key].checked && attr.checked
+                        acc[key].allChecked = acc[key].allChecked && attr.checked
                         acc[key].checked = $scope.getCheckboxStatus(acc[key].checkStates); // TODO maybe move out
                         acc[key].attributes.push(attr);
 
@@ -798,21 +807,17 @@ app.controller('AfExplorerFormCtrl', [
         };
 
         // TODO: use once checkbox handles partial check
-        const CheckboxStatus = Object.freeze({
-            CHECKED: 'CHECKED',
-            UNCHECKED: 'UNCHECKED',
-            PARTIAL_CHECK: 'PARTIAL_CHECK',
-        });
 
         $scope.getCheckboxStatus = function(checkboxStatuses) {
             if (checkboxStatuses.every(Boolean)) {
-                return checkboxStatuses.CHECKED;
+                return CheckboxStatus.CHECKED;
             } else if (checkboxStatuses.some(Boolean)) {
-                return checkboxStatuses.PARTIAL_CHECK;
+                return CheckboxStatus.PARTIAL_CHECK;
             }
-            return checkboxStatuses.UNCHECKED;
+            return CheckboxStatus.UNCHECKED;
         }
 
+        // TODO: try to move it to a callback of some kind (will work with a component)
         $scope.$watch('config.attributeList', function(newVal, oldVal) {
             $scope.templateAggregatedAttributes = $scope.getTemplateGroups();
         }, true);
@@ -1094,4 +1099,27 @@ app.component('treeNode', {
       </li>
     </ul>
   `
+});
+
+app.directive('indeterminate', function() {
+    return {
+        restrict: 'A',
+        require: 'ngModel',
+        link: function(scope, element, attrs) {
+            if (attrs.indeterminate === CheckboxStatus.PARTIAL_CHECK)
+            {
+                element[0].indeterminate = true;
+            }
+
+            scope.$watch(attrs.indeterminate, function(checkStatus) {
+                console.log("Changed check status", checkStatus);
+                if (checkStatus === CheckboxStatus.PARTIAL_CHECK)
+                {
+                    element[0].indeterminate = true;
+                    return;
+                }
+                element[0].indeterminate = false;
+            }, true);
+        }
+    };
 });
