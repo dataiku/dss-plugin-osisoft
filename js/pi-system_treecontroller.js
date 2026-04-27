@@ -535,21 +535,21 @@ app.controller('AfExplorerFormCtrl', [
             setAttributesChecked($scope.getAttributesWithoutTemplate(), !!$scope.config.selectAllWithoutTemplateAttributes);
         };
 
-        // function getAllTemplatedAttributes() {
-        //     const templateGroups = $scope.getGroupedAttributesByTemplate().templateGroups;
-        //     const templatedAttributes = [];
-        //     templateGroups.forEach(group => {
-        //         if (!group || !Array.isArray(group.attributes)) {
-        //             return;
-        //         }
-        //         templatedAttributes.push.apply(templatedAttributes, group.attributes);
-        //     });
-        //     return templatedAttributes;
-        // }
-
-        // $scope.toggleSelectAllTemplateAttributes = function() {
-        //     setAttributesChecked(getAllTemplatedAttributes(), !!$scope.config.selectAllTemplateAttributes);
-        // };
+        $scope.toggleSelectAllTemplateAttributes = function() {
+            const shouldRemove = $scope.templateAggregatedAttributes.checked === CheckboxStatus.CHECKED;
+            $scope.templateAggregatedAttributes.templates.forEach((template) => {
+                    template.attributes.forEach((aggregatedAttribute) => {
+                        aggregatedAttribute.attributes.forEach((underlyingAttribute) => {
+                            if (shouldRemove) {
+                                $scope.removeAttributeFromOutput(underlyingAttribute);
+                                return;
+                            }
+                            $scope.addAttributeToOutput(underlyingAttribute);
+                        });
+                    });
+                }
+            )
+        };
 
         $scope.isTemplateGroupChecked = function(group) {
             if (!group || !Array.isArray(group?.mergedAttributes) || !group.mergedAttributes.length) {
@@ -760,7 +760,7 @@ app.controller('AfExplorerFormCtrl', [
 
         $scope.getGroupedAttributesByTemplate = function() {
             const groupedAttributes = Object.values($scope.config.attributeList.reduce(groupIdenticalAttributes, {}))
-            const templateGroups = groupedAttributes.reduce(
+            const groupedTemplates = Object.values(groupedAttributes.reduce(
                 (acc, attr) => {
                     const key = attr.templateName; // TODO: check it's not template_name ever
                     if (!acc[key]) {
@@ -779,7 +779,13 @@ app.controller('AfExplorerFormCtrl', [
                     acc[key].attributes.push(attr);
                     return acc;
                 }, {}
-            )
+            ));
+            const templateGroups = {
+                allChecked: groupedTemplates.every(template => template.allChecked),
+                checked: getCheckboxStatus(groupedTemplates.reduce((acc, arr) => acc.concat(arr.checkStates), [])),
+                templates: groupedTemplates
+            }
+            console.log("templateGroups", templateGroups);
             return {
                 attributesWithoutTemplate: [], // TODO remove if does not exist,
                 templateGroups: templateGroups // TODO: see if can be avoided

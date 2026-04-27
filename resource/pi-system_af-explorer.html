@@ -129,19 +129,19 @@
                 <table class="custom-table">
                     <thead>
                     <tr>
-                        <th><input type="checkbox" ng-model="config.selectAllTemplateAttributes"
-                                   ng-change="toggleSelectAllTemplateAttributes()"></th>
+                        <th><input type="checkbox" ng-model="templateAggregatedAttributes.allChecked"
+                                   ng-change="toggleSelectAllTemplateAttributes()" indeterminate="templateAggregatedAttributes.checked"></th>
                         <th>Name</th>
                         <th>Description</th>
                         <th>Path</th>
                     </tr>
                     </thead>
-                    <tbody ng-if="!getTemplateGroups().length">
+                    <tbody ng-if="!templateAggregatedAttributes.templates.length">
                     <tr class="custom-table__empty-row">
                         <td colspan="4">No templated attributes</td>
                     </tr>
                     </tbody>
-                    <tbody ng-repeat="template in templateAggregatedAttributes track by template.templateName">
+                    <tbody ng-repeat="template in templateAggregatedAttributes.templates track by template.templateName">
                     <tr class="custom-table__group-row">
                         <td>
                             <input type="checkbox" ng-model="template.allChecked"
