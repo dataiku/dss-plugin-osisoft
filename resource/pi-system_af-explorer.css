@@ -2,8 +2,24 @@
     width: 100% !important;
 }
 
-.tree-node__label--clickable{
+.tree-node__label--search-result{
     background-color: yellow;
+}
+
+.tree-node__label--clickable {
+    box-shadow: inset 0 0 0 1px #2e7d32;
+    border-radius: 2px;
+}
+
+.tree-node__label--clickable::after {
+    content: "";
+    display: inline-block;
+    width: 6px;
+    height: 6px;
+    margin-left: 6px;
+    border-radius: 50%;
+    background-color: #2e7d32;
+    vertical-align: middle;
 }
 .generic-class {
     display: flex;
@@ -23,14 +39,14 @@
 }
 .pi-system-explorer__tree-view-container {
     display: flex;
-width: 252px;
-padding: 16px 12px;
-flex-direction: column;
-align-items: flex-start;
-gap: 12px;
-align-self: stretch;
-border-right: 1px solid #BBB;
-background: #FFF;
+    width: 252px;
+    padding: 16px 12px;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+    align-self: stretch;
+    border-right: 1px solid #BBB;
+    background: #FFF;
 }
 
 .pi-system-explorer__authentication {
@@ -48,22 +64,6 @@ background: #FFF;
     align-self: stretch;
     border: 1px solid #999;
     background: linear-gradient(0deg, rgba(242, 242,242,0.50) 100%), #FFFFFF;
-    /*flex-direction: column;
-    align-items: flex-start;
-    align-self: stretch;
-    cursor: pointer;
-    border: 1px solid #ccc;
-    border-radius: 5px;
-    font-weight: bold;
-    background-color: #f0f0f0;*/
-    /*background-color: #f0f0f0;
-    padding: 10px;
-    cursor: pointer;
-    border: 1px solid #ccc;
-    border-radius: 5px;
-    font-weight: bold;*/
-
-
 }
 
 .pi-system-explorer__authentication-body {
@@ -78,13 +78,6 @@ background: #FFF;
     border-bottom: 1px solid var(--Greyscale-grey-lighten-4, #999);
     border-left: 1px solid var(--Greyscale-grey-lighten-4, #999);
     background: #FFF;
-
-
-    /*flex-direction: column;
-    align-items: flex-end;
-    gap: 8px;
-    align-self: stretch;
-    border: 1px solid #ccc; padding: 10px; border-radius: 5px;*/
 }
 
 .pi-system-explorer__authentication__submit {
@@ -147,6 +140,29 @@ background: #FFF;
 
 .custom-table tr:hover {
     background-color: #f1f7ff;
+}
+
+.custom-table tr.custom-table__group-row td {
+    background-color: #e8f0fb;
+    font-weight: 600;
+}
+
+.custom-table tr.custom-table__group-row:hover td {
+    background-color: #e8f0fb;
+}
+
+.custom-table tr.custom-table__empty-row td {
+    color: #666;
+    font-style: italic;
+}
+
+.attribute-table-block {
+    width: 100%;
+    margin-bottom: 14px;
+}
+
+.attribute-table-block__title {
+    margin-bottom: 6px;
 }
 
 .tree-view__tabs{

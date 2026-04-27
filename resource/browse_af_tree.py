@@ -3,8 +3,42 @@ from safe_logger import SafeLogger
 from osisoft_plugin_common import get_credentials, build_select_choices, check_debug_mode
 from osisoft_plugin_common import get_item_details, Tree, recursive_tree_rebuild, PerformanceTimer
 import dataiku
+import time
 
 logger = SafeLogger("PI System plugin", ["user", "password"])
+
+
+def _run_and_log_login_call(method_name, api_call):
+    started_at = time.time()
+    try:
+        response = api_call()
+        choices = response.get("choices") if isinstance(response, dict) else None
+        choice_count = len(choices) if isinstance(choices, list) else "n/a"
+        preview_titles = []
+        if isinstance(choices, list):
+            for choice in choices[:3]:
+                if isinstance(choice, dict):
+                    preview_titles.append(choice.get("title", "<no-title>"))
+                else:
+                    preview_titles.append(str(choice))
+        logger.info(
+            "[LOGIN] {} ok | {}ms | choices_count={} | preview_titles={}".format(
+                method_name,
+                int((time.time() - started_at) * 1000),
+                choice_count,
+                preview_titles
+            )
+        )
+        return response
+    except Exception as error:
+        logger.error(
+            "[LOGIN] {} failed | {}ms | error={}".format(
+                method_name,
+                int((time.time() - started_at) * 1000),
+                error
+            )
+        )
+        raise
 
 
 def do(payload, config, plugin_config, inputs):
@@ -49,29 +83,47 @@ def do(payload, config, plugin_config, inputs):
     if method == "get_children_from_db":
         database_name = config.get("database_name")
         parent = payload.get("parent", {})
-        return get_children_from_db(client, parent, database_name=database_name)
+        return _run_and_log_login_call(
+            "get_children_from_db",
+            lambda: get_children_from_db(client, parent, database_name=database_name)
+        )
     if method == "get_templates_from_db":
         database_name = config.get("database_name")
         parent = payload.get("parent", {})
-        # ret = get_items_from_db(client, parent, "ElementTemplates", database_name=database_name)
-        ret = get_template_hierarchy_from_db(client, parent, database_name=database_name)
-        return ret
+        return _run_and_log_login_call(
+            "get_templates_from_db",
+            lambda: get_template_hierarchy_from_db(client, parent, database_name=database_name)
+        )
     if method == "get_attribute_categories_from_db":
         database_name = config.get("database_name")
         parent = payload.get("parent", {})
-        ret = get_items_from_db(client, parent, "AttributeCategories", database_name=database_name)
-        return ret
+        return _run_and_log_login_call(
+            "get_attribute_categories_from_db",
+            lambda: get_items_from_db(client, parent, "AttributeCategories", database_name=database_name)
+        )
     if method == "get_element_categories_from_db":
         database_name = config.get("database_name")
         parent = payload.get("parent", {})
-        ret = get_items_from_db(client, parent, "ElementCategories", database_name=database_name)
-        return ret
+        return _run_and_log_login_call(
+            "get_element_categories_from_db",
+            lambda: get_items_from_db(client, parent, "ElementCategories", database_name=database_name)
+        )
     if method == "do_search":
         template_name = config.get("template", None)
         category_name = config.get("element_category", None)
         clicked_nodes = config.get("clickedNodes", [])
+        if not isinstance(clicked_nodes, list):
+            clicked_nodes = []
+        active_tab = config.get("activeTab")
+        selected_template_names = config.get("selectedTemplateNames", [])
         if template_name == "-- Any --":
             template_name = None
+        if not isinstance(selected_template_names, list):
+            selected_template_names = []
+        selected_template_names = [
+            template_name_item for template_name_item in selected_template_names
+            if isinstance(template_name_item, str) and template_name_item and template_name_item != "-- Any --"
+        ]
         if category_name == "-- Any --":
             category_name = None
         element_category = config.get("element_category", None)
@@ -83,6 +135,47 @@ def do(payload, config, plugin_config, inputs):
         database_name = config.get("database_name")
         element_name = config.get("element_name")
         attribute_name = config.get("attribute_name")
+        if isinstance(element_name, str): 
+            element_name = element_name.strip()
+            if element_name == "":
+                element_name = None
+        if isinstance(attribute_name, str):
+            attribute_name = attribute_name.strip()
+            if attribute_name == "":
+                attribute_name = None
+
+        has_attribute_filter = attribute_name is not None
+        is_template_tab = active_tab == "template"
+        has_clicked_element_nodes = len(clicked_nodes) > 0
+        # clicked_nodes scope is only for element-node URLs (batched_search restrict_to_elements).
+        # Template-node selections are scoped via selected_template_names.
+        use_clicked_element_nodes_scope = (
+            has_attribute_filter and
+            not is_template_tab and
+            has_clicked_element_nodes
+        )
+        if has_attribute_filter and not is_template_tab:
+            # Attribute search scope in element tab:
+            # - with selected nodes => restrict to selected nodes
+            # - without selected nodes => global search on the full tree
+            # In both cases, element text input is not a scope for attributes.
+            element_name = None
+        elif has_attribute_filter and is_template_tab:
+            # Attribute search scope in template tab:
+            # - with selected template nodes => restrict to selected templates
+            # - without selected template nodes => global search on the full tree
+            # Ignore stale element/template text filters for attribute-only searches.
+            element_name = None
+            if len(selected_template_names) == 0:
+                template_name = None
+
+        has_element_filter = element_name is not None
+        use_selected_template_names_scope = (
+            is_template_tab and len(selected_template_names) > 0
+        )
+
+        if not use_clicked_element_nodes_scope and not use_selected_template_names_scope:
+            clicked_nodes = []
         # root_tree = payload.get("root_tree")
         root_tree = config.get("treeData", [])
         root_tree = shorten_tree(root_tree)
@@ -92,11 +185,22 @@ def do(payload, config, plugin_config, inputs):
         elements_max_count, attributes_max_count = get_max_counts(config)
 
         attributes = []
-        for result in client.batched_search(database_name, element_name, attribute_name,
-                                            element_category, attribute_category, template_name, clicked_nodes,
-                                            elements_max_count=elements_max_count, attributes_max_count=attributes_max_count):
-            # result["checked"] = True
-            attributes.append(result)
+        if use_selected_template_names_scope:
+            # In template tab with selected template nodes, scope searches to all selected templates.
+            # We ignore element_name here to avoid stale "*" from single-template click behavior.
+            for selected_template_name in selected_template_names:
+                for result in client.batched_search(
+                    database_name, None, attribute_name,
+                    element_category, attribute_category, selected_template_name, [],
+                    elements_max_count=elements_max_count, attributes_max_count=attributes_max_count
+                ):
+                    attributes.append(result)
+        else:
+            for result in client.batched_search(database_name, element_name, attribute_name,
+                                                element_category, attribute_category, template_name, clicked_nodes,
+                                                elements_max_count=elements_max_count, attributes_max_count=attributes_max_count):
+                # result["checked"] = True
+                attributes.append(result)
         attributes = split_real_from_linked_paths(attributes)
         items = []
         for attribute in attributes:
