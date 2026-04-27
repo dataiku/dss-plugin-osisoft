@@ -567,33 +567,39 @@ app.controller('AfExplorerFormCtrl', [
         };
 
         $scope.checkAttribute = function(attributeList) {
+            const shouldRemove = attributeList.checked === CheckboxStatus.CHECKED;
             attributeList.attributes.forEach((attribute) => {
-                    $scope.updateAttributeToOutput(attribute)
+                    if (shouldRemove) {
+                        $scope.removeAttributeFromOutput(attribute);
+                        return;
+                    }
+                    $scope.addAttributeToOutput(attribute);
                 }
             )
         };
 
-        $scope.checkTemplate = function(aggregatedAttributeList) {
-            aggregatedAttributeList.forEach((attribute) => {
-                    $scope.checkAttribute(attribute)
+        $scope.checkTemplate = function(template) {
+            const shouldRemove = template.checked === CheckboxStatus.CHECKED;
+            template.attributes.forEach((aggregatedAttribute) => {
+                    aggregatedAttribute.attributes.forEach((underlyingAttribute) => {
+                        if (shouldRemove) {
+                            $scope.removeAttributeFromOutput(underlyingAttribute);
+                            return;
+                        }
+                        $scope.addAttributeToOutput(underlyingAttribute);
+                    });
                 }
             )
         };
 
-        $scope.updateAttributeToOutput = function(attribute) {
+        $scope.addAttributeToOutput = function(attribute) {
             if (!$scope.config?.attributeList) return;
 
             const selectedAttributes = $scope.config.selectedAttributes;
             const attributeList = $scope.config.attributeList;
 
             const index = selectedAttributes.findIndex(attr => attr.path === attribute.path);
-
             if (index !== -1) {
-                selectedAttributes.splice(index, 1);
-
-                const attrInConfig = attributeList.find(attr => attr.path === attribute.path);
-                if (attrInConfig) attrInConfig.checked = false;
-                upsertOutputSelectedAttribute(attribute, false);
                 return;
             }
 
@@ -607,8 +613,27 @@ app.controller('AfExplorerFormCtrl', [
             selectedAttributes.push(attribute);
             attrInConfig.checked = true;
             upsertOutputSelectedAttribute(attribute, true);
-        };
+        }
 
+        $scope.removeAttributeFromOutput = function(attribute) {
+            if (!$scope.config?.attributeList) return;
+
+            const selectedAttributes = $scope.config.selectedAttributes;
+            const attributeList = $scope.config.attributeList;
+
+            const index = selectedAttributes.findIndex(attr => attr.path === attribute.path);
+
+            if (index === -1) {
+                console.warn("Attribute not selected:", attribute.path);
+                return;
+            }
+
+            selectedAttributes.splice(index, 1);
+
+            const attrInConfig = attributeList.find(attr => attr.path === attribute.path);
+            if (attrInConfig) attrInConfig.checked = false;
+            upsertOutputSelectedAttribute(attribute, false);
+        }
 
         function getNodeAttributePaths(node) {
             if (!node || !Array.isArray(node.children)) {
@@ -735,18 +760,15 @@ app.controller('AfExplorerFormCtrl', [
 
         $scope.getGroupedAttributesByTemplate = function() {
             const groupedAttributes = Object.values($scope.config.attributeList.reduce(groupIdenticalAttributes, {}))
-            console.log("groupedAttributes", groupedAttributes)
             const templateGroups = groupedAttributes.reduce(
                 (acc, attr) => {
-                    console.log("attr", attr)
-                    console.log("acc", acc)
                     const key = attr.templateName; // TODO: check it's not template_name ever
                     if (!acc[key]) {
                         acc[key] = {
                             templateName: attr.templateName,
                             allChecked: attr.checked,
                             checked: CheckboxStatus.UNCHECKED, // Used to determine UI checkbox state
-                            attributes: [], // TODO: potentially remove when merging attributes
+                            attributes: [],
                             checkStates: []
                         }
                     }
@@ -758,7 +780,6 @@ app.controller('AfExplorerFormCtrl', [
                     return acc;
                 }, {}
             )
-            console.log("templateGroups", templateGroups)
             return {
                 attributesWithoutTemplate: [], // TODO remove if does not exist,
                 templateGroups: templateGroups // TODO: see if can be avoided
