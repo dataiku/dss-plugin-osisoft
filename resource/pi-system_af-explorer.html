@@ -95,35 +95,35 @@
                     </div>
                 </div>
             </div>
-            <div class="attribute-table-block">
-                <span><b>Attributes</b> - free floating, unattached to templates</span>
-                <div class="attribute-table-block__title"><strong>Elements</strong></div>
-                <table class="custom-table">
-                    <thead>
-                    <tr>
-                        <th><input type="checkbox" ng-model="config.selectAllWithoutTemplateAttributes"
-                                   ng-change="toggleSelectAllWithoutTemplateAttributes()"></th>
-                        <th>Name</th>
-                        <th>Description</th>
-                        <th>Path</th>
-                    </tr>
-                    </thead>
-                    <tbody>
-                    <tr ng-if="!getAttributesWithoutTemplate().length" class="custom-table__empty-row">
-                        <td colspan="4">No attributes without template</td>
-                    </tr>
-                    <tr ng-repeat="attribute in getAttributesWithoutTemplate() track by attribute.path">
-                        <td>
-                            <input type="checkbox" ng-model="attribute.checked"
-                                   ng-change="updateAttributeToOutput(attribute)">
-                        </td>
-                        <td>{{attribute.title}}</td>
-                        <td>{{attribute.description}}</td>
-                        <td>{{attribute.path}}</td>
-                    </tr>
-                    </tbody>
-                </table>
-            </div>
+<!--            <div class="attribute-table-block">-->
+<!--                <span><b>Attributes</b> - free floating, unattached to templates</span>-->
+<!--                <div class="attribute-table-block__title"><strong>Elements</strong></div>-->
+<!--                <table class="custom-table">-->
+<!--                    <thead>-->
+<!--                    <tr>-->
+<!--                        <th><input type="checkbox" ng-model="config.selectAllWithoutTemplateAttributes"-->
+<!--                                   ng-change="toggleSelectAllWithoutTemplateAttributes()"></th>-->
+<!--                        <th>Name</th>-->
+<!--                        <th>Description</th>-->
+<!--                        <th>Path</th>-->
+<!--                    </tr>-->
+<!--                    </thead>-->
+<!--                    <tbody>-->
+<!--                    <tr ng-if="!getAttributesWithoutTemplate().length" class="custom-table__empty-row">-->
+<!--                        <td colspan="4">No attributes without template</td>-->
+<!--                    </tr>-->
+<!--                    <tr ng-repeat="attribute in getAttributesWithoutTemplate() track by attribute.path">-->
+<!--                        <td>-->
+<!--                            <input type="checkbox" ng-model="attribute.checked"-->
+<!--                                   ng-change="updateAttributeToOutput(attribute)">-->
+<!--                        </td>-->
+<!--                        <td>{{attribute.title}}</td>-->
+<!--                        <td>{{attribute.description}}</td>-->
+<!--                        <td>{{attribute.path}}</td>-->
+<!--                    </tr>-->
+<!--                    </tbody>-->
+<!--                </table>-->
+<!--            </div>-->
             <div class="attribute-table-block">
                 <div class="attribute-table-block__title"><strong>Templates</strong></div>
                 <table class="custom-table">
@@ -141,7 +141,7 @@
                         <td colspan="4">No templated attributes</td>
                     </tr>
                     </tbody>
-                    <tbody ng-repeat="template in templateAggregatedAttributes track by template.groupKey">
+                    <tbody ng-repeat="template in templateAggregatedAttributes track by template.templateName">
                     <tr class="custom-table__group-row">
                         <td>
                             <input type="checkbox" ng-checked="isTemplateGroupChecked(template)"

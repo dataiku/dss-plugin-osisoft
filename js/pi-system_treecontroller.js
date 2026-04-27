@@ -703,77 +703,33 @@ app.controller('AfExplorerFormCtrl', [
             syncVisibleSelectionFromOutput();
         }
 
-        function getAttributeTemplateName(attribute) {
-            if (!attribute) {
-                return "";
-            }
-            const templateName = attribute.parent_template_name || attribute.template_name || "";
-            return typeof templateName === "string" ? templateName.trim() : "";
-        }
-
-        function groupAttributesByTemplate(attributes) {
-            const attributesByTemplate = new Map();
-            const attributesWithoutTemplate = [];
-
-            attributes.forEach(attribute => {
-                if (!attribute?.path) {
-                    return;
-                }
-                const templateName = getAttributeTemplateName(attribute);
-                if (!templateName) {
-                    attributesWithoutTemplate.push(attribute);
-                    return;
-                }
-                if (!attributesByTemplate.has(templateName)) {
-                    attributesByTemplate.set(templateName, []);
-                }
-                attributesByTemplate.get(templateName).push(attribute);
-            });
-
-            const templateGroups = [];
-            attributesByTemplate.forEach((templateAttributes, templateName) => {
-                templateGroups.push({
-                    groupKey: "template:" + templateName,
-                    templateName: templateName,
-                    attributes: templateAttributes
-                });
-            });
-
-            return {
-                attributesWithoutTemplate: attributesWithoutTemplate,
-                templateGroups: templateGroups
-            };
-        }
-
-        function buildTemplateGroupingKey(attributes) {
-            return attributes
-                .filter(attribute => attribute?.path)
-                .map(attribute => attribute.path + "::" + getAttributeTemplateName(attribute))
-                .join("||");
-        }
-
-        let templateGroupingKey = null;
-        let templateGroupingSource = null;
-        let groupedAttributesByTemplate = {
-            attributesWithoutTemplate: [],
-            templateGroups: []
-        };
-
-        function getGroupedAttributesByTemplate() {
-            const attributes = Array.isArray($scope.config.attributeList) ? $scope.config.attributeList : [];
-            const nextTemplateGroupingKey = buildTemplateGroupingKey(attributes);
-            if (attributes === templateGroupingSource && nextTemplateGroupingKey === templateGroupingKey) {
-                return groupedAttributesByTemplate;
-            }
-            templateGroupingSource = attributes;
-            templateGroupingKey = nextTemplateGroupingKey;
-            groupedAttributesByTemplate = groupAttributesByTemplate(attributes);
-            return groupedAttributesByTemplate;
-        }
-
         $scope.getAttributesWithoutTemplate = function() {
             return getGroupedAttributesByTemplate().attributesWithoutTemplate;
         };
+
+        function getGroupedAttributesByTemplate() {
+            const templateGroups = $scope.config.attributeList.reduce(
+                (acc, attr) => {
+                    const key = attr.parent_template_name; // TODO: check it's not template_name ever
+                    if (!acc[key]) {
+                        acc[key] = {
+                            templateName: attr.parent_template_name,
+                            allChecked: attr.checked,
+                            checked: null, // Used to determine UI checkbox state
+                            attributes: [] // TODO: potentially remove when merging attributes
+                        }
+                    }
+
+                    acc[key].allChecked = acc[key].allChecked && attr.checked
+                    acc[key].attributes.push(attr);
+                    return acc;
+                }, {}
+            )
+            return {
+                attributesWithoutTemplate: [], // TODO remove if does not exist,
+                templateGroups: Object.values(templateGroups) // TODO: see if can be avoided
+            }
+        }
 
         $scope.getTemplateGroups = function() {
             const groupedAttributes = getGroupedAttributesByTemplate();
@@ -786,7 +742,7 @@ app.controller('AfExplorerFormCtrl', [
                             acc[key] = {
                                 title: attr.title,
                                 description: attr.description,
-                                checked: null,
+                                checked: null, // Used to determine UI checkbox state
                                 allChecked: attr.checked,
                                 attributes: [],
                                 checkStates: [],
@@ -1049,7 +1005,7 @@ app.component('treeNode', {
         ctrl.isSearchResult = function(node) {
             return !!node.searchHighlighted;
         };
-    }, // TODO: move this to own html file using templateUrl
+    },
     templateUrl: "/plugins/pi-system/resource/tree-node.html"
 });
 
