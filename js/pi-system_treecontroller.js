@@ -538,7 +538,7 @@ app.controller('AfExplorerFormCtrl', [
         };
 
         function getAllTemplatedAttributes() {
-            const templateGroups = getGroupedAttributesByTemplate().templateGroups;
+            const templateGroups = $scope.getGroupedAttributesByTemplate().templateGroups;
             const templatedAttributes = [];
             templateGroups.forEach(group => {
                 if (!group || !Array.isArray(group.attributes)) {
@@ -707,60 +707,59 @@ app.controller('AfExplorerFormCtrl', [
             return getGroupedAttributesByTemplate().attributesWithoutTemplate;
         };
 
-        function getGroupedAttributesByTemplate() {
-            const templateGroups = $scope.config.attributeList.reduce(
+        function groupIdenticalAttributes(acc, attr) {
+            const key = attr.parent_template_name + "::" + attr.title;
+
+            if (!acc[key]) {
+                acc[key] = {
+                    title: attr.title,
+                    description: attr.description,
+                    templateName: attr.parent_template_name,
+                    checked: null, // Used to determine UI checkbox state
+                    allChecked: attr.checked,
+                    attributes: [],
+                    checkStates: [],
+                    paths: [],
+                };
+            }
+
+            acc[key].checkStates.push(attr.checked)
+            acc[key].paths.push(attr.path)
+            acc[key].allChecked = acc[key].allChecked && attr.checked
+            acc[key].checked = $scope.getCheckboxStatus(acc[key].checkStates); // TODO maybe move out
+            acc[key].attributes.push(attr);
+
+            return acc;
+        }
+
+        $scope.getGroupedAttributesByTemplate = function() {
+            const groupedAttributes = Object.values($scope.config.attributeList.reduce(groupIdenticalAttributes, {}))
+
+            const templateGroups = groupedAttributes.reduce(
                 (acc, attr) => {
-                    const key = attr.parent_template_name; // TODO: check it's not template_name ever
+                    const key = attr.templateName; // TODO: check it's not template_name ever
                     if (!acc[key]) {
                         acc[key] = {
-                            templateName: attr.parent_template_name,
+                            templateName: attr.templateName,
                             allChecked: attr.checked,
                             checked: null, // Used to determine UI checkbox state
-                            attributes: [] // TODO: potentially remove when merging attributes
+                            attributes: [], // TODO: potentially remove when merging attributes
+                            checkStates: []
                         }
                     }
 
                     acc[key].allChecked = acc[key].allChecked && attr.checked
+                    acc[key].checked = $scope.getCheckboxStatus(acc[key].checkStates);
                     acc[key].attributes.push(attr);
+                    acc[key].checkStates.push(attr.checked)
                     return acc;
                 }, {}
             )
             return {
                 attributesWithoutTemplate: [], // TODO remove if does not exist,
-                templateGroups: Object.values(templateGroups) // TODO: see if can be avoided
+                templateGroups: templateGroups // TODO: see if can be avoided
             }
         }
-
-        $scope.getTemplateGroups = function() {
-            const groupedAttributes = getGroupedAttributesByTemplate();
-            return groupedAttributes.templateGroups.map(templateGroup => ({
-                    ...templateGroup,
-                    mergedAttributes: templateGroup.attributes.reduce((acc, attr) => {
-                        const key = attr.title;
-
-                        if (!acc[key]) {
-                            acc[key] = {
-                                title: attr.title,
-                                description: attr.description,
-                                checked: null, // Used to determine UI checkbox state
-                                allChecked: attr.checked,
-                                attributes: [],
-                                checkStates: [],
-                                paths: []
-                            };
-                        }
-
-                        acc[key].checkStates.push(attr.checked)
-                        acc[key].paths.push(attr.path)
-                        acc[key].allChecked = acc[key].allChecked && attr.checked
-                        acc[key].checked = $scope.getCheckboxStatus(acc[key].checkStates); // TODO maybe move out
-                        acc[key].attributes.push(attr);
-
-                        return acc;
-                    }, {})
-                })
-            )
-        };
 
         // TODO: use once checkbox handles partial check
 
@@ -775,7 +774,7 @@ app.controller('AfExplorerFormCtrl', [
 
         // TODO: try to move it to a callback of some kind (will work with a component)
         $scope.$watch('config.attributeList', function(newVal, oldVal) {
-            $scope.templateAggregatedAttributes = $scope.getTemplateGroups();
+            $scope.templateAggregatedAttributes = $scope.getGroupedAttributesByTemplate().templateGroups;
         }, true);
 
 

@@ -144,12 +144,12 @@
                     <tbody ng-repeat="template in templateAggregatedAttributes track by template.templateName">
                     <tr class="custom-table__group-row">
                         <td>
-                            <input type="checkbox" ng-checked="isTemplateGroupChecked(template)"
-                                   ng-click="toggleTemplateGroupAttributes(template)">
+<!--                            <input type="checkbox" ng-model="isTemplateGroupChecked(template)"-->
+<!--                                   ng-click="toggleTemplateGroupAttributes(template)" indeterminate="template.checked">-->
                         </td>
                         <td colspan="3">{{template.templateName}}</td>
                     </tr>
-                    <tr ng-repeat="mergedAttribute in template.mergedAttributes track by mergedAttribute.title">
+                    <tr ng-repeat="mergedAttribute in template.attributes track by mergedAttribute.title">
                         <td>
                             <input type="checkbox" ng-model="mergedAttribute.allChecked"
                                    ng-change="checkAttribute(mergedAttribute)" indeterminate="mergedAttribute.checked">
