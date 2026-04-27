@@ -164,6 +164,7 @@ app.controller('AfExplorerFormCtrl', [
             $scope.config.treeData = [];
             $scope.config.clickedNodes = [];
             $scope.config.attributeList = [];
+            // TODO inspect whether config.selectedAttributes is still needed.
             $scope.config.selectedAttributes = [];
             $scope.config.outputSelectedAttributes = [];
             $scope.config.searchMatchedElementPaths = [];
@@ -551,18 +552,11 @@ app.controller('AfExplorerFormCtrl', [
             )
         };
 
-        $scope.isTemplateGroupChecked = function(group) {
-            if (!group || !Array.isArray(group?.mergedAttributes) || !group.mergedAttributes.length) {
-                return false;
-            }
-            return group.mergedAttributes.every(attribute => !!attribute.checked);
-        };
-
         $scope.toggleTemplateGroupAttributes = function(group) {
             if (!group || !Array.isArray(group?.mergedAttributes)) {
                 return;
             }
-            const shouldCheck = !$scope.isTemplateGroupChecked(group);
+            const shouldCheck = !group.mergedAttributes.every(attribute => !!attribute.checked);
             setAttributesChecked(group.mergedAttributes, shouldCheck);
         };
 
