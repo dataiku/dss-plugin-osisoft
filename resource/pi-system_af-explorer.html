@@ -106,11 +106,13 @@
 <!--                        <th>Name</th>-->
 <!--                        <th>Description</th>-->
 <!--                        <th>Path</th>-->
+<!--                        <th>Data type</th>-->
+<!--                        <th>Aggregates</th>-->
 <!--                    </tr>-->
 <!--                    </thead>-->
 <!--                    <tbody>-->
 <!--                    <tr ng-if="!getAttributesWithoutTemplate().length" class="custom-table__empty-row">-->
-<!--                        <td colspan="4">No attributes without template</td>-->
+<!--                        <td colspan="6">No attributes without template</td>-->
 <!--                    </tr>-->
 <!--                    <tr ng-repeat="attribute in getAttributesWithoutTemplate() track by attribute.path">-->
 <!--                        <td>-->
@@ -120,6 +122,8 @@
 <!--                        <td>{{attribute.title}}</td>-->
 <!--                        <td>{{attribute.description}}</td>-->
 <!--                        <td>{{attribute.path}}</td>-->
+<!--                        <td>{{attribute.data_type}}</td>-->
+<!--                        <td>{{attribute.aggregates}}</td>-->
 <!--                    </tr>-->
 <!--                    </tbody>-->
 <!--                </table>-->
@@ -131,14 +135,16 @@
                     <tr>
                         <th><input type="checkbox" ng-model="templateAggregatedAttributes.allChecked"
                                    ng-change="toggleSelectAllTemplateAttributes()" indeterminate="templateAggregatedAttributes.checked"></th>
-                        <th>Name</th>
+                        <th>Title</th>
                         <th>Description</th>
                         <th>Path</th>
+                        <th>Data type</th>
+                        <th>Aggregates</th>
                     </tr>
                     </thead>
                     <tbody ng-if="!templateAggregatedAttributes.templates.length">
                     <tr class="custom-table__empty-row">
-                        <td colspan="4">No templated attributes</td>
+                        <td colspan="6">No templated attributes</td>
                     </tr>
                     </tbody>
                     <tbody ng-repeat="template in templateAggregatedAttributes.templates track by template.templateName">
@@ -147,7 +153,7 @@
                             <input type="checkbox" ng-model="template.allChecked"
                                    ng-change="checkTemplate(template)" indeterminate="template.checked">
                         </td>
-                        <td colspan="3">{{template.templateName}}</td>
+                        <td colspan="5">{{template.templateName}}</td>
                     </tr>
                     <tr ng-repeat="mergedAttribute in template.attributes track by mergedAttribute.title">
                         <td>
@@ -161,6 +167,8 @@
                                 {{path}}<br/>
                             </span>
                         </td>
+                        <td>{{mergedAttribute.data_type}}</td>
+                        <td>{{mergedAttribute.aggregates}}</td>
                     </tr>
                     </tbody>
                 </table>
