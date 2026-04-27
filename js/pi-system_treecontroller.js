@@ -1023,7 +1023,6 @@ app.directive('indeterminate', function() {
             }
 
             scope.$watch(attrs.indeterminate, function(checkStatus) {
-                console.log("Changed check status", checkStatus);
                 if (checkStatus === CheckboxStatus.PARTIAL_CHECK)
                 {
                     element[0].indeterminate = true;
