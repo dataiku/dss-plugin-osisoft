@@ -419,7 +419,6 @@ app.controller('AfExplorerFormCtrl', [
             });
 
             $scope.config.attributeList = deduped;
-            syncVisibleSelectionFromOutput();
         }
 
         function getMatchedElementPaths(attributes) {
@@ -530,28 +529,27 @@ app.controller('AfExplorerFormCtrl', [
                 attribute.checked = !!isChecked;
                 upsertOutputSelectedAttribute(attribute, !!isChecked);
             });
-            syncVisibleSelectionFromOutput();
         }
 
         $scope.toggleSelectAllWithoutTemplateAttributes = function() {
             setAttributesChecked($scope.getAttributesWithoutTemplate(), !!$scope.config.selectAllWithoutTemplateAttributes);
         };
 
-        function getAllTemplatedAttributes() {
-            const templateGroups = $scope.getGroupedAttributesByTemplate().templateGroups;
-            const templatedAttributes = [];
-            templateGroups.forEach(group => {
-                if (!group || !Array.isArray(group.attributes)) {
-                    return;
-                }
-                templatedAttributes.push.apply(templatedAttributes, group.attributes);
-            });
-            return templatedAttributes;
-        }
+        // function getAllTemplatedAttributes() {
+        //     const templateGroups = $scope.getGroupedAttributesByTemplate().templateGroups;
+        //     const templatedAttributes = [];
+        //     templateGroups.forEach(group => {
+        //         if (!group || !Array.isArray(group.attributes)) {
+        //             return;
+        //         }
+        //         templatedAttributes.push.apply(templatedAttributes, group.attributes);
+        //     });
+        //     return templatedAttributes;
+        // }
 
-        $scope.toggleSelectAllTemplateAttributes = function() {
-            setAttributesChecked(getAllTemplatedAttributes(), !!$scope.config.selectAllTemplateAttributes);
-        };
+        // $scope.toggleSelectAllTemplateAttributes = function() {
+        //     setAttributesChecked(getAllTemplatedAttributes(), !!$scope.config.selectAllTemplateAttributes);
+        // };
 
         $scope.isTemplateGroupChecked = function(group) {
             if (!group || !Array.isArray(group?.mergedAttributes) || !group.mergedAttributes.length) {
@@ -575,6 +573,13 @@ app.controller('AfExplorerFormCtrl', [
             )
         };
 
+        $scope.checkTemplate = function(aggregatedAttributeList) {
+            aggregatedAttributeList.forEach((attribute) => {
+                    $scope.checkAttribute(attribute)
+                }
+            )
+        };
+
         $scope.updateAttributeToOutput = function(attribute) {
             if (!$scope.config?.attributeList) return;
 
@@ -589,7 +594,6 @@ app.controller('AfExplorerFormCtrl', [
                 const attrInConfig = attributeList.find(attr => attr.path === attribute.path);
                 if (attrInConfig) attrInConfig.checked = false;
                 upsertOutputSelectedAttribute(attribute, false);
-                syncVisibleSelectionFromOutput();
                 return;
             }
 
@@ -603,7 +607,6 @@ app.controller('AfExplorerFormCtrl', [
             selectedAttributes.push(attribute);
             attrInConfig.checked = true;
             upsertOutputSelectedAttribute(attribute, true);
-            syncVisibleSelectionFromOutput();
         };
 
 
@@ -628,7 +631,6 @@ app.controller('AfExplorerFormCtrl', [
             $scope.config.selectedAttributes = ($scope.config.selectedAttributes || []).filter(
                 attr => !attributePaths.includes(attr.path)
             );
-            syncVisibleSelectionFromOutput();
         }
 
         // TODO: double check the logic
@@ -700,11 +702,10 @@ app.controller('AfExplorerFormCtrl', [
                 }
             });
 
-            syncVisibleSelectionFromOutput();
         }
 
         $scope.getAttributesWithoutTemplate = function() {
-            return getGroupedAttributesByTemplate().attributesWithoutTemplate;
+            return $scope.getGroupedAttributesByTemplate().attributesWithoutTemplate;
         };
 
         function groupIdenticalAttributes(acc, attr) {
@@ -725,8 +726,8 @@ app.controller('AfExplorerFormCtrl', [
 
             acc[key].checkStates.push(attr.checked)
             acc[key].paths.push(attr.path)
+            acc[key].checked = getCheckboxStatus(acc[key].checkStates); // TODO maybe move out
             acc[key].allChecked = acc[key].allChecked && attr.checked
-            acc[key].checked = $scope.getCheckboxStatus(acc[key].checkStates); // TODO maybe move out
             acc[key].attributes.push(attr);
 
             return acc;
@@ -734,36 +735,37 @@ app.controller('AfExplorerFormCtrl', [
 
         $scope.getGroupedAttributesByTemplate = function() {
             const groupedAttributes = Object.values($scope.config.attributeList.reduce(groupIdenticalAttributes, {}))
-
+            console.log("groupedAttributes", groupedAttributes)
             const templateGroups = groupedAttributes.reduce(
                 (acc, attr) => {
+                    console.log("attr", attr)
+                    console.log("acc", acc)
                     const key = attr.templateName; // TODO: check it's not template_name ever
                     if (!acc[key]) {
                         acc[key] = {
                             templateName: attr.templateName,
                             allChecked: attr.checked,
-                            checked: null, // Used to determine UI checkbox state
+                            checked: CheckboxStatus.UNCHECKED, // Used to determine UI checkbox state
                             attributes: [], // TODO: potentially remove when merging attributes
                             checkStates: []
                         }
                     }
 
-                    acc[key].allChecked = acc[key].allChecked && attr.checked
-                    acc[key].checked = $scope.getCheckboxStatus(acc[key].checkStates);
+                    acc[key].checkStates.push(...attr.checkStates)
+                    acc[key].checked = getCheckboxStatus(acc[key].checkStates);
+                    acc[key].allChecked = acc[key].allChecked && attr.allChecked;
                     acc[key].attributes.push(attr);
-                    acc[key].checkStates.push(attr.checked)
                     return acc;
                 }, {}
             )
+            console.log("templateGroups", templateGroups)
             return {
                 attributesWithoutTemplate: [], // TODO remove if does not exist,
                 templateGroups: templateGroups // TODO: see if can be avoided
             }
         }
 
-        // TODO: use once checkbox handles partial check
-
-        $scope.getCheckboxStatus = function(checkboxStatuses) {
+         function getCheckboxStatus(checkboxStatuses) {
             if (checkboxStatuses.every(Boolean)) {
                 return CheckboxStatus.CHECKED;
             } else if (checkboxStatuses.some(Boolean)) {
@@ -825,24 +827,6 @@ app.controller('AfExplorerFormCtrl', [
                 outputSelectedAttributes.splice(index, 1);
             }
         }
-
-        function syncVisibleSelectionFromOutput() {
-            const outputSelectedPathSet = new Set(getOutputSelectedAttributes().map(attr => attr.path));
-            $scope.config.attributeList.forEach(attr => {
-                attr.checked = outputSelectedPathSet.has(attr.path);
-            });
-            $scope.config.selectedAttributes = $scope.config.attributeList.filter(attr => attr.checked);
-            const attributesWithoutTemplate = getGroupedAttributesByTemplate().attributesWithoutTemplate;
-            $scope.config.selectAllWithoutTemplateAttributes =
-                attributesWithoutTemplate.length > 0 &&
-                attributesWithoutTemplate.every(attribute => !!attribute.checked);
-            const templatedAttributes = getAllTemplatedAttributes();
-            $scope.config.selectAllTemplateAttributes =
-                templatedAttributes.length > 0 &&
-                templatedAttributes.every(attribute => !!attribute.checked);
-        }
-
-
     }]);
 
 
@@ -1011,7 +995,6 @@ app.component('treeNode', {
 app.directive('indeterminate', function() {
     return {
         restrict: 'A',
-        require: 'ngModel',
         link: function(scope, element, attrs) {
             if (attrs.indeterminate === CheckboxStatus.PARTIAL_CHECK)
             {

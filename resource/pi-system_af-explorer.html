@@ -144,8 +144,8 @@
                     <tbody ng-repeat="template in templateAggregatedAttributes track by template.templateName">
                     <tr class="custom-table__group-row">
                         <td>
-<!--                            <input type="checkbox" ng-model="isTemplateGroupChecked(template)"-->
-<!--                                   ng-click="toggleTemplateGroupAttributes(template)" indeterminate="template.checked">-->
+                            <input type="checkbox" ng-model="template.allChecked"
+                                   ng-change="checkTemplate(template.attributes)" indeterminate="template.checked">
                         </td>
                         <td colspan="3">{{template.templateName}}</td>
                     </tr>
