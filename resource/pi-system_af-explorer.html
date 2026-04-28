@@ -167,7 +167,12 @@
                                 {{path}}<br/>
                             </span>
                         </td>
-                        <td>{{mergedAttribute.data_type}}</td>
+                        <td>
+                            <select dku-bs-select ng-model="mergedAttribute.data_type"
+                                    ng-options="option.value as option.label for option in aggregateDataTypeFields.data_type.options"
+                                    ng-change="updateMergedAttributeDataType(mergedAttribute)">
+                            </select>
+                        </td>
                         <td>{{mergedAttribute.aggregates}}</td>
                     </tr>
                     </tbody>

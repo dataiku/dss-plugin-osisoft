@@ -1,5 +1,95 @@
 const app = angular.module('piSystemTreeApp.module', []);
 
+const aggregateDataTypeFields = Object.freeze({
+    data_type: {
+        label: 'Data type',
+        type: 'select',
+        defaultValue: 'RecordedData',
+        options: [
+            { value: 'InterpolatedData', label: 'Interpolated' },
+            { value: 'PlotData', label: 'Plot' },
+            { value: 'RecordedData', label: 'Recorded' },
+            { value: 'SummaryData', label: 'Summary' },
+            { value: 'Value', label: 'Value' },
+            { value: 'EndValue', label: 'End value' },
+        ]
+    },
+    summary_type: {
+        label: 'Summary type',
+        type: 'multiselect',
+        dependsOn: ['data_type'],
+        isVisible: function(state) {
+            return state.data_type === 'SummaryData';
+        },
+        options: function() {
+            return [
+                { value: 'Total', label: 'Total' },
+                { value: 'Average', label: 'Average' },
+                { value: 'Minimum', label: 'Minimum' },
+                { value: 'Maximum', label: 'Maximum' },
+                { value: 'Range', label: 'Range' },
+                { value: 'StdDev', label: 'Standard deviation' },
+                { value: 'PopulationStdDev', label: 'Population standard deviation' },
+                { value: 'Count', label: 'Count' },
+                { value: 'PercentGood', label: 'Percent good' },
+                { value: 'TotalWithUOM', label: 'Total with UOM' },
+                { value: 'All', label: 'All' },
+                { value: 'AllForNonNumeric', label: 'All for non numeric' },
+            ];
+        },
+    },
+    boundary_type: {
+        label: 'Boundary type',
+        type: 'select',
+        dependsOn: ['data_type'],
+        defaultValue: 'Inside',
+        isVisible: function(state) {
+            return state.data_type === 'InterpolatedData';
+        },
+        options: function() {
+            return [
+                { value: 'Inside', label: 'Inside' },
+                { value: 'Outside', label: 'Outside' },
+            ];
+        },
+    },
+    record_boundary_type: {
+        label: 'Boundary type',
+        type: 'select',
+        dependsOn: ['data_type'],
+        defaultValue: 'Inside',
+        isVisible: function(state) {
+            return state.data_type === 'RecordedData';
+        },
+        options: function() {
+            return [
+                { value: 'Inside', label: 'Inside' },
+                { value: 'Interpolated', label: 'Interpolated' },
+                { value: 'Outside', label: 'Outside' },
+            ];
+        },
+    },
+    summary_duration: {
+        label: 'Summary duration',
+        type: 'string',
+        dependsOn: ['data_type'],
+        defaultValue: '',
+        isVisible: function(state) {
+            return state.data_type === 'SummaryData';
+        },
+    },
+    max_count: {
+        label: 'Max count',
+        type: 'int',
+        dependsOn: ['show_advanced_parameters', 'data_type'],
+        defaultValue: 10000,
+        isVisible: function(state) {
+            return state.show_advanced_parameters === true &&
+                ['PlotData', 'InterpolatedData', 'RecordedData'].includes(state.data_type);
+        },
+    },
+});
+
 //TODO: divide at least into a tree component + a results/right panel component + welcome component
 const CheckboxStatus = Object.freeze({
     CHECKED: 'CHECKED',
@@ -52,6 +142,8 @@ app.controller('AfExplorerFormCtrl', [
         $scope.config.selectedTemplateNames = $scope.config.selectedTemplateNames || []; // la liste des templates sélectionnés (checkbox cochée) parmi ceux affichés
         $scope.config.selectAllWithoutTemplateAttributes = $scope.config.selectAllWithoutTemplateAttributes || false; // select all des attributs standalone
         $scope.config.selectAllTemplateAttributes = $scope.config.selectAllTemplateAttributes || false; // select all des attributs groupés par template
+
+        $scope.aggregateDataTypeFields = aggregateDataTypeFields;
 
         $scope.onAdvancedToggle = function() {
             if (!$scope.config.show_advanced_parameters) {
@@ -701,7 +793,6 @@ app.controller('AfExplorerFormCtrl', [
         }
 
         function processNode(node) {
-            const selectedPaths = new Set($scope.config.outputSelectedAttributes.map(attr => attr.path));
             const hasAttributeFilter = !!($scope.config.attribute_name?.trim());
             const parentTemplateName = node?.template_name ? node.template_name : null;
 
@@ -715,15 +806,16 @@ app.controller('AfExplorerFormCtrl', [
                     }
                     const isAlreadyPresent = $scope.config.attributeList.some(attr => attr.path === child.path);
                     if (!isAlreadyPresent) {
-                        child.checked = selectedPaths.has(child.path);
-                        if (child.checked) {
-
+                        const selectedAttribute = $scope.config.outputSelectedAttributes.find(attr => attr.path === child.path);
+                        if (selectedAttribute) {
+                            child.data_type = selectedAttribute?.data_type;
+                        } else {
+                            child.data_type = $scope.aggregateDataTypeFields.data_type.defaultValue;
                         }
                         $scope.config.attributeList.push(child);
                     }
                 }
             });
-
         }
 
         $scope.getAttributesWithoutTemplate = function() {
@@ -738,6 +830,8 @@ app.controller('AfExplorerFormCtrl', [
                     title: attr.title,
                     description: attr.description,
                     templateName: attr.parent_template_name,
+                    data_type: attr.data_type,
+                    data_types: [],
                     checked: null, // Used to determine UI checkbox state
                     allChecked: attr.checked,
                     attributes: [],
@@ -751,9 +845,21 @@ app.controller('AfExplorerFormCtrl', [
             acc[key].checked = getCheckboxStatus(acc[key].checkStates); // TODO maybe move out
             acc[key].allChecked = acc[key].allChecked && attr.checked
             acc[key].attributes.push(attr);
+            acc[key].data_types.push(attr.data_type);
+
+            if (acc[key].data_type !== attr.data_type) {
+                acc[key].data_type = null;
+            }
 
             return acc;
         }
+
+        $scope.updateMergedAttributeDataType = function(mergedAttribute) {
+            mergedAttribute.attributes.forEach(attribute => {
+                attribute.data_type = mergedAttribute.data_type;
+                upsertOutputSelectedAttribute(attribute, attribute.checked);
+            });
+        };
 
         $scope.getGroupedAttributesByTemplate = function() {
             const groupedAttributes = Object.values($scope.config.attributeList.reduce(groupIdenticalAttributes, {}))
