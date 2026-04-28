@@ -14,15 +14,15 @@ const aggregateDataTypeFields = Object.freeze({
             { value: 'EndValue', label: 'End value' },
         ]
     },
-    summary_type: {
-        label: 'Summary type',
-        type: 'multiselect',
-        dependsOn: ['data_type'],
-        isVisible: function(state) {
-            return state.data_type === 'SummaryData';
-        },
-        options: function() {
-            return [
+    aggregates: {
+        summary_type: {
+            label: 'Summary type',
+            type: 'multiselect',
+            dependsOn: ['data_type'],
+            isVisible: function(state) {
+                return state.data_type === 'SummaryData';
+            },
+            options: [
                 { value: 'Total', label: 'Total' },
                 { value: 'Average', label: 'Average' },
                 { value: 'Minimum', label: 'Minimum' },
@@ -35,59 +35,55 @@ const aggregateDataTypeFields = Object.freeze({
                 { value: 'TotalWithUOM', label: 'Total with UOM' },
                 { value: 'All', label: 'All' },
                 { value: 'AllForNonNumeric', label: 'All for non numeric' },
-            ];
+            ]
         },
-    },
-    boundary_type: {
-        label: 'Boundary type',
-        type: 'select',
-        dependsOn: ['data_type'],
-        defaultValue: 'Inside',
-        isVisible: function(state) {
-            return state.data_type === 'InterpolatedData';
-        },
-        options: function() {
-            return [
+        boundary_type: {
+            label: 'Boundary type',
+            type: 'select',
+            dependsOn: ['data_type'],
+            defaultValue: 'Inside',
+            isVisible: function(state) {
+                return state.data_type === 'InterpolatedData';
+            },
+            options: [
                 { value: 'Inside', label: 'Inside' },
                 { value: 'Outside', label: 'Outside' },
-            ];
+            ]
         },
-    },
-    record_boundary_type: {
-        label: 'Boundary type',
-        type: 'select',
-        dependsOn: ['data_type'],
-        defaultValue: 'Inside',
-        isVisible: function(state) {
-            return state.data_type === 'RecordedData';
-        },
-        options: function() {
-            return [
+        record_boundary_type: {
+            label: 'Boundary type',
+            type: 'select',
+            dependsOn: ['data_type'],
+            defaultValue: 'Inside',
+            isVisible: function(state) {
+                return state.data_type === 'RecordedData';
+            },
+            options: [
                 { value: 'Inside', label: 'Inside' },
                 { value: 'Interpolated', label: 'Interpolated' },
                 { value: 'Outside', label: 'Outside' },
-            ];
+            ]
         },
-    },
-    summary_duration: {
-        label: 'Summary duration',
-        type: 'string',
-        dependsOn: ['data_type'],
-        defaultValue: '',
-        isVisible: function(state) {
-            return state.data_type === 'SummaryData';
+        summary_duration: {
+            label: 'Summary duration',
+            type: 'string',
+            dependsOn: ['data_type'],
+            defaultValue: '',
+            isVisible: function(state) {
+                return state.data_type === 'SummaryData';
+            },
         },
-    },
-    max_count: {
-        label: 'Max count',
-        type: 'int',
-        dependsOn: ['show_advanced_parameters', 'data_type'],
-        defaultValue: 10000,
-        isVisible: function(state) {
-            return state.show_advanced_parameters === true &&
-                ['PlotData', 'InterpolatedData', 'RecordedData'].includes(state.data_type);
+        max_count: {
+            label: 'Max count',
+            type: 'int',
+            dependsOn: ['show_advanced_parameters', 'data_type'],
+            defaultValue: 10000,
+            isVisible: function(state) {
+                return state.show_advanced_parameters === true &&
+                    ['PlotData', 'InterpolatedData', 'RecordedData'].includes(state.data_type);
+            },
         },
-    },
+    }
 });
 
 //TODO: divide at least into a tree component + a results/right panel component + welcome component
