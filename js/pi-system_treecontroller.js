@@ -891,7 +891,7 @@ app.controller('AfExplorerFormCtrl', [
             }
         }
 
-         function getCheckboxStatus(checkboxStatuses) {
+        function getCheckboxStatus(checkboxStatuses) {
             if (checkboxStatuses.every(Boolean)) {
                 return CheckboxStatus.CHECKED;
             } else if (checkboxStatuses.some(Boolean)) {
@@ -1115,14 +1115,12 @@ app.directive('indeterminate', function() {
     return {
         restrict: 'A',
         link: function(scope, element, attrs) {
-            if (attrs.indeterminate === CheckboxStatus.PARTIAL_CHECK)
-            {
+            if (attrs.indeterminate === CheckboxStatus.PARTIAL_CHECK) {
                 element[0].indeterminate = true;
             }
 
             scope.$watch(attrs.indeterminate, function(checkStatus) {
-                if (checkStatus === CheckboxStatus.PARTIAL_CHECK)
-                {
+                if (checkStatus === CheckboxStatus.PARTIAL_CHECK) {
                     element[0].indeterminate = true;
                     return;
                 }
