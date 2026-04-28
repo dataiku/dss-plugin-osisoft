@@ -828,6 +828,14 @@ app.controller('AfExplorerFormCtrl', [
             return aggregateName + 's';
         }
 
+        function stringArraysEqual(a, b) {
+            if (!a || !b) {
+                return false;
+            }
+            return a.length === b.length &&
+                [...a].sort().every((v, i) => v === [...b].sort()[i]);
+        }
+
         function groupIdenticalAttributes(acc, attr) {
             const key = attr.parent_template_name + "::" + attr.title;
 
@@ -864,6 +872,12 @@ app.controller('AfExplorerFormCtrl', [
 
             getAggregateNames().forEach(aggregateName => {
                 acc[key][getAggregateValuesKey(aggregateName)].push(attr[aggregateName]);
+                if ($scope.aggregateDataTypeFields.aggregates[aggregateName].type === 'multiselect') {
+                    if (!stringArraysEqual(acc[key][aggregateName], attr[aggregateName])) {
+                        acc[key][aggregateName] = [];
+                    }
+                    return;
+                }
                 if (acc[key][aggregateName] !== attr[aggregateName]) {
                     acc[key][aggregateName] = null;
                 }
