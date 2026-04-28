@@ -19,8 +19,8 @@ const aggregateDataTypeFields = Object.freeze({
             label: 'Summary type',
             type: 'multiselect',
             dependsOn: ['data_type'],
-            isVisible: function(state) {
-                return state.data_type === 'SummaryData';
+            isVisible: function(attribute) {
+                return attribute.data_type === 'SummaryData';
             },
             options: [
                 { value: 'Total', label: 'Total' },
@@ -42,8 +42,8 @@ const aggregateDataTypeFields = Object.freeze({
             type: 'select',
             dependsOn: ['data_type'],
             defaultValue: 'Inside',
-            isVisible: function(state) {
-                return state.data_type === 'InterpolatedData';
+            isVisible: function(attribute) {
+                return attribute.data_type === 'InterpolatedData';
             },
             options: [
                 { value: 'Inside', label: 'Inside' },
@@ -55,8 +55,8 @@ const aggregateDataTypeFields = Object.freeze({
             type: 'select',
             dependsOn: ['data_type'],
             defaultValue: 'Inside',
-            isVisible: function(state) {
-                return state.data_type === 'RecordedData';
+            isVisible: function(attribute) {
+                return attribute.data_type === 'RecordedData';
             },
             options: [
                 { value: 'Inside', label: 'Inside' },
@@ -69,8 +69,8 @@ const aggregateDataTypeFields = Object.freeze({
             type: 'string',
             dependsOn: ['data_type'],
             defaultValue: '',
-            isVisible: function(state) {
-                return state.data_type === 'SummaryData';
+            isVisible: function(attribute) {
+                return attribute.data_type === 'SummaryData';
             },
         },
         max_count: {
@@ -78,9 +78,9 @@ const aggregateDataTypeFields = Object.freeze({
             type: 'int',
             dependsOn: ['show_advanced_parameters', 'data_type'],
             defaultValue: 10000,
-            isVisible: function(state) {
-                return state.show_advanced_parameters === true &&
-                    ['PlotData', 'InterpolatedData', 'RecordedData'].includes(state.data_type);
+            isVisible: function(attribute) {
+                return attribute.show_advanced_parameters === true &&
+                    ['PlotData', 'InterpolatedData', 'RecordedData'].includes(attribute.data_type);
             },
         },
     }
@@ -493,7 +493,6 @@ app.controller('AfExplorerFormCtrl', [
         };
 
         function applySearchAttributesToList(attributes) {
-            const preservedSelectedPathSet = new Set($scope.config.outputSelectedAttributes.map(attr => attr.path));
             const seen = new Set();
             const deduped = [];
 
@@ -503,8 +502,7 @@ app.controller('AfExplorerFormCtrl', [
                 }
                 seen.add(attribute.path);
                 const attrCopy = { ...attribute };
-                attrCopy.checked = preservedSelectedPathSet.has(attrCopy.path);
-                deduped.push(attrCopy);
+                deduped.push(enrichAttribute(attrCopy));
             });
 
             $scope.config.attributeList = deduped;
@@ -788,6 +786,17 @@ app.controller('AfExplorerFormCtrl', [
             }
         }
 
+        // Merge frontend data and saved output with loaded attributes
+        function enrichAttribute(attribute) {
+            const selectedAttribute = $scope.config.outputSelectedAttributes.find(attr => attr.path === attribute.path);
+            attribute.checked = !!(selectedAttribute);
+            attribute.data_type = selectedAttribute?.data_type ? selectedAttribute.data_type : $scope.aggregateDataTypeFields.data_type.defaultValue;
+            getAggregateNames().forEach(aggregateName => {
+                attribute[aggregateName] = selectedAttribute?.[aggregateName];
+            });
+            return attribute;
+        }
+
         function processNode(node) {
             const hasAttributeFilter = !!($scope.config.attribute_name?.trim());
             const parentTemplateName = node?.template_name ? node.template_name : null;
@@ -802,13 +811,7 @@ app.controller('AfExplorerFormCtrl', [
                     }
                     const isAlreadyPresent = $scope.config.attributeList.some(attr => attr.path === child.path);
                     if (!isAlreadyPresent) {
-                        const selectedAttribute = $scope.config.outputSelectedAttributes.find(attr => attr.path === child.path);
-                        if (selectedAttribute) {
-                            child.data_type = selectedAttribute?.data_type;
-                        } else {
-                            child.data_type = $scope.aggregateDataTypeFields.data_type.defaultValue;
-                        }
-                        $scope.config.attributeList.push(child);
+                        $scope.config.attributeList.push(enrichAttribute(child));
                     }
                 }
             });
@@ -818,6 +821,14 @@ app.controller('AfExplorerFormCtrl', [
             return $scope.getGroupedAttributesByTemplate().attributesWithoutTemplate;
         };
 
+        function getAggregateNames() {
+            return Object.keys($scope.aggregateDataTypeFields.aggregates);
+        }
+
+        function getAggregateValuesKey(aggregateName) {
+            return aggregateName + 's';
+        }
+
         function groupIdenticalAttributes(acc, attr) {
             const key = attr.parent_template_name + "::" + attr.title;
 
@@ -826,14 +837,19 @@ app.controller('AfExplorerFormCtrl', [
                     title: attr.title,
                     description: attr.description,
                     templateName: attr.parent_template_name,
-                    data_type: attr.data_type,
-                    data_types: [],
                     checked: null, // Used to determine UI checkbox state
                     allChecked: attr.checked,
                     attributes: [],
                     checkStates: [],
                     paths: [],
+                    data_type: attr.data_type,
+                    data_types: [],
                 };
+
+                getAggregateNames().forEach(aggregateName => {
+                    acc[key][aggregateName] = attr[aggregateName];
+                    acc[key][getAggregateValuesKey(aggregateName)] = [];
+                });
             }
 
             acc[key].checkStates.push(attr.checked)
@@ -847,12 +863,24 @@ app.controller('AfExplorerFormCtrl', [
                 acc[key].data_type = null;
             }
 
+            getAggregateNames().forEach(aggregateName => {
+                acc[key][getAggregateValuesKey(aggregateName)].push(attr[aggregateName]);
+                if (acc[key][aggregateName] !== attr[aggregateName]) {
+                    acc[key][aggregateName] = null;
+                }
+            });
+
             return acc;
         }
 
         $scope.updateMergedAttributeDataType = function(mergedAttribute) {
+            const aggregateNames = getAggregateNames();
+
             mergedAttribute.attributes.forEach(attribute => {
                 attribute.data_type = mergedAttribute.data_type;
+                aggregateNames.forEach(aggregateName => {
+                    attribute[aggregateName] = mergedAttribute[aggregateName];
+                });
                 upsertOutputSelectedAttribute(attribute, attribute.checked);
             });
         };

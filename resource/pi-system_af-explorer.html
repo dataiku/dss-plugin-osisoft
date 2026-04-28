@@ -173,7 +173,16 @@
                                     ng-change="updateMergedAttributeDataType(mergedAttribute)">
                             </select>
                         </td>
-                        <td>{{mergedAttribute.aggregates}}</td>
+                        <td>
+                            <div ng-repeat="(aggregateName, aggregate) in aggregateDataTypeFields.aggregates"
+                                 ng-show="aggregate.isVisible(mergedAttribute)">
+                                {{aggregate.label}}
+                                <select dku-bs-select ng-model="mergedAttribute[aggregateName]"
+                                        ng-options="option.value as option.label for option in aggregate.options"
+                                        ng-change="updateMergedAttributeDataType(mergedAttribute)">
+                                </select>
+                            </div>
+                        </td>
                     </tr>
                     </tbody>
                 </table>
