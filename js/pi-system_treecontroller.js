@@ -66,7 +66,7 @@ const aggregateDataTypeFields = Object.freeze({
         },
         summary_duration: {
             label: 'Summary duration',
-            type: 'string',
+            type: 'text',
             dependsOn: ['data_type'],
             defaultValue: '',
             isVisible: function(attribute) {
@@ -75,12 +75,11 @@ const aggregateDataTypeFields = Object.freeze({
         },
         max_count: {
             label: 'Max count',
-            type: 'int',
-            dependsOn: ['show_advanced_parameters', 'data_type'],
+            type: 'number',
+            dependsOn: ['data_type'],
             defaultValue: 10000,
             isVisible: function(attribute) {
-                return attribute.show_advanced_parameters === true &&
-                    ['PlotData', 'InterpolatedData', 'RecordedData'].includes(attribute.data_type);
+                return ['PlotData', 'InterpolatedData', 'RecordedData'].includes(attribute.data_type);
             },
         },
     }

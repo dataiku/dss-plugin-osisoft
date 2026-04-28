@@ -179,8 +179,26 @@
                                 {{aggregate.label}}
                                 <select dku-bs-select ng-model="mergedAttribute[aggregateName]"
                                         ng-options="option.value as option.label for option in aggregate.options"
-                                        ng-change="updateMergedAttributeDataType(mergedAttribute)">
+                                        ng-change="updateMergedAttributeDataType(mergedAttribute)"
+                                        ng-if="aggregate.type === 'select'"
+                                >
                                 </select>
+                                <select dku-bs-select multiple ng-model="mergedAttribute[aggregateName]"
+                                        ng-options="option.value as option.label for option in aggregate.options"
+                                        ng-change="updateMergedAttributeDataType(mergedAttribute)"
+                                        ng-if="aggregate.type === 'multiselect'"
+                                >
+                                </select>
+                                <input type="text" ng-model="mergedAttribute[aggregateName]"
+                                        ng-options="option.value as option.label for option in aggregate.options"
+                                        ng-change="updateMergedAttributeDataType(mergedAttribute)"
+                                        ng-if="aggregate.type === 'text'"
+                                >
+                                <input type="number" ng-model="mergedAttribute[aggregateName]"
+                                       ng-options="option.value as option.label for option in aggregate.options"
+                                       ng-change="updateMergedAttributeDataType(mergedAttribute)"
+                                       ng-if="aggregate.type === 'number'"
+                                >
                             </div>
                         </td>
                     </tr>
