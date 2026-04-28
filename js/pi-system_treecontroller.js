@@ -405,7 +405,7 @@ app.controller('AfExplorerFormCtrl', [
         };
 
         function applySearchAttributesToList(attributes) {
-            const preservedSelectedPathSet = new Set(getOutputSelectedAttributes().map(attr => attr.path));
+            const preservedSelectedPathSet = new Set($scope.config.outputSelectedAttributes.map(attr => attr.path));
             const seen = new Set();
             const deduped = [];
 
@@ -701,7 +701,7 @@ app.controller('AfExplorerFormCtrl', [
         }
 
         function processNode(node) {
-            const selectedPaths = new Set(getOutputSelectedAttributes().map(attr => attr.path));
+            const selectedPaths = new Set($scope.config.outputSelectedAttributes.map(attr => attr.path));
             const hasAttributeFilter = !!($scope.config.attribute_name?.trim());
             const parentTemplateName = node?.template_name ? node.template_name : null;
 
@@ -716,6 +716,9 @@ app.controller('AfExplorerFormCtrl', [
                     const isAlreadyPresent = $scope.config.attributeList.some(attr => attr.path === child.path);
                     if (!isAlreadyPresent) {
                         child.checked = selectedPaths.has(child.path);
+                        if (child.checked) {
+
+                        }
                         $scope.config.attributeList.push(child);
                     }
                 }
@@ -822,19 +825,12 @@ app.controller('AfExplorerFormCtrl', [
             return input.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
         }
 
-        function getOutputSelectedAttributes() {
-            if (!Array.isArray($scope.config.outputSelectedAttributes)) {
-                $scope.config.outputSelectedAttributes = [];
-            }
-            return $scope.config.outputSelectedAttributes;
-        }
-
         function upsertOutputSelectedAttribute(attribute, isChecked) {
             if (!attribute || !attribute.path) {
                 return;
             }
 
-            const outputSelectedAttributes = getOutputSelectedAttributes();
+            const outputSelectedAttributes = $scope.config.outputSelectedAttributes;
             const index = outputSelectedAttributes.findIndex(attr => attr.path === attribute.path);
 
             if (isChecked) {
