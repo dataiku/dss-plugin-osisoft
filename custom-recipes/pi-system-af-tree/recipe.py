@@ -56,8 +56,13 @@ schema = [
     {'name': 'paths', 'type': 'string'},
     {'name': 'id', 'type': 'string'},
     {'name': 'url', 'type': 'string'},
-    {'name': 'checked', 'type': 'boolean'},
-    {'name': 'expanded', 'type': 'boolean'},
+    {'name': 'data_type', 'type': 'string'},
+    {'name': 'summary_type', 'type': 'array'},
+    {'name': 'boundary_type', 'type': 'string'},
+    {'name': 'record_boundary_type', 'type': 'string'},
+    {'name': 'summary_duration', 'type': 'string'},
+    {'name': 'max_count', 'type': 'int'},
+
 ]
 output_dataset.write_schema(schema)
 
