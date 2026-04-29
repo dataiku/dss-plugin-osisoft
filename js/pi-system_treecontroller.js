@@ -19,6 +19,7 @@ const aggregateDataTypeFields = Object.freeze({
             label: 'Summary type',
             type: 'multiselect',
             dependsOn: ['data_type'],
+            defaultValue: [],
             isVisible: function(attribute) {
                 return attribute.data_type === 'SummaryData';
             },
@@ -840,17 +841,27 @@ app.controller('AfExplorerFormCtrl', [
             Object.entries($scope.aggregateDataTypeFields.aggregates).forEach(([aggregateName, aggregate]) =>  {
                     if (!aggregate.isVisible(attribute)) {
                         attribute[aggregateName] = null
-                        attribute[getAggregateValuesKey(aggregateName)] = []
+                        return;
                     }
+                    attribute[aggregateName] = aggregate.defaultValue;
                 }
             )
         }
 
         $scope.updateMergedAttributeDataType = function(mergedAttribute) {
+            mergedAttribute.attributes.forEach(attribute => {
+                attribute.data_type = mergedAttribute.data_type;
+                resetAggregate(attribute);
+                if (attribute.checked) {
+                    $scope.updateAttributeInSelection(attribute)
+                }
+            });
+        }
+
+        $scope.updateMergedAttributeAggregate = function(mergedAttribute) {
             const aggregateNames = getAggregateNames();
 
             mergedAttribute.attributes.forEach(attribute => {
-                attribute.data_type = mergedAttribute.data_type;
                 aggregateNames.forEach(aggregateName => {
                     // TODO: check not necessary to copy to avoid arrays being linked
                     attribute[aggregateName] = mergedAttribute[aggregateName];
