@@ -129,7 +129,6 @@ app.controller('AfExplorerFormCtrl', [
         };
 
         $scope.config.attributeList = $scope.config.attributeList || []; // la liste des attributs qui sont affichés sur le main panel à droite
-        $scope.config.selectedAttributes = $scope.config.selectedAttributes || []; // la liste des attributs qui sont sélectionnés (checkbox cochée) parmi ceux affichés
         $scope.config.outputSelectedAttributes = $scope.config.outputSelectedAttributes || []; // la liste des attributs qui sont séléctionnés pour être dans l'output dataset
         $scope.config.searchMatchedElementPaths = $scope.config.searchMatchedElementPaths || []; // la liste pour highlighter les elements de la recherche
         $scope.config.lastSearchedElementName = $scope.config.lastSearchedElementName || "";
@@ -251,8 +250,6 @@ app.controller('AfExplorerFormCtrl', [
             $scope.config.treeData = [];
             $scope.config.clickedNodes = [];
             $scope.config.attributeList = [];
-            // TODO inspect whether config.selectedAttributes is still needed.
-            $scope.config.selectedAttributes = [];
             $scope.config.outputSelectedAttributes = [];
             $scope.config.searchMatchedElementPaths = [];
             $scope.config.lastSearchedElementName = "";
@@ -273,7 +270,6 @@ app.controller('AfExplorerFormCtrl', [
             $scope.config.element_categories = [];
             $scope.config.loadedDatabaseName = null;
             $scope.config.attributeList = [];
-            $scope.config.selectedAttributes = [];
             $scope.config.outputSelectedAttributes = [];
             $scope.showTreeData = false;
             $scope.cleanTree();
@@ -386,7 +382,6 @@ app.controller('AfExplorerFormCtrl', [
             $scope.config.attribute_name = "";
             $scope.config.clickedNodes = [];
             $scope.config.attributeList = [];
-            $scope.config.selectedAttributes = [];
             $scope.config.selectAllWithoutTemplateAttributes = false;
             $scope.config.selectAllTemplateAttributes = false;
             $scope.config.searchMatchedElementPaths = [];
@@ -466,12 +461,12 @@ app.controller('AfExplorerFormCtrl', [
 
             if (!isRestrictedAttributeSearch) {
                 $scope.config.attributeList = [];
-                $scope.config.selectedAttributes = [];
                 // Right-side display is reset: both table-level select-all checkboxes must be cleared.
                 $scope.config.selectAllWithoutTemplateAttributes = false;
                 $scope.config.selectAllTemplateAttributes = false;
             }
             $scope.config.searchMatchedElementPaths = [];
+            // TODO: understand what this does
             $scope.callPythonDo({ method: "do_search", element_name: element_name, attribute_name: attribute_name, root_tree: $scope.config.treeData }).then(
                 function(data) {
                     TreeDataService.setTreeData(data.choices);
@@ -609,11 +604,12 @@ app.controller('AfExplorerFormCtrl', [
                 return;
             }
             attributes.forEach(attribute => {
-                if (!attribute?.path) {
-                    return;
-                }
                 attribute.checked = !!isChecked;
-                upsertOutputSelectedAttribute(attribute, !!isChecked);
+                if (isChecked) {
+                    $scope.addAttributeToSelection(attribute);
+                } else {
+                    $scope.removeAttributeFromSelection(attribute);
+                }
             });
         }
 
@@ -627,10 +623,10 @@ app.controller('AfExplorerFormCtrl', [
                     template.attributes.forEach((aggregatedAttribute) => {
                         aggregatedAttribute.attributes.forEach((underlyingAttribute) => {
                             if (shouldRemove) {
-                                $scope.removeAttributeFromOutput(underlyingAttribute);
+                                $scope.removeAttributeFromSelection(underlyingAttribute);
                                 return;
                             }
-                            $scope.addAttributeToOutput(underlyingAttribute);
+                            $scope.addAttributeToSelection(underlyingAttribute);
                         });
                     });
                 }
@@ -649,10 +645,10 @@ app.controller('AfExplorerFormCtrl', [
             const shouldRemove = attributeList.checked === CheckboxStatus.CHECKED;
             attributeList.attributes.forEach((attribute) => {
                     if (shouldRemove) {
-                        $scope.removeAttributeFromOutput(attribute);
+                        $scope.removeAttributeFromSelection(attribute);
                         return;
                     }
-                    $scope.addAttributeToOutput(attribute);
+                    $scope.addAttributeToSelection(attribute);
                 }
             )
         };
@@ -662,57 +658,14 @@ app.controller('AfExplorerFormCtrl', [
             template.attributes.forEach((aggregatedAttribute) => {
                     aggregatedAttribute.attributes.forEach((underlyingAttribute) => {
                         if (shouldRemove) {
-                            $scope.removeAttributeFromOutput(underlyingAttribute);
+                            $scope.removeAttributeFromSelection(underlyingAttribute);
                             return;
                         }
-                        $scope.addAttributeToOutput(underlyingAttribute);
+                        $scope.addAttributeToSelection(underlyingAttribute);
                     });
                 }
             )
         };
-
-        $scope.addAttributeToOutput = function(attribute) {
-            if (!$scope.config?.attributeList) return;
-
-            const selectedAttributes = $scope.config.selectedAttributes;
-            const attributeList = $scope.config.attributeList;
-
-            const index = selectedAttributes.findIndex(attr => attr.path === attribute.path);
-            if (index !== -1) {
-                return;
-            }
-
-            const attrInConfig = attributeList.find(attr => attr.path === attribute.path);
-
-            if (!attrInConfig) {
-                console.warn("Attribute not found in config:", attribute.path);
-                return;
-            }
-
-            selectedAttributes.push(attribute);
-            attrInConfig.checked = true;
-            upsertOutputSelectedAttribute(attribute, true);
-        }
-
-        $scope.removeAttributeFromOutput = function(attribute) {
-            if (!$scope.config?.attributeList) return;
-
-            const selectedAttributes = $scope.config.selectedAttributes;
-            const attributeList = $scope.config.attributeList;
-
-            const index = selectedAttributes.findIndex(attr => attr.path === attribute.path);
-
-            if (index === -1) {
-                console.warn("Attribute not selected:", attribute.path);
-                return;
-            }
-
-            selectedAttributes.splice(index, 1);
-
-            const attrInConfig = attributeList.find(attr => attr.path === attribute.path);
-            if (attrInConfig) attrInConfig.checked = false;
-            upsertOutputSelectedAttribute(attribute, false);
-        }
 
         function getNodeAttributePaths(node) {
             if (!node || !Array.isArray(node.children)) {
@@ -730,9 +683,6 @@ app.controller('AfExplorerFormCtrl', [
             }
 
             $scope.config.attributeList = ($scope.config.attributeList || []).filter(
-                attr => !attributePaths.includes(attr.path)
-            );
-            $scope.config.selectedAttributes = ($scope.config.selectedAttributes || []).filter(
                 attr => !attributePaths.includes(attr.path)
             );
         }
@@ -766,7 +716,6 @@ app.controller('AfExplorerFormCtrl', [
                 if (!selectedTemplateNames.length) {
                     $scope.config.template = "-- Any --";
                     $scope.config.attributeList = [];
-                    $scope.config.selectedAttributes = [];
                     $scope.config.selectAllWithoutTemplateAttributes = false;
                     $scope.config.selectAllTemplateAttributes = false;
                     $scope.config.searchMatchedElementPaths = [];
@@ -886,15 +835,29 @@ app.controller('AfExplorerFormCtrl', [
             return acc;
         }
 
+        // reset all aggregates on change data type
+        function resetAggregate(attribute) {
+            Object.entries($scope.aggregateDataTypeFields.aggregates).forEach(([aggregateName, aggregate]) =>  {
+                    if (!aggregate.isVisible(attribute)) {
+                        attribute[aggregateName] = null
+                        attribute[getAggregateValuesKey(aggregateName)] = []
+                    }
+                }
+            )
+        }
+
         $scope.updateMergedAttributeDataType = function(mergedAttribute) {
             const aggregateNames = getAggregateNames();
 
             mergedAttribute.attributes.forEach(attribute => {
                 attribute.data_type = mergedAttribute.data_type;
                 aggregateNames.forEach(aggregateName => {
+                    // TODO: check not necessary to copy to avoid arrays being linked
                     attribute[aggregateName] = mergedAttribute[aggregateName];
                 });
-                upsertOutputSelectedAttribute(attribute, attribute.checked);
+                if (attribute.checked) {
+                    $scope.updateAttributeInSelection(attribute)
+                }
             });
         };
 
@@ -968,25 +931,37 @@ app.controller('AfExplorerFormCtrl', [
             return input.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
         }
 
-        function upsertOutputSelectedAttribute(attribute, isChecked) {
-            if (!attribute || !attribute.path) {
+        $scope.addAttributeToSelection = function(attribute) {
+            const index = $scope.config.outputSelectedAttributes.findIndex(attr => attr.path === attribute.path);
+            if (index !== -1) {
+                console.warn("Cannot add attribute to selection because already present", attribute);
                 return;
             }
-
-            const outputSelectedAttributes = $scope.config.outputSelectedAttributes;
-            const index = outputSelectedAttributes.findIndex(attr => attr.path === attribute.path);
-
-            if (isChecked) {
-                const attributeToStore = { ...attribute, checked: true };
-                if (index === -1) {
-                    outputSelectedAttributes.push(attributeToStore);
-                } else {
-                    outputSelectedAttributes[index] = attributeToStore;
-                }
-            } else if (index !== -1) {
-                outputSelectedAttributes.splice(index, 1);
-            }
+            attribute.checked = true;
+            $scope.config.outputSelectedAttributes.push(attribute);
+            console.log("Removed attribute from selection", attribute);
         }
+
+        $scope.removeAttributeFromSelection = function(attribute) {
+            const index = $scope.config.outputSelectedAttributes.findIndex(attr => attr.path === attribute.path);
+            if (index === -1) {
+                console.warn("Cannot remove attribute from selection because not present", attribute);
+                return;
+            }
+            attribute.checked = false;
+            $scope.config.outputSelectedAttributes.splice(index, 1);
+            console.log("Removed attribute from selection", attribute);
+        }
+
+        $scope.updateAttributeInSelection = function(attribute) {
+            const index = $scope.config.outputSelectedAttributes.findIndex(attr => attr.path === attribute.path);
+            if (index === -1) {
+                console.warn("Cannot update attribute in selection because not present", attribute);
+                return;
+            }
+            $scope.config.outputSelectedAttributes[index] = attribute;
+        }
+
     }]);
 
 
@@ -1011,7 +986,6 @@ app.component('treeNode', {
             ctrl.config.attribute_name = "";
             ctrl.config.clickedNodes = [];
             ctrl.config.attributeList = [];
-            ctrl.config.selectedAttributes = [];
             ctrl.config.selectAllWithoutTemplateAttributes = false;
             ctrl.config.selectAllTemplateAttributes = false;
             ctrl.config.searchMatchedElementPaths = [];
@@ -1054,7 +1028,6 @@ app.component('treeNode', {
                 : [];
 
             ctrl.config.attributeList = [];
-            ctrl.config.selectedAttributes = [];
             ctrl.config.selectAllWithoutTemplateAttributes = false;
             ctrl.config.selectAllTemplateAttributes = false;
 
