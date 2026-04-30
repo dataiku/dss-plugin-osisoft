@@ -54,7 +54,7 @@ schema = [
     {'name': 'template_name', 'type': 'string'},
     {'name': 'category_names', 'type': 'array'},
     {'name': 'path', 'type': 'string'},
-    {'name': 'paths', 'type': 'string'},
+    {'name': 'paths', 'type': 'array'},
     {'name': 'id', 'type': 'string'},
     {'name': 'url', 'type': 'string'},
     {'name': 'data_type', 'type': 'string'},
@@ -73,6 +73,7 @@ with output_dataset.get_writer() as writer:
         if item.get("checked", True) is True:
             item["category_names"] = json.dumps(item.get("category_names", []))
             item["summary_type"] = json.dumps(item.get("summary_type", []))
+            item["paths"] = json.dumps(item.get("paths", []))
             writer.write_row_dict(item)
 
 processing_timer.stop()
