@@ -147,13 +147,13 @@
                         <td colspan="6">No templated attributes</td>
                     </tr>
                     </tbody>
-                    <tbody ng-repeat="template in templateAggregatedAttributes.templates track by template.templateName">
+                    <tbody ng-repeat="template in templateAggregatedAttributes.templates track by template.template_name">
                     <tr class="custom-table__group-row">
                         <td>
                             <input type="checkbox" ng-model="template.allChecked"
                                    ng-change="checkTemplate(template)" indeterminate="template.checked">
                         </td>
-                        <td colspan="5">{{template.templateName}}</td>
+                        <td colspan="5">{{template.template_name}}</td>
                     </tr>
                     <tr ng-repeat="mergedAttribute in template.attributes track by mergedAttribute.title">
                         <td>

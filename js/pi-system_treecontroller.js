@@ -794,13 +794,15 @@ app.controller('AfExplorerFormCtrl', [
         }
 
         function groupIdenticalAttributes(acc, attr) {
-            const key = attr.parent_template_name + "::" + attr.title;
+            // TODO: maybe switch to some kind of id
+            const key = attr.template_name + "::" + attr.title;
+            console.log("attribute", attr);
 
             if (!acc[key]) {
                 acc[key] = {
                     title: attr.title,
                     description: attr.description,
-                    templateName: attr.parent_template_name,
+                    template_name: attr.template_name,
                     checked: null, // Used to determine UI checkbox state
                     allChecked: attr.checked,
                     attributes: [],
@@ -880,13 +882,26 @@ app.controller('AfExplorerFormCtrl', [
         };
 
         $scope.getGroupedAttributesByTemplate = function() {
-            const groupedAttributes = Object.values($scope.config.attributeList.reduce(groupIdenticalAttributes, {}))
+            const splitAttributes = $scope.config.attributeList.reduce(
+                (accumulator, attribute) => {
+                    // TODO: make the attribute have a template name even if no template
+                    if (!attribute?.template_name) {
+                        accumulator.attributesWithoutTemplate.push(attribute);
+                        return accumulator;
+                    }
+                    accumulator.attributesWithTemplate.push(attribute);
+                    return accumulator;
+                },
+                { attributesWithoutTemplate: [], attributesWithTemplate: [] }
+            );
+
+            const groupedAttributes = Object.values(splitAttributes.attributesWithTemplate.reduce(groupIdenticalAttributes, {}))
             const groupedTemplates = Object.values(groupedAttributes.reduce(
                 (acc, attr) => {
-                    const key = attr.templateName; // TODO: check it's not template_name ever
+                    const key = attr.template_name;
                     if (!acc[key]) {
                         acc[key] = {
-                            templateName: attr.templateName,
+                            template_name: attr.template_name,
                             allChecked: attr.checked,
                             checked: CheckboxStatus.UNCHECKED, // Used to determine UI checkbox state
                             attributes: [],
@@ -901,15 +916,15 @@ app.controller('AfExplorerFormCtrl', [
                     return acc;
                 }, {}
             ));
-            const templateGroups = {
+            const attributesGroupedByTemplate = {
                 allChecked: groupedTemplates.every(template => template.allChecked),
                 checked: getCheckboxStatus(groupedTemplates.reduce((acc, arr) => acc.concat(arr.checkStates), [])),
                 templates: groupedTemplates
             }
-            console.log("templateGroups", templateGroups);
+            console.log("attributesGroupedByTemplate", attributesGroupedByTemplate);
             return {
-                attributesWithoutTemplate: [], // TODO remove if does not exist,
-                templateGroups: templateGroups // TODO: see if can be avoided
+                attributesWithoutTemplate: splitAttributes.attributesWithoutTemplate,
+                attributesGroupedByTemplate: attributesGroupedByTemplate
             }
         }
 
@@ -924,7 +939,9 @@ app.controller('AfExplorerFormCtrl', [
 
         // TODO: try to move it to a callback of some kind (will work with a component)
         $scope.$watch('config.attributeList', function(newVal, oldVal) {
-            $scope.templateAggregatedAttributes = $scope.getGroupedAttributesByTemplate().templateGroups;
+            const formattedAttributes = $scope.getGroupedAttributesByTemplate();
+            $scope.templateAggregatedAttributes = formattedAttributes.attributesGroupedByTemplate;
+            $scope.attributesWithoutTemplate = formattedAttributes.attributesWithoutTemplate;
         }, true);
 
 
