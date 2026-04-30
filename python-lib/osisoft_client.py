@@ -3,6 +3,7 @@ import logging
 import copy
 import json
 import simplejson
+import re
 from datetime import datetime
 from requests_ntlm import HttpNtlmAuth
 from osisoft_constants import OSIsoftConstants
@@ -962,6 +963,26 @@ class OSIsoftClient(object):
                 tree.put(path_elements + [item_name], get_item_details(item))
         item = self.extract_item_with_name(json_response, element_to_search)
         return get_item_details(item)
+
+    def get_attributes_templates_names(self, templates_urls):
+        batch_requests_parameters = []
+        templates_names = []
+        for template_url in templates_urls:
+            request_kwargs = {
+                "url": template_url,
+                "headers": self.get_requests_headers()
+            }
+            batch_requests_parameters.append(request_kwargs)
+        json_responses = self._batch_requests(batch_requests_parameters)
+        for json_response in json_responses:
+            response_content = json_response.get("Content", {})
+            template_path = response_content.get("Path")
+            template_name_match = re.search(r'ElementTemplates\[([^\]]+)\]', template_path)
+            template_name = None
+            if template_name_match:
+                template_name = template_name_match.group(1)
+            templates_names.append(template_name)
+        return templates_names
 
     def split_element_attribute(self, path_element):
         attribute = None
