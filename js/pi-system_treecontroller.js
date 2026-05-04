@@ -618,10 +618,11 @@ app.controller('AfExplorerFormCtrl', [
             setAttributesChecked($scope.getAttributesWithoutTemplate(), !!$scope.config.selectAllWithoutTemplateAttributes);
         };
 
-        $scope.toggleSelectAllTemplateAttributes = function() {
-            const shouldRemove = $scope.groupedAttributes.attributesGroupedByTemplate.checked === CheckboxStatus.CHECKED;
-            $scope.groupedAttributes.attributesGroupedByTemplate.templates.forEach((template) => {
-                    template.attributes.forEach((aggregatedAttribute) => {
+        $scope.toggleSelectAllGroupedAttributes = function(groupedAttributes) {
+            const shouldRemove = groupedAttributes.checked === CheckboxStatus.CHECKED;
+            // TODO: make it adapt to both grouping styles
+            groupedAttributes.attributesGroupedByTemplate.groups.forEach((group) => {
+                    group.attributes.forEach((aggregatedAttribute) => {
                         aggregatedAttribute.attributes.forEach((underlyingAttribute) => {
                             if (shouldRemove) {
                                 $scope.removeAttributeFromSelection(underlyingAttribute);
@@ -841,6 +842,7 @@ app.controller('AfExplorerFormCtrl', [
                     title: attr.title,
                     description: attr.description,
                     template_name: attr.template_name,
+                    parent_elements: [],
                     checked: null, // Used to determine UI checkbox state
                     allChecked: attr.checked,
                     attributes: [],
@@ -858,6 +860,7 @@ app.controller('AfExplorerFormCtrl', [
 
             acc[key].checkStates.push(attr.checked)
             acc[key].paths.push(attr.path)
+            acc[key].parent_elements.push(attr.parent_element);
             acc[key].checked = getCheckboxStatus(acc[key].checkStates); // TODO maybe move out
             acc[key].allChecked = acc[key].allChecked && attr.checked
             acc[key].attributes.push(attr);
@@ -887,7 +890,7 @@ app.controller('AfExplorerFormCtrl', [
             const key = attr.template_name;
             if (!acc[key]) {
                 acc[key] = {
-                    template_name: attr.template_name,
+                    group_name: attr.template_name,
                     allChecked: attr.checked,
                     checked: CheckboxStatus.UNCHECKED, // Used to determine UI checkbox state
                     attributes: [],
@@ -906,7 +909,7 @@ app.controller('AfExplorerFormCtrl', [
             const key = attr.parent_element;
             if (!acc[key]) {
                 acc[key] = {
-                    parent_element: attr.parent_element,
+                    group_name: attr.parent_element,
                     allChecked: attr.checked,
                     checked: null,
                     attributes: [],
@@ -940,12 +943,12 @@ app.controller('AfExplorerFormCtrl', [
             const attributesGroupedByTemplate = {
                 allChecked: groupedByTemplate.every(template => template.allChecked),
                 checked: getCheckboxStatus(groupedByTemplate.reduce((acc, arr) => acc.concat(arr.checkStates), [])),
-                templates: groupedByTemplate
+                groups: groupedByTemplate
             }
             const attributesGroupedByElement = {
                 allChecked: groupedByElement.every(element => element.allChecked),
                 checked: getCheckboxStatus(groupedByElement.reduce((acc, arr) => acc.concat(arr.checkStates), [])),
-                elements: groupedByElement
+                groups: groupedByElement
             }
             console.log("attributesGroupedByTemplate", attributesGroupedByTemplate);
             console.log("attributesWithoutTemplate", attributesGroupedByElement);
