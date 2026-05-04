@@ -736,10 +736,11 @@ app.controller('AfExplorerFormCtrl', [
         }
 
         // Merge frontend data and saved output with loaded attributes
-        function enrichAttribute(attribute) {
+        function enrichAttribute(attribute, parentNode) {
             // TODO: check this makes sense, since selectedOutput is persisted and so newly loaded attributes should not be found in it
             const selectedAttribute = $scope.config.outputSelectedAttributes.find(attr => attr.path === attribute.path);
             attribute.checked = !!(selectedAttribute);
+            attribute.parentElement = parentNode.title;
             attribute.data_type = selectedAttribute?.data_type ? selectedAttribute.data_type : $scope.aggregateDataTypeFields.data_type.defaultValue;
             Object.entries($scope.aggregateDataTypeFields.aggregates).forEach(([aggregateName, aggregate]) =>  {
                 if ((selectedAttribute?.[aggregateName] === undefined || selectedAttribute?.[aggregateName] === null) && aggregate.isVisible(attribute)) {
@@ -767,7 +768,7 @@ app.controller('AfExplorerFormCtrl', [
                     }
                     const isAlreadyPresent = $scope.config.attributeList.some(attr => attr.path === child.path);
                     if (!isAlreadyPresent) {
-                        $scope.config.attributeList.push(enrichAttribute(child));
+                        $scope.config.attributeList.push(enrichAttribute(child, node));
                     }
                 }
             });
