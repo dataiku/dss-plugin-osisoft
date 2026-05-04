@@ -913,45 +913,44 @@ app.controller('AfExplorerFormCtrl', [
 
         function buildAggregatedAttributes(attributes, groupKey) {
             const deduplicatedAttributes = Object.values(attributes.reduce(groupDuplicatedAttributesAcrossGroup(groupKey), {}));
-            console.log("groupkey",groupKey)
-            console.log("dedupattributes",deduplicatedAttributes)
             return Object.values(deduplicatedAttributes.reduce(groupAttributes(), {}));
         }
 
-        $scope.buildGroupedAttributes = function() {
-            const splitAttributes = $scope.config.attributeList.reduce(
+        function splitAttributesByTemplatePresence(attributes) {
+            return attributes.reduce(
                 (accumulator, attribute) => {
                     // TODO: make the attribute have a template name even if no template
-                    if (!attribute?.template_name) {
-                        accumulator.attributesWithoutTemplate.push(attribute);
-                        return accumulator;
-                    }
-                    accumulator.attributesWithTemplate.push(attribute);
+                    const bucket = attribute?.template_name
+                        ? 'attributesWithTemplate'
+                        : 'attributesWithoutTemplate';
+                    accumulator[bucket].push(attribute);
                     return accumulator;
                 },
                 { attributesWithoutTemplate: [], attributesWithTemplate: [] }
             );
-            console.log("split attributes", splitAttributes)
-            const groupedByTemplate = buildAggregatedAttributes(splitAttributes.attributesWithTemplate, 'template_name');
-            const groupedByElement = buildAggregatedAttributes(splitAttributes.attributesWithoutTemplate, 'parent_element');
-            console.log("groupedByTemplate", groupedByTemplate)
-            console.log("groupedByElement", groupedByElement)
-            const attributesGroupedByTemplate = {
-                allChecked: groupedByTemplate.every(template => template.allChecked),
-                checked: getCheckboxStatus(groupedByTemplate.reduce((acc, arr) => acc.concat(arr.checkStates), [])),
-                groups: groupedByTemplate
-            }
-            const attributesGroupedByElement = {
-                allChecked: groupedByElement.every(element => element.allChecked),
-                checked: getCheckboxStatus(groupedByElement.reduce((acc, arr) => acc.concat(arr.checkStates), [])),
-                groups: groupedByElement
-            }
-            console.log("attributesGroupedByTemplate", attributesGroupedByTemplate);
-            console.log("attributesWithoutTemplate", attributesGroupedByElement);
+        }
+
+        function buildGroupedAttributesResult(attributes, groupKey) {
+            const groups = buildAggregatedAttributes(attributes, groupKey);
             return {
-                attributesWithoutTemplate: attributesGroupedByElement,
-                attributesGroupedByTemplate: attributesGroupedByTemplate
+                allChecked: groups.every(group => group.allChecked),
+                checked: getCheckboxStatus(groups.reduce((acc, group) => acc.concat(group.checkStates), [])),
+                groups: groups
             }
+        }
+
+        $scope.buildGroupedAttributes = function() {
+            const splitAttributes = splitAttributesByTemplatePresence($scope.config.attributeList);
+            return {
+                attributesWithoutTemplate: buildGroupedAttributesResult(
+                    splitAttributes.attributesWithoutTemplate,
+                    'parent_element'
+                ),
+                attributesGroupedByTemplate: buildGroupedAttributesResult(
+                    splitAttributes.attributesWithTemplate,
+                    'template_name'
+                )
+            };
         }
 
         function getCheckboxStatus(checkboxStatuses) {
