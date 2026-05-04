@@ -2,7 +2,6 @@ from osisoft_client import OSIsoftClient
 from safe_logger import SafeLogger
 from osisoft_plugin_common import get_credentials, build_select_choices, check_debug_mode
 from osisoft_plugin_common import get_item_details, Tree, recursive_tree_rebuild, PerformanceTimer
-import dataiku
 import time
 
 logger = SafeLogger("PI System plugin", ["user", "password"])
@@ -284,14 +283,26 @@ def get_children_from_db(client, parent_node, database_name=None):
             children.append(child)
     if attributes_url:
         attributes = client.get_next_item_from_url(attributes_url)
+        templates_urls = []
         for attribute in attributes:
+            # templates_urls are processed in batch for speed
+            templates_urls.append(extract_attribute_template_url(attribute))
             child = get_item_details(attribute)
             # child["title"] = "🏷️{}".format(child.get("title"))
             child["type"] = "attribute"
             if child.get("has_children"):
                 child["children"] = []
             children.append(child)
+        templates_names = client.get_attributes_templates_names(templates_urls)
+        # post processing the batch response
+        for child, template_name in zip(children, templates_names):
+            if template_name:
+                child["template_name"] = template_name
     return {"choices": children}
+
+
+def extract_attribute_template_url(attribute):
+    return attribute.get("Links", {}).get("Template")
 
 
 def get_template_hierarchy_from_db(client, parent_node, database_name=None):

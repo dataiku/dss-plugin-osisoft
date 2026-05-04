@@ -95,72 +95,46 @@
                     </div>
                 </div>
             </div>
-<!--            <div class="attribute-table-block">-->
-<!--                <span><b>Attributes</b> - free floating, unattached to templates</span>-->
-<!--                <div class="attribute-table-block__title"><strong>Elements</strong></div>-->
-<!--                <table class="custom-table">-->
-<!--                    <thead>-->
-<!--                    <tr>-->
-<!--                        <th><input type="checkbox" ng-model="config.selectAllWithoutTemplateAttributes"-->
-<!--                                   ng-change="toggleSelectAllWithoutTemplateAttributes()"></th>-->
-<!--                        <th>Name</th>-->
-<!--                        <th>Description</th>-->
-<!--                        <th>Path</th>-->
-<!--                    </tr>-->
-<!--                    </thead>-->
-<!--                    <tbody>-->
-<!--                    <tr ng-if="!getAttributesWithoutTemplate().length" class="custom-table__empty-row">-->
-<!--                        <td colspan="4">No attributes without template</td>-->
-<!--                    </tr>-->
-<!--                    <tr ng-repeat="attribute in getAttributesWithoutTemplate() track by attribute.path">-->
-<!--                        <td>-->
-<!--                            <input type="checkbox" ng-model="attribute.checked"-->
-<!--                                   ng-change="updateAttributeToOutput(attribute)">-->
-<!--                        </td>-->
-<!--                        <td>{{attribute.title}}</td>-->
-<!--                        <td>{{attribute.description}}</td>-->
-<!--                        <td>{{attribute.path}}</td>-->
-<!--                    </tr>-->
-<!--                    </tbody>-->
-<!--                </table>-->
-<!--            </div>-->
-            <div class="attribute-table-block">
-                <div class="attribute-table-block__title"><strong>Templates</strong></div>
+            <div class="attribute-table-block"
+                 ng-repeat="section in attributeGroupSections track by section.key">
+                <div class="attribute-table-block__title"><strong>{{section.title}}</strong></div>
                 <table class="custom-table">
                     <thead>
                     <tr>
-                        <th><input type="checkbox" ng-model="templateAggregatedAttributes.allChecked"
-                                   ng-change="toggleSelectAllTemplateAttributes()" indeterminate="templateAggregatedAttributes.checked"></th>
-                        <th>Name</th>
+                        <th><input type="checkbox" ng-model="groupedAttributes[section.key].allChecked"
+                                   ng-change="toggleSelectAllGroupedAttributes(groupedAttributes[section.key])"
+                                   ng-disabled="!groupedAttributes[section.key].groups.length"
+                                   indeterminate="groupedAttributes[section.key].checked"></th>
+
+                        <th>Title</th>
                         <th>Description</th>
                         <th>Path</th>
+                        <th>Data type</th>
+                        <th>Aggregates</th>
                     </tr>
                     </thead>
-                    <tbody ng-if="!templateAggregatedAttributes.templates.length">
+                    <tbody ng-if="!groupedAttributes[section.key].groups.length">
                     <tr class="custom-table__empty-row">
-                        <td colspan="4">No templated attributes</td>
+                        <td colspan="6">{{section.emptyMessage}}</td>
                     </tr>
                     </tbody>
-                    <tbody ng-repeat="template in templateAggregatedAttributes.templates track by template.templateName">
-                    <tr class="custom-table__group-row">
+                    <tbody ng-repeat="group in groupedAttributes[section.key].groups track by group.group_name">
+
+                <tr class="custom-table__group-row">
                         <td>
-                            <input type="checkbox" ng-model="template.allChecked"
-                                   ng-change="checkTemplate(template)" indeterminate="template.checked">
+                            <input type="checkbox" ng-model="group.allChecked"
+                                   ng-change="checkTemplate(group)" indeterminate="group.checked">
                         </td>
-                        <td colspan="3">{{template.templateName}}</td>
+                        <td colspan="5">{{group.group_name}}</td>
                     </tr>
-                    <tr ng-repeat="mergedAttribute in template.attributes track by mergedAttribute.title">
-                        <td>
-                            <input type="checkbox" ng-model="mergedAttribute.allChecked"
-                                   ng-change="checkAttribute(mergedAttribute)" indeterminate="mergedAttribute.checked">
-                        </td>
-                        <td>{{mergedAttribute.title}}</td>
-                        <td>{{mergedAttribute.description}}</td>
-                        <td>
-                            <span ng-repeat="path in mergedAttribute.paths">
-                                {{path}}<br/>
-                            </span>
-                        </td>
+                    <tr
+                            ng-repeat="mergedAttribute in group.attributes track by mergedAttribute.title"
+                            attribute-table-row
+                            merged-attribute="mergedAttribute"
+                            aggregate-data-type-fields="aggregateDataTypeFields"
+                            on-check-attribute="checkAttribute(mergedAttribute)"
+                            on-update-data-type="updateMergedAttributeDataType(mergedAttribute)"
+                            on-update-aggregate="updateMergedAttributeAggregate(mergedAttribute)">
                     </tr>
                     </tbody>
                 </table>
