@@ -942,7 +942,7 @@ app.controller('AfExplorerFormCtrl', [
         function buildGroupedAttributesResult(attributes, groupKey) {
             const groups = buildAggregatedAttributes(attributes, groupKey);
             return {
-                allChecked: groups.every(group => group.allChecked),
+                allChecked: groups.length > 0 && groups.every(group => group.allChecked),
                 checked: getCheckboxStatus(groups.reduce((acc, group) => acc.concat(group.checkStates), [])),
                 groups: groups
             }
@@ -963,6 +963,9 @@ app.controller('AfExplorerFormCtrl', [
         }
 
         function getCheckboxStatus(checkboxStatuses) {
+            if (!checkboxStatuses.length) {
+                return CheckboxStatus.UNCHECKED;
+            }
             if (checkboxStatuses.every(Boolean)) {
                 return CheckboxStatus.CHECKED;
             } else if (checkboxStatuses.some(Boolean)) {
