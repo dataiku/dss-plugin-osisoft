@@ -842,12 +842,10 @@ app.controller('AfExplorerFormCtrl', [
             });
         };
 
-        // groupKey= template_name, parent_element
         function groupDuplicatedAttributesAcrossGroup(groupKey) {
             return (acc, attr) => {
                 // TODO: switch to id
                 const key = attr[groupKey] + "::" + attr.title;
-                console.log("attribute", attr);
 
                 if (!acc[key]) {
                     acc[key] = {
@@ -901,7 +899,6 @@ app.controller('AfExplorerFormCtrl', [
             }
         }
 
-        // groupKey= template_names, parent_elements
         function groupAttributes() {
             return (acc, attr) => {
                 const key = attr.group;
