@@ -619,8 +619,8 @@ app.controller('AfExplorerFormCtrl', [
         };
 
         $scope.toggleSelectAllTemplateAttributes = function() {
-            const shouldRemove = $scope.templateAggregatedAttributes.checked === CheckboxStatus.CHECKED;
-            $scope.templateAggregatedAttributes.templates.forEach((template) => {
+            const shouldRemove = $scope.groupedAttributes.attributesGroupedByTemplate.checked === CheckboxStatus.CHECKED;
+            $scope.groupedAttributes.attributesGroupedByTemplate.templates.forEach((template) => {
                     template.attributes.forEach((aggregatedAttribute) => {
                         aggregatedAttribute.attributes.forEach((underlyingAttribute) => {
                             if (shouldRemove) {
@@ -740,7 +740,7 @@ app.controller('AfExplorerFormCtrl', [
             // TODO: check this makes sense, since selectedOutput is persisted and so newly loaded attributes should not be found in it
             const selectedAttribute = $scope.config.outputSelectedAttributes.find(attr => attr.path === attribute.path);
             attribute.checked = !!(selectedAttribute);
-            attribute.parentElement = parentNode.title;
+            attribute.parent_element = parentNode.title;
             attribute.data_type = selectedAttribute?.data_type ? selectedAttribute.data_type : $scope.aggregateDataTypeFields.data_type.defaultValue;
             Object.entries($scope.aggregateDataTypeFields.aggregates).forEach(([aggregateName, aggregate]) =>  {
                 if ((selectedAttribute?.[aggregateName] === undefined || selectedAttribute?.[aggregateName] === null) && aggregate.isVisible(attribute)) {
@@ -775,7 +775,7 @@ app.controller('AfExplorerFormCtrl', [
         }
 
         $scope.getAttributesWithoutTemplate = function() {
-            return $scope.getGroupedAttributesByTemplate().attributesWithoutTemplate;
+            return $scope.buildGroupedAttributes().attributesWithoutTemplate;
         };
 
         function getAggregateNames() {
@@ -794,8 +794,45 @@ app.controller('AfExplorerFormCtrl', [
                 [...a].sort().every((v, i) => v === [...b].sort()[i]);
         }
 
-        function groupIdenticalAttributes(acc, attr) {
-            // TODO: maybe switch to some kind of id
+
+        // reset all aggregates on change data type
+        function resetAggregate(attribute) {
+            Object.entries($scope.aggregateDataTypeFields.aggregates).forEach(([aggregateName, aggregate]) =>  {
+                    if (!aggregate.isVisible(attribute)) {
+                        attribute[aggregateName] = null
+                        return;
+                    }
+                    attribute[aggregateName] = aggregate.defaultValue;
+                }
+            )
+        }
+
+        $scope.updateMergedAttributeDataType = function(mergedAttribute) {
+            mergedAttribute.attributes.forEach(attribute => {
+                attribute.data_type = mergedAttribute.data_type;
+                resetAggregate(attribute);
+                if (attribute.checked) {
+                    $scope.updateAttributeInSelection(attribute)
+                }
+            });
+        }
+
+        $scope.updateMergedAttributeAggregate = function(mergedAttribute) {
+            const aggregateNames = getAggregateNames();
+
+            mergedAttribute.attributes.forEach(attribute => {
+                aggregateNames.forEach(aggregateName => {
+                    // TODO: check not necessary to copy to avoid arrays being linked
+                    attribute[aggregateName] = mergedAttribute[aggregateName];
+                });
+                if (attribute.checked) {
+                    $scope.updateAttributeInSelection(attribute)
+                }
+            });
+        };
+
+        function groupTemplateDuplicatedAttributes(acc, attr) {
+            // TODO: switch to id
             const key = attr.template_name + "::" + attr.title;
             console.log("attribute", attr);
 
@@ -846,43 +883,45 @@ app.controller('AfExplorerFormCtrl', [
             return acc;
         }
 
-        // reset all aggregates on change data type
-        function resetAggregate(attribute) {
-            Object.entries($scope.aggregateDataTypeFields.aggregates).forEach(([aggregateName, aggregate]) =>  {
-                    if (!aggregate.isVisible(attribute)) {
-                        attribute[aggregateName] = null
-                        return;
-                    }
-                    attribute[aggregateName] = aggregate.defaultValue;
+        function groupAttributesByTemplate(acc, attr) {
+            const key = attr.template_name;
+            if (!acc[key]) {
+                acc[key] = {
+                    template_name: attr.template_name,
+                    allChecked: attr.checked,
+                    checked: CheckboxStatus.UNCHECKED, // Used to determine UI checkbox state
+                    attributes: [],
+                    checkStates: []
                 }
-            )
+            }
+
+            acc[key].checkStates.push(...attr.checkStates)
+            acc[key].checked = getCheckboxStatus(acc[key].checkStates);
+            acc[key].allChecked = acc[key].allChecked && attr.allChecked;
+            acc[key].attributes.push(attr);
+            return acc;
         }
 
-        $scope.updateMergedAttributeDataType = function(mergedAttribute) {
-            mergedAttribute.attributes.forEach(attribute => {
-                attribute.data_type = mergedAttribute.data_type;
-                resetAggregate(attribute);
-                if (attribute.checked) {
-                    $scope.updateAttributeInSelection(attribute)
+        function groupAttributesByElement(acc, attr) {
+            const key = attr.parent_element;
+            if (!acc[key]) {
+                acc[key] = {
+                    parent_element: attr.parent_element,
+                    allChecked: attr.checked,
+                    checked: null,
+                    attributes: [],
+                    checkStates: []
                 }
-            });
+            }
+
+            acc[key].checkStates.push(attr.checked)
+            acc[key].checked = getCheckboxStatus(acc[key].checkStates);
+            acc[key].allChecked = acc[key].allChecked && attr.checked;
+            acc[key].attributes.push(attr);
+            return acc;
         }
 
-        $scope.updateMergedAttributeAggregate = function(mergedAttribute) {
-            const aggregateNames = getAggregateNames();
-
-            mergedAttribute.attributes.forEach(attribute => {
-                aggregateNames.forEach(aggregateName => {
-                    // TODO: check not necessary to copy to avoid arrays being linked
-                    attribute[aggregateName] = mergedAttribute[aggregateName];
-                });
-                if (attribute.checked) {
-                    $scope.updateAttributeInSelection(attribute)
-                }
-            });
-        };
-
-        $scope.getGroupedAttributesByTemplate = function() {
+        $scope.buildGroupedAttributes = function() {
             const splitAttributes = $scope.config.attributeList.reduce(
                 (accumulator, attribute) => {
                     // TODO: make the attribute have a template name even if no template
@@ -895,36 +934,23 @@ app.controller('AfExplorerFormCtrl', [
                 },
                 { attributesWithoutTemplate: [], attributesWithTemplate: [] }
             );
-
-            const groupedAttributes = Object.values(splitAttributes.attributesWithTemplate.reduce(groupIdenticalAttributes, {}))
-            const groupedTemplates = Object.values(groupedAttributes.reduce(
-                (acc, attr) => {
-                    const key = attr.template_name;
-                    if (!acc[key]) {
-                        acc[key] = {
-                            template_name: attr.template_name,
-                            allChecked: attr.checked,
-                            checked: CheckboxStatus.UNCHECKED, // Used to determine UI checkbox state
-                            attributes: [],
-                            checkStates: []
-                        }
-                    }
-
-                    acc[key].checkStates.push(...attr.checkStates)
-                    acc[key].checked = getCheckboxStatus(acc[key].checkStates);
-                    acc[key].allChecked = acc[key].allChecked && attr.allChecked;
-                    acc[key].attributes.push(attr);
-                    return acc;
-                }, {}
-            ));
+            const groupedTemplateDuplicatedAttributes = Object.values(splitAttributes.attributesWithTemplate.reduce(groupTemplateDuplicatedAttributes, {}));
+            const groupedByTemplate = Object.values(groupedTemplateDuplicatedAttributes.reduce(groupAttributesByTemplate, {}));
+            const groupedByElement = Object.values(splitAttributes.attributesWithoutTemplate.reduce(groupAttributesByElement, {}));
             const attributesGroupedByTemplate = {
-                allChecked: groupedTemplates.every(template => template.allChecked),
-                checked: getCheckboxStatus(groupedTemplates.reduce((acc, arr) => acc.concat(arr.checkStates), [])),
-                templates: groupedTemplates
+                allChecked: groupedByTemplate.every(template => template.allChecked),
+                checked: getCheckboxStatus(groupedByTemplate.reduce((acc, arr) => acc.concat(arr.checkStates), [])),
+                templates: groupedByTemplate
+            }
+            const attributesGroupedByElement = {
+                allChecked: groupedByElement.every(element => element.allChecked),
+                checked: getCheckboxStatus(groupedByElement.reduce((acc, arr) => acc.concat(arr.checkStates), [])),
+                elements: groupedByElement
             }
             console.log("attributesGroupedByTemplate", attributesGroupedByTemplate);
+            console.log("attributesWithoutTemplate", attributesGroupedByElement);
             return {
-                attributesWithoutTemplate: splitAttributes.attributesWithoutTemplate,
+                attributesWithoutTemplate: attributesGroupedByElement,
                 attributesGroupedByTemplate: attributesGroupedByTemplate
             }
         }
@@ -940,9 +966,7 @@ app.controller('AfExplorerFormCtrl', [
 
         // TODO: try to move it to a callback of some kind (will work with a component)
         $scope.$watch('config.attributeList', function(newVal, oldVal) {
-            const formattedAttributes = $scope.getGroupedAttributesByTemplate();
-            $scope.templateAggregatedAttributes = formattedAttributes.attributesGroupedByTemplate;
-            $scope.attributesWithoutTemplate = formattedAttributes.attributesWithoutTemplate;
+            $scope.groupedAttributes = $scope.buildGroupedAttributes();
         }, true);
 
 
