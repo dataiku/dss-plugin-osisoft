@@ -95,13 +95,15 @@
                     </div>
                 </div>
             </div>
-            <div class="attribute-table-block">
-                <div class="attribute-table-block__title"><strong>Elements</strong></div>
+            <div class="attribute-table-block"
+                 ng-repeat="section in attributeGroupSections track by section.key"
+                 ng-init="groupedSection = groupedAttributes[section.key]">
+                <div class="attribute-table-block__title"><strong>{{section.title}}</strong></div>
                 <table class="custom-table">
                     <thead>
                     <tr>
-                        <th><input type="checkbox" ng-model="groupedAttributes.attributesWithoutTemplate.allChecked"
-                                   ng-change="toggleSelectAllGroupedAttributes(groupedAttributes.attributesWithoutTemplate)" indeterminate="groupedAttributes.attributesWithoutTemplate.checked"></th>
+                        <th><input type="checkbox" ng-model="groupedSection.allChecked"
+                                   ng-change="toggleSelectAllGroupedAttributes(groupedSection)" indeterminate="groupedSection.checked"></th>
                         <th>Title</th>
                         <th>Description</th>
                         <th>Path</th>
@@ -109,60 +111,21 @@
                         <th>Aggregates</th>
                     </tr>
                     </thead>
-                    <tbody ng-if="!groupedAttributes.attributesWithoutTemplate.groups.length">
+                    <tbody ng-if="!groupedSection.groups.length">
                     <tr class="custom-table__empty-row">
-                        <td colspan="6">No attributes without template</td>
+                        <td colspan="6">{{section.emptyMessage}}</td>
                     </tr>
                     </tbody>
-                    <tbody ng-repeat="element in groupedAttributes.attributesWithoutTemplate.groups track by element.group_name">
+                    <tbody ng-repeat="group in groupedSection.groups track by group.group_name">
                     <tr class="custom-table__group-row">
                         <td>
-                            <input type="checkbox" ng-model="element.allChecked"
-                                   ng-change="checkTemplate(element)" indeterminate="element.checked">
+                            <input type="checkbox" ng-model="group.allChecked"
+                                   ng-change="checkTemplate(group)" indeterminate="group.checked">
                         </td>
-                        <td colspan="5">{{element.group_name}}</td>
+                        <td colspan="5">{{group.group_name}}</td>
                     </tr>
                     <tr
-                            ng-repeat="mergedElement in element.attributes track by mergedElement.title"
-                            attribute-table-row
-                            merged-attribute="mergedElement"
-                            aggregate-data-type-fields="aggregateDataTypeFields"
-                            on-check-attribute="checkAttribute(mergedElement)"
-                            on-update-data-type="updateMergedAttributeDataType(mergedElement)"
-                            on-update-aggregate="updateMergedAttributeAggregate(mergedElement)">
-                    </tr>
-                    </tbody>
-                </table>
-            </div>
-            <div class="attribute-table-block">
-                <div class="attribute-table-block__title"><strong>Templates</strong></div>
-                <table class="custom-table">
-                    <thead>
-                    <tr>
-                        <th><input type="checkbox" ng-model="groupedAttributes.attributesGroupedByTemplate.allChecked"
-                                   ng-change="toggleSelectAllGroupedAttributes(groupedAttributes.attributesGroupedByTemplate)" indeterminate="groupedAttributes.attributesGroupedByTemplate.checked"></th>
-                        <th>Title</th>
-                        <th>Description</th>
-                        <th>Path</th>
-                        <th>Data type</th>
-                        <th>Aggregates</th>
-                    </tr>
-                    </thead>
-                    <tbody ng-if="!groupedAttributes.attributesGroupedByTemplate.groups.length">
-                    <tr class="custom-table__empty-row">
-                        <td colspan="6">No templated attributes</td>
-                    </tr>
-                    </tbody>
-                    <tbody ng-repeat="template in groupedAttributes.attributesGroupedByTemplate.groups track by template.group_name">
-                    <tr class="custom-table__group-row">
-                        <td>
-                            <input type="checkbox" ng-model="template.allChecked"
-                                   ng-change="checkTemplate(template)" indeterminate="template.checked">
-                        </td>
-                        <td colspan="5">{{template.group_name}}</td>
-                    </tr>
-                    <tr
-                        ng-repeat="mergedAttribute in template.attributes track by mergedAttribute.title"
+                        ng-repeat="mergedAttribute in group.attributes track by mergedAttribute.title"
                         attribute-table-row
                         merged-attribute="mergedAttribute"
                         aggregate-data-type-fields="aggregateDataTypeFields"

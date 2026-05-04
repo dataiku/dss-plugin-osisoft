@@ -139,6 +139,18 @@ app.controller('AfExplorerFormCtrl', [
         $scope.config.selectAllTemplateAttributes = $scope.config.selectAllTemplateAttributes || false; // select all des attributs groupés par template
 
         $scope.aggregateDataTypeFields = aggregateDataTypeFields;
+        $scope.attributeGroupSections = [
+            {
+                key: 'attributesWithoutTemplate',
+                title: 'Elements',
+                emptyMessage: 'No attributes without template'
+            },
+            {
+                key: 'attributesGroupedByTemplate',
+                title: 'Templates',
+                emptyMessage: 'No templated attributes'
+            }
+        ];
 
         $scope.onAdvancedToggle = function() {
             if (!$scope.config.show_advanced_parameters) {
