@@ -1160,6 +1160,24 @@ app.component('treeNode', {
     templateUrl: "/plugins/pi-system/resource/tree-node.html"
 });
 
+// TODO: see if cleaner architecture
+app.directive('attributeTableRow', function() {
+    return {
+        restrict: 'A',
+        scope: {
+            mergedAttribute: '=',
+            aggregateDataTypeFields: '<',
+            onCheckAttribute: '&',
+            onUpdateDataType: '&',
+            onUpdateAggregate: '&',
+        },
+        bindToController: true,
+        controllerAs: 'ctrl',
+        controller: function() {},
+        templateUrl: "/plugins/pi-system/resource/attribute-table-row.html"
+    };
+});
+
 app.directive('indeterminate', function() {
     return {
         restrict: 'A',
