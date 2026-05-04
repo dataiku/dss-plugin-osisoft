@@ -753,7 +753,7 @@ app.controller('AfExplorerFormCtrl', [
             attribute.checked = !!(selectedAttribute);
             attribute.parent_element = parentNode.title;
             attribute.data_type = selectedAttribute?.data_type ? selectedAttribute.data_type : $scope.aggregateDataTypeFields.data_type.defaultValue;
-            Object.entries($scope.aggregateDataTypeFields.aggregates).forEach(([aggregateName, aggregate]) =>  {
+            Object.entries($scope.aggregateDataTypeFields.aggregates).forEach(([aggregateName, aggregate]) => {
                 if ((selectedAttribute?.[aggregateName] === undefined || selectedAttribute?.[aggregateName] === null) && aggregate.isVisible(attribute)) {
                     attribute[aggregateName] = aggregate.defaultValue;
                 } else if (selectedAttribute?.[aggregateName] !== null && selectedAttribute?.[aggregateName] !== undefined) {
@@ -808,7 +808,7 @@ app.controller('AfExplorerFormCtrl', [
 
         // reset all aggregates on change data type
         function resetAggregate(attribute) {
-            Object.entries($scope.aggregateDataTypeFields.aggregates).forEach(([aggregateName, aggregate]) =>  {
+            Object.entries($scope.aggregateDataTypeFields.aggregates).forEach(([aggregateName, aggregate]) => {
                     if (!aggregate.isVisible(attribute)) {
                         attribute[aggregateName] = null
                         return;
@@ -1205,7 +1205,8 @@ app.directive('attributeTableRow', function() {
         },
         bindToController: true,
         controllerAs: 'ctrl',
-        controller: function() {},
+        controller: function() {
+        },
         templateUrl: "/plugins/pi-system/resource/attribute-table-row.html"
     };
 });
