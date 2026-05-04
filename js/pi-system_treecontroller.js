@@ -620,19 +620,17 @@ app.controller('AfExplorerFormCtrl', [
 
         $scope.toggleSelectAllGroupedAttributes = function(groupedAttributes) {
             const shouldRemove = groupedAttributes.checked === CheckboxStatus.CHECKED;
-            // TODO: make it adapt to both grouping styles
-            groupedAttributes.attributesGroupedByTemplate.groups.forEach((group) => {
-                    group.attributes.forEach((aggregatedAttribute) => {
-                        aggregatedAttribute.attributes.forEach((underlyingAttribute) => {
-                            if (shouldRemove) {
-                                $scope.removeAttributeFromSelection(underlyingAttribute);
-                                return;
-                            }
-                            $scope.addAttributeToSelection(underlyingAttribute);
-                        });
+            groupedAttributes.groups.forEach((group) => {
+                group.attributes.forEach((aggregatedAttribute) => {
+                    aggregatedAttribute.attributes.forEach((underlyingAttribute) => {
+                        if (shouldRemove) {
+                            $scope.removeAttributeFromSelection(underlyingAttribute);
+                            return;
+                        }
+                        $scope.addAttributeToSelection(underlyingAttribute);
                     });
-                }
-            )
+                });
+            });
         };
 
         $scope.toggleTemplateGroupAttributes = function(group) {
@@ -832,96 +830,92 @@ app.controller('AfExplorerFormCtrl', [
             });
         };
 
-        function groupTemplateDuplicatedAttributes(acc, attr) {
-            // TODO: switch to id
-            const key = attr.template_name + "::" + attr.title;
-            console.log("attribute", attr);
+        // groupKey= template_name, parent_element
+        function groupDuplicatedAttributesAcrossGroup(groupKey) {
+            return (acc, attr) => {
+                // TODO: switch to id
+                const key = attr[groupKey] + "::" + attr.title;
+                console.log("attribute", attr);
 
-            if (!acc[key]) {
-                acc[key] = {
-                    title: attr.title,
-                    description: attr.description,
-                    template_name: attr.template_name,
-                    parent_elements: [],
-                    checked: null, // Used to determine UI checkbox state
-                    allChecked: attr.checked,
-                    attributes: [],
-                    checkStates: [],
-                    paths: [],
-                    data_type: attr.data_type,
-                    data_types: [],
-                };
+                if (!acc[key]) {
+                    acc[key] = {
+                        title: attr.title,
+                        description: attr.description,
+                        group: attr[groupKey],
+                        template_names: [],
+                        parent_elements: [],
+                        checked: null, // Used to determine UI checkbox state
+                        allChecked: attr.checked,
+                        attributes: [],
+                        checkStates: [],
+                        paths: [],
+                        data_type: attr.data_type,
+                        data_types: [],
+                    };
+
+                    getAggregateNames().forEach(aggregateName => {
+                        acc[key][aggregateName] = attr[aggregateName];
+                        acc[key][getAggregateValuesKey(aggregateName)] = [];
+                    });
+                }
+
+                acc[key].checkStates.push(attr.checked)
+                acc[key].template_names.push(attr.template_name)
+                acc[key].paths.push(attr.path)
+                acc[key].parent_elements.push(attr.parent_element);
+                acc[key].checked = getCheckboxStatus(acc[key].checkStates); // TODO maybe move out
+                acc[key].allChecked = acc[key].allChecked && attr.checked
+                acc[key].attributes.push(attr);
+                acc[key].data_types.push(attr.data_type);
+
+                if (acc[key].data_type !== attr.data_type) {
+                    acc[key].data_type = null;
+                }
 
                 getAggregateNames().forEach(aggregateName => {
-                    acc[key][aggregateName] = attr[aggregateName];
-                    acc[key][getAggregateValuesKey(aggregateName)] = [];
-                });
-            }
-
-            acc[key].checkStates.push(attr.checked)
-            acc[key].paths.push(attr.path)
-            acc[key].parent_elements.push(attr.parent_element);
-            acc[key].checked = getCheckboxStatus(acc[key].checkStates); // TODO maybe move out
-            acc[key].allChecked = acc[key].allChecked && attr.checked
-            acc[key].attributes.push(attr);
-            acc[key].data_types.push(attr.data_type);
-
-            if (acc[key].data_type !== attr.data_type) {
-                acc[key].data_type = null;
-            }
-
-            getAggregateNames().forEach(aggregateName => {
-                acc[key][getAggregateValuesKey(aggregateName)].push(attr[aggregateName]);
-                if ($scope.aggregateDataTypeFields.aggregates[aggregateName].type === 'multiselect') {
-                    if (!stringArraysEqual(acc[key][aggregateName], attr[aggregateName])) {
-                        acc[key][aggregateName] = [];
+                    acc[key][getAggregateValuesKey(aggregateName)].push(attr[aggregateName]);
+                    if ($scope.aggregateDataTypeFields.aggregates[aggregateName].type === 'multiselect') {
+                        if (!stringArraysEqual(acc[key][aggregateName], attr[aggregateName])) {
+                            acc[key][aggregateName] = [];
+                        }
+                        return;
                     }
-                    return;
-                }
-                if (acc[key][aggregateName] !== attr[aggregateName]) {
-                    acc[key][aggregateName] = null;
-                }
-            });
+                    if (acc[key][aggregateName] !== attr[aggregateName]) {
+                        acc[key][aggregateName] = null;
+                    }
+                });
 
-            return acc;
+                return acc
+            }
         }
 
-        function groupAttributesByTemplate(acc, attr) {
-            const key = attr.template_name;
-            if (!acc[key]) {
-                acc[key] = {
-                    group_name: attr.template_name,
-                    allChecked: attr.checked,
-                    checked: CheckboxStatus.UNCHECKED, // Used to determine UI checkbox state
-                    attributes: [],
-                    checkStates: []
+        // groupKey= template_names, parent_elements
+        function groupAttributes() {
+            return (acc, attr) => {
+                const key = attr.group;
+                if (!acc[key]) {
+                    acc[key] = {
+                        group_name: attr.group,
+                        allChecked: attr.checked,
+                        checked: CheckboxStatus.UNCHECKED, // Used to determine UI checkbox state
+                        attributes: [],
+                        checkStates: []
+                    }
                 }
-            }
 
-            acc[key].checkStates.push(...attr.checkStates)
-            acc[key].checked = getCheckboxStatus(acc[key].checkStates);
-            acc[key].allChecked = acc[key].allChecked && attr.allChecked;
-            acc[key].attributes.push(attr);
-            return acc;
+                acc[key].checkStates.push(...attr.checkStates)
+                acc[key].checked = getCheckboxStatus(acc[key].checkStates);
+                acc[key].allChecked = acc[key].allChecked && attr.allChecked;
+                acc[key].attributes.push(attr);
+                return acc;
+            }
         }
 
-        function groupAttributesByElement(acc, attr) {
-            const key = attr.parent_element;
-            if (!acc[key]) {
-                acc[key] = {
-                    group_name: attr.parent_element,
-                    allChecked: attr.checked,
-                    checked: null,
-                    attributes: [],
-                    checkStates: []
-                }
-            }
-
-            acc[key].checkStates.push(attr.checked)
-            acc[key].checked = getCheckboxStatus(acc[key].checkStates);
-            acc[key].allChecked = acc[key].allChecked && attr.checked;
-            acc[key].attributes.push(attr);
-            return acc;
+        function buildAggregatedAttributes(attributes, groupKey) {
+            const deduplicatedAttributes = Object.values(attributes.reduce(groupDuplicatedAttributesAcrossGroup(groupKey), {}));
+            console.log("groupkey",groupKey)
+            console.log("dedupattributes",deduplicatedAttributes)
+            return Object.values(deduplicatedAttributes.reduce(groupAttributes(), {}));
         }
 
         $scope.buildGroupedAttributes = function() {
@@ -937,9 +931,11 @@ app.controller('AfExplorerFormCtrl', [
                 },
                 { attributesWithoutTemplate: [], attributesWithTemplate: [] }
             );
-            const groupedTemplateDuplicatedAttributes = Object.values(splitAttributes.attributesWithTemplate.reduce(groupTemplateDuplicatedAttributes, {}));
-            const groupedByTemplate = Object.values(groupedTemplateDuplicatedAttributes.reduce(groupAttributesByTemplate, {}));
-            const groupedByElement = Object.values(splitAttributes.attributesWithoutTemplate.reduce(groupAttributesByElement, {}));
+            console.log("split attributes", splitAttributes)
+            const groupedByTemplate = buildAggregatedAttributes(splitAttributes.attributesWithTemplate, 'template_name');
+            const groupedByElement = buildAggregatedAttributes(splitAttributes.attributesWithoutTemplate, 'parent_element');
+            console.log("groupedByTemplate", groupedByTemplate)
+            console.log("groupedByElement", groupedByElement)
             const attributesGroupedByTemplate = {
                 allChecked: groupedByTemplate.every(template => template.allChecked),
                 checked: getCheckboxStatus(groupedByTemplate.reduce((acc, arr) => acc.concat(arr.checkStates), [])),
