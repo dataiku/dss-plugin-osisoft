@@ -185,14 +185,14 @@
                 </div>
                 <ul ng-if="config.activeTab === 'element' && config.treeData && config.treeData.length">
                     <li ng-repeat="node in config.treeData track by node.id">
-                        <tree-node node="node" get-children-from-db="getChildrenFromDB" display-attributes="displayAttributes"
+                        <tree-node node="node" get-children-from-db="getChildrenFromDB" toggle-display-attributes="toggleDisplayAttributes"
                                    config="config" clicked-nodes="config.clickedNodes">
                         </tree-node>
                     </li>
                 </ul>
                 <ul ng-if="config.activeTab === 'template' && config.templateTreeData && config.templateTreeData.length">
                     <li ng-repeat="node in config.templateTreeData track by node.id">
-                        <tree-node node="node" get-children-from-db="getChildrenFromDB" display-attributes="displayAttributes"
+                        <tree-node node="node" get-children-from-db="getChildrenFromDB" toggle-display-attributes="toggleDisplayAttributes"
                                    config="config" clicked-nodes="config.clickedNodes">
                         </tree-node>
                     </li>
