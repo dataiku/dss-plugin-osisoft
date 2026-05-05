@@ -468,9 +468,6 @@ app.controller('AfExplorerFormCtrl', [
 
             if (!isRestrictedAttributeSearch) {
                 $scope.config.attributeList = [];
-                // Right-side display is reset: both table-level select-all checkboxes must be cleared.
-                $scope.config.selectAllWithoutTemplateAttributes = false;
-                $scope.config.selectAllTemplateAttributes = false;
             }
             $scope.config.searchMatchedElementPaths = [];
             // TODO: understand what this does
@@ -635,14 +632,6 @@ app.controller('AfExplorerFormCtrl', [
             });
         };
 
-        $scope.toggleTemplateGroupAttributes = function(group) {
-            if (!group || !Array.isArray(group?.mergedAttributes)) {
-                return;
-            }
-            const shouldCheck = !group.mergedAttributes.every(attribute => !!attribute.checked);
-            setAttributesChecked(group.mergedAttributes, shouldCheck);
-        };
-
         $scope.checkAttribute = function(attributeList) {
             const shouldRemove = attributeList.checked === CheckboxStatus.CHECKED;
             attributeList.attributes.forEach((attribute) => {
@@ -771,10 +760,6 @@ app.controller('AfExplorerFormCtrl', [
                 }
             });
         }
-
-        $scope.getAttributesWithoutTemplate = function() {
-            return $scope.buildGroupedAttributes().attributesWithoutTemplate;
-        };
 
         function getAggregateNames() {
             return Object.keys($scope.aggregateDataTypeFields.aggregates);
