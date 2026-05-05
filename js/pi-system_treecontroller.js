@@ -133,10 +133,7 @@ app.controller('AfExplorerFormCtrl', [
         $scope.config.outputSelectedAttributes = $scope.config.outputSelectedAttributes || []; // la liste des attributs qui sont séléctionnés pour être dans l'output dataset
         $scope.config.searchMatchedElementPaths = $scope.config.searchMatchedElementPaths || []; // la liste pour highlighter les elements de la recherche
         $scope.config.lastSearchedElementName = $scope.config.lastSearchedElementName || "";
-        $scope.config.pendingTabContextReset = $scope.config.pendingTabContextReset || false; // indique le changement de tab template/element
         $scope.config.selectedTemplateNames = $scope.config.selectedTemplateNames || []; // la liste des templates sélectionnés (checkbox cochée) parmi ceux affichés
-        $scope.config.selectAllWithoutTemplateAttributes = $scope.config.selectAllWithoutTemplateAttributes || false; // select all des attributs standalone
-        $scope.config.selectAllTemplateAttributes = $scope.config.selectAllTemplateAttributes || false; // select all des attributs groupés par template
 
         $scope.aggregateDataTypeFields = aggregateDataTypeFields;
         $scope.attributeGroupSections = [
@@ -266,7 +263,6 @@ app.controller('AfExplorerFormCtrl', [
             $scope.config.outputSelectedAttributes = [];
             $scope.config.searchMatchedElementPaths = [];
             $scope.config.lastSearchedElementName = "";
-            $scope.config.pendingTabContextReset = false;
             $scope.config.selectedTemplateNames = [];
             $scope.config.selectAllWithoutTemplateAttributes = false;
             $scope.config.selectAllTemplateAttributes = false;
@@ -406,18 +402,10 @@ app.controller('AfExplorerFormCtrl', [
             }
         }
 
-        function consumePendingTabContextReset() { // reset la main view après changement de tab + action sur le new tab
-            if (!$scope.config.pendingTabContextReset) {
-                return;
-            }
-            resetRightPanelForCurrentTabContext();
-            $scope.config.pendingTabContextReset = false;
-        }
-
         $scope.setTab = function(tab) {
             const previousTab = $scope.config.activeTab;
             if (tab !== previousTab) {
-                $scope.config.pendingTabContextReset = true;
+                resetRightPanelForCurrentTabContext();
             }
             $scope.config.activeTab = tab;
         };
@@ -437,7 +425,6 @@ app.controller('AfExplorerFormCtrl', [
         }
 
         $scope.doSearch = function(element_name, attribute_name) {
-            consumePendingTabContextReset();
 
             const hasElementFilter = !!(element_name?.trim());
             const hadPreviousElementFilter = !!($scope.config.lastSearchedElementName?.trim());
@@ -751,7 +738,7 @@ app.controller('AfExplorerFormCtrl', [
             // TODO: check this makes sense, since selectedOutput is persisted and so newly loaded attributes should not be found in it
             const selectedAttribute = $scope.config.outputSelectedAttributes.find(attr => attr.path === attribute.path);
             attribute.checked = !!(selectedAttribute);
-            attribute.parent_element = parentNode.title;
+            attribute.parent_element = parentNode?.title;
             attribute.data_type = selectedAttribute?.data_type ? selectedAttribute.data_type : $scope.aggregateDataTypeFields.data_type.defaultValue;
             Object.entries($scope.aggregateDataTypeFields.aggregates).forEach(([aggregateName, aggregate]) => {
                 if ((selectedAttribute?.[aggregateName] === undefined || selectedAttribute?.[aggregateName] === null) && aggregate.isVisible(attribute)) {
@@ -1048,26 +1035,6 @@ app.component('treeNode', {
     controller: function() {
         const ctrl = this;
 
-        function consumePendingTabContextReset() {
-            if (!ctrl.config?.pendingTabContextReset) {
-                return;
-            }
-
-            ctrl.config.attribute_name = "";
-            ctrl.config.clickedNodes = [];
-            ctrl.config.attributeList = [];
-            ctrl.config.selectAllWithoutTemplateAttributes = false;
-            ctrl.config.selectAllTemplateAttributes = false;
-            ctrl.config.searchMatchedElementPaths = [];
-
-            if (ctrl.config.activeTab === "element") {
-                ctrl.config.template = "-- Any --";
-            } else if (ctrl.config.activeTab === "template") {
-                ctrl.config.element_name = "";
-            }
-
-            ctrl.config.pendingTabContextReset = false;
-        }
 
         function findNodeByUrl(nodes, targetUrl) {
             if (!Array.isArray(nodes) || !targetUrl) {
@@ -1139,7 +1106,6 @@ app.component('treeNode', {
         };
 
         ctrl.onNodeClick = function(node) {
-            consumePendingTabContextReset();
 
             // TODO: factorize this check
             const hasActiveAttributeSearch = !!(
