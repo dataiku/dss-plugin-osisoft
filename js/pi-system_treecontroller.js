@@ -658,29 +658,7 @@ app.controller('AfExplorerFormCtrl', [
             )
         };
 
-        function getNodeAttributePaths(node) {
-            if (!node || !Array.isArray(node.children)) {
-                return [];
-            }
-            return node.children
-                .filter(child => child.type === "attribute" && child.path)
-                .map(child => child.path);
-        }
-
-        function removeNodeAttributes(node) {
-            const attributePaths = getNodeAttributePaths(node);
-            console.log("attributePaths", attributePaths)
-            console.log("attributeList", $scope.config.attributeList)
-            if (!attributePaths.length) {
-                return;
-            }
-
-            $scope.config.attributeList = $scope.config.attributeList.filter(
-                attr => !attributePaths.includes(attr.path)
-            );
-        }
-
-        // TODO: double check the logic
+        // TODO: mark as loaded elements and replace this logic
         function hasAttributeChildren(node) {
             if (!Array.isArray(node.children) || node.children.length === 0) {
                 return false
@@ -688,14 +666,36 @@ app.controller('AfExplorerFormCtrl', [
             return node.children.some(child => child.type === "attribute");
         }
 
-        // TODO: cleanup
-
-        $scope.displayAttributes = function(node, remove = true) {
-            if (!remove) {
-                removeNodeAttributes(node);
-                return;
+        function getChildren(node) {
+            if (hasAttributeChildren(node)) {
+                return Promise.resolve(node);
             }
+            return $scope.getChildrenFromDB(node);
+        }
 
+        function stopDisplayingAttributes(node) {
+            // It is for now possible to stop displaying an element that was not loaded because of weak links
+            // patching it by loading the element before stopping to display it
+            // TODO: replace by weak link single loading logic
+            getChildren(node).then( node => {
+                const nodeAttributeChildrenPaths = node.children.filter(child => child.type === "attribute" && child.path)
+                    .map(child => child.path)
+                    if (!nodeAttributeChildrenPaths.length) {
+                        return;
+                    }
+
+                    $scope.config.attributeList = $scope.config.attributeList.filter(
+                        attr => !nodeAttributeChildrenPaths.includes(attr.path)
+                    );
+            });
+        }
+
+        $scope.toggleDisplayAttributes = function(node, add = true) {
+            if (!add) {
+               stopDisplayingAttributes(node);
+               return;
+            }
+            // TODO: refacto
             if (node.type === "element" && !hasAttributeChildren(node)) {
                 $scope.config.template = "-- Any --";
                 $scope.getChildrenFromDB(node).then(newNode => {
@@ -1011,7 +1011,7 @@ app.component('treeNode', {
     bindings: {
         node: '=',
         getChildrenFromDb: '<',
-        displayAttributes: '<',
+        toggleDisplayAttributes: '<',
         config: '<',
     },
 
@@ -1061,7 +1061,7 @@ app.component('treeNode', {
             return null;
         }
 
-        // TODO: understand why the logic is different from displayAttributes (merge them if possible)
+        // TODO: understand why the logic is different from toggleDisplayAttributes (merge them if possible)
         function rebuildAttributesFromClickedNodes() {
             const clickedUrls = Array.isArray(ctrl.config?.clickedNodes)
                 ? ctrl.config.clickedNodes
@@ -1078,7 +1078,7 @@ app.component('treeNode', {
                     findNodeByUrl(ctrl.config.treeData, url) ||
                     findNodeByUrl(ctrl.config.templateTreeData, url);
                 if (node) {
-                    ctrl.displayAttributes(node, true);
+                    ctrl.toggleDisplayAttributes(node);
                 }
             });
         }
@@ -1126,8 +1126,9 @@ app.component('treeNode', {
             }
 
             const indexClickedNode = ctrl.config.clickedNodes.indexOf(node.url);
+            const nodeAlreadySelected = indexClickedNode > -1;
             // If the node is already clicked, remove it from clicked nodes - else add it
-            if (indexClickedNode > -1) {
+            if (nodeAlreadySelected) {
                 ctrl.config.clickedNodes.splice(indexClickedNode, 1);
             } else {
                 ctrl.config.clickedNodes.push(node.url);
@@ -1136,23 +1137,23 @@ app.component('treeNode', {
             // TODO: split element/template logic
             if (node?.type === "template") {
                 // Template clicks should always rebuild right-side content from the full template selection.
-                ctrl.displayAttributes(node, true);
+                ctrl.toggleDisplayAttributes(node);
                 console.log("ctrl.config.clickedNodes: " + JSON.stringify(ctrl.config.clickedNodes));
                 return;
             }
 
+            // TODO: understand why this is mutually exclusive
             if (hasActiveAttributeSearch) {
                 rebuildAttributesFromClickedNodes();
-            } else if (indexClickedNode > -1) {
-                ctrl.displayAttributes(node, false);
             } else {
-                ctrl.displayAttributes(node);
+                ctrl.toggleDisplayAttributes(node, !nodeAlreadySelected);
             }
 
             console.log("ctrl.config.clickedNodes: " + JSON.stringify(ctrl.config.clickedNodes));
         };
 
         ctrl.isNodeClicked = function(node) {
+            // the click is entirely based on node.url
             return ctrl.config.clickedNodes.includes(node.url);
         };
 
