@@ -135,8 +135,6 @@ app.controller('AfExplorerFormCtrl', [
         $scope.config.lastSearchedElementName = $scope.config.lastSearchedElementName || "";
         $scope.config.pendingTabContextReset = $scope.config.pendingTabContextReset || false; // indique le changement de tab template/element
         $scope.config.selectedTemplateNames = $scope.config.selectedTemplateNames || []; // la liste des templates sélectionnés (checkbox cochée) parmi ceux affichés
-        $scope.config.selectAllWithoutTemplateAttributes = $scope.config.selectAllWithoutTemplateAttributes || false; // select all des attributs standalone
-        $scope.config.selectAllTemplateAttributes = $scope.config.selectAllTemplateAttributes || false; // select all des attributs groupés par template
 
         $scope.aggregateDataTypeFields = aggregateDataTypeFields;
         $scope.attributeGroupSections = [
@@ -268,8 +266,6 @@ app.controller('AfExplorerFormCtrl', [
             $scope.config.lastSearchedElementName = "";
             $scope.config.pendingTabContextReset = false;
             $scope.config.selectedTemplateNames = [];
-            $scope.config.selectAllWithoutTemplateAttributes = false;
-            $scope.config.selectAllTemplateAttributes = false;
         }
 
         $scope.resetDatasourceState = function() { //
@@ -395,8 +391,6 @@ app.controller('AfExplorerFormCtrl', [
             $scope.config.attribute_name = "";
             $scope.config.clickedNodes = [];
             $scope.config.attributeList = [];
-            $scope.config.selectAllWithoutTemplateAttributes = false;
-            $scope.config.selectAllTemplateAttributes = false;
             $scope.config.searchMatchedElementPaths = [];
             $scope.config.selectedTemplateNames = [];
             if ($scope.config.activeTab === "element") {
@@ -626,10 +620,6 @@ app.controller('AfExplorerFormCtrl', [
             });
         }
 
-        $scope.toggleSelectAllWithoutTemplateAttributes = function() {
-            setAttributesChecked($scope.getAttributesWithoutTemplate(), !!$scope.config.selectAllWithoutTemplateAttributes);
-        };
-
         $scope.toggleSelectAllGroupedAttributes = function(groupedAttributes) {
             const shouldRemove = groupedAttributes.checked === CheckboxStatus.CHECKED;
             groupedAttributes.groups.forEach((group) => {
@@ -690,11 +680,13 @@ app.controller('AfExplorerFormCtrl', [
 
         function removeNodeAttributes(node) {
             const attributePaths = getNodeAttributePaths(node);
+            console.log("attributePaths", attributePaths)
+            console.log("attributeList", $scope.config.attributeList)
             if (!attributePaths.length) {
                 return;
             }
 
-            $scope.config.attributeList = ($scope.config.attributeList || []).filter(
+            $scope.config.attributeList = $scope.config.attributeList.filter(
                 attr => !attributePaths.includes(attr.path)
             );
         }
@@ -708,17 +700,14 @@ app.controller('AfExplorerFormCtrl', [
         }
 
         // TODO: cleanup
+
         $scope.displayAttributes = function(node, remove = true) {
-            $scope.config.selectAllWithoutTemplateAttributes = false;
-            $scope.config.selectAllTemplateAttributes = false;
             if (!remove) {
                 removeNodeAttributes(node);
                 return;
             }
 
-            const shouldLoadChildrenFromDb = node.type === "element" && !hasAttributeChildren(node);
-
-            if (shouldLoadChildrenFromDb) {
+            if (node.type === "element" && !hasAttributeChildren(node)) {
                 $scope.config.template = "-- Any --";
                 $scope.getChildrenFromDB(node).then(newNode => {
                     processNode(newNode);
@@ -728,8 +717,6 @@ app.controller('AfExplorerFormCtrl', [
                 if (!selectedTemplateNames.length) {
                     $scope.config.template = "-- Any --";
                     $scope.config.attributeList = [];
-                    $scope.config.selectAllWithoutTemplateAttributes = false;
-                    $scope.config.selectAllTemplateAttributes = false;
                     $scope.config.searchMatchedElementPaths = [];
                     return;
                 }
@@ -1056,8 +1043,6 @@ app.component('treeNode', {
             ctrl.config.attribute_name = "";
             ctrl.config.clickedNodes = [];
             ctrl.config.attributeList = [];
-            ctrl.config.selectAllWithoutTemplateAttributes = false;
-            ctrl.config.selectAllTemplateAttributes = false;
             ctrl.config.searchMatchedElementPaths = [];
 
             if (ctrl.config.activeTab === "element") {
@@ -1098,8 +1083,6 @@ app.component('treeNode', {
                 : [];
 
             ctrl.config.attributeList = [];
-            ctrl.config.selectAllWithoutTemplateAttributes = false;
-            ctrl.config.selectAllTemplateAttributes = false;
 
             if (!clickedUrls.length) {
                 return;
