@@ -502,9 +502,9 @@ class OSIsoftClient(object):
         )
         return json_response
 
-    def get_next_item_from_url(self, url):
+    def get_next_item_from_url(self, url, params = None):
         headers = self.get_requests_headers()
-        params = {}
+        params = params or {}
         while url:
             json_response = self.get(
                 url=url,
