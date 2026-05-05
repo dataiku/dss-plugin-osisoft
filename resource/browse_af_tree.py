@@ -268,13 +268,13 @@ def get_children_from_db(client, parent_node, database_name=None):
         url = parent_node.get("url", database_name)
     else:
         url = parent_node
-    this_node = next(client.get_next_item_from_url(url))
+    this_node = next(client.get_next_item_from_url(url, params={"associations": "Paths"}))
     links = this_node.get("Links", {})
     attributes_url = links.get("Attributes")
     elements_url = links.get("Elements")
     children = []
     if elements_url:
-        elements = client.get_next_item_from_url(elements_url)
+        elements = client.get_next_item_from_url(elements_url, params={"associations": "Paths"})
         for element in elements:
             child = get_item_details(element)
             # child["title"] = "🧩{}".format(child.get("title"))
@@ -282,7 +282,7 @@ def get_children_from_db(client, parent_node, database_name=None):
             child["children"] = []
             children.append(child)
     if attributes_url:
-        attributes = client.get_next_item_from_url(attributes_url)
+        attributes = client.get_next_item_from_url(attributes_url, params={"associations": "Paths"})
         templates_urls = []
         for attribute in attributes:
             # templates_urls are processed in batch for speed
