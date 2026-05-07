@@ -57,6 +57,18 @@
             "credentialRequestSettings": {
                 "type": "BASIC"
             }
+        },
+        {
+            "name": "old_domain",
+            "label": "Old domain",
+            "type": "STRING",
+            "description": "(optional)"
+        },
+        {
+            "name": "new_domain",
+            "label": "New domain",
+            "type": "STRING",
+            "description": "(optional)"
         }
     ]
 }
