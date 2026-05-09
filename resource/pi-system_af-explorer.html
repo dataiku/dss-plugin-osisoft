@@ -109,7 +109,7 @@
                         <th>Aggregates</th>
                     </tr>
                     </thead>
-                    <tbody ng-if="!groupedAttributes[section.key].groups.length">
+                    <tbody ng-if="groupedAttributes[section.key].empty">
                     <tr class="custom-table__empty-row">
                         <td colspan="6">{{section.emptyMessage}}</td>
                     </tr>

@@ -141,12 +141,12 @@ app.controller('AfExplorerFormCtrl', [
             {
                 key: 'attributesWithoutTemplate',
                 title: 'Elements',
-                emptyMessage: 'No attributes without template'
+                emptyMessage: 'No attributes without template matched your selection'
             },
             {
                 key: 'attributesGroupedByTemplate',
                 title: 'Templates',
-                emptyMessage: 'No templated attributes'
+                emptyMessage: 'No templated attributes matched your selection'
             }
         ];
 
@@ -813,6 +813,9 @@ app.controller('AfExplorerFormCtrl', [
             return (templateNameMatches || attributeNameMatches)
         }
 
+        // Attributes are shared between templates
+        // Meaning all elements with the same template will share the attributes in this template
+        // If multiple elements with the same template are selected, we only show the attribute once
         function conflateAttributes(groupKey) {
             return (acc, attr) => {
                 // TODO: switch to id
@@ -915,9 +918,12 @@ app.controller('AfExplorerFormCtrl', [
 
         function buildGroupedAttributesResult(attributes, groupKey) {
             const groups = buildAggregatedAttributes(attributes, groupKey);
+            // TODO: probably turn this into a reduce
             return {
                 allChecked: groups.length > 0 && groups.every(group => group.allChecked),
                 checked: getCheckboxStatus(groups.reduce((acc, group) => acc.concat(group.checkStates), [])),
+                // a table can be empty because all it's attributes have been filtered out OR there are no elements to show
+                empty: groups.length === 0 || groups.every(group => group.noSearchMatch),
                 groups: groups
             }
         }
