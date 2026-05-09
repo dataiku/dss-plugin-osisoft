@@ -114,9 +114,11 @@
                         <td colspan="6">{{section.emptyMessage}}</td>
                     </tr>
                     </tbody>
-                    <tbody ng-repeat="group in groupedAttributes[section.key].groups track by group.group_name">
-
-                <tr class="custom-table__group-row">
+                    <tbody
+                            ng-repeat="group in groupedAttributes[section.key].groups track by group.group_name"
+                            ng-show="!group.noSearchMatch"
+                    >
+                    <tr class="custom-table__group-row">
                         <td>
                             <input type="checkbox" ng-model="group.allChecked"
                                    ng-change="checkTemplate(group)" indeterminate="group.checked">

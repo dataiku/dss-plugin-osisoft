@@ -805,6 +805,9 @@ app.controller('AfExplorerFormCtrl', [
         };
 
         function attributeMatchesSearch(attribute_name, template_name) {
+            if ($scope.config.attributeSearch === "") {
+                return true;
+            }
             const templateNameMatches = template_name.toLowerCase().includes($scope.config.attributeSearch.toLowerCase());
             const attributeNameMatches = attribute_name.toLowerCase().includes($scope.config.attributeSearch.toLowerCase());
             return (templateNameMatches || attributeNameMatches)
@@ -877,7 +880,8 @@ app.controller('AfExplorerFormCtrl', [
                         allChecked: attr.checked,
                         checked: CheckboxStatus.UNCHECKED, // Used to determine UI checkbox state
                         attributes: [],
-                        checkStates: []
+                        checkStates: [],
+                        noSearchMatch: !attr.matchesSearch
                     }
                 }
 
@@ -885,6 +889,7 @@ app.controller('AfExplorerFormCtrl', [
                 acc[key].checked = getCheckboxStatus(acc[key].checkStates);
                 acc[key].allChecked = acc[key].allChecked && attr.allChecked;
                 acc[key].attributes.push(attr);
+                acc[key].noSearchMatch = acc[key].noSearchMatch && !attr.matchesSearch;
                 return acc;
             }
         }
