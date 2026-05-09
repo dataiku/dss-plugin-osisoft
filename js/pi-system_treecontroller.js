@@ -383,6 +383,7 @@ app.controller('AfExplorerFormCtrl', [
             $scope.config.attributeList = [];
             $scope.config.searchMatchedElementPaths = [];
             $scope.config.selectedTemplateNames = [];
+            $scope.config.attributeSearch = "";
             if ($scope.config.activeTab === "element") {
                 $scope.config.template = "-- Any --";
             } else if ($scope.config.activeTab === "template") {
