@@ -83,13 +83,13 @@
                     <input ng-model="config.attributeSearch" type="text" placeholder="Search attribute or template name" ng-keydown="refreshAttributeSection()"/>
 
                 </div>
-                <div>
-                    Filter by category
-                    <select dku-bs-select ng-model="config.attribute_category"
-                            ng-options="dbn.title as dbn.title for dbn in config.attribute_categories"
-                            ng-init="getCategoriesFromDB()"
-                            ng-change="doSearch(config.element_name, config.attribute_name)"/>
-                </div>
+<!--                <div>-->
+<!--                    Filter by category-->
+<!--                    <select dku-bs-select ng-model="config.attribute_category"-->
+<!--                            ng-options="dbn.title as dbn.title for dbn in config.attribute_categories"-->
+<!--                            ng-init="getCategoriesFromDB()"-->
+<!--                            ng-change="refreshAttributeSection()"></select>-->
+<!--                </div>-->
             </div>
             <div class="attribute-table-block"
                  ng-repeat="section in attributeGroupSections track by section.key">
@@ -177,11 +177,11 @@
                 </div>
             </div>-->
             <div class="tree-view__content">
-                <div>
-                    Filter by category<select dku-bs-select ng-model="config.element_category"
-                                              ng-options="dbn.title as dbn.title for dbn in config.element_categories" ng-init="getCategoriesFromDB()"
-                                              ng-change="doSearch(config.element_name, config.attribute_name)"/>
-                </div>
+<!--                <div>-->
+<!--                    Filter by category<select dku-bs-select ng-model="config.element_category"-->
+<!--                                              ng-options="dbn.title as dbn.title for dbn in config.element_categories" ng-init="getCategoriesFromDB()"-->
+<!--                                              ng-change="doSearch(config.element_name, config.attribute_name)"/>-->
+<!--                </div>-->
                 <ul ng-if="config.activeTab === 'element' && config.treeData && config.treeData.length">
                     <li ng-repeat="node in config.treeData track by node.id">
                         <tree-node node="node" get-children-from-db="getChildrenFromDB" toggle-display-attributes="toggleDisplayAttributes"
