@@ -810,7 +810,7 @@ app.controller('AfExplorerFormCtrl', [
             return (templateNameMatches || attributeNameMatches)
         }
 
-        function groupDuplicatedAttributesAcrossGroup(groupKey) {
+        function conflateAttributes(groupKey) {
             return (acc, attr) => {
                 // TODO: switch to id
                 const key = attr[groupKey] + "::" + attr.title;
@@ -868,7 +868,7 @@ app.controller('AfExplorerFormCtrl', [
             }
         }
 
-        function groupAttributes() {
+        function groupAttributesIntoSections() {
             return (acc, attr) => {
                 const key = attr.group;
                 if (!acc[key]) {
@@ -890,8 +890,8 @@ app.controller('AfExplorerFormCtrl', [
         }
 
         function buildAggregatedAttributes(attributes, groupKey) {
-            const deduplicatedAttributes = Object.values(attributes.reduce(groupDuplicatedAttributesAcrossGroup(groupKey), {}));
-            return Object.values(deduplicatedAttributes.reduce(groupAttributes(), {}));
+            const deduplicatedAttributes = Object.values(attributes.reduce(conflateAttributes(groupKey), {}));
+            return Object.values(deduplicatedAttributes.reduce(groupAttributesIntoSections(), {}));
         }
 
         function splitAttributesByTemplatePresence(attributes) {
