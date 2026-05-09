@@ -74,15 +74,6 @@ const aggregateDataTypeFields = Object.freeze({
                 return attribute.data_type === 'SummaryData';
             },
         },
-        max_count: {
-            label: 'Max count',
-            type: 'number',
-            dependsOn: ['data_type'],
-            defaultValue: 10000,
-            isVisible: function(attribute) {
-                return ['PlotData', 'InterpolatedData', 'RecordedData'].includes(attribute.data_type);
-            },
-        },
     }
 });
 
