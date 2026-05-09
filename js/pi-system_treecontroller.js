@@ -134,6 +134,7 @@ app.controller('AfExplorerFormCtrl', [
         $scope.config.searchMatchedElementPaths = $scope.config.searchMatchedElementPaths || []; // la liste pour highlighter les elements de la recherche
         $scope.config.lastSearchedElementName = $scope.config.lastSearchedElementName || "";
         $scope.config.selectedTemplateNames = $scope.config.selectedTemplateNames || []; // la liste des templates sélectionnés (checkbox cochée) parmi ceux affichés
+        $scope.config.attributeSearch =  $scope.config.attributeSearch || "";
 
         $scope.aggregateDataTypeFields = aggregateDataTypeFields;
         $scope.attributeGroupSections = [
@@ -803,6 +804,12 @@ app.controller('AfExplorerFormCtrl', [
             });
         };
 
+        function attributeMatchesSearch(attribute_name, template_name) {
+            const templateNameMatches = template_name.toLowerCase().includes($scope.config.attributeSearch.toLowerCase());
+            const attributeNameMatches = attribute_name.toLowerCase().includes($scope.config.attributeSearch.toLowerCase());
+            return (templateNameMatches || attributeNameMatches)
+        }
+
         function groupDuplicatedAttributesAcrossGroup(groupKey) {
             return (acc, attr) => {
                 // TODO: switch to id
@@ -822,6 +829,7 @@ app.controller('AfExplorerFormCtrl', [
                         paths: [],
                         data_type: attr.data_type,
                         data_types: [],
+                        matchesSearch: attributeMatchesSearch(attr.title, attr[groupKey]),
                     };
 
                     getAggregateNames().forEach(aggregateName => {
@@ -939,6 +947,10 @@ app.controller('AfExplorerFormCtrl', [
         $scope.$watch('config.attributeList', function(newVal, oldVal) {
             $scope.groupedAttributes = $scope.buildGroupedAttributes();
         }, true);
+
+        $scope.refreshAttributeSection = function() {
+            $scope.groupedAttributes = $scope.buildGroupedAttributes();
+        }
 
 
         function attributeMatchesCurrentSearch(attribute) {
