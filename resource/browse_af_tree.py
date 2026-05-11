@@ -117,7 +117,7 @@ def do(payload, config, plugin_config, inputs):
         return {"choices": [], "elements": elements}
     if method=="get_attribute_for_template":
         database_name = config.get("database_name")
-        template_name = config.get("template", None)
+        template_name = payload.get("template_name", None)
         if template_name is None:
             return {"choices": [], "attributes": []}
         # when searching for template : attribute_name=None, element_category=None, attribute_category=None

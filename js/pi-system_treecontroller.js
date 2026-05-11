@@ -382,6 +382,9 @@ app.controller('AfExplorerFormCtrl', [
         }
 
         $scope.getChildrenFromDB = function(item) {
+            if (item.type === "template") {
+                return getAttributesForTemplate(item);
+            }
             console.log("ALX:gcfd:" + JSON.stringify(item));
             return $scope.callPythonDo({ method: "get_children_from_db", parent: item })
                 .then(function(data) {
@@ -499,6 +502,18 @@ app.controller('AfExplorerFormCtrl', [
                 }
             );
         };
+
+        function getAttributesForTemplate(node) {
+            return $scope.callPythonDo({ method: "get_attribute_for_template", template_name: node.title}).then(
+                function(data) {
+                    node.children = data.attributes;
+                    node.children.forEach(child => {
+                        child.expanded = false;
+                    });
+                    return node;
+                }
+            );
+        }
 
         function applySearchAttributesToList(attributes) {
             const seen = new Set();
@@ -705,31 +720,13 @@ app.controller('AfExplorerFormCtrl', [
                stopDisplayingAttributes(node);
                return;
             }
-            // TODO: refacto
-            if (node.type === "element" && !hasAttributeChildren(node)) {
-                $scope.config.template = "-- Any --";
+            if (!hasAttributeChildren(node)) {
                 $scope.getChildrenFromDB(node).then(newNode => {
                     processNode(newNode);
                 });
-            } else if (node.type === "template") {
-                const selectedTemplateNames = getSelectedTemplateNamesFromClickedNodes();
-                if (!selectedTemplateNames.length) {
-                    $scope.config.template = "-- Any --";
-                    $scope.config.attributeList = [];
-                    $scope.config.searchMatchedElementPaths = [];
-                    return;
-                }
-
-                // Keep previous single-template behavior in config when only one is selected.
-                // For multi-select, backend will use selectedTemplateNames.
-                $scope.config.template = selectedTemplateNames.length === 1
-                    ? selectedTemplateNames[0]
-                    : "-- Any --";
-                $scope.config.element_name = "*";
-                $scope.doSearch($scope.config.element_name, $scope.config.attribute_name);
-            } else {
-                processNode(node);
+                return;
             }
+            processNode(node);
         }
 
         // Merge frontend data and saved output with loaded attributes
