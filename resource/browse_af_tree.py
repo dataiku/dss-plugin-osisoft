@@ -114,6 +114,7 @@ def do(payload, config, plugin_config, inputs):
             return {"choices": [], "attributes": []}
         # when searching for template : attribute_name=None, element_category=None, attribute_category=None
         elements_max_count, attributes_max_count = get_max_counts(config)
+        attributes = []
         for result in client.batched_search(
             database_name, None, None,
             None, None, template_name, [],
