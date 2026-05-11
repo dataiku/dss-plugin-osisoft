@@ -15,10 +15,41 @@ const aggregateDataTypeFields = Object.freeze({
         ]
     },
     aggregates: {
+        start_time: {
+            label: 'Start time',
+            type: 'text',
+            defaultValue: '',
+            isVisible: function(attribute) {
+                return ['InterpolatedData', 'PlotData', 'RecordedData', 'SummaryData'].includes(attribute.data_type);
+            },
+        },
+        end_time: {
+            label: 'End time',
+            type: 'text',
+            defaultValue: '',
+            isVisible: function(attribute) {
+                return ['InterpolatedData', 'PlotData', 'RecordedData', 'SummaryData'].includes(attribute.data_type);
+            },
+        },
+        interval: {
+            label: 'Interval',
+            type: 'text',
+            defaultValue: '',
+            isVisible: function(attribute) {
+                return attribute.data_type === 'InterpolatedData';
+            },
+        },
+        sync_time: {
+            label: 'Sync time',
+            type: 'text',
+            defaultValue: '',
+            isVisible: function(attribute) {
+                return attribute.data_type === 'InterpolatedData';
+            },
+        },
         summary_type: {
             label: 'Summary type',
             type: 'multiselect',
-            dependsOn: ['data_type'],
             defaultValue: [],
             isVisible: function(attribute) {
                 return attribute.data_type === 'SummaryData';
@@ -41,7 +72,6 @@ const aggregateDataTypeFields = Object.freeze({
         boundary_type: {
             label: 'Boundary type',
             type: 'select',
-            dependsOn: ['data_type'],
             defaultValue: 'Inside',
             isVisible: function(attribute) {
                 return attribute.data_type === 'InterpolatedData';
@@ -54,7 +84,6 @@ const aggregateDataTypeFields = Object.freeze({
         record_boundary_type: {
             label: 'Boundary type',
             type: 'select',
-            dependsOn: ['data_type'],
             defaultValue: 'Inside',
             isVisible: function(attribute) {
                 return attribute.data_type === 'RecordedData';
@@ -68,7 +97,6 @@ const aggregateDataTypeFields = Object.freeze({
         summary_duration: {
             label: 'Summary duration',
             type: 'text',
-            dependsOn: ['data_type'],
             defaultValue: '',
             isVisible: function(attribute) {
                 return attribute.data_type === 'SummaryData';
