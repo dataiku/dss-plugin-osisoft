@@ -154,18 +154,22 @@ app.controller('AfExplorerFormCtrl', [
         $scope.config.lastSearchedElementName = $scope.config.lastSearchedElementName || "";
         $scope.config.selectedTemplateNames = $scope.config.selectedTemplateNames || []; // la liste des templates sélectionnés (checkbox cochée) parmi ceux affichés
         $scope.config.attributeSearch =  $scope.config.attributeSearch || "";
+        // TODO: get categories from backend for attributes
+        // $scope.config.attributeCategoryFilter = $scope.config.attributeCategoryFilter || ""
 
         $scope.aggregateDataTypeFields = aggregateDataTypeFields;
         $scope.attributeGroupSections = [
             {
                 key: 'attributesWithoutTemplate',
                 title: 'Elements',
-                emptyMessage: 'No attributes without template matched your selection'
+                emptyMessage: 'No attributes without template matched your selection',
+                shouldDisplay: () => $scope.config.activeTab === "element"
             },
             {
                 key: 'attributesGroupedByTemplate',
                 title: 'Templates',
-                emptyMessage: 'No templated attributes matched your selection'
+                emptyMessage: 'No templated attributes matched your selection',
+                shouldDisplay: () => true
             }
         ];
 

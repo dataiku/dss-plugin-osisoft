@@ -92,7 +92,8 @@
 <!--                </div>-->
             </div>
             <div class="attribute-table-block"
-                 ng-repeat="section in attributeGroupSections track by section.key">
+                 ng-repeat="section in attributeGroupSections track by section.key"
+                 ng-if="section.shouldDisplay()">
                 <div class="attribute-table-block__title"><strong>{{section.title}}</strong></div>
                 <table class="custom-table">
                     <thead>
