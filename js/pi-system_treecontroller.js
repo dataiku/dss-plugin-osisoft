@@ -734,7 +734,11 @@ app.controller('AfExplorerFormCtrl', [
             // TODO: check this makes sense, since selectedOutput is persisted and so newly loaded attributes should not be found in it
             const selectedAttribute = $scope.config.outputSelectedAttributes.find(attr => attr.path === attribute.path);
             attribute.checked = !!(selectedAttribute);
-            attribute.parent_element = parentNode?.title;
+            if (parentNode.type === "element") {
+                attribute.parent_element = parentNode?.title;
+            } else if (parentNode.type === "template") {
+                attribute.template_name = parentNode?.title;
+            }
             attribute.data_type = selectedAttribute?.data_type ? selectedAttribute.data_type : $scope.aggregateDataTypeFields.data_type.defaultValue;
             Object.entries($scope.aggregateDataTypeFields.aggregates).forEach(([aggregateName, aggregate]) => {
                 if ((selectedAttribute?.[aggregateName] === undefined || selectedAttribute?.[aggregateName] === null) && aggregate.isVisible(attribute)) {
