@@ -758,14 +758,15 @@ class OSIsoftClient(object):
             else:
                 json_response = None
 
-    def search_elements(self, database_webid, name=None, description=None, category=None, template=None, full_search=True):
+    def search_elements(self, database, name=None, description=None, category=None, template=None, full_search=True):
         headers = self.get_requests_headers()
         tempo_maxcount = OSIsoftConstants.DEFAULT_MAXCOUNT
         params = {
             "maxCount": tempo_maxcount,
             "associations": "Paths",
         }
-        url = self.endpoint.get_base_url() + "/assetdatabases/{}/elements".format(database_webid)
+        # url = self.endpoint.get_base_url() + "/assetdatabases/{}/elements".format(database_webid)
+        url = "{}/elements".format(database)
         if name:
             params["nameFilter"] = name
         if description:

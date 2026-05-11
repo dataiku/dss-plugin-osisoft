@@ -77,6 +77,7 @@ def do(payload, config, plugin_config, inputs):
     )
 
     method = payload.get("method")
+    logger.info("Running do for method '{}'".format(method))
     if method == "get_query_catalogs":
         return get_query_catalogs(None, config)
     if method == "get_children_from_db":
@@ -107,6 +108,13 @@ def do(payload, config, plugin_config, inputs):
             "get_element_categories_from_db",
             lambda: get_items_from_db(client, parent, "ElementCategories", database_name=database_name)
         )
+    if method == "get_elements_for_template":
+        database_name = config.get("database_name")
+        template_name = config.get("template", None)
+        elements = []
+        for element in client.search_elements(database_name, name=None, description=None, category=None, template=template_name, full_search=True):
+            elements.append(get_item_details(element))
+        return {"choices": [], "elements": elements}
     if method=="get_attribute_for_template":
         database_name = config.get("database_name")
         template_name = config.get("template", None)
