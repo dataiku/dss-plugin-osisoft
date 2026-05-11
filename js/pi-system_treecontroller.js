@@ -1151,14 +1151,6 @@ app.component('treeNode', {
                 ctrl.config.clickedNodes.push(node.url);
             }
 
-            // TODO: split element/template logic
-            if (node?.type === "template") {
-                // Template clicks should always rebuild right-side content from the full template selection.
-                ctrl.toggleDisplayAttributes(node);
-                console.log("ctrl.config.clickedNodes: " + JSON.stringify(ctrl.config.clickedNodes));
-                return;
-            }
-
             // TODO: understand why this is mutually exclusive
             if (hasActiveAttributeSearch) {
                 rebuildAttributesFromClickedNodes();
