@@ -107,6 +107,26 @@ def do(payload, config, plugin_config, inputs):
             "get_element_categories_from_db",
             lambda: get_items_from_db(client, parent, "ElementCategories", database_name=database_name)
         )
+    if method=="get_attribute_for_template":
+        database_name = config.get("database_name")
+        template_name = config.get("template", None)
+        if template_name is None:
+            return {"choices": [], "attributes": []}
+        # when searching for template : attribute_name=None, element_category=None, attribute_category=None
+        elements_max_count, attributes_max_count = get_max_counts(config)
+        for result in client.batched_search(
+            database_name, None, None,
+            None, None, template_name, [],
+            elements_max_count=elements_max_count, attributes_max_count=attributes_max_count
+        ):
+            attributes.append(result)
+        attributes = split_real_from_linked_paths(attributes)
+        items = []
+        for attribute in attributes:
+            item = get_item_details(attribute)
+            items.append(item)
+        items = expand_items_by_paths(items)
+        return {"choices": [], "attributes": items}
     if method == "do_search":
         template_name = config.get("template", None)
         category_name = config.get("element_category", None)
