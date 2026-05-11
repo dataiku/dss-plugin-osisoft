@@ -5,7 +5,7 @@
 </td>
 <td>{{ctrl.mergedAttribute.title}}</td>
 <td>{{ctrl.mergedAttribute.description}}</td>
-<td>
+<td ng-if="ctrl.displayPath">
     <span ng-repeat="path in ctrl.mergedAttribute.paths">
         {{path}}<br/>
     </span>

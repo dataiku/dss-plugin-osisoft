@@ -82,7 +82,12 @@
                 <div>
                     <!-- Searches on keydown - if there are some performance issue, can be switched to enter or button click -->
                     <input ng-model="config.attributeSearch" type="text" placeholder="Search attribute or template name" ng-keydown="refreshAttributeSection()"/>
-
+                </div>
+                <div>
+                    <label style="display: inline-flex; align-items: center; gap: 4px;">
+                        <input type="checkbox" ng-model="config.displayPath" style="margin: 0;"/>
+                        Display attribute paths
+                    </label>
                 </div>
 <!--                <div>-->
 <!--                    Filter by category-->
@@ -106,14 +111,14 @@
 
                         <th>Title</th>
                         <th>Description</th>
-                        <th>Path</th>
+                        <th ng-if="config.displayPath">Path</th>
                         <th>Data type</th>
                         <th>Aggregates</th>
                     </tr>
                     </thead>
                     <tbody ng-if="groupedAttributes[section.key].empty">
                     <tr class="custom-table__empty-row">
-                        <td colspan="6">{{section.emptyMessage}}</td>
+                        <td colspan="{{config.displayPath ? 6 : 5}}">{{section.emptyMessage}}</td>
                     </tr>
                     </tbody>
                     <tbody
@@ -125,13 +130,14 @@
                             <input type="checkbox" ng-model="group.allChecked"
                                    ng-change="checkTemplate(group)" indeterminate="group.checked">
                         </td>
-                        <td colspan="5">{{group.group_name}}</td>
+                        <td colspan="{{config.displayPath ? 5 : 4}}">{{group.group_name}}</td>
                     </tr>
                     <tr
                             ng-repeat="mergedAttribute in group.attributes track by mergedAttribute.title"
                             ng-show="mergedAttribute.matchesSearch"
                             attribute-table-row
                             merged-attribute="mergedAttribute"
+                            display-path="config.displayPath"
                             aggregate-data-type-fields="aggregateDataTypeFields"
                             on-check-attribute="checkAttribute(mergedAttribute)"
                             on-update-data-type="updateMergedAttributeDataType(mergedAttribute)"

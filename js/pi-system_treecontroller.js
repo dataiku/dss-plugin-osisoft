@@ -154,6 +154,7 @@ app.controller('AfExplorerFormCtrl', [
         $scope.config.lastSearchedElementName = $scope.config.lastSearchedElementName || "";
         $scope.config.selectedTemplateNames = $scope.config.selectedTemplateNames || []; // la liste des templates sélectionnés (checkbox cochée) parmi ceux affichés
         $scope.config.attributeSearch =  $scope.config.attributeSearch || "";
+        $scope.config.displayPath = $scope.config.displayPath || false;
         // TODO: get categories from backend for attributes
         // $scope.config.attributeCategoryFilter = $scope.config.attributeCategoryFilter || ""
 
@@ -1179,6 +1180,7 @@ app.directive('attributeTableRow', function() {
         restrict: 'A',
         scope: {
             mergedAttribute: '=',
+            displayPath: '<',
             aggregateDataTypeFields: '<',
             onCheckAttribute: '&',
             onUpdateDataType: '&',
