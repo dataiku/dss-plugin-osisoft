@@ -302,14 +302,6 @@ def get_children_from_db(client, parent_node, database_name=None):
     attributes_url = links.get("Attributes")
     elements_url = links.get("Elements")
     children = []
-    if elements_url:
-        elements = client.get_next_item_from_url(elements_url, params={"associations": "Paths"})
-        for element in elements:
-            child = get_item_details(element)
-            # child["title"] = "🧩{}".format(child.get("title"))
-            child["type"] = "element"
-            child["children"] = []
-            children.append(child)
     if attributes_url:
         attributes = client.get_next_item_from_url(attributes_url, params={"associations": "Paths"})
         templates_urls = []
@@ -327,6 +319,14 @@ def get_children_from_db(client, parent_node, database_name=None):
         for child, template_name in zip(children, templates_names):
             if template_name:
                 child["template_name"] = template_name
+    if elements_url:
+        elements = client.get_next_item_from_url(elements_url, params={"associations": "Paths"})
+        for element in elements:
+            child = get_item_details(element)
+            # child["title"] = "🧩{}".format(child.get("title"))
+            child["type"] = "element"
+            child["children"] = []
+            children.append(child)
     return {"choices": children}
 
 
