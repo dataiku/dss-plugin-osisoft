@@ -536,6 +536,15 @@ app.controller('AfExplorerFormCtrl', [
             );
         }
 
+        function fullRefreshSelectedElementsByTemplate() {
+            Object.keys($scope.selectedElementsByTemplate).forEach(templateName => {
+                if (!$scope.config.elementsByTemplate[templateName]) {
+                    return;
+                }
+                refreshSelectedElementsByTemplate(templateName);
+            });
+        }
+
         function refreshSelectedElementsByTemplate(templateName) {
             $scope.selectedElementsByTemplate[templateName] = $scope.config.elementsByTemplate[templateName].filter(element => {
                     return $scope.config.clickedNodes.includes(element.url);
@@ -750,6 +759,7 @@ app.controller('AfExplorerFormCtrl', [
                 $scope.toggleDisplayAttributes(node, !nodeAlreadySelected);
             }
 
+            fullRefreshSelectedElementsByTemplate();
             console.log("clickedNodes: " + JSON.stringify($scope.config.clickedNodes));
         };
 
