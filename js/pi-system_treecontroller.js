@@ -139,9 +139,8 @@ app.controller('AfExplorerFormCtrl', [
     '$scope',
     '$stateParams',
     '$q',
-    'CodeMirrorSettingService',
     'TreeDataService',
-    function($scope, $stateParams, $q, CodeMirrorSettingService, TreeDataService) {
+    function($scope, $stateParams, $q, TreeDataService) {
 
         $scope.paramDesc = {
             'parameterSetId': 'basic-auth',
@@ -151,7 +150,6 @@ app.controller('AfExplorerFormCtrl', [
         $scope.config.attributeList = $scope.config.attributeList || []; // la liste des attributs qui sont affichés sur le main panel à droite
         $scope.config.outputSelectedAttributes = $scope.config.outputSelectedAttributes || []; // la liste des attributs qui sont séléctionnés pour être dans l'output dataset
         $scope.config.searchMatchedElementPaths = $scope.config.searchMatchedElementPaths || []; // la liste pour highlighter les elements de la recherche
-        $scope.config.lastSearchedElementName = $scope.config.lastSearchedElementName || "";
         $scope.config.selectedTemplateNames = $scope.config.selectedTemplateNames || []; // la liste des templates sélectionnés (checkbox cochée) parmi ceux affichés
         $scope.config.attributeSearch =  $scope.config.attributeSearch || "";
         $scope.config.displayPath = $scope.config.displayPath || false;
@@ -291,7 +289,6 @@ app.controller('AfExplorerFormCtrl', [
             $scope.config.attributeList = [];
             $scope.config.outputSelectedAttributes = [];
             $scope.config.searchMatchedElementPaths = [];
-            $scope.config.lastSearchedElementName = "";
             $scope.config.selectedTemplateNames = [];
         }
 
@@ -418,7 +415,6 @@ app.controller('AfExplorerFormCtrl', [
         }
 
         function resetRightPanelForCurrentTabContext() {
-            $scope.config.attribute_name = "";
             $scope.config.clickedNodes = [];
             $scope.config.attributeList = [];
             $scope.config.searchMatchedElementPaths = [];
@@ -453,47 +449,10 @@ app.controller('AfExplorerFormCtrl', [
             return $q.all([attributeCategoriesPromise, elementCategoriesPromise]);
         }
 
-        $scope.doSearch = function(element_name, attribute_name) {
+        $scope.doSearch = function(element_name) {
 
-            const hasElementFilter = !!(element_name?.trim());
-            const hadPreviousElementFilter = !!($scope.config.lastSearchedElementName?.trim());
-
-            // If user clears element filter after a scoped search, release previous click-based scope.
-            if (!hasElementFilter && hadPreviousElementFilter) {
-                $scope.config.clickedNodes = [];
-            }
-
-            const hasClickedNodes = Array.isArray($scope.config.clickedNodes) && $scope.config.clickedNodes.length > 0;
-            const hasAttributeFilter = !!(attribute_name?.trim());
-            const isRestrictedAttributeSearch = hasClickedNodes && hasAttributeFilter && !hasElementFilter;
-            const hasTemplateFilter = !!(
-                $scope.config.template &&
-                $scope.config.template !== "-- Any --"
-            );
-            const isTemplateScopedSearch =
-                hasTemplateFilter &&
-                ($scope.config.activeTab === "template");
-            const shouldDisplaySearchAttributesDirectly =
-                hasAttributeFilter || isTemplateScopedSearch;
-            $scope.config.lastSearchedElementName = element_name || "";
-            if ($scope.config.activeTab === "template") {
-                $scope.config.selectedTemplateNames = getSelectedTemplateNamesFromClickedNodes();
-            } else {
-                $scope.config.selectedTemplateNames = [];
-            }
-            const hasSelectedTemplateNodes = (
-                $scope.config.activeTab === "template" &&
-                Array.isArray($scope.config.selectedTemplateNames) &&
-                $scope.config.selectedTemplateNames.length > 0
-            );
-            const shouldShowTemplateSelectionAttributes = hasSelectedTemplateNodes;
-
-            if (!isRestrictedAttributeSearch) {
-                $scope.config.attributeList = [];
-            }
             $scope.config.searchMatchedElementPaths = [];
-            // TODO: understand what this does
-            $scope.callPythonDo({ method: "do_search", element_name: element_name, attribute_name: attribute_name, root_tree: $scope.config.treeData }).then(
+            $scope.callPythonDo({ method: "do_search", element_name: element_name, root_tree: $scope.config.treeData }).then(
                 function(data) {
                     TreeDataService.setTreeData(data.choices);
                     $scope.config.treeData = TreeDataService.getTreeData();
@@ -501,13 +460,6 @@ app.controller('AfExplorerFormCtrl', [
                     const matchedElementPaths = getMatchedElementPaths(matchedAttributes);
                     $scope.config.searchMatchedElementPaths = matchedElementPaths;
                     markSearchResults($scope.config.treeData, matchedElementPaths);
-                    if (
-                        isRestrictedAttributeSearch ||
-                        shouldDisplaySearchAttributesDirectly ||
-                        shouldShowTemplateSelectionAttributes
-                    ) {
-                        applySearchAttributesToList(matchedAttributes);
-                    }
                 }
             );
         };
@@ -700,42 +652,12 @@ app.controller('AfExplorerFormCtrl', [
             return null;
         }
 
-        // TODO: understand why the logic is different from toggleDisplayAttributes (merge them if possible)
-        function rebuildAttributesFromClickedNodes() {
-            const clickedUrls = Array.isArray($scope.config?.clickedNodes)
-                ? $scope.config.clickedNodes
-                : [];
-
-            $scope.config.attributeList = [];
-
-            if (!clickedUrls.length) {
-                return;
-            }
-
-            clickedUrls.forEach(function(url) {
-                const node =
-                    findNodeByUrl($scope.config.treeData, url) ||
-                    findNodeByUrl($scope.config.templateTreeData, url);
-                if (node) {
-                    $scope.toggleDisplayAttributes(node);
-                }
-            });
-        }
-
         $scope.onNodeClick = function(node) {
             console.log("clicked on ", node)
-
-            // TODO: factorize this check
-            const hasActiveAttributeSearch = !!(
-                $scope.config?.attribute_name?.trim()
-            );
 
             // Keep right-side attribute search when active so multi-node clicks can
             // enrich results with the same filter (ex: "Load" on California + Fresno).
             // TODO: understand why we need a reset if the attribute search is empty
-            if (!hasActiveAttributeSearch) {
-                $scope.config.attribute_name = "";
-            }
             if (node?.type === "element") {
                 // TODO: factorize this reset
                 $scope.config.template = "-- Any --";
@@ -753,11 +675,7 @@ app.controller('AfExplorerFormCtrl', [
             }
 
             // TODO: understand why this is mutually exclusive
-            if (hasActiveAttributeSearch) {
-                rebuildAttributesFromClickedNodes();
-            } else {
-                $scope.toggleDisplayAttributes(node, !nodeAlreadySelected);
-            }
+            $scope.toggleDisplayAttributes(node, !nodeAlreadySelected);
 
             fullRefreshSelectedElementsByTemplate();
             console.log("clickedNodes: " + JSON.stringify($scope.config.clickedNodes));
@@ -782,28 +700,22 @@ app.controller('AfExplorerFormCtrl', [
             });
         }
 
+        // TODO understand why both
         $scope.onSearchInputKeydown = function($event) {
             if ($event && ($event.key === "Enter" || $event.keyCode === 13)) {
                 $event.preventDefault();
-                const targetId = $event.target?.id || "";
-                if (targetId === "ReturnsName") {
-                    $scope.searchFromElement();
-                    return;
-                }
-                $scope.doSearch($scope.config.element_name, $scope.config.attribute_name);
+                // const targetId = $event.target?.id || "";
+                // // TODO: understand
+                // if (targetId === "ReturnsName") {
+                //     $scope.searchFromElement();
+                //     return;
+                // }
+                $scope.searchFromElement();
             }
         };
 
         $scope.searchFromElement = function() {
-            if (!$scope.config) {
-                return;
-            }
-
-            // Left search always resets right-side filter/template search.
-            $scope.config.clickedNodes = [];
-            $scope.config.selectedTemplateNames = [];
-            $scope.config.attribute_name = "";
-            $scope.doSearch($scope.config.element_name, $scope.config.attribute_name);
+            $scope.doSearch($scope.config.element_name);
         };
 
         function setAttributesChecked(attributes, isChecked) {
@@ -931,16 +843,12 @@ app.controller('AfExplorerFormCtrl', [
         }
 
         function processNode(node) {
-            const hasAttributeFilter = !!($scope.config.attribute_name?.trim());
             const parentTemplateName = node?.template_name ? node.template_name : null;
 
             node.children.forEach(child => {
                 if (child.type === "attribute") {
                     if (!child.parent_template_name && parentTemplateName) {
                         child.parent_template_name = parentTemplateName;
-                    }
-                    if (hasAttributeFilter && !attributeMatchesCurrentSearch(child)) {
-                        return;
                     }
                     const isAlreadyPresent = $scope.config.attributeList.some(attr => attr.path === child.path);
                     if (!isAlreadyPresent) {
@@ -1161,28 +1069,6 @@ app.controller('AfExplorerFormCtrl', [
 
         $scope.refreshAttributeSection = function() {
             $scope.groupedAttributes = $scope.buildGroupedAttributes();
-        }
-
-
-        function attributeMatchesCurrentSearch(attribute) {
-            const rawFilter = ($scope.config.attribute_name || "").trim();
-            if (!rawFilter) {
-                return true;
-            }
-
-            const attributeTitle = (attribute?.title ? attribute.title : "").toLowerCase();
-            const filter = rawFilter.toLowerCase();
-
-            if (filter.includes("*")) {
-                const regexPattern = "^" + escapeRegex(filter).replace(/\\\*/g, ".*") + "$";
-                return new RegExp(regexPattern).test(attributeTitle);
-            }
-
-            return attributeTitle.includes(filter);
-        }
-
-        function escapeRegex(input) {
-            return input.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
         }
 
         $scope.addAttributeToSelection = function(attribute) {

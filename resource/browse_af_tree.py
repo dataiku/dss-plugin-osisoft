@@ -162,6 +162,7 @@ def do(payload, config, plugin_config, inputs):
             attribute_category = None
         database_name = config.get("database_name")
         element_name = config.get("element_name")
+        # TODO: remove, stale
         attribute_name = config.get("attribute_name")
         if isinstance(element_name, str): 
             element_name = element_name.strip()
@@ -173,6 +174,7 @@ def do(payload, config, plugin_config, inputs):
                 attribute_name = None
 
         has_attribute_filter = attribute_name is not None
+        # TODO: remove, never true anymore
         is_template_tab = active_tab == "template"
         has_clicked_element_nodes = len(clicked_nodes) > 0
         # clicked_nodes scope is only for element-node URLs (batched_search restrict_to_elements).
