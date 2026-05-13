@@ -110,7 +110,7 @@ def do(payload, config, plugin_config, inputs):
         )
     if method == "get_elements_for_template":
         database_name = config.get("database_name")
-        template_name = config.get("template", None)
+        template_name = payload.get("template_name", None)
         elements = []
         for element in client.search_elements(database_name, name=None, description=None, category=None, template=template_name, full_search=True):
             elements.append(get_item_details(element))

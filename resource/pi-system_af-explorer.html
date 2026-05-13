@@ -130,7 +130,23 @@
                             <input type="checkbox" ng-model="group.allChecked"
                                    ng-change="checkTemplate(group)" indeterminate="group.checked">
                         </td>
-                        <td colspan="{{config.displayPath ? 5 : 4}}">{{group.group_name}}</td>
+                        <td colspan="{{config.displayPath ? 5 : 4}}">
+                            {{group.group_name}}
+                            <select dku-bs-select
+                                    multiple
+                                    ng-model="selectedElementsByTemplateUI[group.group_name]"
+                                    ng-if="section.type === 'template'"
+                                    on-ready="setupElementsDropdown($element, group.group_name)"
+                            >
+                                <option
+                                        ng-repeat="element in config.elementsByTemplate[group.group_name]"
+                                        value="{{ element.url }}"
+                                        ng-selected="isTemplateAssociatedElementSelected(element)"
+                                >
+                                    {{ element.title }}
+                                </option>
+                            </select>
+                        </td>
                     </tr>
                     <tr
                             ng-repeat="mergedAttribute in group.attributes track by mergedAttribute.title"
@@ -193,14 +209,14 @@
                 <ul ng-if="config.activeTab === 'element' && config.treeData && config.treeData.length">
                     <li ng-repeat="node in config.treeData track by node.id">
                         <tree-node node="node" get-children-from-db="getChildrenFromDB" toggle-display-attributes="toggleDisplayAttributes"
-                                   config="config" clicked-nodes="config.clickedNodes">
+                                   config="config" clicked-nodes="config.clickedNodes" on-node-click="onNodeClick(node)">
                         </tree-node>
                     </li>
                 </ul>
                 <ul ng-if="config.activeTab === 'template' && config.templateTreeData && config.templateTreeData.length">
                     <li ng-repeat="node in config.templateTreeData track by node.id">
                         <tree-node node="node" get-children-from-db="getChildrenFromDB" toggle-display-attributes="toggleDisplayAttributes"
-                                   config="config" clicked-nodes="config.clickedNodes">
+                                   config="config" clicked-nodes="config.clickedNodes" on-node-click="onNodeClick(node)">
                         </tree-node>
                     </li>
                 </ul>

@@ -155,18 +155,22 @@ app.controller('AfExplorerFormCtrl', [
         $scope.config.selectedTemplateNames = $scope.config.selectedTemplateNames || []; // la liste des templates sélectionnés (checkbox cochée) parmi ceux affichés
         $scope.config.attributeSearch =  $scope.config.attributeSearch || "";
         $scope.config.displayPath = $scope.config.displayPath || false;
+        $scope.config.elementsByTemplate = $scope.config.elementsByTemplate || {};
+
         // TODO: get categories from backend for attributes
         // $scope.config.attributeCategoryFilter = $scope.config.attributeCategoryFilter || ""
 
         $scope.aggregateDataTypeFields = aggregateDataTypeFields;
         $scope.attributeGroupSections = [
             {
+                type: 'element',
                 key: 'attributesWithoutTemplate',
                 title: 'Elements',
                 emptyMessage: 'No attributes without template matched your selection',
                 shouldDisplay: () => $scope.config.activeTab === "element"
             },
             {
+                type: 'template',
                 key: 'attributesGroupedByTemplate',
                 title: 'Templates',
                 emptyMessage: 'No templated attributes matched your selection',
@@ -520,6 +524,81 @@ app.controller('AfExplorerFormCtrl', [
             );
         }
 
+        $scope.isTemplateAssociatedElementSelected = function(element) {
+            return $scope.config.clickedNodes.includes(element.url);
+        }
+
+        $scope.getElementsForTemplate = function (templateName) {
+            return $scope.callPythonDo({ method: "get_elements_for_template", template_name: templateName}).then(
+                function(data) {
+                    $scope.config.elementsByTemplate[templateName] = data.elements;
+                }
+            );
+        }
+
+        function refreshSelectedElementsByTemplate(templateName) {
+            $scope.selectedElementsByTemplate[templateName] = $scope.config.elementsByTemplate[templateName].filter(element => {
+                    return $scope.config.clickedNodes.includes(element.url);
+                }
+            ).map(element => element.url);
+            $scope.selectedElementsByTemplateUI[templateName] = $scope.selectedElementsByTemplate[templateName]
+        }
+
+        $scope.selectedElementsByTemplateUI = {};
+        $scope.selectedElementsByTemplate = {};
+
+        $scope.setupElementsDropdown = function($element, templateName) {
+            let initialized = false;
+            const dropdown = $element.next();
+
+            dropdown.on('click', function() {
+                // console.log("triggered click")
+                if (initialized) {
+                    return;
+                } else if (!initialized && $scope.config.elementsByTemplate[templateName]?.length > 0) {
+                    refreshSelectedElementsByTemplate(templateName);
+                    return;
+                }
+
+                $scope.$applyAsync(() => {
+                    $scope.getElementsForTemplate(templateName).then(() => {
+                        refreshSelectedElementsByTemplate(templateName);
+                        initialized = true;
+                        $scope.$broadcast('selectPickerRefresh');
+                    }
+                    )
+                });
+            });
+
+
+            $element.on('change', function() {
+
+                if (!initialized) {
+                    return;
+                }
+
+                $scope.$applyAsync(() => {
+                    const options = $scope.config.elementsByTemplate[templateName];
+                    const previouslySelected = new Set($scope.selectedElementsByTemplate[templateName]);
+                    const currentlySelected = new Set($scope.selectedElementsByTemplateUI[templateName]);
+
+                    options.forEach(element => {
+                        const elementKey = String(element.url);
+                        const wasSelected = previouslySelected.has(elementKey);
+                        const isSelected = currentlySelected.has(elementKey);
+
+                        if (!wasSelected && isSelected) {
+                            $scope.onNodeClick(element);
+                        } else if (wasSelected && !isSelected) {
+                            $scope.onNodeClick(element);
+                        }
+                    });
+
+                    $scope.selectedElementsByTemplate = angular.copy($scope.selectedElementsByTemplateUI);
+                });
+            });
+        }
+
         function applySearchAttributesToList(attributes) {
             const seen = new Set();
             const deduped = [];
@@ -589,6 +668,90 @@ app.controller('AfExplorerFormCtrl', [
             );
             return Array.from(selectedTemplateNames);
         }
+
+        function findNodeByUrl(nodes, targetUrl) {
+            if (!Array.isArray(nodes) || !targetUrl) {
+                return null;
+            }
+
+            for (let i = 0; i < nodes.length; i += 1) {
+                const node = nodes[i];
+                if (!node) {
+                    continue;
+                }
+                if (node.url === targetUrl) {
+                    return node;
+                }
+                const childMatch = findNodeByUrl(node.children, targetUrl);
+                if (childMatch) {
+                    return childMatch;
+                }
+            }
+
+            return null;
+        }
+
+        // TODO: understand why the logic is different from toggleDisplayAttributes (merge them if possible)
+        function rebuildAttributesFromClickedNodes() {
+            const clickedUrls = Array.isArray($scope.config?.clickedNodes)
+                ? $scope.config.clickedNodes
+                : [];
+
+            $scope.config.attributeList = [];
+
+            if (!clickedUrls.length) {
+                return;
+            }
+
+            clickedUrls.forEach(function(url) {
+                const node =
+                    findNodeByUrl($scope.config.treeData, url) ||
+                    findNodeByUrl($scope.config.templateTreeData, url);
+                if (node) {
+                    $scope.toggleDisplayAttributes(node);
+                }
+            });
+        }
+
+        $scope.onNodeClick = function(node) {
+            console.log("clicked on ", node)
+
+            // TODO: factorize this check
+            const hasActiveAttributeSearch = !!(
+                $scope.config?.attribute_name?.trim()
+            );
+
+            // Keep right-side attribute search when active so multi-node clicks can
+            // enrich results with the same filter (ex: "Load" on California + Fresno).
+            // TODO: understand why we need a reset if the attribute search is empty
+            if (!hasActiveAttributeSearch) {
+                $scope.config.attribute_name = "";
+            }
+            if (node?.type === "element") {
+                // TODO: factorize this reset
+                $scope.config.template = "-- Any --";
+            }
+
+            const indexClickedNode = $scope.config.clickedNodes.indexOf(node.url);
+            const nodeAlreadySelected = indexClickedNode > -1;
+            // If the node is already clicked, remove it from clicked nodes - else add it
+            if (nodeAlreadySelected) {
+                console.log("node already selected")
+                $scope.config.clickedNodes.splice(indexClickedNode, 1);
+            } else {
+                console.log("node not already selected")
+                $scope.config.clickedNodes.push(node.url);
+            }
+
+            // TODO: understand why this is mutually exclusive
+            if (hasActiveAttributeSearch) {
+                rebuildAttributesFromClickedNodes();
+            } else {
+                $scope.toggleDisplayAttributes(node, !nodeAlreadySelected);
+            }
+
+            console.log("clickedNodes: " + JSON.stringify($scope.config.clickedNodes));
+        };
 
         function markSearchResults(nodes, matchedElementPaths) {
             if (!Array.isArray(nodes)) {
@@ -851,6 +1014,7 @@ app.controller('AfExplorerFormCtrl', [
                     acc[key] = {
                         title: attr.title,
                         description: attr.description,
+                        groupKey: groupKey,
                         group: attr[groupKey],
                         template_names: [],
                         parent_elements: [],
@@ -1051,56 +1215,13 @@ app.component('treeNode', {
         getChildrenFromDb: '<',
         toggleDisplayAttributes: '<',
         config: '<',
+        onNodeClick: '&',
     },
 
     controllerAs: 'ctrl',
 
     controller: function() {
         const ctrl = this;
-
-        function findNodeByUrl(nodes, targetUrl) {
-            if (!Array.isArray(nodes) || !targetUrl) {
-                return null;
-            }
-
-            for (let i = 0; i < nodes.length; i += 1) {
-                const node = nodes[i];
-                if (!node) {
-                    continue;
-                }
-                if (node.url === targetUrl) {
-                    return node;
-                }
-                const childMatch = findNodeByUrl(node.children, targetUrl);
-                if (childMatch) {
-                    return childMatch;
-                }
-            }
-
-            return null;
-        }
-
-        // TODO: understand why the logic is different from toggleDisplayAttributes (merge them if possible)
-        function rebuildAttributesFromClickedNodes() {
-            const clickedUrls = Array.isArray(ctrl.config?.clickedNodes)
-                ? ctrl.config.clickedNodes
-                : [];
-
-            ctrl.config.attributeList = [];
-
-            if (!clickedUrls.length) {
-                return;
-            }
-
-            clickedUrls.forEach(function(url) {
-                const node =
-                    findNodeByUrl(ctrl.config.treeData, url) ||
-                    findNodeByUrl(ctrl.config.templateTreeData, url);
-                if (node) {
-                    ctrl.toggleDisplayAttributes(node);
-                }
-            });
-        }
 
         ctrl.hasRenderableChildren = function(node) {
             if (!node || !Array.isArray(node.children) || !node.children.length) {
@@ -1123,43 +1244,6 @@ app.component('treeNode', {
                 return;
             }
             node.expanded = !node.expanded;
-        };
-
-        ctrl.onNodeClick = function(node) {
-
-            // TODO: factorize this check
-            const hasActiveAttributeSearch = !!(
-                ctrl.config?.attribute_name?.trim()
-            );
-
-            // Keep right-side attribute search when active so multi-node clicks can
-            // enrich results with the same filter (ex: "Load" on California + Fresno).
-            // TODO: understand why we need a reset if the attribute search is empty
-            if (!hasActiveAttributeSearch) {
-                ctrl.config.attribute_name = "";
-            }
-            if (node?.type === "element") {
-                // TODO: factorize this reset
-                ctrl.config.template = "-- Any --";
-            }
-
-            const indexClickedNode = ctrl.config.clickedNodes.indexOf(node.url);
-            const nodeAlreadySelected = indexClickedNode > -1;
-            // If the node is already clicked, remove it from clicked nodes - else add it
-            if (nodeAlreadySelected) {
-                ctrl.config.clickedNodes.splice(indexClickedNode, 1);
-            } else {
-                ctrl.config.clickedNodes.push(node.url);
-            }
-
-            // TODO: understand why this is mutually exclusive
-            if (hasActiveAttributeSearch) {
-                rebuildAttributesFromClickedNodes();
-            } else {
-                ctrl.toggleDisplayAttributes(node, !nodeAlreadySelected);
-            }
-
-            console.log("ctrl.config.clickedNodes: " + JSON.stringify(ctrl.config.clickedNodes));
         };
 
         ctrl.isNodeClicked = function(node) {
