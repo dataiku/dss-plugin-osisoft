@@ -134,6 +134,7 @@
                             {{group.group_name}}
                             <select dku-bs-select
                                     multiple
+                                    none-selected-text="Scope"
                                     ng-model="selectedElementsByTemplateUI[group.group_name]"
                                     ng-if="section.type === 'template'"
                                     on-ready="setupElementsDropdown($element, group.group_name)"
