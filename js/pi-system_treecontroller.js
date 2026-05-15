@@ -560,22 +560,6 @@ app.controller('AfExplorerFormCtrl', [
             });
         }
 
-        function applySearchAttributesToList(attributes) {
-            const seen = new Set();
-            const deduped = [];
-
-            attributes.forEach(attribute => {
-                if (!attribute?.path || seen.has(attribute.path)) {
-                    return;
-                }
-                seen.add(attribute.path);
-                const attrCopy = { ...attribute };
-                deduped.push(enrichAttribute(attrCopy));
-            });
-
-            $scope.config.attributeList = deduped;
-        }
-
         function getMatchedElementPaths(attributes) {
             const matchedPathSet = new Set();
             attributes.forEach(attribute => {
@@ -587,69 +571,6 @@ app.controller('AfExplorerFormCtrl', [
                 matchedPathSet.add(elementPath);
             });
             return Array.from(matchedPathSet);
-        }
-
-
-        function collectTemplateTitlesByClickedUrls(nodes, clickedUrlSet, outputSet) {
-            if (!Array.isArray(nodes) || !clickedUrlSet || !outputSet) {
-                return;
-            }
-
-            nodes.forEach(function(node) {
-                if (!node) {
-                    return;
-                }
-                if (
-                    clickedUrlSet.has(node.url) &&
-                    node.type === "template" &&
-                    node.title &&
-                    node.title !== "-- Any --"
-                ) {
-                    outputSet.add(node.title);
-                }
-                if (Array.isArray(node.children) && node.children.length > 0) {
-                    collectTemplateTitlesByClickedUrls(node.children, clickedUrlSet, outputSet);
-                }
-            });
-        }
-
-        function getSelectedTemplateNamesFromClickedNodes() {
-            const clickedUrls = Array.isArray($scope.config.clickedNodes)
-                ? $scope.config.clickedNodes
-                : [];
-            if (!clickedUrls.length) {
-                return [];
-            }
-
-            const selectedTemplateNames = new Set();
-            collectTemplateTitlesByClickedUrls(
-                $scope.config.templateTreeData,
-                new Set(clickedUrls),
-                selectedTemplateNames
-            );
-            return Array.from(selectedTemplateNames);
-        }
-
-        function findNodeByUrl(nodes, targetUrl) {
-            if (!Array.isArray(nodes) || !targetUrl) {
-                return null;
-            }
-
-            for (let i = 0; i < nodes.length; i += 1) {
-                const node = nodes[i];
-                if (!node) {
-                    continue;
-                }
-                if (node.url === targetUrl) {
-                    return node;
-                }
-                const childMatch = findNodeByUrl(node.children, targetUrl);
-                if (childMatch) {
-                    return childMatch;
-                }
-            }
-
-            return null;
         }
 
         $scope.onNodeClick = function(node) {
