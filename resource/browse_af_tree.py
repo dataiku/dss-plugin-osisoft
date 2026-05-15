@@ -377,13 +377,14 @@ def nest_children(items):
 def rebuild_tree(client, items, root_tree=None):
     # builds an active tree containing all the items and their parent up to the root
     tree = Tree(root_tree=root_tree)
-    # tree.print()
     while items:
         item = items.pop()
         if item is None:
-            break
-        find_all_ancestors(client, item, tree)
-        update_item(item, tree)
+            continue
+        find_missing_element_ancestors(client, item, tree)
+        if is_attribute_item(item):
+            continue
+        insert_missing_element(item, tree)
     result = recursive_tree_rebuild(tree.get_tree(), tree.get_records())
     result = drop_first_levels(result)
     return result
@@ -404,10 +405,12 @@ def drop_first_levels(result):
     return output_result
 
 
-def find_all_ancestors(client, item, tree):
-    # Find all the ancestors of an item
+def find_missing_element_ancestors(client, item, tree):
+    # Find the missing element ancestors of an item without loading attributes.
     elements_paths_tokens, attributes_paths_tokens = path_to_list(item.get("path"))
-    client.traverse_and_cache(elements_paths_tokens, attributes_paths_tokens, tree)
+    if not elements_paths_tokens:
+        return
+    client.traverse_and_cache(elements_paths_tokens, [], tree)
 
 
 def combine_trees(final_tree, all_item_s_ancestors):
@@ -479,11 +482,21 @@ def set_as_selected(items):
     return items
 
 
-def update_item(item, tree):
+def is_attribute_item(item):
+    if not isinstance(item, dict):
+        return False
+    if item.get("type") == "attribute":
+        return True
+    return bool(item.get("path")) and "|" in item.get("path", "")
+
+
+def insert_missing_element(item, tree):
     elements_paths_tokens, attributes_paths_tokens = path_to_list(item.get("path"))
-    if not elements_paths_tokens and not attributes_paths_tokens:
+    if not elements_paths_tokens or attributes_paths_tokens:
         return
-    tree.put(elements_paths_tokens + attributes_paths_tokens, item)
+    if tree.exists(elements_paths_tokens):
+        return
+    tree.put(elements_paths_tokens, item)
 
 
 def get_max_counts(config):
