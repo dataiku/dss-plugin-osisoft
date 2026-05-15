@@ -15,22 +15,6 @@ const aggregateDataTypeFields = Object.freeze({
         ]
     },
     aggregates: {
-        start_time: {
-            label: 'Start time',
-            type: 'text',
-            defaultValue: '',
-            isVisible: function(attribute) {
-                return ['InterpolatedData', 'PlotData', 'RecordedData', 'SummaryData'].includes(attribute.data_type);
-            },
-        },
-        end_time: {
-            label: 'End time',
-            type: 'text',
-            defaultValue: '',
-            isVisible: function(attribute) {
-                return ['InterpolatedData', 'PlotData', 'RecordedData', 'SummaryData'].includes(attribute.data_type);
-            },
-        },
         interval: {
             label: 'Interval',
             type: 'text',
