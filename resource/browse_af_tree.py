@@ -1,3 +1,4 @@
+import copy
 from osisoft_client import OSIsoftClient
 from safe_logger import SafeLogger
 from osisoft_plugin_common import get_credentials, build_select_choices, check_debug_mode
@@ -208,6 +209,7 @@ def do(payload, config, plugin_config, inputs):
             clicked_nodes = []
         # root_tree = payload.get("root_tree")
         root_tree = config.get("treeData", [])
+        root_tree_before_search = copy.deepcopy(root_tree)
         attributes = []
         # https://dku-qa-osi.francecentral.cloudapp.azure.com/piwebapi/assetdatabases/F1RD3VEt1yTvt0ip6-a5yeEVsgbMcrwu_Je0qg9btcZIvPswT1NJU09GVC1QSS1TRVJWXFdFTEw
         database_webid = database_name.split("/")[-1]
@@ -238,7 +240,7 @@ def do(payload, config, plugin_config, inputs):
         items = expand_items_by_paths(items)
         attributesCopy = [dict(item) for item in items]
         rebuilt_tree = rebuild_tree(client, items.copy(), root_tree)
-        expand_nodes_for_matched_paths(rebuilt_tree, items)
+        expand_nodes_for_matched_paths(client, rebuilt_tree, items, root_tree_before_search)
         logger.info("Search network timer:{}".format(network_timer.get_report()))
         return {"choices": rebuilt_tree, "attributes": attributesCopy}
 
@@ -390,7 +392,7 @@ def rebuild_tree(client, items, root_tree=None):
     return result
 
 
-def expand_nodes_for_matched_paths(tree, items):
+def expand_nodes_for_matched_paths(client, tree, items, root_tree):
     if not isinstance(tree, list) or not isinstance(items, list):
         return
 
@@ -399,14 +401,15 @@ def expand_nodes_for_matched_paths(tree, items):
         element_tokens, attribute_tokens = path_to_list(item_path)
         if not element_tokens or not attribute_tokens:
             continue
-        mark_expanded_path(tree, element_tokens[2:])
+        mark_expanded_path(client, tree, element_tokens[2:], root_tree)
 
 
-def mark_expanded_path(nodes, path_tokens):
+def mark_expanded_path(client, nodes, path_tokens, root_tree):
     if not isinstance(nodes, list) or not path_tokens:
         return
 
     current_nodes = nodes
+    traversed_tokens = []
     for token in path_tokens:
         matching_node = None
         for node in current_nodes:
@@ -415,8 +418,38 @@ def mark_expanded_path(nodes, path_tokens):
                 break
         if matching_node is None:
             return
+        traversed_tokens.append(token)
+        was_expanded = bool(matching_node.get("expanded"))
         matching_node["expanded"] = True
+        previous_node = find_node_by_path_tokens(root_tree, traversed_tokens)
+        if (
+            not was_expanded and
+            (
+                previous_node is None or
+                not isinstance(previous_node.get("children"), list) or
+                len(previous_node.get("children")) == 0
+            )
+        ):
+            matching_node["children"] = get_children_from_db(client, matching_node).get("choices", [])
         current_nodes = matching_node.get("children", [])
+
+
+def find_node_by_path_tokens(nodes, path_tokens):
+    if not isinstance(nodes, list) or not path_tokens:
+        return None
+
+    current_nodes = nodes
+    current_node = None
+    for token in path_tokens:
+        current_node = None
+        for node in current_nodes:
+            if node.get("title") == token:
+                current_node = node
+                break
+        if current_node is None:
+            return None
+        current_nodes = current_node.get("children", [])
+    return current_node
 
 
 def drop_first_levels(result):
