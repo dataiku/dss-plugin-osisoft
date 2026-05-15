@@ -62,6 +62,8 @@ schema = [
     {'name': 'record_boundary_type', 'type': 'string'},
     {'name': 'summary_duration', 'type': 'string'},
     {'name': 'max_count', 'type': 'int'},
+    {'name': 'interval', 'type': 'string'},
+    {'name': 'sync_time', 'type': 'string'},
 
 ]
 output_dataset.write_schema(schema)
