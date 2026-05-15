@@ -199,7 +199,6 @@ app.controller('AfExplorerFormCtrl', [
             }).error(setErrorInScope.bind($scope.errorScope));
             if ($scope.authConfigured() === true) {
                 const hasTreeData = Array.isArray($scope.config.treeData) && $scope.config.treeData.length > 0;
-                const hasTemplateTreeData = Array.isArray($scope.config.templateTreeData) && $scope.config.templateTreeData.length > 0;
                 $scope.authSectionVisible = !hasTreeData;
                 $scope.showTreeData = hasTreeData;
             }
@@ -622,20 +621,6 @@ app.controller('AfExplorerFormCtrl', [
         $scope.searchFromElement = function() {
             $scope.doSearch($scope.config.element_name);
         };
-
-        function setAttributesChecked(attributes, isChecked) {
-            if (!Array.isArray(attributes)) {
-                return;
-            }
-            attributes.forEach(attribute => {
-                attribute.checked = !!isChecked;
-                if (isChecked) {
-                    $scope.addAttributeToSelection(attribute);
-                } else {
-                    $scope.removeAttributeFromSelection(attribute);
-                }
-            });
-        }
 
         $scope.toggleSelectAllGroupedAttributes = function(groupedAttributes) {
             const shouldRemove = groupedAttributes.checked === CheckboxStatus.CHECKED;
