@@ -764,7 +764,7 @@ app.controller('AfExplorerFormCtrl', [
         }
 
         function processNode(node) {
-            const parentTemplateName = node?.template_name ? node.template_name : null;
+            const parentTemplateName = node?.template_name;
 
             node.children.forEach(child => {
                 if (child.type === "attribute") {

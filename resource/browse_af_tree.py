@@ -208,7 +208,6 @@ def do(payload, config, plugin_config, inputs):
             clicked_nodes = []
         # root_tree = payload.get("root_tree")
         root_tree = config.get("treeData", [])
-        root_tree = shorten_tree(root_tree)
         attributes = []
         # https://dku-qa-osi.francecentral.cloudapp.azure.com/piwebapi/assetdatabases/F1RD3VEt1yTvt0ip6-a5yeEVsgbMcrwu_Je0qg9btcZIvPswT1NJU09GVC1QSS1TRVJWXFdFTEw
         database_webid = database_name.split("/")[-1]
@@ -239,6 +238,7 @@ def do(payload, config, plugin_config, inputs):
         items = expand_items_by_paths(items)
         attributesCopy = [dict(item) for item in items]
         rebuilt_tree = rebuild_tree(client, items.copy(), root_tree)
+        expand_nodes_for_matched_paths(rebuilt_tree, items)
         logger.info("Search network timer:{}".format(network_timer.get_report()))
         return {"choices": rebuilt_tree, "attributes": attributesCopy}
 
@@ -388,6 +388,35 @@ def rebuild_tree(client, items, root_tree=None):
     result = recursive_tree_rebuild(tree.get_tree(), tree.get_records())
     result = drop_first_levels(result)
     return result
+
+
+def expand_nodes_for_matched_paths(tree, items):
+    if not isinstance(tree, list) or not isinstance(items, list):
+        return
+
+    for item in items:
+        item_path = item.get("path")
+        element_tokens, attribute_tokens = path_to_list(item_path)
+        if not element_tokens or not attribute_tokens:
+            continue
+        mark_expanded_path(tree, element_tokens[2:])
+
+
+def mark_expanded_path(nodes, path_tokens):
+    if not isinstance(nodes, list) or not path_tokens:
+        return
+
+    current_nodes = nodes
+    for token in path_tokens:
+        matching_node = None
+        for node in current_nodes:
+            if node.get("title") == token:
+                matching_node = node
+                break
+        if matching_node is None:
+            return
+        matching_node["expanded"] = True
+        current_nodes = matching_node.get("children", [])
 
 
 def drop_first_levels(result):
