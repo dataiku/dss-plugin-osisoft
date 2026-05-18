@@ -81,7 +81,7 @@
                 <div><strong>Attributes and templates</strong></div>
                 <div>
                     <!-- Searches on keydown - if there are some performance issue, can be switched to enter or button click -->
-                    <input ng-model="config.attributeSearch" type="text" placeholder="Search attribute or template name" ng-keydown="refreshAttributeSection()"/>
+                    <input ng-model="config.attributeSearch" type="text" placeholder="Search attribute or template name" ng-change="refreshAttributeSection()"/>
                 </div>
                 <div>
                     <label style="display: inline-flex; align-items: center; gap: 4px;">
