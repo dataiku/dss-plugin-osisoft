@@ -138,6 +138,7 @@ app.controller('AfExplorerFormCtrl', [
         $scope.config.attributeSearch =  $scope.config.attributeSearch || "";
         $scope.config.displayPath = $scope.config.displayPath || false;
         $scope.config.elementsByTemplate = $scope.config.elementsByTemplate || {};
+        $scope.config.searchInProgress = $scope.config.searchInProgress || false;
 
         // TODO: get categories from backend for attributes
         // $scope.config.attributeCategoryFilter = $scope.config.attributeCategoryFilter || ""
@@ -433,7 +434,7 @@ app.controller('AfExplorerFormCtrl', [
         }
 
         $scope.doSearch = function(element_name) {
-
+            $scope.config.searchInProgress = true;
             $scope.config.searchMatchedElementPaths = [];
             $scope.callPythonDo({ method: "do_search", element_name: element_name, root_tree: $scope.config.treeData }).then(
                 function(data) {
@@ -446,6 +447,15 @@ app.controller('AfExplorerFormCtrl', [
                 }
             );
         };
+
+        function clearSearchHighlights(nodes) {
+            nodes.forEach(node => {
+                node.searchHighlighted = false;
+                if (node?.children?.length > 0) {
+                    clearSearchHighlights(node.children);
+                }
+            });
+        }
 
         function getAttributesForTemplate(node) {
             return $scope.callPythonDo({ method: "get_attribute_for_template", template_name: node.title}).then(
@@ -620,6 +630,13 @@ app.controller('AfExplorerFormCtrl', [
 
         $scope.searchFromElement = function() {
             $scope.doSearch($scope.config.element_name);
+        };
+
+        $scope.clearSearch = function() {
+            $scope.config.searchInProgress = false;
+            $scope.config.element_name = "";
+            $scope.config.searchMatchedElementPaths = [];
+            clearSearchHighlights($scope.config.treeData);
         };
 
         $scope.toggleSelectAllGroupedAttributes = function(groupedAttributes) {

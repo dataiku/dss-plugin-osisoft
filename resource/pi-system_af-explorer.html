@@ -183,6 +183,10 @@
                         ng-click="searchFromElement()" class="btn btn--secondary link-like"
                         id="get-query-dim-prop" ng-disabled="!config.element_name">Search
                 </button>
+                <button ng-if="config.activeTab === 'element' && config.searchInProgress"
+                        ng-click="clearSearch()" class="btn btn--secondary link-like">
+                    Clear search
+                </button>
             </div>
             <!--<div class="tab-container">
                 <ul class="tab-header">
