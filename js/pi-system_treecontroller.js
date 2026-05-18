@@ -644,7 +644,13 @@ app.controller('AfExplorerFormCtrl', [
         $scope.toggleSelectAllGroupedAttributes = function(groupedAttributes) {
             const shouldRemove = groupedAttributes.checked === CheckboxStatus.CHECKED;
             groupedAttributes.groups.forEach((group) => {
+                if (group.isDisplayed) {
+                    return;
+                }
                 group.attributes.forEach((aggregatedAttribute) => {
+                    if (!aggregatedAttribute.isDisplayed) {
+                        return;
+                    }
                     aggregatedAttribute.attributes.forEach((underlyingAttribute) => {
                         if (shouldRemove) {
                             $scope.removeAttributeFromSelection(underlyingAttribute);
@@ -668,9 +674,12 @@ app.controller('AfExplorerFormCtrl', [
             )
         };
 
-        $scope.checkTemplate = function(template) {
-            const shouldRemove = template.checked === CheckboxStatus.CHECKED;
-            template.attributes.forEach((aggregatedAttribute) => {
+        $scope.toggleGroupedAttributes = function(group) {
+            const shouldRemove = group.checked === CheckboxStatus.CHECKED;
+            group.attributes.forEach((aggregatedAttribute) => {
+                    if (!aggregatedAttribute.isDisplayed) {
+                        return;
+                    }
                     aggregatedAttribute.attributes.forEach((underlyingAttribute) => {
                         if (shouldRemove) {
                             $scope.removeAttributeFromSelection(underlyingAttribute);
@@ -857,7 +866,7 @@ app.controller('AfExplorerFormCtrl', [
                         paths: [],
                         data_type: attr.data_type,
                         data_types: [],
-                        matchesSearch: attributeMatchesSearch(attr.title, attr[groupKey], attr.description),
+                        isDisplayed: attributeMatchesSearch(attr.title, attr[groupKey], attr.description),
                     };
 
                     getAggregateNames().forEach(aggregateName => {
@@ -906,18 +915,19 @@ app.controller('AfExplorerFormCtrl', [
                         checked: CheckboxStatus.UNCHECKED, // Used to determine UI checkbox state
                         attributes: [],
                         checkStates: [],
-                        // TODO check it works for one match
-                        noSearchMatch: !attr.matchesSearch,
+                        isDisplayed: true,
                         nbSearchMatches: 0
                     }
                 }
 
-                acc[key].checkStates.push(...attr.checkStates)
+                if (attr.isDisplayed) {
+                    acc[key].checkStates.push(...attr.checkStates);
+                    acc[key].allChecked = acc[key].allChecked && attr.allChecked;
+                }
                 acc[key].checked = getCheckboxStatus(acc[key].checkStates);
-                acc[key].allChecked = acc[key].allChecked && attr.allChecked;
                 acc[key].attributes.push(attr);
-                acc[key].noSearchMatch = acc[key].noSearchMatch && !attr.matchesSearch;
-                acc[key].nbSearchMatches += +attr.matchesSearch;
+                acc[key].isDisplayed = acc[key].isDisplayed && !attr.isDisplayed;
+                acc[key].nbSearchMatches += +attr.isDisplayed;
                 return acc;
             }
         }
@@ -943,12 +953,13 @@ app.controller('AfExplorerFormCtrl', [
 
         function buildGroupedAttributesResult(attributes, groupKey) {
             const groups = buildAggregatedAttributes(attributes, groupKey);
+            const displayedGroups = groups.filter(group => !group.isDisplayed);
             // TODO: probably turn this into a reduce
             return {
-                allChecked: groups.length > 0 && groups.every(group => group.allChecked),
+                allChecked: displayedGroups.length > 0 && displayedGroups.every(group => group.allChecked),
                 checked: getCheckboxStatus(groups.reduce((acc, group) => acc.concat(group.checkStates), [])),
                 // a table can be empty because all it's attributes have been filtered out OR there are no elements to show
-                empty: groups.length === 0 || groups.every(group => group.noSearchMatch),
+                empty: groups.length === 0 || groups.every(group => group.isDisplayed),
                 groups: groups
             }
         }

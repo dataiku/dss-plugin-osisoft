@@ -123,12 +123,12 @@
                     </tbody>
                     <tbody
                             ng-repeat="group in groupedAttributes[section.key].groups track by group.group_name"
-                            ng-show="!group.noSearchMatch"
+                            ng-show="!group.isDisplayed"
                     >
                     <tr class="custom-table__group-row">
                         <td>
                             <input type="checkbox" ng-model="group.allChecked"
-                                   ng-change="checkTemplate(group)" indeterminate="group.checked">
+                                   ng-change="toggleGroupedAttributes(group)" indeterminate="group.checked">
                         </td>
                         <td colspan="{{config.displayPath ? 5 : 4}}">
                             <span>
@@ -156,7 +156,7 @@
                     </tr>
                     <tr
                             ng-repeat="mergedAttribute in group.attributes track by mergedAttribute.title"
-                            ng-show="mergedAttribute.matchesSearch"
+                            ng-show="mergedAttribute.isDisplayed"
                             attribute-table-row
                             merged-attribute="mergedAttribute"
                             display-path="config.displayPath"
