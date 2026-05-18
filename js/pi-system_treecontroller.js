@@ -827,7 +827,7 @@ app.controller('AfExplorerFormCtrl', [
             const lowercasedSearch = $scope.config.attributeSearch.toLowerCase();
             const templateNameMatches = template_name.toLowerCase().includes(lowercasedSearch);
             const attributeNameMatches = attribute_name.toLowerCase().includes(lowercasedSearch);
-            const attributeDescriptionMatches = attribute_description.toLowerCase().includes(lowercasedSearch);
+            const attributeDescriptionMatches = attribute_description?.toLowerCase().includes(lowercasedSearch);
             return (templateNameMatches || attributeNameMatches || attributeDescriptionMatches)
         }
 
@@ -854,7 +854,7 @@ app.controller('AfExplorerFormCtrl', [
                         paths: [],
                         data_type: attr.data_type,
                         data_types: [],
-                        matchesSearch: attributeMatchesSearch(attr.title, attr[groupKey]),
+                        matchesSearch: attributeMatchesSearch(attr.title, attr[groupKey], attr.description),
                     };
 
                     getAggregateNames().forEach(aggregateName => {
