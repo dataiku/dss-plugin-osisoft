@@ -820,13 +820,15 @@ app.controller('AfExplorerFormCtrl', [
             });
         };
 
-        function attributeMatchesSearch(attribute_name, template_name) {
+        function attributeMatchesSearch(attribute_name, template_name, attribute_description) {
             if ($scope.config.attributeSearch === "") {
                 return true;
             }
-            const templateNameMatches = template_name.toLowerCase().includes($scope.config.attributeSearch.toLowerCase());
-            const attributeNameMatches = attribute_name.toLowerCase().includes($scope.config.attributeSearch.toLowerCase());
-            return (templateNameMatches || attributeNameMatches)
+            const lowercasedSearch = $scope.config.attributeSearch.toLowerCase();
+            const templateNameMatches = template_name.toLowerCase().includes(lowercasedSearch);
+            const attributeNameMatches = attribute_name.toLowerCase().includes(lowercasedSearch);
+            const attributeDescriptionMatches = attribute_description.toLowerCase().includes(lowercasedSearch);
+            return (templateNameMatches || attributeNameMatches || attributeDescriptionMatches)
         }
 
         // Attributes are shared between templates
