@@ -131,7 +131,12 @@
                                    ng-change="checkTemplate(group)" indeterminate="group.checked">
                         </td>
                         <td colspan="{{config.displayPath ? 5 : 4}}">
-                            {{group.group_name}}
+                            <span>
+                                {{group.group_name}}
+                            </span>
+                            <span ng-if="group.nbSearchMatches !== group.attributes.length">
+                                 - ({{group.nbSearchMatches}}/{{group.attributes.length}} attributes shown)
+                            </span>
                             <select dku-bs-select
                                     multiple
                                     none-selected-text="Scope"

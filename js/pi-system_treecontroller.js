@@ -820,14 +820,17 @@ app.controller('AfExplorerFormCtrl', [
             });
         };
 
-        function attributeMatchesSearch(attribute_name, template_name, attribute_description) {
+        function attributeMatchesSearch(attribute_name, template_name, attribute_description="") {
             if ($scope.config.attributeSearch === "") {
                 return true;
             }
             const lowercasedSearch = $scope.config.attributeSearch.toLowerCase();
             const templateNameMatches = template_name.toLowerCase().includes(lowercasedSearch);
             const attributeNameMatches = attribute_name.toLowerCase().includes(lowercasedSearch);
-            const attributeDescriptionMatches = attribute_description?.toLowerCase().includes(lowercasedSearch);
+            let attributeDescriptionMatches = false;
+            if (attribute_description) {
+                attributeDescriptionMatches = attribute_description.toLowerCase().includes(lowercasedSearch);
+            }
             return (templateNameMatches || attributeNameMatches || attributeDescriptionMatches)
         }
 
@@ -903,7 +906,9 @@ app.controller('AfExplorerFormCtrl', [
                         checked: CheckboxStatus.UNCHECKED, // Used to determine UI checkbox state
                         attributes: [],
                         checkStates: [],
-                        noSearchMatch: !attr.matchesSearch
+                        // TODO check it works for one match
+                        noSearchMatch: !attr.matchesSearch,
+                        nbSearchMatches: 0
                     }
                 }
 
@@ -912,6 +917,7 @@ app.controller('AfExplorerFormCtrl', [
                 acc[key].allChecked = acc[key].allChecked && attr.allChecked;
                 acc[key].attributes.push(attr);
                 acc[key].noSearchMatch = acc[key].noSearchMatch && !attr.matchesSearch;
+                acc[key].nbSearchMatches += +attr.matchesSearch;
                 return acc;
             }
         }
