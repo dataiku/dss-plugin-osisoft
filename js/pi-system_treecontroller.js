@@ -505,12 +505,14 @@ app.controller('AfExplorerFormCtrl', [
             let initialized = false;
             const dropdown = $element.next();
 
+           if (!initialized && $scope.config.elementsByTemplate[templateName]?.length > 0) {
+               refreshSelectedElementsByTemplate(templateName);
+               initialized = true;
+           }
+
             dropdown.on('click', function() {
                 // console.log("triggered click")
                 if (initialized) {
-                    return;
-                } else if (!initialized && $scope.config.elementsByTemplate[templateName]?.length > 0) {
-                    refreshSelectedElementsByTemplate(templateName);
                     return;
                 }
 
