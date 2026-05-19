@@ -6,6 +6,7 @@ from safe_logger import SafeLogger
 from datetime import datetime, timezone
 import dateutil.parser as date_parser
 import re
+import requests
 
 
 regex_iso8601 = r'^(-?(?:[1-9][0-9]*)?[0-9]{4})-(1[0-2]|0[1-9])-(3[01]|0[1-9]|[12][0-9])T(2[0-3]|[01][0-9]):([0-5][0-9]):([0-5][0-9])(\.[0-9]+)?(Z|[+-](?:2[0-3]|[01][0-9]):[0-5][0-9])?$'
@@ -44,6 +45,33 @@ def get_credentials(config, can_raise=True):
         password = credentials.get("secure_token")
         if not password:
             error_message.add("Incorrect credential. Go to you profile page > Credentials > Your preset, click the connect button and processed to Single Sign On.")
+        username = None
+    elif credentials_type == "oauth_secret":
+        auth_type = "bearer_token"
+        credentials = config.get("oauth_secret", {})
+        client_id = credentials.get("client_id")
+        if not client_id:
+            error_message.add("The client ID is not set")
+        client_secret = credentials.get("client_secret")
+        if not client_secret:
+            error_message.add("The client secret is not set")
+        token_endpoint = credentials.get("tokenEndpoint")
+        if not token_endpoint:
+            error_message.add("The token endpoint url is not set")
+        scope = credentials.get("scope", "")
+        request = {
+            "grant_type": "client_credentials",
+            "client_id": client_id,
+            "client_secret": client_secret,
+            "scope": scope
+        }
+        json_response = {}
+        try:
+            response = requests.post(token_endpoint, data=request)
+            json_response = response.json()
+        except Exception as error:
+            error_message.add("Error while retrieving token: {}".format(error))
+        password = json_response.get("access_token")
         username = None
     else:
         credentials = config.get('credentials', {})
