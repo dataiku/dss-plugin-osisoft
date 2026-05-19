@@ -45,3 +45,7 @@ def test_run_pisystem_tag_with_spaces(user_dss_clients):
 
 def test_run_pisystem_tag_transpose_with_step_column(user_dss_clients):
     dss_scenario.run(user_dss_clients, project_key=TEST_PROJECT_KEY, scenario_id="TRANSPOSECHECKSTEPCOLUMN")
+
+
+def test_run_pisystem_multiwrite(user_dss_clients):
+    dss_scenario.run(user_dss_clients, project_key=TEST_PROJECT_KEY, scenario_id="MULTIWRITE")

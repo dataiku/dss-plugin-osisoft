@@ -534,12 +534,20 @@ class OSIsoftClient(object):
         return response
 
     def prepare_post_all_values(self, webid, buffer):
-        url = self.endpoint.get_stream_record_url(webid)
+        if len(buffer)==1:
+            # Only one point, we use value endpoint which allows writing to static attributes
+            url = self.endpoint.get_stream_value_url(webid)
+        else:
+            url = self.endpoint.get_stream_record_url(webid)
         headers = OSIsoftConstants.WRITE_HEADERS
         params = {}
         requests_kwargs = self.generic_get_kwargs(url=url, headers=headers, params=params, data=buffer)
         requests_kwargs['url'] = url
-        requests_kwargs['json'] = buffer
+        if len(buffer) == 1:
+            # value endpoint accepts dict, not list
+            requests_kwargs['json'] = buffer[0]
+        else:
+            requests_kwargs['json'] = buffer
         return requests_kwargs
 
     def post(self, url, headers, params, data, can_raise=True, error_source=None):
@@ -1060,8 +1068,12 @@ def prepare_request_buffer(request_buffer):
     for streak in request_buffer:
         json = streak.get("json", [])
         dku_counter = []
-        for row in json:
-            _dku_counter = row.pop("_dku_counter", None)
+        if isinstance(json, list):
+            for row in json:
+                _dku_counter = row.pop("_dku_counter", None)
+                dku_counter.append(_dku_counter)
+        else:
+            _dku_counter = json.pop("_dku_counter", None)
             dku_counter.append(_dku_counter)
         row_counter.append(dku_counter)
     return request_buffer, row_counter
