@@ -202,14 +202,14 @@
                 <ul ng-if="config.activeTab === 'element' && config.treeData && config.treeData.length">
                     <li ng-repeat="node in config.treeData track by node.id">
                         <tree-node node="node" get-children-from-db="getChildrenFromDB" toggle-display-attributes="toggleDisplayAttributes"
-                                   config="config" clicked-nodes="config.clickedNodes" on-node-click="onNodeClick(node)">
+                                   config="config" clicked-nodes="config.clickedNodes" toggle-node-visualization="toggleNodeVisualization(node)">
                         </tree-node>
                     </li>
                 </ul>
                 <ul ng-if="config.activeTab === 'template' && config.templateTreeData && config.templateTreeData.length">
                     <li ng-repeat="node in config.templateTreeData track by node.id">
                         <tree-node node="node" get-children-from-db="getChildrenFromDB" toggle-display-attributes="toggleDisplayAttributes"
-                                   config="config" clicked-nodes="config.clickedNodes" on-node-click="onNodeClick(node)">
+                                   config="config" clicked-nodes="config.clickedNodes" toggle-node-visualization="toggleNodeVisualization(node)">
                         </tree-node>
                     </li>
                 </ul>

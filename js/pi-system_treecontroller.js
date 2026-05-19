@@ -457,12 +457,25 @@ app.controller('AfExplorerFormCtrl', [
             });
         }
 
+        function getElementNameFromPath(elementPath) {
+            const splitPath = elementPath.split('\\');
+            return splitPath?.[splitPath.length - 1];
+        }
+
+        function getElementPathFromAttributePath(attributePath) {
+            return attributePath.split('|')?.[0];
+        }
+
         function getAttributesForTemplate(node) {
             return $scope.callPythonDo({ method: "get_attribute_for_template", template_name: node.title}).then(
                 function(data) {
                     node.children = data.attributes;
                     node.children.forEach(child => {
+                        // TODO: do the same for the normal getChild
+                        const elementPath = getElementPathFromAttributePath(child.path);
                         child.expanded = false;
+                        child.parent_element = getElementNameFromPath(elementPath);
+                        child.parent_element_path = elementPath;
                     });
                     return node;
                 }
@@ -481,35 +494,45 @@ app.controller('AfExplorerFormCtrl', [
             );
         }
 
-        function fullRefreshSelectedElementsByTemplate() {
+        // Called whenever the element selection change
+        function refreshSelectedElementsByTemplatesAllTemplates() {
             Object.keys($scope.selectedElementsByTemplate).forEach(templateName => {
                 if (!$scope.config.elementsByTemplate[templateName]) {
                     return;
                 }
-                refreshSelectedElementsByTemplate(templateName);
+                setSelectedElementsByTemplate(templateName);
             });
         }
 
-        function refreshSelectedElementsByTemplate(templateName) {
-            $scope.selectedElementsByTemplate[templateName] = $scope.config.elementsByTemplate[templateName].filter(element => {
-                    return $scope.config.clickedNodes.includes(element.url);
-                }
-            ).map(element => element.url);
+        function setSelectedElementsByTemplate(templateName) {
+            if ($scope.config.activeTab === 'element') {
+                // Sets selected elements for the elements dropdown to all visualized elements
+                $scope.selectedElementsByTemplate[templateName] = $scope.config.elementsByTemplate[templateName].filter(element => {
+                        return $scope.config.clickedNodes.includes(element.url);
+                    }
+                ).map(element => element.url);
+            } else if ($scope.config.activeTab === 'template') {
+                $scope.selectedElementsByTemplate[templateName] = $scope.config.elementsByTemplate[templateName].map(element => element.url);
+            }
             $scope.selectedElementsByTemplateUI[templateName] = $scope.selectedElementsByTemplate[templateName]
         }
 
         $scope.selectedElementsByTemplateUI = {};
         $scope.selectedElementsByTemplate = {};
+        $scope.templateModeExcludedAttributes = {};
 
         $scope.setupElementsDropdown = function($element, templateName) {
             let initialized = false;
             const dropdown = $element.next();
 
+            // if not initialized but elements by template is already populated
+            // refresh the state, and set to initialized
            if (!initialized && $scope.config.elementsByTemplate[templateName]?.length > 0) {
-               refreshSelectedElementsByTemplate(templateName);
+               setSelectedElementsByTemplate(templateName);
                initialized = true;
            }
 
+            // TODO: maybe unhook this
             dropdown.on('click', function() {
                 // console.log("triggered click")
                 if (initialized) {
@@ -518,14 +541,13 @@ app.controller('AfExplorerFormCtrl', [
 
                 $scope.$applyAsync(() => {
                     $scope.getElementsForTemplate(templateName).then(() => {
-                        refreshSelectedElementsByTemplate(templateName);
+                        setSelectedElementsByTemplate(templateName);
                         initialized = true;
                         $scope.$broadcast('selectPickerRefresh');
                     }
                     )
                 });
             });
-
 
             $element.on('change', function() {
 
@@ -534,6 +556,7 @@ app.controller('AfExplorerFormCtrl', [
                 }
 
                 $scope.$applyAsync(() => {
+                    // TODO: redo everything by templateID
                     const options = $scope.config.elementsByTemplate[templateName];
                     const previouslySelected = new Set($scope.selectedElementsByTemplate[templateName]);
                     const currentlySelected = new Set($scope.selectedElementsByTemplateUI[templateName]);
@@ -543,10 +566,27 @@ app.controller('AfExplorerFormCtrl', [
                         const wasSelected = previouslySelected.has(elementKey);
                         const isSelected = currentlySelected.has(elementKey);
 
-                        if (!wasSelected && isSelected) {
-                            $scope.onNodeClick(element);
-                        } else if (wasSelected && !isSelected) {
-                            $scope.onNodeClick(element);
+                        if (wasSelected !== isSelected) {
+                            if ($scope.config.activeTab === 'element') {
+                                $scope.toggleNodeVisualization(element);
+                            } else if ($scope.config.activeTab === 'template') {
+                                // TODO: if selection becomes empty because of this do something
+                                // like unselecting the template altogether
+                                if (wasSelected && !isSelected) {
+                                    if (!$scope.templateModeExcludedAttributes[templateName]) {
+                                        $scope.templateModeExcludedAttributes[templateName] = {}
+                                    }
+                                    $scope.templateModeExcludedAttributes[templateName][element.path] = $scope.config.attributeList.filter(attribute => {
+                                        return attribute.parent_element_path === element.path;
+                                    });
+                                    $scope.config.attributeList = $scope.config.attributeList.filter(attribute => {
+                                        return attribute.parent_element_path !== element.path;
+                                    });
+                                } else if (!wasSelected && isSelected) {
+                                    const attributesToAdd = $scope.templateModeExcludedAttributes[templateName]?.[element.path];
+                                    $scope.config.attributeList.push(...attributesToAdd)
+                                }
+                            }
                         }
                     });
 
@@ -568,7 +608,7 @@ app.controller('AfExplorerFormCtrl', [
             return Array.from(matchedPathSet);
         }
 
-        $scope.onNodeClick = function(node) {
+        $scope.toggleNodeVisualization = function(node) {
             console.log("clicked on ", node)
 
             // Keep right-side attribute search when active so multi-node clicks can
@@ -583,17 +623,17 @@ app.controller('AfExplorerFormCtrl', [
             const nodeAlreadySelected = indexClickedNode > -1;
             // If the node is already clicked, remove it from clicked nodes - else add it
             if (nodeAlreadySelected) {
-                console.log("node already selected")
                 $scope.config.clickedNodes.splice(indexClickedNode, 1);
             } else {
-                console.log("node not already selected")
                 $scope.config.clickedNodes.push(node.url);
             }
 
-            // TODO: understand why this is mutually exclusive
             $scope.toggleDisplayAttributes(node, !nodeAlreadySelected);
 
-            fullRefreshSelectedElementsByTemplate();
+            // In element node, the visualized nodes are reflected on the elements dropdown
+            if ($scope.config.activeTab === 'element') {
+                refreshSelectedElementsByTemplatesAllTemplates();
+            }
             console.log("clickedNodes: " + JSON.stringify($scope.config.clickedNodes));
         };
 
@@ -730,11 +770,11 @@ app.controller('AfExplorerFormCtrl', [
             }
             if (!hasAttributeChildren(node)) {
                 $scope.getChildrenFromDB(node).then(newNode => {
-                    processNode(newNode);
+                    addChildrenToAttributeList(newNode);
                 });
                 return;
             }
-            processNode(node);
+            addChildrenToAttributeList(node);
         }
 
         // Merge frontend data and saved output with loaded attributes
@@ -760,7 +800,8 @@ app.controller('AfExplorerFormCtrl', [
             return attribute;
         }
 
-        function processNode(node) {
+        // Put node children in the displayed attribute list
+        function addChildrenToAttributeList(node) {
             const parentTemplateName = node?.template_name;
 
             node.children.forEach(child => {
@@ -1039,7 +1080,7 @@ app.component('treeNode', {
         getChildrenFromDb: '<',
         toggleDisplayAttributes: '<',
         config: '<',
-        onNodeClick: '&',
+        toggleNodeVisualization: '&',
     },
 
     controllerAs: 'ctrl',

@@ -12,7 +12,7 @@
         <span
                 ng-if="ctrl.node.type !== 'attribute'"
                 class="tree-node__label"
-                ng-click="ctrl.onNodeClick({ node: ctrl.node })"
+                ng-click="ctrl.toggleNodeVisualization({ node: ctrl.node })"
                 ng-class="{
             'tree-node__label--search-result':
               ctrl.isSearchResult(ctrl.node),
@@ -40,7 +40,7 @@
                 toggle-display-attributes="ctrl.toggleDisplayAttributes"
                 config="ctrl.config"
                 clicked-nodes="ctrl.config.clickedNodes"
-                on-node-click="ctrl.onNodeClick({ node: node })"
+                toggle-node-visualization="ctrl.toggleNodeVisualization({ node: node })"
         >
         </tree-node>
     </li>
