@@ -570,17 +570,15 @@ app.controller('AfExplorerFormCtrl', [
                             if ($scope.config.activeTab === 'element') {
                                 $scope.toggleNodeVisualization(element);
                             } else if ($scope.config.activeTab === 'template') {
-                                // TODO: if selection becomes empty because of this do something
-                                // like unselecting the template altogether
                                 if (wasSelected && !isSelected) {
                                     if (!$scope.templateModeExcludedAttributes[templateName]) {
                                         $scope.templateModeExcludedAttributes[templateName] = {}
                                     }
                                     $scope.templateModeExcludedAttributes[templateName][element.path] = $scope.config.attributeList.filter(attribute => {
-                                        return attribute.parent_element_path === element.path;
+                                        return attribute.template_name === templateName && attribute.parent_element_path === element.path;
                                     });
                                     $scope.config.attributeList = $scope.config.attributeList.filter(attribute => {
-                                        return attribute.parent_element_path !== element.path;
+                                        return attribute.template_name === templateName && attribute.parent_element_path !== element.path;
                                     });
                                 } else if (!wasSelected && isSelected) {
                                     const attributesToAdd = $scope.templateModeExcludedAttributes[templateName]?.[element.path];
