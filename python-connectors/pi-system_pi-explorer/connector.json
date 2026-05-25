@@ -10,10 +10,36 @@
     "paramsPythonSetup": "browse_tags.py",
     "params": [
         {
+            "name": "credentials_type",
+            "label": "Credentials type",
+            "type": "SELECT",
+            "selectChoices":[
+                {"value": "basic_auth", "label": "User / Password"},
+                {"value": "oauth_sso", "label": "Single Sign On"},
+                {"value": "oauth_secret", "label": "OAuth with secret"}
+            ],
+            "defaultValue": "basic_auth"
+        },
+        {
             "name": "credentials",
             "label": "User preset",
             "type": "PRESET",
-            "parameterSetId": "basic-auth"
+            "parameterSetId": "basic-auth",
+            "visibilityCondition": "model.credentials_type=='basic_auth'"
+        },
+        {
+            "name": "oauth_credentials",
+            "label": "User preset",
+            "type": "PRESET",
+            "parameterSetId": "oauth-sso",
+            "visibilityCondition": "model.credentials_type=='oauth_sso'"
+        },
+        {
+            "name": "oauth_secret",
+            "label": "Oauth with secret preset",
+            "type": "PRESET",
+            "parameterSetId": "oauth-secret",
+            "visibilityCondition": "model.credentials_type=='oauth_secret'"
         },
         {
             "name": "show_advanced_parameters",

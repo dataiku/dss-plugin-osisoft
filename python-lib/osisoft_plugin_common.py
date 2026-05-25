@@ -6,6 +6,7 @@ from safe_logger import SafeLogger
 from datetime import datetime, timezone
 import dateutil.parser as date_parser
 import re
+import requests
 
 
 regex_iso8601 = r'^(-?(?:[1-9][0-9]*)?[0-9]{4})-(1[0-2]|0[1-9])-(3[01]|0[1-9]|[12][0-9])T(2[0-3]|[01][0-9]):([0-5][0-9]):([0-5][0-9])(\.[0-9]+)?(Z|[+-](?:2[0-3]|[01][0-9]):[0-5][0-9])?$'
@@ -18,16 +19,74 @@ class PISystemConnectorError(ValueError):
     pass
 
 
+class ErrorMessage():
+    def __init__(self):
+        self.first_error_message = None
+
+    def add(self, error_message):
+        if not self.first_error_message:
+            self.first_error_message = error_message
+
+    def get(self):
+        return self.first_error_message
+
+    def exists(self):
+        return self.first_error_message is not None
+
+
 def get_credentials(config, can_raise=True):
-    error_message = None
-    credentials = config.get('credentials', {})
-    auth_type = credentials.get("auth_type", "basic")
-    osisoft_basic = credentials.get("osisoft_basic", {})
+    error_message = ErrorMessage()
+    credentials_type = config.get("credentials_type", "basic_auth")
+    if credentials_type == "oauth_sso":
+        auth_type = "bearer_token"
+        credentials = config.get("oauth_credentials", {})
+        if not credentials:
+            error_message.add("Pick a credential")
+        password = credentials.get("secure_token")
+        if not password:
+            error_message.add("Incorrect credential. Go to you profile page > Credentials > Your preset, click the connect button and processed to Single Sign On.")
+        username = None
+    elif credentials_type == "oauth_secret":
+        auth_type = "bearer_token"
+        credentials = config.get("oauth_secret", {})
+        client_id = credentials.get("client_id")
+        if not client_id:
+            error_message.add("The client ID is not set")
+        client_secret = credentials.get("client_secret")
+        if not client_secret:
+            error_message.add("The client secret is not set")
+        token_endpoint = credentials.get("tokenEndpoint")
+        if not token_endpoint:
+            error_message.add("The token endpoint url is not set")
+        scope = credentials.get("scope", "")
+        request = {
+            "grant_type": "client_credentials",
+            "client_id": client_id,
+            "client_secret": client_secret,
+            "scope": scope
+        }
+        json_response = {}
+        try:
+            response = requests.post(token_endpoint, data=request)
+            json_response = response.json()
+        except Exception as error:
+            error_message.add("Error while retrieving token: {}".format(error))
+        password = json_response.get("access_token")
+        username = None
+    else:
+        credentials = config.get('credentials', {})
+        if not credentials:
+            error_message.add("Pick a credential")
+        auth_type = credentials.get("auth_type", "basic")
+        osisoft_basic = credentials.get("osisoft_basic", {})
+        username = osisoft_basic.get("user")
+        password = osisoft_basic.get("password")
+        if not username or not password:
+            error_message.add("Incorrect credential. Go to you profile page > Credentials > Your preset, click the edit button and fill in you username and password details.")
+
     ssl_cert_path = credentials.get("ssl_cert_path")
     if ssl_cert_path:
         setup_ssl_certificate(ssl_cert_path)
-    username = osisoft_basic.get("user")
-    password = osisoft_basic.get("password")
     show_advanced_parameters = config.get('show_advanced_parameters', False)
     server_url = credentials.get("default_server")
     is_ssl_check_disabled = False
@@ -46,14 +105,16 @@ def get_credentials(config, can_raise=True):
             else:
                 server_url = overwrite_server_url
         if (not can_disable_ssl_check) and is_ssl_check_disabled:
-            error_message = "You cannot disable SSL check on this preset. Please refer to your Dataiku admin"
+            error_message.add("You cannot disable SSL check on this preset. Please refer to your Dataiku admin")
         is_ssl_check_disabled = can_disable_ssl_check and is_ssl_check_disabled
-    if can_raise and error_message:
-        raise PISystemConnectorError(error_message)
+    if not server_url:
+        error_message.add("Fill in the server address")
+    if can_raise and error_message.exists():
+        raise PISystemConnectorError(error_message.get())
     if can_raise:
         return auth_type, username, password, server_url, is_ssl_check_disabled
     else:
-        return auth_type, username, password, server_url, is_ssl_check_disabled, error_message
+        return auth_type, username, password, server_url, is_ssl_check_disabled, error_message.get()
 
 
 def get_advanced_parameters(config):
@@ -508,6 +569,13 @@ def get_element_name_from_path(path):
         last_token = path_tokens[-1:][0]
         element_name = last_token.split("|")[0]
     return element_name
+
+
+def assert_correct_config(config):
+    if "server_name" not in config:
+        raise PISystemConnectorError("There is no server selected")
+    if "database_name" not in config:
+        raise PISystemConnectorError("There is no database selected")
 
 
 class RecordsLimit():
