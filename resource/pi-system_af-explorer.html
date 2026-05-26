@@ -2,8 +2,10 @@
 <div class="generic-class" ng-controller="AfExplorerFormCtrl" ng-init="init()">
     <div class="pi-system-explorer__main">
         <div class="pi-system-explorer__authentication">
-            <div class="pi-system-explorer__authentication-header" ng-click="toggleAuthSection()">
-                <strong>Welcome to Pi System Plugin</strong>
+            <div class="pi-system-explorer__authentication-header-row">
+                <div class="pi-system-explorer__authentication-header" ng-click="toggleAuthSection()">
+                    <strong>Welcome to Pi System Plugin</strong>
+                </div>
             </div>
             <div class="pi-system-explorer__authentication-body" ng-show="authSectionVisible">
                 <div class="pi-system-config--mandatory">
@@ -51,6 +53,12 @@
                     <div class="pi-system-config--ssl-check"><input type="checkbox" style="vertical-align: baseline"
                                                                     ng-model="config.is_ssl_check_disabled" ng-change="getServers();"/>Disable SSL Check
                     </div>
+                    <button
+                            ng-click="refreshCachedTree()"
+                            class="btn btn--secondary"
+                            title="This will clear your current workstate, like opened elements and current searches, but your selected attributes will remain">
+                        Refresh local data
+                    </button>
                     <div>
                         <div>Elements max count</div>
                         <div><input type="number" ng-model="config.elements_max_count" placeholder="100"/></div>

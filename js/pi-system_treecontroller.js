@@ -316,6 +316,17 @@ app.controller('AfExplorerFormCtrl', [
             $scope.cleanTree();
         };
 
+        $scope.refreshCachedTree = function() {
+            $scope.config.treeData = [];
+            $scope.config.clickedNodes = [];
+            $scope.config.attributeList = [];
+            $scope.config.searchMatchedElementPaths = [];
+            $scope.config.selectedTemplateNames = [];
+            $scope.initializeTree();
+            $scope.getTemplatesFromDB();
+            $scope.getCategoriesFromDB();
+        }
+
         let presetWatchInitialized = false;
         // TODO: move this to an ng-change
         $scope.$watchGroup(
