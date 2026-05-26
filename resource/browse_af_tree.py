@@ -8,6 +8,7 @@ logger = SafeLogger("PI System plugin", ["user", "password"])
 
 
 def _run_and_log_login_call(method_name, api_call):
+    logger.info("Start call method {}".format(method_name))
     started_at = time.time()
     try:
         response = api_call()
@@ -21,7 +22,7 @@ def _run_and_log_login_call(method_name, api_call):
                 else:
                     preview_titles.append(str(choice))
         logger.info(
-            "[LOGIN] {} ok | {}ms | choices_count={} | preview_titles={}".format(
+            "End call method {} ok | {}ms | choices_count={} | preview_titles={}".format(
                 method_name,
                 int((time.time() - started_at) * 1000),
                 choice_count,
@@ -31,7 +32,7 @@ def _run_and_log_login_call(method_name, api_call):
         return response
     except Exception as error:
         logger.error(
-            "[LOGIN] {} failed | {}ms | error={}".format(
+            "End call method {} failed | {}ms | error={}".format(
                 method_name,
                 int((time.time() - started_at) * 1000),
                 error
@@ -172,6 +173,8 @@ def do(payload, config, plugin_config, inputs):
         use_selected_template_names_scope = (
             is_template_tab and len(selected_template_names) > 0
         )
+
+        logger.info("Start call do_search element_name={}, attribute_name={}, db={}:".format(element_name, attribute_name, database_name))
 
         if not use_clicked_element_nodes_scope and not use_selected_template_names_scope:
             clicked_nodes = []
