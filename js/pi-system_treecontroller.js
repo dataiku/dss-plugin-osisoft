@@ -209,11 +209,13 @@ app.controller('AfExplorerFormCtrl', [
 
         $scope.getServers = function() {
             $scope.callPythonDo({ parameterName: "server_name" }).then(function(data) {
+                console.log("server_name", data);
                 $scope.server_name = data.choices;
             });
         };
         $scope.getDatabases = function() {
             $scope.callPythonDo({ parameterName: "database_name" }).then(function(data) {
+                console.log("database_name", data);
                 $scope.database_name = data.choices;
             });
         };
@@ -351,6 +353,7 @@ app.controller('AfExplorerFormCtrl', [
         $scope.initializeTree = function() {
             if (!$scope.config.treeData || $scope.config.treeData.length === 0) {
                 return $scope.callPythonDo({ method: "get_children_from_db", parent: $scope.config.database_name }).then(function(data) {
+                    console.log("get_children_from_db", data);
                     TreeDataService.setTreeData(data.choices);
                     $scope.config.treeData = TreeDataService.getTreeData();
                     return data;
@@ -378,6 +381,7 @@ app.controller('AfExplorerFormCtrl', [
             console.log("ALX:gcfd:" + JSON.stringify(item));
             return $scope.callPythonDo({ method: "get_children_from_db", parent: item })
                 .then(function(data) {
+                    console.log("get_children_from_db", data);
                     console.log("ALX:data1=" + JSON.stringify(data));
                     item.children = data.choices;
                     item.children.forEach(child => {
@@ -392,6 +396,7 @@ app.controller('AfExplorerFormCtrl', [
 
         $scope.getTemplatesFromDB = function() {
             return $scope.callPythonDo({ method: "get_templates_from_db" }).then(function(data) {
+                console.log("get_templates_from_db", data)
                 $scope.config.templates = data.choices;
                 TreeDataService.setTemplateTreeData(data.choices);
                 $scope.config.templateTreeData = TreeDataService.getTemplateTreeData();
@@ -423,10 +428,12 @@ app.controller('AfExplorerFormCtrl', [
             $scope.config.attribute_categories = [];
             $scope.config.element_categories = [];
             const attributeCategoriesPromise = $scope.callPythonDo({ method: "get_attribute_categories_from_db" }).then(function(data) {
+                console.log("get_attribute_categories_from_db", data);
                 $scope.config.attribute_categories = data.choices;
                 return data;
             });
             const elementCategoriesPromise = $scope.callPythonDo({ method: "get_element_categories_from_db" }).then(function(data) {
+                console.log("get_element_categories_from_db", data);
                 $scope.config.element_categories = data.choices;
                 return data;
             });
@@ -438,6 +445,7 @@ app.controller('AfExplorerFormCtrl', [
             $scope.config.searchMatchedElementPaths = [];
             $scope.callPythonDo({ method: "do_search", element_name: element_name, root_tree: $scope.config.treeData }).then(
                 function(data) {
+                    console.log("do_search", data);
                     TreeDataService.setTreeData(data.choices);
                     $scope.config.treeData = TreeDataService.getTreeData();
                     const matchedAttributes = data.attributes || [];
@@ -469,6 +477,7 @@ app.controller('AfExplorerFormCtrl', [
         function getAttributesForTemplate(node) {
             return $scope.callPythonDo({ method: "get_attribute_for_template", template_name: node.title}).then(
                 function(data) {
+                    console.log("get_attribute_for_template", data);
                     node.children = data.attributes;
                     node.children.forEach(child => {
                         // TODO: do the same for the normal getChild
@@ -489,6 +498,7 @@ app.controller('AfExplorerFormCtrl', [
         $scope.getElementsForTemplate = function (templateName) {
             return $scope.callPythonDo({ method: "get_elements_for_template", template_name: templateName}).then(
                 function(data) {
+                    console.log("get_elements_for_template", data);
                     $scope.config.elementsByTemplate[templateName] = data.elements;
                 }
             );
