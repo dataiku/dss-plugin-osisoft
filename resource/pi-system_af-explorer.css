@@ -2,24 +2,104 @@
     width: 100% !important;
 }
 
-.tree-node__label--search-result{
-    background-color: yellow;
+.tree-node {
+    box-sizing: border-box;
+    min-width: 0;
+    width: 100%;
 }
 
-.tree-node__label--clickable {
-    box-shadow: inset 0 0 0 1px #2e7d32;
-    border-radius: 2px;
+.tree-node__row {
+    box-sizing: border-box;
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    min-height: 24px;
+    min-width: 0;
+    padding: 2px 0 2px 2px;
+    width: 100%;
 }
 
-.tree-node__label--clickable::after {
-    content: "";
-    display: inline-block;
-    width: 6px;
-    height: 6px;
-    margin-left: 6px;
-    border-radius: 50%;
-    background-color: #2e7d32;
-    vertical-align: middle;
+.tree-node__row--visualized {
+    background: #E7F3FF;
+}
+
+.tree-node__row--search-result:not(.tree-node__row--visualized) {
+    background: #FFF8C6;
+}
+
+.tree-node__toggle,
+.tree-node__folder,
+.tree-node__status {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 16px;
+    height: 16px;
+    flex: 0 0 16px;
+}
+
+.tree-node__toggle {
+    cursor: pointer;
+    color: #222;
+}
+
+.tree-node__toggle--spacer {
+    cursor: default;
+}
+
+.tree-node__folder {
+    color: #222;
+}
+
+.tree-node__folder--spacer {
+    visibility: hidden;
+}
+
+.tree-node__content {
+    box-sizing: border-box;
+    display: flex;
+    align-items: center;
+    flex: 1 1 auto;
+    min-width: 0;
+    padding-right: 8px;
+    cursor: pointer;
+}
+
+.tree-node__label {
+    flex: 1 1 auto;
+    min-width: 0;
+    overflow: hidden;
+    color: #222;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 13px;
+    line-height: 16px;
+}
+
+.tree-node__status {
+    box-sizing: border-box;
+    color: #222;
+    flex-shrink: 0;
+    margin-left: auto;
+    margin-right: 4px;
+}
+
+.tree-node__children {
+    box-sizing: border-box;
+    list-style: none;
+    margin: 0;
+    min-width: 0;
+    padding: 0 0 0 18px;
+    width: 100%;
+}
+
+.tree-node__child {
+    box-sizing: border-box;
+    list-style: none;
+    margin: 0;
+    min-width: 0;
+    padding: 0;
+    width: 100%;
 }
 .generic-class {
     display: flex;
@@ -165,13 +245,26 @@
     margin-bottom: 6px;
 }
 
+.pi-system-explorer__tree-view {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+    width: 100%;
+}
+
+.tree-view__header {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    align-self: stretch;
+}
+
 .tree-view__tabs {
     display: flex;
-    align-items: center;
-    flex-direction: row;
+    align-items: stretch;
     align-self: stretch;
-    padding: 0;
-    width: 228px;
+    width: 100%;
     height: 42px;
     box-sizing: border-box;
     border: 1px solid #BBB;
@@ -216,7 +309,6 @@
 
 .tree-view__tab-content {
     display: flex;
-    flex-direction: row;
     justify-content: center;
     align-items: center;
     padding: 12px 23px;
@@ -231,30 +323,35 @@
     line-height: 18px;
 }
 
-.tree-view__content {
-    gap: 8px;
+.tree-view__search-panel {
     display: flex;
     flex-direction: column;
+    gap: 8px;
+    align-self: stretch;
 }
 
-.pi-system-explorer__tree-view-container{
-    .pi-system-explorer__tree-view {
-        .tree-view__search-container{
-            display:flex;
-            align-items:center;
-            gap: 8px;
-            align-self: stretch;
-        }
-        .tree-view__search-box {
-            display: flex;
-            height: 26px;
-            padding: 0 8px;
-            flex-direction: column;
-            justify-content: center;
-            align-items: flex-start;
-            flex: 1 0 0;
-        }
-    }
+.tree-view__search-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    align-self: stretch;
+}
+
+.tree-view__search-input {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+.tree-view__search-actions {
+    display: flex;
+    align-items: center;
+    align-self: stretch;
+}
+
+.tree-view__content {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
 }
 
 .tab-container {

@@ -1,36 +1,43 @@
-<div style="display: flex; align-items: center; gap: 6px;">
-
-      <span
-              ng-click="ctrl.toggleExpand(ctrl.node, $event)"
-              style="cursor: pointer;"
-      >
-        <i ng-if="ctrl.node.has_children && ctrl.node.expanded" class="dku-icon-chevron-down-16"></i>
-        <i ng-if="ctrl.node.has_children && !ctrl.node.expanded" class="dku-icon-chevron-right-16"></i>
-      </span>
-
-    <div class="tree-node">
+<div class="tree-node" ng-if="ctrl.node.type !== 'attribute'">
+    <div
+            class="tree-node__row"
+            ng-class="{
+                'tree-node__row--search-result': ctrl.isSearchResult(ctrl.node),
+                'tree-node__row--visualized': ctrl.isNodeClicked(ctrl.node)
+            }"
+    >
         <span
-                ng-if="ctrl.node.type !== 'attribute'"
-                class="tree-node__label"
-                ng-click="ctrl.toggleNodeVisualization({ node: ctrl.node })"
-                ng-class="{
-            'tree-node__label--search-result':
-              ctrl.isSearchResult(ctrl.node),
-            'tree-node__label--clickable':
-              ctrl.isNodeClicked(ctrl.node)
-          }"
+                class="tree-node__toggle"
+                ng-class="{ 'tree-node__toggle--spacer': !ctrl.node.has_children }"
+                ng-click="ctrl.node.has_children && ctrl.toggleExpand(ctrl.node, $event)"
         >
-          {{ ctrl.node.title }}
+            <i ng-if="ctrl.node.has_children && ctrl.node.expanded" class="dku-icon-chevron-down-16"></i>
+            <i ng-if="ctrl.node.has_children && !ctrl.node.expanded" class="dku-icon-chevron-right-16"></i>
+        </span>
+
+        <span class="tree-node__folder" ng-if="ctrl.node.has_children">
+            <i ng-if="ctrl.node.expanded" class="dku-icon-folder-open-16"></i>
+            <i ng-if="!ctrl.node.expanded" class="dku-icon-folder-closed-16"></i>
+        </span>
+
+        <span
+                class="tree-node__content"
+                ng-click="ctrl.toggleNodeVisualization({ node: ctrl.node })"
+        >
+            <span class="tree-node__label">{{ ctrl.node.title }}</span>
+        </span>
+        <span class="tree-node__status" ng-if="ctrl.isNodeClicked(ctrl.node)">
+            <i class="dku-icon-eye-16"></i>
         </span>
     </div>
-
 </div>
 
 <ul
+        class="tree-node__children"
         ng-if="ctrl.node.children && ctrl.node.children.length && ctrl.node.expanded"
-        style="margin-left: 20px;"
 >
     <li
+            class="tree-node__child"
             ng-repeat="child in ctrl.node.children track by (child.id || child.path || (child.title + '_' + $index))"
             ng-if="child.type !== 'attribute'"
     >
