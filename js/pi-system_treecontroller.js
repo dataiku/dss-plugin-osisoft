@@ -397,8 +397,9 @@ app.controller('AfExplorerFormCtrl', [
         $scope.getTemplatesFromDB = function() {
             return $scope.callPythonDo({ method: "get_templates_from_db" }).then(function(data) {
                 console.log("get_templates_from_db", data)
-                $scope.config.templates = data.choices;
-                TreeDataService.setTemplateTreeData(data.choices);
+                const templates = data.choices.filter(template => template.title !== "-- Any --")
+                $scope.config.templates = templates;
+                TreeDataService.setTemplateTreeData(templates);
                 $scope.config.templateTreeData = TreeDataService.getTemplateTreeData();
             });
         }
