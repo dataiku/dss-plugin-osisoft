@@ -23,6 +23,10 @@
     background: #E7F3FF;
 }
 
+.tree-node__row--visualized.tree-node__row--search-result {
+    background: #F3F6E3;
+}
+
 .tree-node__row--search-result:not(.tree-node__row--visualized) {
     background: #FFF8C6;
 }
