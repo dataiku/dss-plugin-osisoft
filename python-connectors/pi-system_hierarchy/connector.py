@@ -73,10 +73,10 @@ class HierarchyConnector(Connector):
             return
         for item in items:
             parent_path = item.get("Path")
-            link_to_attributes = self.client.extract_link_with_key(item, "Attributes")
-            if link_to_attributes:
-                for attribute in self.recurse_next_item(link_to_attributes, parent=parent_path, type="Attribute"):
-                    yield attribute
+            # link_to_attributes = self.client.extract_link_with_key(item, "Attributes")
+            # if link_to_attributes:
+            #     for attribute in self.recurse_next_item(link_to_attributes, parent=parent_path, type="Attribute"):
+            #         yield attribute
             link_to_elements = self.client.extract_link_with_key(item, "Elements")
             if link_to_elements:
                 for element in self.recurse_next_item(link_to_elements, parent=parent_path, type="Element"):
@@ -134,7 +134,7 @@ class HierarchyConnector(Connector):
                     for retrieved_item in retrieved_items:
                         retrieved_item_path = retrieved_item.get("Path")
                         elements_url = self.client.extract_link_with_key(retrieved_item, "Elements")
-                        attributes_url = self.client.extract_link_with_key(retrieved_item, "Attributes")
+                        # attributes_url = self.client.extract_link_with_key(retrieved_item, "Attributes")
                         if elements_url:
                             todo_list.append(
                                 {
@@ -143,14 +143,14 @@ class HierarchyConnector(Connector):
                                     "parent": parent_of_batched_item + "\\" + retrieved_item.get("Name")
                                 }
                             )
-                        if attributes_url:
-                            todo_list.append(
-                                {
-                                    "url": attributes_url,
-                                    "type": "Attribute",
-                                    "parent": parent_of_batched_item + "\\" + retrieved_item.get("Name")
-                                }
-                            )
+                        # if attributes_url:
+                        #     todo_list.append(
+                        #         {
+                        #             "url": attributes_url,
+                        #             "type": "Attribute",
+                        #             "parent": parent_of_batched_item + "\\" + retrieved_item.get("Name")
+                        #         }
+                        #     )
                         yield {
                             "ItemType": type,
                             "Name": retrieved_item.get("Name"),

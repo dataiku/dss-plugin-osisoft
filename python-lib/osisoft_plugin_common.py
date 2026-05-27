@@ -748,8 +748,9 @@ def recursive_tree_rebuild(dictionary, records, counter=None):
             children = []
         # context["id"] = str(counter)
         context["title"] = key
-        context["expanded"] = True
+        # context["expanded"] = True
         # context["checked"] = False
         context["children"] = children
+        # logger.info("context post" + str(context))
         output.append(context)
     return output

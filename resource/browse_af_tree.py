@@ -1,3 +1,4 @@
+import copy
 from osisoft_client import OSIsoftClient
 from safe_logger import SafeLogger
 from osisoft_plugin_common import get_credentials, build_select_choices, check_debug_mode
@@ -78,6 +79,7 @@ def do(payload, config, plugin_config, inputs):
     )
 
     method = payload.get("method")
+    logger.info("Running do for method '{}'".format(method))
     if method == "get_query_catalogs":
         return get_query_catalogs(None, config)
     if method == "get_children_from_db":
@@ -108,6 +110,34 @@ def do(payload, config, plugin_config, inputs):
             "get_element_categories_from_db",
             lambda: get_items_from_db(client, parent, "ElementCategories", database_name=database_name)
         )
+    if method == "get_elements_for_template":
+        database_name = config.get("database_name")
+        template_name = payload.get("template_name", None)
+        elements = []
+        for element in client.search_elements(database_name, name=None, description=None, category=None, template=template_name, full_search=True):
+            elements.append(get_item_details(element))
+        return {"choices": [], "elements": elements}
+    if method == "get_attribute_for_template":
+        database_name = config.get("database_name")
+        template_name = payload.get("template_name", None)
+        if template_name is None:
+            return {"choices": [], "attributes": []}
+        # when searching for template : attribute_name=None, element_category=None, attribute_category=None
+        elements_max_count, attributes_max_count = get_max_counts(config)
+        attributes = []
+        for result in client.batched_search(
+            database_name, None, None,
+            None, None, template_name, [],
+            elements_max_count=elements_max_count, attributes_max_count=attributes_max_count
+        ):
+            attributes.append(result)
+        # attributes = split_real_from_linked_paths(attributes)
+        items = []
+        for attribute in attributes:
+            item = get_item_details(attribute)
+            items.append(item)
+        # items = expand_items_by_paths(items)
+        return {"choices": [], "attributes": items}
     if method == "do_search":
         template_name = config.get("template", None)
         category_name = config.get("element_category", None)
@@ -134,6 +164,7 @@ def do(payload, config, plugin_config, inputs):
             attribute_category = None
         database_name = config.get("database_name")
         element_name = config.get("element_name")
+        # TODO: remove, stale
         attribute_name = config.get("attribute_name")
         if isinstance(element_name, str): 
             element_name = element_name.strip()
@@ -145,6 +176,7 @@ def do(payload, config, plugin_config, inputs):
                 attribute_name = None
 
         has_attribute_filter = attribute_name is not None
+        # TODO: remove, never true anymore
         is_template_tab = active_tab == "template"
         has_clicked_element_nodes = len(clicked_nodes) > 0
         # clicked_nodes scope is only for element-node URLs (batched_search restrict_to_elements).
@@ -180,7 +212,7 @@ def do(payload, config, plugin_config, inputs):
             clicked_nodes = []
         # root_tree = payload.get("root_tree")
         root_tree = config.get("treeData", [])
-        root_tree = shorten_tree(root_tree)
+        root_tree_before_search = copy.deepcopy(root_tree)
         attributes = []
         # https://dku-qa-osi.francecentral.cloudapp.azure.com/piwebapi/assetdatabases/F1RD3VEt1yTvt0ip6-a5yeEVsgbMcrwu_Je0qg9btcZIvPswT1NJU09GVC1QSS1TRVJWXFdFTEw
         database_webid = database_name.split("/")[-1]
@@ -211,6 +243,7 @@ def do(payload, config, plugin_config, inputs):
         items = expand_items_by_paths(items)
         attributesCopy = [dict(item) for item in items]
         rebuilt_tree = rebuild_tree(client, items.copy(), root_tree)
+        expand_nodes_for_matched_paths(client, rebuilt_tree, items, root_tree_before_search)
         logger.info("Search network timer:{}".format(network_timer.get_report()))
         return {"choices": rebuilt_tree, "attributes": attributesCopy}
 
@@ -276,14 +309,6 @@ def get_children_from_db(client, parent_node, database_name=None):
     attributes_url = links.get("Attributes")
     elements_url = links.get("Elements")
     children = []
-    if elements_url:
-        elements = client.get_next_item_from_url(elements_url, params={"associations": "Paths"})
-        for element in elements:
-            child = get_item_details(element)
-            # child["title"] = "🧩{}".format(child.get("title"))
-            child["type"] = "element"
-            child["children"] = []
-            children.append(child)
     if attributes_url:
         attributes = client.get_next_item_from_url(attributes_url, params={"associations": "Paths"})
         templates_urls = []
@@ -301,6 +326,14 @@ def get_children_from_db(client, parent_node, database_name=None):
         for child, template_name in zip(children, templates_names):
             if template_name:
                 child["template_name"] = template_name
+    if elements_url:
+        elements = client.get_next_item_from_url(elements_url, params={"associations": "Paths"})
+        for element in elements:
+            child = get_item_details(element)
+            # child["title"] = "🧩{}".format(child.get("title"))
+            child["type"] = "element"
+            child["children"] = []
+            children.append(child)
     return {"choices": children}
 
 
@@ -349,16 +382,77 @@ def nest_children(items):
 def rebuild_tree(client, items, root_tree=None):
     # builds an active tree containing all the items and their parent up to the root
     tree = Tree(root_tree=root_tree)
-    # tree.print()
     while items:
         item = items.pop()
         if item is None:
-            break
-        find_all_ancestors(client, item, tree)
-        update_item(item, tree)
+            continue
+        find_missing_element_ancestors(client, item, tree)
+        if is_attribute_item(item):
+            continue
+        insert_missing_element(item, tree)
     result = recursive_tree_rebuild(tree.get_tree(), tree.get_records())
     result = drop_first_levels(result)
     return result
+
+
+def expand_nodes_for_matched_paths(client, tree, items, root_tree):
+    if not isinstance(tree, list) or not isinstance(items, list):
+        return
+
+    for item in items:
+        item_path = item.get("path")
+        element_tokens, attribute_tokens = path_to_list(item_path)
+        if not element_tokens or not attribute_tokens:
+            continue
+        mark_expanded_path(client, tree, element_tokens[2:], root_tree)
+
+
+def mark_expanded_path(client, nodes, path_tokens, root_tree):
+    if not isinstance(nodes, list) or not path_tokens:
+        return
+
+    current_nodes = nodes
+    traversed_tokens = []
+    for token in path_tokens:
+        matching_node = None
+        for node in current_nodes:
+            if node.get("title") == token:
+                matching_node = node
+                break
+        if matching_node is None:
+            return
+        traversed_tokens.append(token)
+        was_expanded = bool(matching_node.get("expanded"))
+        matching_node["expanded"] = True
+        previous_node = find_node_by_path_tokens(root_tree, traversed_tokens)
+        if (
+            not was_expanded and
+            (
+                previous_node is None or
+                not isinstance(previous_node.get("children"), list) or
+                len(previous_node.get("children")) == 0
+            )
+        ):
+            matching_node["children"] = get_children_from_db(client, matching_node).get("choices", [])
+        current_nodes = matching_node.get("children", [])
+
+
+def find_node_by_path_tokens(nodes, path_tokens):
+    if not isinstance(nodes, list) or not path_tokens:
+        return None
+
+    current_nodes = nodes
+    current_node = None
+    for token in path_tokens:
+        current_node = None
+        for node in current_nodes:
+            if node.get("title") == token:
+                current_node = node
+                break
+        if current_node is None:
+            return None
+        current_nodes = current_node.get("children", [])
+    return current_node
 
 
 def drop_first_levels(result):
@@ -376,10 +470,12 @@ def drop_first_levels(result):
     return output_result
 
 
-def find_all_ancestors(client, item, tree):
-    # Find all the ancestors of an item
+def find_missing_element_ancestors(client, item, tree):
+    # Find the missing element ancestors of an item without loading attributes.
     elements_paths_tokens, attributes_paths_tokens = path_to_list(item.get("path"))
-    client.traverse_and_cache(elements_paths_tokens, attributes_paths_tokens, tree)
+    if not elements_paths_tokens:
+        return
+    client.traverse_and_cache(elements_paths_tokens, [], tree)
 
 
 def combine_trees(final_tree, all_item_s_ancestors):
@@ -451,11 +547,21 @@ def set_as_selected(items):
     return items
 
 
-def update_item(item, tree):
+def is_attribute_item(item):
+    if not isinstance(item, dict):
+        return False
+    if item.get("type") == "attribute":
+        return True
+    return bool(item.get("path")) and "|" in item.get("path", "")
+
+
+def insert_missing_element(item, tree):
     elements_paths_tokens, attributes_paths_tokens = path_to_list(item.get("path"))
-    if not elements_paths_tokens and not attributes_paths_tokens:
+    if not elements_paths_tokens or attributes_paths_tokens:
         return
-    tree.put(elements_paths_tokens + attributes_paths_tokens, item)
+    if tree.exists(elements_paths_tokens):
+        return
+    tree.put(elements_paths_tokens, item)
 
 
 def get_max_counts(config):

@@ -15,10 +15,25 @@ const aggregateDataTypeFields = Object.freeze({
         ]
     },
     aggregates: {
+        interval: {
+            label: 'Interval',
+            type: 'text',
+            defaultValue: '',
+            isVisible: function(attribute) {
+                return attribute.data_type === 'InterpolatedData';
+            },
+        },
+        sync_time: {
+            label: 'Sync time',
+            type: 'text',
+            defaultValue: '',
+            isVisible: function(attribute) {
+                return attribute.data_type === 'InterpolatedData';
+            },
+        },
         summary_type: {
             label: 'Summary type',
             type: 'multiselect',
-            dependsOn: ['data_type'],
             defaultValue: [],
             isVisible: function(attribute) {
                 return attribute.data_type === 'SummaryData';
@@ -41,7 +56,6 @@ const aggregateDataTypeFields = Object.freeze({
         boundary_type: {
             label: 'Boundary type',
             type: 'select',
-            dependsOn: ['data_type'],
             defaultValue: 'Inside',
             isVisible: function(attribute) {
                 return attribute.data_type === 'InterpolatedData';
@@ -54,7 +68,6 @@ const aggregateDataTypeFields = Object.freeze({
         record_boundary_type: {
             label: 'Boundary type',
             type: 'select',
-            dependsOn: ['data_type'],
             defaultValue: 'Inside',
             isVisible: function(attribute) {
                 return attribute.data_type === 'RecordedData';
@@ -68,19 +81,9 @@ const aggregateDataTypeFields = Object.freeze({
         summary_duration: {
             label: 'Summary duration',
             type: 'text',
-            dependsOn: ['data_type'],
             defaultValue: '',
             isVisible: function(attribute) {
                 return attribute.data_type === 'SummaryData';
-            },
-        },
-        max_count: {
-            label: 'Max count',
-            type: 'number',
-            dependsOn: ['data_type'],
-            defaultValue: 10000,
-            isVisible: function(attribute) {
-                return ['PlotData', 'InterpolatedData', 'RecordedData'].includes(attribute.data_type);
             },
         },
     }
@@ -120,9 +123,8 @@ app.controller('AfExplorerFormCtrl', [
     '$scope',
     '$stateParams',
     '$q',
-    'CodeMirrorSettingService',
     'TreeDataService',
-    function($scope, $stateParams, $q, CodeMirrorSettingService, TreeDataService) {
+    function($scope, $stateParams, $q, TreeDataService) {
 
         $scope.paramDesc = {
             'parameterSetId': 'basic-auth',
@@ -132,21 +134,30 @@ app.controller('AfExplorerFormCtrl', [
         $scope.config.attributeList = $scope.config.attributeList || []; // la liste des attributs qui sont affichés sur le main panel à droite
         $scope.config.outputSelectedAttributes = $scope.config.outputSelectedAttributes || []; // la liste des attributs qui sont séléctionnés pour être dans l'output dataset
         $scope.config.searchMatchedElementPaths = $scope.config.searchMatchedElementPaths || []; // la liste pour highlighter les elements de la recherche
-        $scope.config.lastSearchedElementName = $scope.config.lastSearchedElementName || "";
-        $scope.config.pendingTabContextReset = $scope.config.pendingTabContextReset || false; // indique le changement de tab template/element
         $scope.config.selectedTemplateNames = $scope.config.selectedTemplateNames || []; // la liste des templates sélectionnés (checkbox cochée) parmi ceux affichés
+        $scope.config.attributeSearch =  $scope.config.attributeSearch || "";
+        $scope.config.displayPath = $scope.config.displayPath || false;
+        $scope.config.elementsByTemplate = $scope.config.elementsByTemplate || {};
+        $scope.config.searchInProgress = $scope.config.searchInProgress || false;
+
+        // TODO: get categories from backend for attributes
+        // $scope.config.attributeCategoryFilter = $scope.config.attributeCategoryFilter || ""
 
         $scope.aggregateDataTypeFields = aggregateDataTypeFields;
         $scope.attributeGroupSections = [
             {
+                type: 'element',
                 key: 'attributesWithoutTemplate',
                 title: 'Elements',
-                emptyMessage: 'No attributes without template'
+                emptyMessage: 'No attributes without template matched your selection',
+                shouldDisplay: () => $scope.config.activeTab === "element"
             },
             {
+                type: 'template',
                 key: 'attributesGroupedByTemplate',
                 title: 'Templates',
-                emptyMessage: 'No templated attributes'
+                emptyMessage: 'No templated attributes matched your selection',
+                shouldDisplay: () => true
             }
         ];
 
@@ -189,7 +200,6 @@ app.controller('AfExplorerFormCtrl', [
             }).error(setErrorInScope.bind($scope.errorScope));
             if ($scope.authConfigured() === true) {
                 const hasTreeData = Array.isArray($scope.config.treeData) && $scope.config.treeData.length > 0;
-                const hasTemplateTreeData = Array.isArray($scope.config.templateTreeData) && $scope.config.templateTreeData.length > 0;
                 $scope.authSectionVisible = !hasTreeData;
                 $scope.showTreeData = hasTreeData;
             }
@@ -199,11 +209,13 @@ app.controller('AfExplorerFormCtrl', [
 
         $scope.getServers = function() {
             $scope.callPythonDo({ parameterName: "server_name" }).then(function(data) {
+                console.log("server_name", data);
                 $scope.server_name = data.choices;
             });
         };
         $scope.getDatabases = function() {
             $scope.callPythonDo({ parameterName: "database_name" }).then(function(data) {
+                console.log("database_name", data);
                 $scope.database_name = data.choices;
             });
         };
@@ -263,8 +275,6 @@ app.controller('AfExplorerFormCtrl', [
             $scope.config.attributeList = [];
             $scope.config.outputSelectedAttributes = [];
             $scope.config.searchMatchedElementPaths = [];
-            $scope.config.lastSearchedElementName = "";
-            $scope.config.pendingTabContextReset = false;
             $scope.config.selectedTemplateNames = [];
         }
 
@@ -306,6 +316,17 @@ app.controller('AfExplorerFormCtrl', [
             $scope.cleanTree();
         };
 
+        $scope.refreshCachedTree = function() {
+            $scope.config.treeData = [];
+            $scope.config.clickedNodes = [];
+            $scope.config.attributeList = [];
+            $scope.config.searchMatchedElementPaths = [];
+            $scope.config.selectedTemplateNames = [];
+            $scope.initializeTree();
+            $scope.getTemplatesFromDB();
+            $scope.getCategoriesFromDB();
+        }
+
         let presetWatchInitialized = false;
         // TODO: move this to an ng-change
         $scope.$watchGroup(
@@ -343,6 +364,7 @@ app.controller('AfExplorerFormCtrl', [
         $scope.initializeTree = function() {
             if (!$scope.config.treeData || $scope.config.treeData.length === 0) {
                 return $scope.callPythonDo({ method: "get_children_from_db", parent: $scope.config.database_name }).then(function(data) {
+                    console.log("get_children_from_db", data);
                     TreeDataService.setTreeData(data.choices);
                     $scope.config.treeData = TreeDataService.getTreeData();
                     return data;
@@ -364,9 +386,13 @@ app.controller('AfExplorerFormCtrl', [
         }
 
         $scope.getChildrenFromDB = function(item) {
+            if (item.type === "template") {
+                return getAttributesForTemplate(item);
+            }
             console.log("ALX:gcfd:" + JSON.stringify(item));
             return $scope.callPythonDo({ method: "get_children_from_db", parent: item })
                 .then(function(data) {
+                    console.log("get_children_from_db", data);
                     console.log("ALX:data1=" + JSON.stringify(data));
                     item.children = data.choices;
                     item.children.forEach(child => {
@@ -381,18 +407,20 @@ app.controller('AfExplorerFormCtrl', [
 
         $scope.getTemplatesFromDB = function() {
             return $scope.callPythonDo({ method: "get_templates_from_db" }).then(function(data) {
-                $scope.config.templates = data.choices;
-                TreeDataService.setTemplateTreeData(data.choices);
+                console.log("get_templates_from_db", data)
+                const templates = data.choices.filter(template => template.title !== "-- Any --")
+                $scope.config.templates = templates;
+                TreeDataService.setTemplateTreeData(templates);
                 $scope.config.templateTreeData = TreeDataService.getTemplateTreeData();
             });
         }
 
         function resetRightPanelForCurrentTabContext() {
-            $scope.config.attribute_name = "";
             $scope.config.clickedNodes = [];
             $scope.config.attributeList = [];
             $scope.config.searchMatchedElementPaths = [];
             $scope.config.selectedTemplateNames = [];
+            $scope.config.attributeSearch = "";
             if ($scope.config.activeTab === "element") {
                 $scope.config.template = "-- Any --";
             } else if ($scope.config.activeTab === "template") {
@@ -400,18 +428,10 @@ app.controller('AfExplorerFormCtrl', [
             }
         }
 
-        function consumePendingTabContextReset() { // reset la main view après changement de tab + action sur le new tab
-            if (!$scope.config.pendingTabContextReset) {
-                return;
-            }
-            resetRightPanelForCurrentTabContext();
-            $scope.config.pendingTabContextReset = false;
-        }
-
         $scope.setTab = function(tab) {
             const previousTab = $scope.config.activeTab;
             if (tab !== previousTab) {
-                $scope.config.pendingTabContextReset = true;
+                resetRightPanelForCurrentTabContext();
             }
             $scope.config.activeTab = tab;
         };
@@ -420,90 +440,179 @@ app.controller('AfExplorerFormCtrl', [
             $scope.config.attribute_categories = [];
             $scope.config.element_categories = [];
             const attributeCategoriesPromise = $scope.callPythonDo({ method: "get_attribute_categories_from_db" }).then(function(data) {
+                console.log("get_attribute_categories_from_db", data);
                 $scope.config.attribute_categories = data.choices;
                 return data;
             });
             const elementCategoriesPromise = $scope.callPythonDo({ method: "get_element_categories_from_db" }).then(function(data) {
+                console.log("get_element_categories_from_db", data);
                 $scope.config.element_categories = data.choices;
                 return data;
             });
             return $q.all([attributeCategoriesPromise, elementCategoriesPromise]);
         }
 
-        $scope.doSearch = function(element_name, attribute_name) {
-            consumePendingTabContextReset();
-
-            const hasElementFilter = !!(element_name?.trim());
-            const hadPreviousElementFilter = !!($scope.config.lastSearchedElementName?.trim());
-
-            // If user clears element filter after a scoped search, release previous click-based scope.
-            if (!hasElementFilter && hadPreviousElementFilter) {
-                $scope.config.clickedNodes = [];
-            }
-
-            const hasClickedNodes = Array.isArray($scope.config.clickedNodes) && $scope.config.clickedNodes.length > 0;
-            const hasAttributeFilter = !!(attribute_name?.trim());
-            const isRestrictedAttributeSearch = hasClickedNodes && hasAttributeFilter && !hasElementFilter;
-            const hasTemplateFilter = !!(
-                $scope.config.template &&
-                $scope.config.template !== "-- Any --"
-            );
-            const isTemplateScopedSearch =
-                hasTemplateFilter &&
-                ($scope.config.activeTab === "template");
-            const shouldDisplaySearchAttributesDirectly =
-                hasAttributeFilter || isTemplateScopedSearch;
-            $scope.config.lastSearchedElementName = element_name || "";
-            if ($scope.config.activeTab === "template") {
-                $scope.config.selectedTemplateNames = getSelectedTemplateNamesFromClickedNodes();
-            } else {
-                $scope.config.selectedTemplateNames = [];
-            }
-            const hasSelectedTemplateNodes = (
-                $scope.config.activeTab === "template" &&
-                Array.isArray($scope.config.selectedTemplateNames) &&
-                $scope.config.selectedTemplateNames.length > 0
-            );
-            const shouldShowTemplateSelectionAttributes = hasSelectedTemplateNodes;
-
-            if (!isRestrictedAttributeSearch) {
-                $scope.config.attributeList = [];
-            }
+        $scope.doSearch = function(element_name) {
+            $scope.config.searchInProgress = true;
             $scope.config.searchMatchedElementPaths = [];
-            // TODO: understand what this does
-            $scope.callPythonDo({ method: "do_search", element_name: element_name, attribute_name: attribute_name, root_tree: $scope.config.treeData }).then(
+            $scope.callPythonDo({ method: "do_search", element_name: element_name, root_tree: $scope.config.treeData }).then(
                 function(data) {
+                    console.log("do_search", data);
                     TreeDataService.setTreeData(data.choices);
                     $scope.config.treeData = TreeDataService.getTreeData();
                     const matchedAttributes = data.attributes || [];
                     const matchedElementPaths = getMatchedElementPaths(matchedAttributes);
                     $scope.config.searchMatchedElementPaths = matchedElementPaths;
                     markSearchResults($scope.config.treeData, matchedElementPaths);
-                    if (
-                        isRestrictedAttributeSearch ||
-                        shouldDisplaySearchAttributesDirectly ||
-                        shouldShowTemplateSelectionAttributes
-                    ) {
-                        applySearchAttributesToList(matchedAttributes);
-                    }
                 }
             );
         };
 
-        function applySearchAttributesToList(attributes) {
-            const seen = new Set();
-            const deduped = [];
+        function clearSearchHighlights(nodes) {
+            nodes.forEach(node => {
+                node.searchHighlighted = false;
+                if (node?.children?.length > 0) {
+                    clearSearchHighlights(node.children);
+                }
+            });
+        }
 
-            attributes.forEach(attribute => {
-                if (!attribute?.path || seen.has(attribute.path)) {
+        function getElementNameFromPath(elementPath) {
+            const splitPath = elementPath.split('\\');
+            return splitPath?.[splitPath.length - 1];
+        }
+
+        function getElementPathFromAttributePath(attributePath) {
+            return attributePath.split('|')?.[0];
+        }
+
+        function getAttributesForTemplate(node) {
+            return $scope.callPythonDo({ method: "get_attribute_for_template", template_name: node.title}).then(
+                function(data) {
+                    console.log("get_attribute_for_template", data);
+                    node.children = data.attributes;
+                    node.children.forEach(child => {
+                        // TODO: do the same for the normal getChild
+                        const elementPath = getElementPathFromAttributePath(child.path);
+                        child.expanded = false;
+                        child.parent_element = getElementNameFromPath(elementPath);
+                        child.parent_element_path = elementPath;
+                    });
+                    return node;
+                }
+            );
+        }
+
+        $scope.isTemplateAssociatedElementSelected = function(element) {
+            return $scope.config.clickedNodes.includes(element.url);
+        }
+
+        $scope.getElementsForTemplate = function (templateName) {
+            return $scope.callPythonDo({ method: "get_elements_for_template", template_name: templateName}).then(
+                function(data) {
+                    console.log("get_elements_for_template", data);
+                    $scope.config.elementsByTemplate[templateName] = data.elements;
+                }
+            );
+        }
+
+        // Called whenever the element selection change
+        function refreshSelectedElementsByTemplatesAllTemplates() {
+            Object.keys($scope.selectedElementsByTemplate).forEach(templateName => {
+                if (!$scope.config.elementsByTemplate[templateName]) {
                     return;
                 }
-                seen.add(attribute.path);
-                const attrCopy = { ...attribute };
-                deduped.push(enrichAttribute(attrCopy));
+                setSelectedElementsByTemplate(templateName);
+            });
+        }
+
+        function setSelectedElementsByTemplate(templateName) {
+            if ($scope.config.activeTab === 'element') {
+                // Sets selected elements for the elements dropdown to all visualized elements
+                $scope.selectedElementsByTemplate[templateName] = $scope.config.elementsByTemplate[templateName].filter(element => {
+                        return $scope.config.clickedNodes.includes(element.url);
+                    }
+                ).map(element => element.url);
+            } else if ($scope.config.activeTab === 'template') {
+                $scope.selectedElementsByTemplate[templateName] = $scope.config.elementsByTemplate[templateName].map(element => element.url);
+            }
+            $scope.selectedElementsByTemplateUI[templateName] = $scope.selectedElementsByTemplate[templateName]
+        }
+
+        $scope.selectedElementsByTemplateUI = {};
+        $scope.selectedElementsByTemplate = {};
+        $scope.templateModeExcludedAttributes = {};
+
+        $scope.setupElementsDropdown = function($element, templateName) {
+            let initialized = false;
+            const dropdown = $element.next();
+
+            // if not initialized but elements by template is already populated
+            // refresh the state, and set to initialized
+           if (!initialized && $scope.config.elementsByTemplate[templateName]?.length > 0) {
+               setSelectedElementsByTemplate(templateName);
+               initialized = true;
+           }
+
+            // TODO: maybe unhook this
+            dropdown.on('click', function() {
+                // console.log("triggered click")
+                if (initialized) {
+                    return;
+                }
+
+                $scope.$applyAsync(() => {
+                    $scope.getElementsForTemplate(templateName).then(() => {
+                        setSelectedElementsByTemplate(templateName);
+                        initialized = true;
+                        $scope.$broadcast('selectPickerRefresh');
+                    }
+                    )
+                });
             });
 
-            $scope.config.attributeList = deduped;
+            $element.on('change', function() {
+
+                if (!initialized) {
+                    return;
+                }
+
+                $scope.$applyAsync(() => {
+                    // TODO: redo everything by templateID
+                    const options = $scope.config.elementsByTemplate[templateName];
+                    const previouslySelected = new Set($scope.selectedElementsByTemplate[templateName]);
+                    const currentlySelected = new Set($scope.selectedElementsByTemplateUI[templateName]);
+
+                    options.forEach(element => {
+                        const elementKey = String(element.url);
+                        const wasSelected = previouslySelected.has(elementKey);
+                        const isSelected = currentlySelected.has(elementKey);
+
+                        if (wasSelected !== isSelected) {
+                            if ($scope.config.activeTab === 'element') {
+                                $scope.toggleNodeVisualization(element);
+                            } else if ($scope.config.activeTab === 'template') {
+                                if (wasSelected && !isSelected) {
+                                    if (!$scope.templateModeExcludedAttributes[templateName]) {
+                                        $scope.templateModeExcludedAttributes[templateName] = {}
+                                    }
+                                    $scope.templateModeExcludedAttributes[templateName][element.path] = $scope.config.attributeList.filter(attribute => {
+                                        return attribute.template_name === templateName && attribute.parent_element_path === element.path;
+                                    });
+                                    $scope.config.attributeList = $scope.config.attributeList.filter(attribute => {
+                                        return attribute.template_name === templateName && attribute.parent_element_path !== element.path;
+                                    });
+                                } else if (!wasSelected && isSelected) {
+                                    const attributesToAdd = $scope.templateModeExcludedAttributes[templateName]?.[element.path];
+                                    $scope.config.attributeList.push(...attributesToAdd)
+                                }
+                            }
+                        }
+                    });
+
+                    $scope.selectedElementsByTemplate = angular.copy($scope.selectedElementsByTemplateUI);
+                });
+            });
         }
 
         function getMatchedElementPaths(attributes) {
@@ -519,46 +628,34 @@ app.controller('AfExplorerFormCtrl', [
             return Array.from(matchedPathSet);
         }
 
+        $scope.toggleNodeVisualization = function(node) {
+            console.log("clicked on ", node)
 
-        function collectTemplateTitlesByClickedUrls(nodes, clickedUrlSet, outputSet) {
-            if (!Array.isArray(nodes) || !clickedUrlSet || !outputSet) {
-                return;
+            // Keep right-side attribute search when active so multi-node clicks can
+            // enrich results with the same filter (ex: "Load" on California + Fresno).
+            // TODO: understand why we need a reset if the attribute search is empty
+            if (node?.type === "element") {
+                // TODO: factorize this reset
+                $scope.config.template = "-- Any --";
             }
 
-            nodes.forEach(function(node) {
-                if (!node) {
-                    return;
-                }
-                if (
-                    clickedUrlSet.has(node.url) &&
-                    node.type === "template" &&
-                    node.title &&
-                    node.title !== "-- Any --"
-                ) {
-                    outputSet.add(node.title);
-                }
-                if (Array.isArray(node.children) && node.children.length > 0) {
-                    collectTemplateTitlesByClickedUrls(node.children, clickedUrlSet, outputSet);
-                }
-            });
-        }
-
-        function getSelectedTemplateNamesFromClickedNodes() {
-            const clickedUrls = Array.isArray($scope.config.clickedNodes)
-                ? $scope.config.clickedNodes
-                : [];
-            if (!clickedUrls.length) {
-                return [];
+            const indexClickedNode = $scope.config.clickedNodes.indexOf(node.url);
+            const nodeAlreadySelected = indexClickedNode > -1;
+            // If the node is already clicked, remove it from clicked nodes - else add it
+            if (nodeAlreadySelected) {
+                $scope.config.clickedNodes.splice(indexClickedNode, 1);
+            } else {
+                $scope.config.clickedNodes.push(node.url);
             }
 
-            const selectedTemplateNames = new Set();
-            collectTemplateTitlesByClickedUrls(
-                $scope.config.templateTreeData,
-                new Set(clickedUrls),
-                selectedTemplateNames
-            );
-            return Array.from(selectedTemplateNames);
-        }
+            $scope.toggleDisplayAttributes(node, !nodeAlreadySelected);
+
+            // In element node, the visualized nodes are reflected on the elements dropdown
+            if ($scope.config.activeTab === 'element') {
+                refreshSelectedElementsByTemplatesAllTemplates();
+            }
+            console.log("clickedNodes: " + JSON.stringify($scope.config.clickedNodes));
+        };
 
         function markSearchResults(nodes, matchedElementPaths) {
             if (!Array.isArray(nodes)) {
@@ -579,48 +676,41 @@ app.controller('AfExplorerFormCtrl', [
             });
         }
 
+        // TODO understand why both
         $scope.onSearchInputKeydown = function($event) {
             if ($event && ($event.key === "Enter" || $event.keyCode === 13)) {
                 $event.preventDefault();
-                const targetId = $event.target?.id || "";
-                if (targetId === "ReturnsName") {
-                    $scope.searchFromElement();
-                    return;
-                }
-                $scope.doSearch($scope.config.element_name, $scope.config.attribute_name);
+                // const targetId = $event.target?.id || "";
+                // // TODO: understand
+                // if (targetId === "ReturnsName") {
+                //     $scope.searchFromElement();
+                //     return;
+                // }
+                $scope.searchFromElement();
             }
         };
 
         $scope.searchFromElement = function() {
-            if (!$scope.config) {
-                return;
-            }
-
-            // Left search always resets right-side filter/template search.
-            $scope.config.clickedNodes = [];
-            $scope.config.selectedTemplateNames = [];
-            $scope.config.attribute_name = "";
-            $scope.doSearch($scope.config.element_name, $scope.config.attribute_name);
+            $scope.doSearch($scope.config.element_name);
         };
 
-        function setAttributesChecked(attributes, isChecked) {
-            if (!Array.isArray(attributes)) {
-                return;
-            }
-            attributes.forEach(attribute => {
-                attribute.checked = !!isChecked;
-                if (isChecked) {
-                    $scope.addAttributeToSelection(attribute);
-                } else {
-                    $scope.removeAttributeFromSelection(attribute);
-                }
-            });
-        }
+        $scope.clearSearch = function() {
+            $scope.config.searchInProgress = false;
+            $scope.config.element_name = "";
+            $scope.config.searchMatchedElementPaths = [];
+            clearSearchHighlights($scope.config.treeData);
+        };
 
         $scope.toggleSelectAllGroupedAttributes = function(groupedAttributes) {
             const shouldRemove = groupedAttributes.checked === CheckboxStatus.CHECKED;
             groupedAttributes.groups.forEach((group) => {
+                if (group.isDisplayed) {
+                    return;
+                }
                 group.attributes.forEach((aggregatedAttribute) => {
+                    if (!aggregatedAttribute.isDisplayed) {
+                        return;
+                    }
                     aggregatedAttribute.attributes.forEach((underlyingAttribute) => {
                         if (shouldRemove) {
                             $scope.removeAttributeFromSelection(underlyingAttribute);
@@ -644,9 +734,12 @@ app.controller('AfExplorerFormCtrl', [
             )
         };
 
-        $scope.checkTemplate = function(template) {
-            const shouldRemove = template.checked === CheckboxStatus.CHECKED;
-            template.attributes.forEach((aggregatedAttribute) => {
+        $scope.toggleGroupedAttributes = function(group) {
+            const shouldRemove = group.checked === CheckboxStatus.CHECKED;
+            group.attributes.forEach((aggregatedAttribute) => {
+                    if (!aggregatedAttribute.isDisplayed) {
+                        return;
+                    }
                     aggregatedAttribute.attributes.forEach((underlyingAttribute) => {
                         if (shouldRemove) {
                             $scope.removeAttributeFromSelection(underlyingAttribute);
@@ -695,31 +788,13 @@ app.controller('AfExplorerFormCtrl', [
                stopDisplayingAttributes(node);
                return;
             }
-            // TODO: refacto
-            if (node.type === "element" && !hasAttributeChildren(node)) {
-                $scope.config.template = "-- Any --";
+            if (!hasAttributeChildren(node)) {
                 $scope.getChildrenFromDB(node).then(newNode => {
-                    processNode(newNode);
+                    addChildrenToAttributeList(newNode);
                 });
-            } else if (node.type === "template") {
-                const selectedTemplateNames = getSelectedTemplateNamesFromClickedNodes();
-                if (!selectedTemplateNames.length) {
-                    $scope.config.template = "-- Any --";
-                    $scope.config.attributeList = [];
-                    $scope.config.searchMatchedElementPaths = [];
-                    return;
-                }
-
-                // Keep previous single-template behavior in config when only one is selected.
-                // For multi-select, backend will use selectedTemplateNames.
-                $scope.config.template = selectedTemplateNames.length === 1
-                    ? selectedTemplateNames[0]
-                    : "-- Any --";
-                $scope.config.element_name = "*";
-                $scope.doSearch($scope.config.element_name, $scope.config.attribute_name);
-            } else {
-                processNode(node);
+                return;
             }
+            addChildrenToAttributeList(node);
         }
 
         // Merge frontend data and saved output with loaded attributes
@@ -727,7 +802,11 @@ app.controller('AfExplorerFormCtrl', [
             // TODO: check this makes sense, since selectedOutput is persisted and so newly loaded attributes should not be found in it
             const selectedAttribute = $scope.config.outputSelectedAttributes.find(attr => attr.path === attribute.path);
             attribute.checked = !!(selectedAttribute);
-            attribute.parent_element = parentNode.title;
+            if (parentNode.type === "element") {
+                attribute.parent_element = parentNode?.title;
+            } else if (parentNode.type === "template") {
+                attribute.template_name = parentNode?.title;
+            }
             attribute.data_type = selectedAttribute?.data_type ? selectedAttribute.data_type : $scope.aggregateDataTypeFields.data_type.defaultValue;
             Object.entries($scope.aggregateDataTypeFields.aggregates).forEach(([aggregateName, aggregate]) => {
                 if ((selectedAttribute?.[aggregateName] === undefined || selectedAttribute?.[aggregateName] === null) && aggregate.isVisible(attribute)) {
@@ -741,17 +820,14 @@ app.controller('AfExplorerFormCtrl', [
             return attribute;
         }
 
-        function processNode(node) {
-            const hasAttributeFilter = !!($scope.config.attribute_name?.trim());
-            const parentTemplateName = node?.template_name ? node.template_name : null;
+        // Put node children in the displayed attribute list
+        function addChildrenToAttributeList(node) {
+            const parentTemplateName = node?.template_name;
 
             node.children.forEach(child => {
                 if (child.type === "attribute") {
                     if (!child.parent_template_name && parentTemplateName) {
                         child.parent_template_name = parentTemplateName;
-                    }
-                    if (hasAttributeFilter && !attributeMatchesCurrentSearch(child)) {
-                        return;
                     }
                     const isAlreadyPresent = $scope.config.attributeList.some(attr => attr.path === child.path);
                     if (!isAlreadyPresent) {
@@ -814,7 +890,24 @@ app.controller('AfExplorerFormCtrl', [
             });
         };
 
-        function groupDuplicatedAttributesAcrossGroup(groupKey) {
+        function attributeMatchesSearch(attribute_name, template_name, attribute_description="") {
+            if ($scope.config.attributeSearch === "") {
+                return true;
+            }
+            const lowercasedSearch = $scope.config.attributeSearch.toLowerCase();
+            const templateNameMatches = template_name.toLowerCase().includes(lowercasedSearch);
+            const attributeNameMatches = attribute_name.toLowerCase().includes(lowercasedSearch);
+            let attributeDescriptionMatches = false;
+            if (attribute_description) {
+                attributeDescriptionMatches = attribute_description.toLowerCase().includes(lowercasedSearch);
+            }
+            return (templateNameMatches || attributeNameMatches || attributeDescriptionMatches)
+        }
+
+        // Attributes are shared between templates
+        // Meaning all elements with the same template will share the attributes in this template
+        // If multiple elements with the same template are selected, we only show the attribute once
+        function conflateAttributes(groupKey) {
             return (acc, attr) => {
                 // TODO: switch to id
                 const key = attr[groupKey] + "::" + attr.title;
@@ -823,6 +916,7 @@ app.controller('AfExplorerFormCtrl', [
                     acc[key] = {
                         title: attr.title,
                         description: attr.description,
+                        groupKey: groupKey,
                         group: attr[groupKey],
                         template_names: [],
                         parent_elements: [],
@@ -833,6 +927,7 @@ app.controller('AfExplorerFormCtrl', [
                         paths: [],
                         data_type: attr.data_type,
                         data_types: [],
+                        isDisplayed: attributeMatchesSearch(attr.title, attr[groupKey], attr.description),
                     };
 
                     getAggregateNames().forEach(aggregateName => {
@@ -871,7 +966,7 @@ app.controller('AfExplorerFormCtrl', [
             }
         }
 
-        function groupAttributes() {
+        function groupAttributesIntoSections() {
             return (acc, attr) => {
                 const key = attr.group;
                 if (!acc[key]) {
@@ -880,21 +975,27 @@ app.controller('AfExplorerFormCtrl', [
                         allChecked: attr.checked,
                         checked: CheckboxStatus.UNCHECKED, // Used to determine UI checkbox state
                         attributes: [],
-                        checkStates: []
+                        checkStates: [],
+                        isDisplayed: true,
+                        nbSearchMatches: 0
                     }
                 }
 
-                acc[key].checkStates.push(...attr.checkStates)
+                if (attr.isDisplayed) {
+                    acc[key].checkStates.push(...attr.checkStates);
+                    acc[key].allChecked = acc[key].allChecked && attr.allChecked;
+                }
                 acc[key].checked = getCheckboxStatus(acc[key].checkStates);
-                acc[key].allChecked = acc[key].allChecked && attr.allChecked;
                 acc[key].attributes.push(attr);
+                acc[key].isDisplayed = acc[key].isDisplayed && !attr.isDisplayed;
+                acc[key].nbSearchMatches += +attr.isDisplayed;
                 return acc;
             }
         }
 
         function buildAggregatedAttributes(attributes, groupKey) {
-            const deduplicatedAttributes = Object.values(attributes.reduce(groupDuplicatedAttributesAcrossGroup(groupKey), {}));
-            return Object.values(deduplicatedAttributes.reduce(groupAttributes(), {}));
+            const deduplicatedAttributes = Object.values(attributes.reduce(conflateAttributes(groupKey), {}));
+            return Object.values(deduplicatedAttributes.reduce(groupAttributesIntoSections(), {}));
         }
 
         function splitAttributesByTemplatePresence(attributes) {
@@ -913,9 +1014,13 @@ app.controller('AfExplorerFormCtrl', [
 
         function buildGroupedAttributesResult(attributes, groupKey) {
             const groups = buildAggregatedAttributes(attributes, groupKey);
+            const displayedGroups = groups.filter(group => !group.isDisplayed);
+            // TODO: probably turn this into a reduce
             return {
-                allChecked: groups.length > 0 && groups.every(group => group.allChecked),
+                allChecked: displayedGroups.length > 0 && displayedGroups.every(group => group.allChecked),
                 checked: getCheckboxStatus(groups.reduce((acc, group) => acc.concat(group.checkStates), [])),
+                // a table can be empty because all it's attributes have been filtered out OR there are no elements to show
+                empty: groups.length === 0 || groups.every(group => group.isDisplayed),
                 groups: groups
             }
         }
@@ -951,26 +1056,8 @@ app.controller('AfExplorerFormCtrl', [
             $scope.groupedAttributes = $scope.buildGroupedAttributes();
         }, true);
 
-
-        function attributeMatchesCurrentSearch(attribute) {
-            const rawFilter = ($scope.config.attribute_name || "").trim();
-            if (!rawFilter) {
-                return true;
-            }
-
-            const attributeTitle = (attribute?.title ? attribute.title : "").toLowerCase();
-            const filter = rawFilter.toLowerCase();
-
-            if (filter.includes("*")) {
-                const regexPattern = "^" + escapeRegex(filter).replace(/\\\*/g, ".*") + "$";
-                return new RegExp(regexPattern).test(attributeTitle);
-            }
-
-            return attributeTitle.includes(filter);
-        }
-
-        function escapeRegex(input) {
-            return input.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+        $scope.refreshAttributeSection = function() {
+            $scope.groupedAttributes = $scope.buildGroupedAttributes();
         }
 
         $scope.addAttributeToSelection = function(attribute) {
@@ -1013,75 +1100,13 @@ app.component('treeNode', {
         getChildrenFromDb: '<',
         toggleDisplayAttributes: '<',
         config: '<',
+        toggleNodeVisualization: '&',
     },
 
     controllerAs: 'ctrl',
 
     controller: function() {
         const ctrl = this;
-
-        function consumePendingTabContextReset() {
-            if (!ctrl.config?.pendingTabContextReset) {
-                return;
-            }
-
-            ctrl.config.attribute_name = "";
-            ctrl.config.clickedNodes = [];
-            ctrl.config.attributeList = [];
-            ctrl.config.searchMatchedElementPaths = [];
-
-            if (ctrl.config.activeTab === "element") {
-                ctrl.config.template = "-- Any --";
-            } else if (ctrl.config.activeTab === "template") {
-                ctrl.config.element_name = "";
-            }
-
-            ctrl.config.pendingTabContextReset = false;
-        }
-
-        function findNodeByUrl(nodes, targetUrl) {
-            if (!Array.isArray(nodes) || !targetUrl) {
-                return null;
-            }
-
-            for (let i = 0; i < nodes.length; i += 1) {
-                const node = nodes[i];
-                if (!node) {
-                    continue;
-                }
-                if (node.url === targetUrl) {
-                    return node;
-                }
-                const childMatch = findNodeByUrl(node.children, targetUrl);
-                if (childMatch) {
-                    return childMatch;
-                }
-            }
-
-            return null;
-        }
-
-        // TODO: understand why the logic is different from toggleDisplayAttributes (merge them if possible)
-        function rebuildAttributesFromClickedNodes() {
-            const clickedUrls = Array.isArray(ctrl.config?.clickedNodes)
-                ? ctrl.config.clickedNodes
-                : [];
-
-            ctrl.config.attributeList = [];
-
-            if (!clickedUrls.length) {
-                return;
-            }
-
-            clickedUrls.forEach(function(url) {
-                const node =
-                    findNodeByUrl(ctrl.config.treeData, url) ||
-                    findNodeByUrl(ctrl.config.templateTreeData, url);
-                if (node) {
-                    ctrl.toggleDisplayAttributes(node);
-                }
-            });
-        }
 
         ctrl.hasRenderableChildren = function(node) {
             if (!node || !Array.isArray(node.children) || !node.children.length) {
@@ -1106,52 +1131,6 @@ app.component('treeNode', {
             node.expanded = !node.expanded;
         };
 
-        ctrl.onNodeClick = function(node) {
-            consumePendingTabContextReset();
-
-            // TODO: factorize this check
-            const hasActiveAttributeSearch = !!(
-                ctrl.config?.attribute_name?.trim()
-            );
-
-            // Keep right-side attribute search when active so multi-node clicks can
-            // enrich results with the same filter (ex: "Load" on California + Fresno).
-            // TODO: understand why we need a reset if the attribute search is empty
-            if (!hasActiveAttributeSearch) {
-                ctrl.config.attribute_name = "";
-            }
-            if (node?.type === "element") {
-                // TODO: factorize this reset
-                ctrl.config.template = "-- Any --";
-            }
-
-            const indexClickedNode = ctrl.config.clickedNodes.indexOf(node.url);
-            const nodeAlreadySelected = indexClickedNode > -1;
-            // If the node is already clicked, remove it from clicked nodes - else add it
-            if (nodeAlreadySelected) {
-                ctrl.config.clickedNodes.splice(indexClickedNode, 1);
-            } else {
-                ctrl.config.clickedNodes.push(node.url);
-            }
-
-            // TODO: split element/template logic
-            if (node?.type === "template") {
-                // Template clicks should always rebuild right-side content from the full template selection.
-                ctrl.toggleDisplayAttributes(node);
-                console.log("ctrl.config.clickedNodes: " + JSON.stringify(ctrl.config.clickedNodes));
-                return;
-            }
-
-            // TODO: understand why this is mutually exclusive
-            if (hasActiveAttributeSearch) {
-                rebuildAttributesFromClickedNodes();
-            } else {
-                ctrl.toggleDisplayAttributes(node, !nodeAlreadySelected);
-            }
-
-            console.log("ctrl.config.clickedNodes: " + JSON.stringify(ctrl.config.clickedNodes));
-        };
-
         ctrl.isNodeClicked = function(node) {
             // the click is entirely based on node.url
             return ctrl.config.clickedNodes.includes(node.url);
@@ -1170,6 +1149,7 @@ app.directive('attributeTableRow', function() {
         restrict: 'A',
         scope: {
             mergedAttribute: '=',
+            displayPath: '<',
             aggregateDataTypeFields: '<',
             onCheckAttribute: '&',
             onUpdateDataType: '&',

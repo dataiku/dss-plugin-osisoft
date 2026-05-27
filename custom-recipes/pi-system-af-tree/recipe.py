@@ -1,4 +1,5 @@
 import dataiku
+import json
 from dataiku.customrecipe import get_recipe_config, get_output_names_for_role
 from safe_logger import SafeLogger
 from osisoft_plugin_common import (
@@ -62,6 +63,8 @@ schema = [
     {'name': 'record_boundary_type', 'type': 'string'},
     {'name': 'summary_duration', 'type': 'string'},
     {'name': 'max_count', 'type': 'int'},
+    {'name': 'interval', 'type': 'string'},
+    {'name': 'sync_time', 'type': 'string'},
 
 ]
 output_dataset.write_schema(schema)
@@ -70,6 +73,9 @@ selectedAttributes = config.get("outputSelectedAttributes", [])
 with output_dataset.get_writer() as writer:
     for item in selectedAttributes:
         if item.get("checked", True) is True:
+            item["category_names"] = json.dumps(item.get("category_names", []))
+            item["summary_type"] = json.dumps(item.get("summary_type", []))
+            item["paths"] = json.dumps(item.get("paths", []))
             writer.write_row_dict(item)
 
 processing_timer.stop()

@@ -2,8 +2,10 @@
 <div class="generic-class" ng-controller="AfExplorerFormCtrl" ng-init="init()">
     <div class="pi-system-explorer__main">
         <div class="pi-system-explorer__authentication">
-            <div class="pi-system-explorer__authentication-header" ng-click="toggleAuthSection()">
-                <strong>Welcome to Pi System Plugin</strong>
+            <div class="pi-system-explorer__authentication-header-row">
+                <div class="pi-system-explorer__authentication-header" ng-click="toggleAuthSection()">
+                    <strong>Welcome to Pi System Plugin</strong>
+                </div>
             </div>
             <div class="pi-system-explorer__authentication-body" ng-show="authSectionVisible">
                 <div class="pi-system-config--mandatory">
@@ -51,6 +53,12 @@
                     <div class="pi-system-config--ssl-check"><input type="checkbox" style="vertical-align: baseline"
                                                                     ng-model="config.is_ssl_check_disabled" ng-change="getServers();"/>Disable SSL Check
                     </div>
+                    <button
+                            ng-click="refreshCachedTree()"
+                            class="btn btn--secondary"
+                            title="This will clear your current workstate, like opened elements and current searches, but your selected attributes will remain">
+                        Refresh local data
+                    </button>
                     <div>
                         <div>Elements max count</div>
                         <div><input type="number" ng-model="config.elements_max_count" placeholder="100"/></div>
@@ -74,29 +82,32 @@
                 </select>
             </div>
         </div>
+        <!-- TODO: move the table to a separate component-->
         <!-- Attributes Section -->
         <div class="attribute-tab pi-system-explorer__center-view" ng-if="showTreeData">
             <div class="attribute-section__search">
                 <div><strong>Attributes and templates</strong></div>
                 <div>
-                    <input id="ReturnsType" list="datatypes" ng-model="config.attribute_name" type="text" data-container="body"
-                           data-html="true" data-placement="right" data-toggle="tooltip" title="" placeholder="Search attribute or template name"
-                           ng-keydown="onSearchInputKeydown($event)"/>
-                    <button ng-click="doSearch(config.element_name, config.attribute_name)" class="btn btn--secondary link-like"
-                            id="get-query-dim-prop" ng-disabled="!config.attribute_name">Search
-                    </button>
-
-                    <div>
-                        Filter by category
-                        <select dku-bs-select ng-model="config.attribute_category"
-                                ng-options="dbn.title as dbn.title for dbn in config.attribute_categories"
-                                ng-init="getCategoriesFromDB()"
-                                ng-change="doSearch(config.element_name, config.attribute_name)"/>
-                    </div>
+                    <!-- Searches on keydown - if there are some performance issue, can be switched to enter or button click -->
+                    <input ng-model="config.attributeSearch" type="text" placeholder="Search attribute or template name" ng-change="refreshAttributeSection()"/>
                 </div>
+                <div>
+                    <label style="display: inline-flex; align-items: center; gap: 4px;">
+                        <input type="checkbox" ng-model="config.displayPath" style="margin: 0;"/>
+                        Display attribute paths
+                    </label>
+                </div>
+<!--                <div>-->
+<!--                    Filter by category-->
+<!--                    <select dku-bs-select ng-model="config.attribute_category"-->
+<!--                            ng-options="dbn.title as dbn.title for dbn in config.attribute_categories"-->
+<!--                            ng-init="getCategoriesFromDB()"-->
+<!--                            ng-change="refreshAttributeSection()"></select>-->
+<!--                </div>-->
             </div>
             <div class="attribute-table-block"
-                 ng-repeat="section in attributeGroupSections track by section.key">
+                 ng-repeat="section in attributeGroupSections track by section.key"
+                 ng-if="section.shouldDisplay()">
                 <div class="attribute-table-block__title"><strong>{{section.title}}</strong></div>
                 <table class="custom-table">
                     <thead>
@@ -108,29 +119,55 @@
 
                         <th>Title</th>
                         <th>Description</th>
-                        <th>Path</th>
+                        <th ng-if="config.displayPath">Path</th>
                         <th>Data type</th>
                         <th>Aggregates</th>
                     </tr>
                     </thead>
-                    <tbody ng-if="!groupedAttributes[section.key].groups.length">
+                    <tbody ng-if="groupedAttributes[section.key].empty">
                     <tr class="custom-table__empty-row">
-                        <td colspan="6">{{section.emptyMessage}}</td>
+                        <td colspan="{{config.displayPath ? 6 : 5}}">{{section.emptyMessage}}</td>
                     </tr>
                     </tbody>
-                    <tbody ng-repeat="group in groupedAttributes[section.key].groups track by group.group_name">
-
-                <tr class="custom-table__group-row">
+                    <tbody
+                            ng-repeat="group in groupedAttributes[section.key].groups track by group.group_name"
+                            ng-show="!group.isDisplayed"
+                    >
+                    <tr class="custom-table__group-row">
                         <td>
                             <input type="checkbox" ng-model="group.allChecked"
-                                   ng-change="checkTemplate(group)" indeterminate="group.checked">
+                                   ng-change="toggleGroupedAttributes(group)" indeterminate="group.checked">
                         </td>
-                        <td colspan="5">{{group.group_name}}</td>
+                        <td colspan="{{config.displayPath ? 5 : 4}}">
+                            <span>
+                                {{group.group_name}}
+                            </span>
+                            <span ng-if="group.nbSearchMatches !== group.attributes.length">
+                                 - ({{group.nbSearchMatches}}/{{group.attributes.length}} attributes shown)
+                            </span>
+                            <select dku-bs-select
+                                    multiple
+                                    none-selected-text="Scope"
+                                    ng-model="selectedElementsByTemplateUI[group.group_name]"
+                                    ng-if="section.type === 'template'"
+                                    on-ready="setupElementsDropdown($element, group.group_name)"
+                            >
+                                <option
+                                        ng-repeat="element in config.elementsByTemplate[group.group_name]"
+                                        value="{{ element.url }}"
+                                        ng-selected="isTemplateAssociatedElementSelected(element)"
+                                >
+                                    {{ element.title }}
+                                </option>
+                            </select>
+                        </td>
                     </tr>
                     <tr
                             ng-repeat="mergedAttribute in group.attributes track by mergedAttribute.title"
+                            ng-show="mergedAttribute.isDisplayed"
                             attribute-table-row
                             merged-attribute="mergedAttribute"
+                            display-path="config.displayPath"
                             aggregate-data-type-fields="aggregateDataTypeFields"
                             on-check-attribute="checkAttribute(mergedAttribute)"
                             on-update-data-type="updateMergedAttributeDataType(mergedAttribute)"
@@ -143,57 +180,48 @@
     </div>
     <div class="pi-system-explorer__tree-view-container" ng-if="showTreeData">
         <div ng-if="config.database_name" class="pi-system-explorer__tree-view">
-            <div class="tree-view__tabs">
-                <div class="tree-view__tab" ng-click="setTab('element')" ng-class="{active: config.activeTab === 'element'}">
-                    <div class="tree-view__tab-content">Element</div>
+            <div class="tree-view__header">
+                <div class="tree-view__tabs">
+                    <div class="tree-view__tab" ng-click="setTab('element')" ng-class="{active: config.activeTab === 'element'}">
+                        <div class="tree-view__tab-content">Elements</div>
+                    </div>
+                    <div class="tree-view__tab" ng-click="setTab('template')" ng-class="{active: config.activeTab === 'template'}">
+                        <div class="tree-view__tab-content">Templates</div>
+                    </div>
                 </div>
-                <div class="tree-view__tab" ng-click="setTab('template')" ng-class="{active: config.activeTab === 'template'}">
-                    <div class="tree-view__tab-content">Template</div>
+                <div class="tree-view__search-panel" ng-if="config.activeTab === 'element'">
+                    <div class="tree-view__search-row">
+                        <input class="tree-view__search-input" id="ReturnsName" ng-model="config.element_name" type="text"
+                               data-container="body" data-html="true" placeholder="Search element"
+                               ng-keydown="onSearchInputKeydown($event)"/>
+                        <button ng-click="searchFromElement()" class="btn btn--secondary link-like"
+                                id="get-query-dim-prop" ng-disabled="!config.element_name">Search
+                        </button>
+                    </div>
+                    <div class="tree-view__search-actions" ng-if="config.searchInProgress">
+                        <button ng-click="clearSearch()" class="btn btn--secondary link-like">
+                            Clear search
+                        </button>
+                    </div>
                 </div>
             </div>
-            <div class="tab-content" style="margin-bottom:8px;">
-                <input ng-if="config.activeTab === 'element'" id="ReturnsName" ng-model="config.element_name" type="text"
-                       data-container="body" data-html="true" placeholder="Search element"
-                       ng-keydown="onSearchInputKeydown($event)"/>
-                <button ng-if="config.activeTab === 'element'"
-                        ng-click="searchFromElement()" class="btn btn--secondary link-like"
-                        id="get-query-dim-prop" ng-disabled="!config.element_name">Search
-                </button>
-            </div>
-            <!--<div class="tab-container">
-                <ul class="tab-header">
-                    <li ng-click="setTab('element')" ng-class="{active: config.activeTab === 'element'}">
-                        Element
-                    </li>
-                    <li ng-click="setTab('template')" ng-class="{active: config.activeTab === 'template'}">
-                        Template
-                    </li>
-                </ul>
-                <div class="tab-content" style="margin-bottom:8px;">
-                    <input ng-if="config.activeTab === 'element'" id="ReturnsName" ng-model="config.element_name" type="text"
-                        data-container="body" data-html="true" placeholder="Search element" />
-                    <button ng-if="config.activeTab === 'element'"
-                        ng-click="doSearch(config.element_name, config.attribute_name)" class="btn btn--secondary link-like"
-                        id="get-query-dim-prop">Search</button>
-                </div>
-            </div>-->
             <div class="tree-view__content">
-                <div>
-                    Filter by category<select dku-bs-select ng-model="config.element_category"
-                                              ng-options="dbn.title as dbn.title for dbn in config.element_categories" ng-init="getCategoriesFromDB()"
-                                              ng-change="doSearch(config.element_name, config.attribute_name)"/>
-                </div>
+<!--                <div>-->
+<!--                    Filter by category<select dku-bs-select ng-model="config.element_category"-->
+<!--                                              ng-options="dbn.title as dbn.title for dbn in config.element_categories" ng-init="getCategoriesFromDB()"-->
+<!--                                              ng-change="doSearch(config.element_name, config.attribute_name)"/>-->
+<!--                </div>-->
                 <ul ng-if="config.activeTab === 'element' && config.treeData && config.treeData.length">
                     <li ng-repeat="node in config.treeData track by node.id">
                         <tree-node node="node" get-children-from-db="getChildrenFromDB" toggle-display-attributes="toggleDisplayAttributes"
-                                   config="config" clicked-nodes="config.clickedNodes">
+                                   config="config" clicked-nodes="config.clickedNodes" toggle-node-visualization="toggleNodeVisualization(node)">
                         </tree-node>
                     </li>
                 </ul>
                 <ul ng-if="config.activeTab === 'template' && config.templateTreeData && config.templateTreeData.length">
                     <li ng-repeat="node in config.templateTreeData track by node.id">
                         <tree-node node="node" get-children-from-db="getChildrenFromDB" toggle-display-attributes="toggleDisplayAttributes"
-                                   config="config" clicked-nodes="config.clickedNodes">
+                                   config="config" clicked-nodes="config.clickedNodes" toggle-node-visualization="toggleNodeVisualization(node)">
                         </tree-node>
                     </li>
                 </ul>
