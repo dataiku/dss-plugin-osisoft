@@ -90,15 +90,25 @@ def do(payload, config, plugin_config, inputs):
 
 
 def get_query_catalogs(payload, config):
+    logger.info("Start call [get_query_catalogs] payload_keys={}".format(sorted(payload.keys())))
     user = config.get("credentials", {}).get("osisoft_basic", {}).get("user")
     password = config.get("credentials", {}).get("osisoft_basic", {}).get("password")
-    return {"choices": [user, password]}
+    result = {"choices": [user, password]}
+    logger.info("End call [get_query_catalogs] payload_keys={}".format(sorted(payload.keys())))
+    return result
 
 
 def get_children_from_db(client, payload, config):
     database_name = config.get("database_name")
     parent_node = payload.get("parent", {})
-    return get_children_node(client, parent_node, database_name=database_name)
+    logger.info(
+        "Start call [get_children_from_db] database_name={}, parent_node={}".format(database_name, parent_node)
+    )
+    result = get_children_node(client, parent_node, database_name=database_name)
+    logger.info(
+        "End call [get_children_from_db] database_name={}, parent_node={}".format(database_name, parent_node)
+    )
+    return result
 
 
 def get_children_node(client, parent_node, database_name=None):
@@ -142,35 +152,78 @@ def get_children_node(client, parent_node, database_name=None):
 def get_templates_from_db(client, payload, config):
     database_name = config.get("database_name")
     parent_node = payload.get("parent", {})
-    return get_template_hierarchy_from_db(client, parent_node, database_name=database_name)
+    logger.info(
+        "Start call [get_templates_from_db] database_name={}, parent_node={}".format(database_name, parent_node)
+    )
+    result = get_template_hierarchy_from_db(client, parent_node, database_name=database_name)
+    logger.info(
+        "End call [get_templates_from_db] database_name={}, parent_node={}".format(database_name, parent_node)
+    )
+    return result
 
 
 def get_attribute_categories_from_db(client, payload, config):
     database_name = config.get("database_name")
     parent_node = payload.get("parent", {})
-    return get_items_from_db(client, parent_node, "AttributeCategories", database_name=database_name)
+    logger.info(
+        "Start call [get_attribute_categories_from_db] database_name={}, parent_node={}".format(database_name, parent_node)
+    )
+    result = get_items_from_db(client, parent_node, "AttributeCategories", database_name=database_name)
+    logger.info(
+        "End call [get_attribute_categories_from_db] database_name={}, parent_node={}".format(database_name, parent_node)
+    )
+    return result
 
 
 def get_element_categories_from_db(client, payload, config):
     database_name = config.get("database_name")
     parent_node = payload.get("parent", {})
-    return get_items_from_db(client, parent_node, "ElementCategories", database_name=database_name)
+    logger.info(
+        "Start call [get_element_categories_from_db] database_name={}, parent_node={}".format(database_name, parent_node)
+    )
+    result = get_items_from_db(client, parent_node, "ElementCategories", database_name=database_name)
+    logger.info(
+        "End call [get_element_categories_from_db] database_name={}, parent_node={}".format(database_name, parent_node)
+    )
+    return result
 
 
 def get_elements_for_template(client, payload, config):
     database_name = config.get("database_name")
     template_name = payload.get("template_name", None)
+    logger.info(
+        "Start call [get_elements_for_template] database_name={}, template_name={}".format(
+            database_name, template_name
+        )
+    )
     elements = []
     for element in client.search_elements(database_name, name=None, description=None, category=None, template=template_name, full_search=True):
         elements.append(get_item_details(element))
-    return {"choices": [], "elements": elements}
+    result = {"choices": [], "elements": elements}
+    logger.info(
+        "End call [get_elements_for_template] database_name={}, template_name={}".format(
+            database_name, template_name
+        )
+    )
+    return result
 
 
 def get_attribute_for_template(client, payload, config):
     database_name = config.get("database_name")
     template_name = payload.get("template_name", None)
+    logger.info(
+        "Start call [get_attribute_for_template] database_name={}, template_name={}".format(
+            database_name, template_name
+        )
+    )
     if template_name is None:
-        return {"choices": [], "attributes": []}
+        result = {"choices": [], "attributes": []}
+        logger.info(
+            "End call [get_attribute_for_template] database_name={}, template_name={}".format(
+                database_name, template_name
+            )
+        )
+        return result
     # when searching for template : attribute_name=None, element_category=None, attribute_category=None
     elements_max_count, attributes_max_count = get_max_counts(config)
     attributes = []
@@ -186,10 +239,30 @@ def get_attribute_for_template(client, payload, config):
         item = get_item_details(attribute)
         items.append(item)
     # items = expand_items_by_paths(items)
-    return {"choices": [], "attributes": items}
+    result = {"choices": [], "attributes": items}
+    logger.info(
+        "End call [get_attribute_for_template] database_name={}, template_name={}".format(
+            database_name, template_name
+        )
+    )
+    return result
 
 
 def do_search(client, payload, config, network_timer):
+    logger.info(
+        "Start call [do_search] database_name={}, active_tab={}, element_name={}, attribute_name={}, template={}, "
+        "element_category={}, attribute_category={}, clicked_nodes_count={}, selected_template_names_count={}".format(
+            config.get("database_name"),
+            config.get("activeTab"),
+            config.get("element_name"),
+            config.get("attribute_name"),
+            config.get("template", None),
+            config.get("element_category", None),
+            config.get("attribute_category", None),
+            len(config.get("clickedNodes", [])) if isinstance(config.get("clickedNodes", []), list) else 0,
+            len(config.get("selectedTemplateNames", [])) if isinstance(config.get("selectedTemplateNames", []), list) else 0
+        )
+    )
     template_name = config.get("template", None)
     category_name = config.get("element_category", None)
     clicked_nodes = config.get("clickedNodes", [])
@@ -256,8 +329,6 @@ def do_search(client, payload, config, network_timer):
         is_template_tab and len(selected_template_names) > 0
     )
 
-    logger.info("Start call do_search element_name={}, attribute_name={}, db={}:".format(element_name, attribute_name, database_name))
-
     if not use_clicked_element_nodes_scope and not use_selected_template_names_scope:
         clicked_nodes = []
     # root_tree = payload.get("root_tree")
@@ -296,7 +367,23 @@ def do_search(client, payload, config, network_timer):
     rebuilt_tree = rebuild_tree(client, items.copy(), root_tree)
     expand_nodes_for_matched_paths(client, rebuilt_tree, items, root_tree_before_search)
     logger.info("Search network timer:{}".format(network_timer.get_report()))
-    return {"choices": rebuilt_tree, "attributes": attributes_copy}
+    result = {"choices": rebuilt_tree, "attributes": attributes_copy}
+    logger.info(
+        "End call [do_search] database_name={}, active_tab={}, element_name={}, attribute_name={}, template={}, "
+        "element_category={}, attribute_category={}, clicked_nodes_count={}, selected_template_names_count={}".format(
+            config.get("database_name"),
+            config.get("activeTab"),
+            config.get("element_name"),
+            config.get("attribute_name"),
+            config.get("template", None),
+            config.get("element_category", None),
+            config.get("attribute_category", None),
+            len(config.get("clickedNodes", [])) if isinstance(config.get("clickedNodes", []), list) else 0,
+            len(config.get("selectedTemplateNames", [])) if isinstance(config.get("selectedTemplateNames", []), list) else 0
+        )
+    )
+    logger.info("End call [do_search] element_name={}, attribute_name={}, db={}:".format(element_name, attribute_name, database_name))
+    return result
 
 
 def get_items_from_db(client, parent_node, link_key, database_name=None):
