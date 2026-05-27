@@ -2,6 +2,11 @@
     width: 100% !important;
 }
 
+.fh.w800.oa > :first-child {
+    margin: 20px 20px !important;
+}
+
+
 .tree-node {
     box-sizing: border-box;
     min-width: 0;
