@@ -127,15 +127,15 @@ def do(payload, config, plugin_config, inputs):
         for result in client.batched_search(
             database_name, None, None,
             None, None, template_name, [],
-            elements_max_count=elements_max_count, attributes_max_count=attributes_max_count, include_weak_links=False
+            elements_max_count=elements_max_count, attributes_max_count=attributes_max_count
         ):
             attributes.append(result)
-        attributes = split_real_from_linked_paths(attributes)
+        # attributes = split_real_from_linked_paths(attributes)
         items = []
         for attribute in attributes:
             item = get_item_details(attribute)
             items.append(item)
-        items = expand_items_by_paths(items)
+        # items = expand_items_by_paths(items)
         return {"choices": [], "attributes": items}
     if method == "do_search":
         template_name = config.get("template", None)
