@@ -1,11 +1,16 @@
+/* Make custom UI full width */
 .fh.w800.oa {
     width: 100% !important;
 }
 
+/* Hide standard recipe header */
 .fh.w800.oa > :first-child {
-    margin: 20px 20px !important;
+    display: none;
 }
 
+.recipe-settings-section1 {
+    margin: 0px !important;
+}
 
 .tree-node {
     box-sizing: border-box;
