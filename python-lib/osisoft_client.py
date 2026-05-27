@@ -795,7 +795,7 @@ class OSIsoftClient(object):
 
     def batched_search(self, database, element_name, attribute_name, element_category,
                        attribute_category, template, restrict_to_elements,
-                       elements_max_count=None, attributes_max_count=None):
+                       elements_max_count=None, attributes_max_count=None, include_weak_links=True):
         elements_query = {
             "templateName": template,
             "categoryName": element_category,
@@ -807,8 +807,10 @@ class OSIsoftClient(object):
             elements_query["maxCount"] = elements_max_count
         attribute_query = {
             "searchFullHierarchy": "true",
-            "associations": "Paths"
+            # "associations": "Paths"
         }
+        if include_weak_links:
+            attribute_query["associations"] = "Paths"
         if attribute_name:
             attribute_query["nameFilter"] = attribute_name
         if attribute_category:

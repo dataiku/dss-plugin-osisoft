@@ -116,7 +116,7 @@ def do(payload, config, plugin_config, inputs):
         for element in client.search_elements(database_name, name=None, description=None, category=None, template=template_name, full_search=True):
             elements.append(get_item_details(element))
         return {"choices": [], "elements": elements}
-    if method=="get_attribute_for_template":
+    if method == "get_attribute_for_template":
         database_name = config.get("database_name")
         template_name = payload.get("template_name", None)
         if template_name is None:
@@ -127,7 +127,7 @@ def do(payload, config, plugin_config, inputs):
         for result in client.batched_search(
             database_name, None, None,
             None, None, template_name, [],
-            elements_max_count=elements_max_count, attributes_max_count=attributes_max_count
+            elements_max_count=elements_max_count, attributes_max_count=attributes_max_count, include_weak_links=False
         ):
             attributes.append(result)
         attributes = split_real_from_linked_paths(attributes)
