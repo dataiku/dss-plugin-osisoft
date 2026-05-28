@@ -124,6 +124,27 @@
 }
 .pi-system-explorer__main {
     display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    flex: 1 0 0;
+    align-self: stretch;
+}
+
+.pi-system-explorer__header {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    padding: 8px 16px;
+    border-bottom: 1px solid #BBB;
+    width: 100%;
+    box-sizing: border-box;
+    align-items: center;
+    font-size: 16px;
+}
+
+.pi-system-explorer__content {
+    padding: 16px;
+    display: flex;
     padding: 16px;
     flex-direction: column;
     align-items: flex-start;
