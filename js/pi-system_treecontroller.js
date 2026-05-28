@@ -177,8 +177,8 @@ app.controller('AfExplorerFormCtrl', [
             return value;
         }
 
-        $scope.showDatasetPreviewModal = function() {
-            const selectedAttributes = ($scope.config.outputSelectedAttributes || [])
+        function buildSelectedAttributesTable() {
+            return ($scope.config.outputSelectedAttributes || [])
                 .filter(attribute => attribute.checked !== false)
                 .map(attribute => ({
                     title: attribute.title || '',
@@ -192,8 +192,11 @@ app.controller('AfExplorerFormCtrl', [
                     interval: attribute.interval || '',
                     sync_time: attribute.sync_time || '',
                 }));
+        }
 
+        $scope.showDatasetPreviewModal = function() {
             const modalScope = $scope.$new();
+
             modalScope.previewColumns = [
                 { key: 'title', label: 'Title' },
                 { key: 'template_name', label: 'Template' },
@@ -206,7 +209,11 @@ app.controller('AfExplorerFormCtrl', [
                 { key: 'interval', label: 'Interval' },
                 { key: 'sync_time', label: 'Sync time' },
             ];
-            modalScope.previewRows = selectedAttributes;
+
+            modalScope.previewRows = buildSelectedAttributesTable();
+            modalScope.$watch('config.outputSelectedAttributes', function() {
+                modalScope.previewRows = buildSelectedAttributesTable();
+            }, true);
 
             CreateModalFromTemplate('/plugins/pi-system/resource/pi-system_preview-dataset-modal.html', modalScope);
         };
