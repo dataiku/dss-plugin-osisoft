@@ -1,6 +1,9 @@
 .pi-system-preview-dataset-modal {
-    height: 60%;
     width: 75%;
+}
+
+.pi-system-preview-dataset-modal .modal-body {
+    height: 75vh;
 }
 
 /* Make custom UI full width */
