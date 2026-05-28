@@ -130,9 +130,13 @@
                 </div>
                 <div class="tree-view__search-panel" ng-if="config.activeTab === 'element'">
                     <div class="tree-view__search-row">
-                        <input class="tree-view__search-input" id="ReturnsName" ng-model="config.element_name" type="text"
-                               data-container="body" data-html="true" placeholder="Search element"
-                               ng-keydown="onSearchInputKeydown($event)"/>
+                        <basic-search-box
+                                ng-model="config.element_name"
+                                placeholder="Search element"
+                                click-clear="clearSearch()"
+                                ng-keydown="onSearchInputKeydown($event)"
+                        >
+                        </basic-search-box>
                         <button ng-click="searchFromElement()" class="btn btn--secondary link-like"
                                 id="get-query-dim-prop" ng-disabled="!config.element_name">Search
                         </button>
