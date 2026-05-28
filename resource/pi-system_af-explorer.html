@@ -145,7 +145,7 @@
                             <span ng-if="group.nbSearchMatches !== group.attributes.length">
                                  - ({{group.nbSearchMatches}}/{{group.attributes.length}} attributes shown)
                             </span>
-                            <select dku-bs-select
+                            <select dku-bs-select="{ size: 10 }"
                                     multiple
                                     none-selected-text="Scope"
                                     ng-model="selectedElementsByTemplateUI[group.group_name]"
