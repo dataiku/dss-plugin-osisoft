@@ -131,6 +131,13 @@
     flex: 1 0 0;
     align-self: stretch;
 }
+
+pi-system-auth-banner {
+    display: block;
+    width: 100%;
+    align-self: stretch;
+}
+
 .pi-system-explorer__tree-view-container {
     display: flex;
     width: 252px;

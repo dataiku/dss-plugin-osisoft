@@ -1,5 +1,13 @@
 const app = angular.module('piSystemTreeApp.module', []);
 
+app.directive('piSystemAuthBanner', function() {
+    return {
+        restrict: 'E',
+        scope: false,
+        templateUrl: '/plugins/pi-system/resource/pi-system_auth-banner.html'
+    };
+});
+
 const aggregateDataTypeFields = Object.freeze({
     data_type: {
         label: 'Data type',
