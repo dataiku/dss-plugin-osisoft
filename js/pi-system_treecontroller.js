@@ -211,6 +211,16 @@ app.controller('AfExplorerFormCtrl', [
             CreateModalFromTemplate('/plugins/pi-system/resource/pi-system_preview-dataset-modal.html', modalScope);
         };
 
+        $scope.clearOutputSelection = function() {
+            $scope.config.outputSelectedAttributes = [];
+            $scope.buildGroupedAttributes();
+            // Just need to uncheck the current attribute list as it is
+            // built with the correct checked state when adding any new elements
+            $scope.config.attributeList.forEach(attribute => {
+                attribute.checked = false;
+            });
+        }
+
         $scope.onAdvancedToggle = function() {
             if (!$scope.config.show_advanced_parameters) {
                 $scope.config.is_ssl_check_disabled = false;
