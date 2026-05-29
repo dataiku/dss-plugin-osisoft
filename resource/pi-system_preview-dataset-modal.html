@@ -1,0 +1,35 @@
+<div class="modal modal3 pi-system-preview-dataset-modal"
+     auto-size="false">
+    <div dku-modal-header modal-title="Preview dataset" />
+    <div class="modal-body">
+        <button
+                class="btn btn- btn--outline btn--secondary btn--dku-icon"
+                ng-click="clearOutputSelection()">
+            <i class="dku-icon-dismiss-16"></i>
+            Clear selection
+        </button>
+        <div ng-if="!previewRows.length" class="alert alert-info">
+            No attributes selected yet.
+        </div>
+        <div ng-if="previewRows.length">
+            <p>{{previewRows.length}} selected attribute(s)</p>
+            <div class="scroll">
+                <table class="table table-striped table-condensed">
+                    <thead>
+                        <tr>
+                            <th ng-repeat="column in previewColumns">{{column.label}}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr ng-repeat="row in previewRows track by $index">
+                            <td ng-repeat="column in previewColumns">{{row[column.key]}}</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    <div class="modal-footer modal-footer-std-buttons">
+        <button type="button" class="btn btn--text btn--primary" ng-click="dismiss()">Close</button>
+    </div>
+</div>
