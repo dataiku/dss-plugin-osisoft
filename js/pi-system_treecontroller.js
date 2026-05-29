@@ -557,13 +557,15 @@ app.controller('AfExplorerFormCtrl', [
             return $scope.callPythonDo({ method: "get_attribute_for_template", template_name: node.title}).then(
                 function(data) {
                     console.log("get_attribute_for_template", data);
-                    node.children = data.attributes;
+                    node.children.push(...data.attributes);
                     node.children.forEach(child => {
                         // TODO: do the same for the normal getChild
-                        const elementPath = getElementPathFromAttributePath(child.path);
-                        child.expanded = false;
-                        child.parent_element = getElementNameFromPath(elementPath);
-                        child.parent_element_path = elementPath;
+                        if (child.type === 'attribute') {
+                            const elementPath = getElementPathFromAttributePath(child.path);
+                            child.expanded = false;
+                            child.parent_element = getElementNameFromPath(elementPath);
+                            child.parent_element_path = elementPath;
+                        }
                     });
                     return node;
                 }
