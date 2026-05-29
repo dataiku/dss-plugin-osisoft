@@ -667,7 +667,8 @@ app.controller('AfExplorerFormCtrl', [
                                         return attribute.template_name === templateName && attribute.parent_element_path === element.path;
                                     });
                                     $scope.config.attributeList = $scope.config.attributeList.filter(attribute => {
-                                        return attribute.template_name === templateName && attribute.parent_element_path !== element.path;
+                                        return attribute.template_name !== templateName || attribute.parent_element_path !==
+                                            element.path;
                                     });
                                 } else if (!wasSelected && isSelected) {
                                     const attributesToAdd = $scope.templateModeExcludedAttributes[templateName]?.[element.path];
