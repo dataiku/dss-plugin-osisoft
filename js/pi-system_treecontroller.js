@@ -1,5 +1,13 @@
 const app = angular.module('piSystemTreeApp.module', []);
 
+app.directive('piSystemAuthBanner', function() {
+    return {
+        restrict: 'E',
+        scope: false,
+        templateUrl: '/plugins/pi-system/resource/pi-system_auth-banner.html'
+    };
+});
+
 const aggregateDataTypeFields = Object.freeze({
     data_type: {
         label: 'Data type',
@@ -124,7 +132,8 @@ app.controller('AfExplorerFormCtrl', [
     '$stateParams',
     '$q',
     'TreeDataService',
-    function($scope, $stateParams, $q, TreeDataService) {
+    'CreateModalFromTemplate',
+    function($scope, $stateParams, $q, TreeDataService, CreateModalFromTemplate) {
 
         $scope.paramDesc = {
             'parameterSetId': 'basic-auth',
@@ -160,6 +169,64 @@ app.controller('AfExplorerFormCtrl', [
                 shouldDisplay: () => true
             }
         ];
+
+        function formatPreviewValue(value) {
+            if (Array.isArray(value)) {
+                return value.join(', ');
+            }
+            return value;
+        }
+
+        function buildSelectedAttributesTable() {
+            return ($scope.config.outputSelectedAttributes || [])
+                .filter(attribute => attribute.checked !== false)
+                .map(attribute => ({
+                    title: attribute.title || '',
+                    template_name: attribute.template_name || '',
+                    path: attribute.path || '',
+                    data_type: attribute.data_type || '',
+                    summary_type: formatPreviewValue(attribute.summary_type || []),
+                    boundary_type: attribute.boundary_type || '',
+                    record_boundary_type: attribute.record_boundary_type || '',
+                    summary_duration: attribute.summary_duration || '',
+                    interval: attribute.interval || '',
+                    sync_time: attribute.sync_time || '',
+                }));
+        }
+
+        $scope.showDatasetPreviewModal = function() {
+            const modalScope = $scope.$new();
+
+            modalScope.previewColumns = [
+                { key: 'title', label: 'Title' },
+                { key: 'template_name', label: 'Template' },
+                { key: 'path', label: 'Path' },
+                { key: 'data_type', label: 'Data type' },
+                { key: 'summary_type', label: 'Summary type' },
+                { key: 'boundary_type', label: 'Boundary type' },
+                { key: 'record_boundary_type', label: 'Record boundary type' },
+                { key: 'summary_duration', label: 'Summary duration' },
+                { key: 'interval', label: 'Interval' },
+                { key: 'sync_time', label: 'Sync time' },
+            ];
+
+            modalScope.previewRows = buildSelectedAttributesTable();
+            modalScope.$watch('config.outputSelectedAttributes', function() {
+                modalScope.previewRows = buildSelectedAttributesTable();
+            }, true);
+
+            CreateModalFromTemplate('/plugins/pi-system/resource/pi-system_preview-dataset-modal.html', modalScope);
+        };
+
+        $scope.clearOutputSelection = function() {
+            $scope.config.outputSelectedAttributes = [];
+            $scope.buildGroupedAttributes();
+            // Just need to uncheck the current attribute list as it is
+            // built with the correct checked state when adding any new elements
+            $scope.config.attributeList.forEach(attribute => {
+                attribute.checked = false;
+            });
+        }
 
         $scope.onAdvancedToggle = function() {
             if (!$scope.config.show_advanced_parameters) {

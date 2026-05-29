@@ -1,5 +1,23 @@
+.pi-system-preview-dataset-modal {
+    width: 75%;
+}
+
+.pi-system-preview-dataset-modal .modal-body {
+    height: 75vh;
+}
+
+/* Make custom UI full width */
 .fh.w800.oa {
     width: 100% !important;
+}
+
+/* Hide standard recipe header */
+.fh.w800.oa > :first-child {
+    display: none;
+}
+
+.recipe-settings-section1 {
+    margin: 0px !important;
 }
 
 .tree-node {
@@ -21,6 +39,10 @@
 
 .tree-node__row--visualized {
     background: #E7F3FF;
+}
+
+.tree-node__row--visualized.tree-node__row--search-result {
+    background: #F3F6E3;
 }
 
 .tree-node__row--search-result:not(.tree-node__row--visualized) {
@@ -110,6 +132,27 @@
 }
 .pi-system-explorer__main {
     display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    flex: 1 0 0;
+    align-self: stretch;
+}
+
+.pi-system-explorer__header {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    padding: 8px 16px;
+    border-bottom: 1px solid #BBB;
+    width: 100%;
+    box-sizing: border-box;
+    align-items: center;
+    font-size: 16px;
+}
+
+.pi-system-explorer__content {
+    padding: 16px;
+    display: flex;
     padding: 16px;
     flex-direction: column;
     align-items: flex-start;
@@ -117,6 +160,13 @@
     flex: 1 0 0;
     align-self: stretch;
 }
+
+pi-system-auth-banner {
+    display: block;
+    width: 100%;
+    align-self: stretch;
+}
+
 .pi-system-explorer__tree-view-container {
     display: flex;
     width: 252px;
@@ -315,9 +365,14 @@
 
 .tree-view__search-row {
     display: flex;
-    align-items: center;
+    align-items: stretch;
     gap: 8px;
     align-self: stretch;
+}
+
+.tree-view__search-row .btn {
+    display: flex;
+    align-items: center;
 }
 
 .tree-view__search-input {
