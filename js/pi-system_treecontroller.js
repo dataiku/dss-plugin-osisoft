@@ -612,76 +612,57 @@ app.controller('AfExplorerFormCtrl', [
         $scope.selectedElementsByTemplate = {};
         $scope.templateModeExcludedAttributes = {};
 
-        $scope.setupElementsDropdown = function($element, templateName) {
-            let initialized = false;
-            const dropdown = $element.next();
-
-            // if not initialized but elements by template is already populated
-            // refresh the state, and set to initialized
-           if (!initialized && $scope.config.elementsByTemplate[templateName]?.length > 0) {
-               setSelectedElementsByTemplate(templateName);
-               initialized = true;
-           }
-
-            // TODO: maybe unhook this
-            dropdown.on('click', function() {
-                // console.log("triggered click")
-                if (initialized) {
-                    return;
-                }
-
-                $scope.$applyAsync(() => {
-                    $scope.getElementsForTemplate(templateName).then(() => {
+        $scope.initElementsDropdown = function(templateName) {
+            if ($scope.config.elementsByTemplate[templateName]?.length === 0) {
+                console.log("Elements dropdown already initialized");
+                setSelectedElementsByTemplate(templateName);
+                return;
+            }
+            $scope.$applyAsync(() => {
+                $scope.getElementsForTemplate(templateName).then(() => {
                         setSelectedElementsByTemplate(templateName);
-                        initialized = true;
                         $scope.$broadcast('selectPickerRefresh');
                     }
-                    )
-                });
+                )
             });
+        }
 
-            $element.on('change', function() {
+        $scope.applyChangeElementsDropdown = function(templateName) {
+            $scope.$applyAsync(() => {
+                // TODO: redo everything by templateID
+                const options = $scope.config.elementsByTemplate[templateName];
+                const previouslySelected = new Set($scope.selectedElementsByTemplate[templateName]);
+                const currentlySelected = new Set($scope.selectedElementsByTemplateUI[templateName]);
 
-                if (!initialized) {
-                    return;
-                }
+                options.forEach(element => {
+                    const elementKey = String(element.url);
+                    const wasSelected = previouslySelected.has(elementKey);
+                    const isSelected = currentlySelected.has(elementKey);
 
-                $scope.$applyAsync(() => {
-                    // TODO: redo everything by templateID
-                    const options = $scope.config.elementsByTemplate[templateName];
-                    const previouslySelected = new Set($scope.selectedElementsByTemplate[templateName]);
-                    const currentlySelected = new Set($scope.selectedElementsByTemplateUI[templateName]);
-
-                    options.forEach(element => {
-                        const elementKey = String(element.url);
-                        const wasSelected = previouslySelected.has(elementKey);
-                        const isSelected = currentlySelected.has(elementKey);
-
-                        if (wasSelected !== isSelected) {
-                            if ($scope.config.activeTab === 'element') {
-                                $scope.toggleNodeVisualization(element);
-                            } else if ($scope.config.activeTab === 'template') {
-                                if (wasSelected && !isSelected) {
-                                    if (!$scope.templateModeExcludedAttributes[templateName]) {
-                                        $scope.templateModeExcludedAttributes[templateName] = {}
-                                    }
-                                    $scope.templateModeExcludedAttributes[templateName][element.path] = $scope.config.attributeList.filter(attribute => {
-                                        return attribute.template_name === templateName && attribute.parent_element_path === element.path;
-                                    });
-                                    $scope.config.attributeList = $scope.config.attributeList.filter(attribute => {
-                                        return attribute.template_name !== templateName || attribute.parent_element_path !==
-                                            element.path;
-                                    });
-                                } else if (!wasSelected && isSelected) {
-                                    const attributesToAdd = $scope.templateModeExcludedAttributes[templateName]?.[element.path];
-                                    $scope.config.attributeList.push(...attributesToAdd)
+                    if (wasSelected !== isSelected) {
+                        if ($scope.config.activeTab === 'element') {
+                            $scope.toggleNodeVisualization(element);
+                        } else if ($scope.config.activeTab === 'template') {
+                            if (wasSelected && !isSelected) {
+                                if (!$scope.templateModeExcludedAttributes[templateName]) {
+                                    $scope.templateModeExcludedAttributes[templateName] = {}
                                 }
+                                $scope.templateModeExcludedAttributes[templateName][element.path] = $scope.config.attributeList.filter(attribute => {
+                                    return attribute.template_name === templateName && attribute.parent_element_path === element.path;
+                                });
+                                $scope.config.attributeList = $scope.config.attributeList.filter(attribute => {
+                                    return attribute.template_name !== templateName || attribute.parent_element_path !==
+                                        element.path;
+                                });
+                            } else if (!wasSelected && isSelected) {
+                                const attributesToAdd = $scope.templateModeExcludedAttributes[templateName]?.[element.path];
+                                $scope.config.attributeList.push(...attributesToAdd)
                             }
                         }
-                    });
-
-                    $scope.selectedElementsByTemplate = angular.copy($scope.selectedElementsByTemplateUI);
+                    }
                 });
+
+                $scope.selectedElementsByTemplate = angular.copy($scope.selectedElementsByTemplateUI);
             });
         }
 

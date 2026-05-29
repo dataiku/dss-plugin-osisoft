@@ -88,10 +88,11 @@
                             </span>
                                 <select dku-bs-select="{ size: 10 }"
                                         multiple
-                                        none-selected-text="Scope"
+                                        none-selected-text="Load element scope"
                                         ng-model="selectedElementsByTemplateUI[group.group_name]"
                                         ng-if="section.type === 'template'"
-                                        on-ready="setupElementsDropdown($element, group.group_name)"
+                                        ng-disabled="selectedElementsByTemplateUI[group.group_name].length === 0"
+                                        ng-change="applyChangeElementsDropdown(group.group_name)"
                                 >
                                     <option
                                             ng-repeat="element in config.elementsByTemplate[group.group_name]"
@@ -101,6 +102,13 @@
                                         {{ element.title }}
                                     </option>
                                 </select>
+                                <button class="btn btn--secondary btn--dku-icon-only"
+                                        ng-click="initElementsDropdown(group.group_name)"
+                                        ng-if="section.type === 'template'"
+                                        ng-disabled="selectedElementsByTemplateUI[group.group_name].length > 0"
+                                >
+                                    <i class="dku-icon-arrow-circular-16"></i>
+                                </button>
                             </td>
                         </tr>
                         <tr
