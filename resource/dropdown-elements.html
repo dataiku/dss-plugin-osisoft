@@ -1,0 +1,25 @@
+<div class="dropdown elements-dropdown--container">
+    <button
+            class="dropdown-toggle elements-dropdown--button"
+            type="button"
+            data-toggle="dropdown"
+            aria-expanded="false"
+            aria-haspopup="true"
+            ng-click="ctrl.onClick()"
+            dropdown-position="fixed"
+    >
+        Scope for {{ctrl.groupName}}
+        <i class="dku-icon-caret-down-16"></i>
+        <i class="dku-icon-caret-up-16"></i>
+    </button>
+    <ul class="dropdown-menu elements-dropdown--dropdown">
+        <li ng-repeat="element in ctrl.elements"
+            value="{{element.url}}"
+            ng-click="ctrl.onClickElement(element)"
+            class="elements-dropdown--element"
+        >
+            {{element.title}}
+            <i class="dku-icon-eye-16" ng-show="ctrl.isElementSelected(element)"></i>
+        </li>
+    </ul>
+</div>
