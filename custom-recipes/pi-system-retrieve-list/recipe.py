@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import dataiku
+import json
 from dataiku.customrecipe import get_input_names_for_role, get_recipe_config, get_output_names_for_role
 import pandas as pd
 from safe_logger import SafeLogger
@@ -30,6 +31,59 @@ def get_step_value(item):
     return None
 
 
+def is_dataset_self_contained(input_columns):
+    NECESSARY_COLUMNS = ["id", "data_type", "summary_type", "boundary_type", "record_boundary_type", "summary_duration"]
+    for necessary_column in NECESSARY_COLUMNS:
+        if necessary_column not in input_columns:
+            return False
+    return True
+
+
+def normalize_value(value):
+    try:
+        if pd.isna(value):
+            return None
+    except Exception:
+        pass
+    return value
+
+
+def extract_params_from_row(row):
+    data_type = normalize_value(row.get("data_type"))
+    boundary_type = normalize_value(row.get("boundary_type"))
+    record_boundary_type = normalize_value(row.get("record_boundary_type"))
+    interval = normalize_value(row.get("interval"))
+    sync_time = normalize_value(row.get("sync_time"))
+    summary_type = row.get("summary_type", [])
+    summary_type = normalize_value(summary_type)
+    if summary_type and summary_type.startswith("["):
+        summary_type = summary_type.replace("'", '"')
+        summary_type = json.loads(summary_type)
+        summary_type = ",".join(summary_type)
+    else:
+        summary_type = None
+    summary_duration = normalize_value(row.get("summary_duration"))
+    object_id = normalize_value(row.get("id"))
+    return object_id, data_type, boundary_type, record_boundary_type, interval, sync_time, summary_type, summary_duration
+
+
+def format_results(results, output_schema_data_type):
+    default_columns = OSIsoftConstants.RECIPE_SCHEMA_PER_DATA_TYPE.get(output_schema_data_type)
+    # todo: cache the result of this part
+    columns_types = {}
+    for default_column in default_columns:
+        column_name = default_column.get("name")
+        column_type = default_column.get("type")
+        columns_types[column_name] = column_type
+    formated_results = []
+    for result in results:
+        formated_result = {}
+        for column_name in columns_types:
+            formated_result[column_name] = result.get(column_name)
+        formated_results.append(formated_result)
+    return formated_results
+
+
 input_dataset = get_input_names_for_role('input_dataset')
 output_names_stats = get_output_names_for_role('api_output')
 config = get_recipe_config()
@@ -48,10 +102,22 @@ if not server_url and not use_server_url_column:
     raise ValueError("Server domain not set")
 
 path_column = config.get("path_column", "")
+input_parameters_dataset = dataiku.Dataset(input_dataset[0])
+input_parameters_dataframe = input_parameters_dataset.get_dataframe()
+do_duplicate_input_row = config.get("do_duplicate_input_row", False)
+input_columns = list(input_parameters_dataframe.columns)
+
+self_contained_mode = False
 if not path_column:
-    raise ValueError("There is no parameter column selected.")
+    if is_dataset_self_contained(input_columns):
+        self_contained_mode = True
+    else:
+        raise ValueError("There is no parameter column selected.")
+else:
+    input_columns = list(input_parameters_dataframe.columns) if do_duplicate_input_row else []
 
 data_type = config.get("data_type")
+output_schema_data_type = data_type
 start_time = config.get("start_time")
 end_time = config.get("end_time")
 use_start_time_column = config.get("use_start_time_column", False)
@@ -63,25 +129,21 @@ use_batch_mode, batch_size = get_advanced_parameters(config)
 interval, sync_time, boundary_type = get_interpolated_parameters(config)
 record_boundary_type = config.get("record_boundary_type") if data_type == "RecordedData" else None
 summary_type, summary_duration = get_summary_parameters(config)
-do_duplicate_input_row = config.get("do_duplicate_input_row", False)
+
 max_request_size, estimated_density, maximum_points_returned = get_batch_parameters(config)
-max_time_to_retrieve_per_batch = estimated_density / maximum_points_returned #density per hour <- max time is in hour
+max_time_to_retrieve_per_batch = estimated_density / maximum_points_returned  # density per hour <- max time is in hour
 
 network_timer = PerformanceTimer()
 processing_timer = PerformanceTimer()
 processing_timer.start()
 
-input_parameters_dataset = dataiku.Dataset(input_dataset[0])
 output_dataset = dataiku.Dataset(output_names_stats[0])
-input_parameters_dataframe = input_parameters_dataset.get_dataframe()
 
 results = []
 time_last_request = None
 client = None
 previous_server_url = ""
 time_not_parsed = True
-
-input_columns = list(input_parameters_dataframe.columns) if do_duplicate_input_row else []
 
 with output_dataset.get_writer() as writer:
     first_dataframe = True
@@ -94,6 +156,16 @@ with output_dataset.get_writer() as writer:
         start_time = input_parameters_row.get(start_time_column, start_time) if use_start_time_column else start_time
         end_time = input_parameters_row.get(end_time_column, end_time) if use_end_time_column else end_time
         row_name = input_parameters_row.get("Name")
+
+        object_id = input_parameters_row.get(path_column)
+
+        if self_contained_mode:
+            object_id, data_type, boundary_type, record_boundary_type, interval, sync_time, summary_type, summary_duration = extract_params_from_row(
+                input_parameters_row
+            )
+            output_schema_data_type = "All"
+            path_column = "id"
+
         duplicate_initial_row = {}
         nb_rows_to_process = input_parameters_dataframe.shape[0]
         for input_column in input_columns:
@@ -114,7 +186,6 @@ with output_dataset.get_writer() as writer:
                 end_time = client.parse_pi_time(end_time)
                 sync_time = client.parse_pi_time(sync_time)
 
-        object_id = input_parameters_row.get(path_column)
         item = None
         if client.is_resource_path(object_id):
             object_id = normalize_af_path(object_id)
@@ -194,9 +265,11 @@ with output_dataset.get_writer() as writer:
                 extention = client.unnest_row(base)
                 results.extend(extention)
 
+        if output_schema_data_type == "All":
+            results = format_results(results, output_schema_data_type)
         unnested_items_rows = pd.DataFrame(results)
         if first_dataframe:
-            default_columns = OSIsoftConstants.RECIPE_SCHEMA_PER_DATA_TYPE.get(data_type)
+            default_columns = OSIsoftConstants.RECIPE_SCHEMA_PER_DATA_TYPE.get(output_schema_data_type)
             if must_convert_object_to_string:
                 default_columns = convert_schema_objects_to_string(default_columns)
             combined_columns_description = get_combined_description(default_columns, unnested_items_rows)
@@ -205,6 +278,7 @@ with output_dataset.get_writer() as writer:
         if not unnested_items_rows.empty:
             writer.write_dataframe(unnested_items_rows)
         results = []
+        formated_results = []
 
 processing_timer.stop()
 logger.info("Overall timer:{}".format(processing_timer.get_report()))
