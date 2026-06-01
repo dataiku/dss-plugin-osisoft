@@ -594,7 +594,7 @@ app.controller('AfExplorerFormCtrl', [
             }
 
             await $scope.getElementsForTemplate(templateName);
-            return ($scope.config.elementsByTemplate[templateName] || []).map(element => element.url);
+            return $scope.config.elementsByTemplate[templateName].map(element => element.url);
         }
 
         $scope.applyClickElementsDropdown = function(templateName, element, selected) {
@@ -1202,6 +1202,10 @@ app.component('dropdownElements', {
 
         ctrl.$onInit = function() {
 
+            if (ctrl.elements?.length > 0 && ctrl.activeTab === 'template') {
+                ctrl.templatedModeSelectedElements = ctrl.elements.map(element => element.url);
+            }
+
             ctrl.onClick = function() {
                 if (ctrl.elements?.length > 0) {
                     return;
@@ -1209,7 +1213,7 @@ app.component('dropdownElements', {
 
                 ctrl.initElementsDropdown({ templateName: ctrl.groupName }).then(function(elementUrls) {
                     if (ctrl.activeTab === 'template') {
-                        ctrl.templatedModeSelectedElements = elementUrls || [];
+                        ctrl.templatedModeSelectedElements = elementUrls;
                     }
                 });
             }
