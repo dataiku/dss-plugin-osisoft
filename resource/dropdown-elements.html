@@ -8,8 +8,8 @@
             ng-click="ctrl.onClick()"
             dropdown-position="fixed"
     >
-        <span ng-if="!ctrl.initialized">Load scope</span>
-        <span ng-if="ctrl.initialized">Scope: ({{ctrl.getSelectedElementsCount()}}/{{ctrl.elements.length}}) Elements</span>
+        <span ng-if="!ctrl.elements || ctrl.elements.length === 0">Load scope</span>
+        <span ng-if="ctrl.elements && ctrl.elements.length > 0">Scope: ({{ctrl.getSelectedElementsCount()}}/{{ctrl.elements.length}}) Elements</span>
         <i class="dku-icon-caret-down-16"></i>
     </button>
     <ul class="dropdown-menu elements-dropdown--dropdown">

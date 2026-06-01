@@ -1198,22 +1198,19 @@ app.component('dropdownElements', {
     controllerAs: 'ctrl',
     controller: function() {
         const ctrl = this;
-        ctrl.initialized = false;
         ctrl.templatedModeSelectedElements = [];
 
         ctrl.$onInit = function() {
-            console.log("ON INIT")
-
 
             ctrl.onClick = function() {
-                if (ctrl.initialized) {
+                if (ctrl.elements?.length > 0) {
                     return;
                 }
+
                 ctrl.initElementsDropdown({ templateName: ctrl.groupName }).then(function(elementUrls) {
                     if (ctrl.activeTab === 'template') {
                         ctrl.templatedModeSelectedElements = elementUrls || [];
                     }
-                    ctrl.initialized = true;
                 });
             }
 
