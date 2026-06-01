@@ -6,9 +6,9 @@
                 Welcome to Pi System Plugin
             </div>
             <button
-                class="btn btn- btn--outline btn--primary btn--dku-icon"
-                ng-click="showDatasetPreviewModal()"
-                ng-disabled="!config.outputSelectedAttributes.length">
+                    class="btn btn- btn--outline btn--primary btn--dku-icon"
+                    ng-click="showDatasetPreviewModal()"
+                    ng-disabled="!config.outputSelectedAttributes.length">
                 <i class="dku-icon-eye-16"></i>
                 Preview dataset
             </button>
@@ -79,22 +79,26 @@
                                 <input type="checkbox" ng-model="group.allChecked"
                                        ng-change="toggleGroupedAttributes(group)" indeterminate="group.checked">
                             </td>
-                            <td colspan="{{config.displayPath ? 5 : 4}}">
-                            <span>
-                                {{group.group_name}}
-                            </span>
-                                <span ng-if="group.nbSearchMatches !== group.attributes.length">
-                                 - ({{group.nbSearchMatches}}/{{group.attributes.length}} attributes shown)
-                            </span>
-                                <dropdown-elements
-                                    elements="config.elementsByTemplate[group.group_name]"
-                                    group-name="group.group_name"
-                                    init-elements-dropdown="initElementsDropdown(templateName)"
-                                    is-template-associated-element-selected="isTemplateAssociatedElementSelected(element)"
-                                    apply-click-elements-dropdown="applyClickElementsDropdown(templateName, element, selected)"
-                                    active-tab="config.activeTab"
-                                    ng-if="section.type === 'template'"
-                                ></dropdown-elements>
+                            <td colspan="{{config.displayPath ? 5 : 4}}"">
+                                <div class="custom-table__group-actions">
+                                    <div>
+                                        <span class="custom-table__group-name">
+                                            {{group.group_name}}
+                                        </span>
+                                                <span ng-if="group.nbSearchMatches !== group.attributes.length">
+                                             - ({{group.nbSearchMatches}}/{{group.attributes.length}} attributes shown)
+                                        </span>
+                                    </div>
+                                    <dropdown-elements
+                                            elements="config.elementsByTemplate[group.group_name]"
+                                            group-name="group.group_name"
+                                            init-elements-dropdown="initElementsDropdown(templateName)"
+                                            is-template-associated-element-selected="isTemplateAssociatedElementSelected(element)"
+                                            apply-click-elements-dropdown="applyClickElementsDropdown(templateName, element, selected)"
+                                            active-tab="config.activeTab"
+                                            ng-if="section.type === 'template'"
+                                    ></dropdown-elements>
+                                </div>
                             </td>
                         </tr>
                         <tr

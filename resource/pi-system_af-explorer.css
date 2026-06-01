@@ -256,7 +256,6 @@ pi-system-auth-banner {
 .custom-table {
     border-collapse: collapse;
     width: 100%;
-    font-family: Arial, sans-serif;
 }
 
 .custom-table th,
@@ -280,17 +279,25 @@ pi-system-auth-banner {
 }
 
 .custom-table tr.custom-table__group-row td {
-    background-color: #e8f0fb;
-    font-weight: 600;
-}
-
-.custom-table tr.custom-table__group-row:hover td {
-    background-color: #e8f0fb;
+    background-color: #FDF1E7;
 }
 
 .custom-table tr.custom-table__empty-row td {
     color: #666;
     font-style: italic;
+}
+
+.custom-table__group-actions {
+    display: flex;
+    flex-direction: row;
+    padding: 4px;
+    gap: 8px;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 16px;
+}
+
+.custom-table__group-name {
 }
 
 .attribute-table-block {
@@ -431,3 +438,38 @@ pi-system-auth-banner {
     display: inline-flex;
     vertical-align: middle;
 }
+
+.elements-dropdown--button {
+    font-family: inherit;
+    display: flex;
+    width: 400px;
+    padding: 4px 8px;
+    justify-content: space-between;
+    align-items: center;
+    border: 1px solid #CCC;
+    background: #FFF;
+}
+
+.elements-dropdown--dropdown {
+    width: 400px;
+    padding: 4px;
+    box-sizing: border-box;
+}
+
+.elements-dropdown--element {
+    padding: 4px;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.elements-dropdown--element:hover {
+    background: #F4F7F8;
+}
+
+
+.elements-dropdown--element i {
+    color: #196BFA;
+}
+

@@ -8,9 +8,9 @@
             ng-click="ctrl.onClick()"
             dropdown-position="fixed"
     >
-        Scope for {{ctrl.groupName}}
+        <span ng-if="!ctrl.initialized">Load scope</span>
+        <span ng-if="ctrl.initialized">Scope: ({{ctrl.getSelectedElementsCount()}}/{{ctrl.elements.length}}) Elements</span>
         <i class="dku-icon-caret-down-16"></i>
-        <i class="dku-icon-caret-up-16"></i>
     </button>
     <ul class="dropdown-menu elements-dropdown--dropdown">
         <li ng-repeat="element in ctrl.elements"
@@ -18,7 +18,9 @@
             ng-click="ctrl.onClickElement(element)"
             class="elements-dropdown--element"
         >
-            {{element.title}}
+            <span>
+                {{element.title}}
+            </span>
             <i class="dku-icon-eye-16" ng-show="ctrl.isElementSelected(element)"></i>
         </li>
     </ul>

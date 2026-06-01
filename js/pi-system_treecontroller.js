@@ -1198,7 +1198,7 @@ app.component('dropdownElements', {
     controllerAs: 'ctrl',
     controller: function() {
         const ctrl = this;
-        let initialized = false;
+        ctrl.initialized = false;
         ctrl.templatedModeSelectedElements = [];
 
         ctrl.$onInit = function() {
@@ -1206,15 +1206,15 @@ app.component('dropdownElements', {
 
 
             ctrl.onClick = function() {
-                if (initialized) {
+                if (ctrl.initialized) {
                     return;
                 }
                 ctrl.initElementsDropdown({ templateName: ctrl.groupName }).then(function(elementUrls) {
                     if (ctrl.activeTab === 'template') {
                         ctrl.templatedModeSelectedElements = elementUrls || [];
                     }
+                    ctrl.initialized = true;
                 });
-                initialized = true;
             }
 
             ctrl.onClickElement = function(element) {
@@ -1243,6 +1243,10 @@ app.component('dropdownElements', {
                 } else {
                     return ctrl.templatedModeSelectedElements.includes(element.url);
                 }
+            }
+
+            ctrl.getSelectedElementsCount = function() {
+                return ctrl.elements.filter(element => ctrl.isElementSelected(element)).length;
             }
         }
     },
