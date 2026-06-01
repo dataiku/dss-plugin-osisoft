@@ -452,12 +452,13 @@ pi-system-auth-banner {
 
 .elements-dropdown--dropdown {
     width: 400px;
-    padding: 4px;
     box-sizing: border-box;
+    max-height: min(200px, calc(100dvh - 16px));
+    overflow-y: auto;
 }
 
 .elements-dropdown--element {
-    padding: 4px;
+    padding: 4px 8px;
     display: flex;
     flex-direction: row;
     align-items: center;
