@@ -587,11 +587,14 @@ app.controller('AfExplorerFormCtrl', [
 
         $scope.templateModeExcludedAttributes = {};
 
-        $scope.initElementsDropdown = function(templateName) {
-            if ($scope.config.elementsByTemplate[templateName]?.length === 0) {
-                return;
+        $scope.initElementsDropdown = async function(templateName) {
+            const existingElements = $scope.config.elementsByTemplate[templateName];
+            if (Array.isArray(existingElements)) {
+                return existingElements.map(element => element.url);
             }
-            $scope.$applyAsync(() => $scope.getElementsForTemplate(templateName));
+
+            await $scope.getElementsForTemplate(templateName);
+            return ($scope.config.elementsByTemplate[templateName] || []).map(element => element.url);
         }
 
         $scope.applyClickElementsDropdown = function(templateName, element, selected) {
@@ -1190,33 +1193,58 @@ app.component('dropdownElements', {
         initElementsDropdown: '&',
         isTemplateAssociatedElementSelected: '&',
         applyClickElementsDropdown: '&',
+        activeTab: '<',
     },
     controllerAs: 'ctrl',
     controller: function() {
         const ctrl = this;
         let initialized = false;
+        ctrl.templatedModeSelectedElements = [];
 
         ctrl.$onInit = function() {
+            console.log("ON INIT")
 
 
-        ctrl.onClick = function() {
-            if (initialized) {
-                return;
+            ctrl.onClick = function() {
+                if (initialized) {
+                    return;
+                }
+                ctrl.initElementsDropdown({ templateName: ctrl.groupName }).then(function(elementUrls) {
+                    if (ctrl.activeTab === 'template') {
+                        ctrl.templatedModeSelectedElements = elementUrls || [];
+                    }
+                });
+                initialized = true;
             }
-            ctrl.initElementsDropdown({ templateName: ctrl.groupName });
-            initialized = true;
+
+            ctrl.onClickElement = function(element) {
+
+                let selected;
+                if (ctrl.activeTab === 'template') {
+                    selected = !ctrl.templatedModeSelectedElements.includes(element.url);
+                    if (selected) {
+                        ctrl.templatedModeSelectedElements.push(element.url)
+                    } else {
+                        ctrl.templatedModeSelectedElements = ctrl.templatedModeSelectedElements.filter(url => url !== element.url);
+                    }
+                } else {
+                    selected = ctrl.isTemplateAssociatedElementSelected({ element: element });
+                }
+                ctrl.applyClickElementsDropdown({
+                    templateName: ctrl.groupName,
+                    element: element,
+                    selected: selected
+                })
+            }
+
+            ctrl.isElementSelected = function(element) {
+                if (ctrl.activeTab === 'element') {
+                    return ctrl.isTemplateAssociatedElementSelected({element: element});
+                } else {
+                    return ctrl.templatedModeSelectedElements.includes(element.url);
+                }
+            }
         }
-
-        ctrl.onClickElement = function(element) {
-            const selected = ctrl.isTemplateAssociatedElementSelected({element: element});
-            ctrl.applyClickElementsDropdown({
-                templateName: ctrl.groupName,
-                element: element,
-                selected: selected
-            })
-
-        }
-
     },
     templateUrl: "/plugins/pi-system/resource/dropdown-elements.html"
 });
