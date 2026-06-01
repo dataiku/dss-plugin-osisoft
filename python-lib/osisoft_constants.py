@@ -175,6 +175,36 @@ class OSIsoftConstants(object):
         {'name': 'Zero', 'type': 'string'},
         {'name': 'Errors', 'type': 'object'}
     ]
+    ALL_COLUMNS = [
+        {'name': 'object_id', 'type': 'string'},
+        {'name': 'WebId', 'type': 'string'},
+        {'name': 'Name', 'type': 'string'},
+        {'name': 'Path', 'type': 'string'},
+        {'name': 'Type', 'type': 'string'},
+        {'name': 'Timestamp', 'type': 'date'},
+        {'name': 'Value', 'type': 'string'},
+        # {'name': 'IsSystem', 'type': 'boolean'},
+        {'name': 'UnitsAbbreviation', 'type': 'string'},
+        {'name': 'Annotated', 'type': 'boolean'},
+        {'name': 'Good', 'type': 'boolean'},
+        {'name': 'Questionable', 'type': 'boolean'},
+        {'name': 'Substituted', 'type': 'boolean'},
+        {'name': 'title', 'type': 'string'},
+        {'name': 'template_name', 'type': 'string'},
+        {'name': 'category_names', 'type': 'string'},
+        {'name': 'path', 'type': 'string'},
+        {'name': 'paths', 'type': 'string'},
+        {'name': 'id', 'type': 'string'},
+        {'name': 'url', 'type': 'string'},
+        {'name': 'data_type', 'type': 'string'},
+        {'name': 'summary_type', 'type': 'string'},
+        {'name': 'boundary_type', 'type': 'string'},
+        {'name': 'record_boundary_type', 'type': 'string'},
+        {'name': 'summary_duration', 'type': 'string'},
+        {'name': 'max_count', 'type': 'string'},
+        {'name': 'Errors', 'type': 'object'}
+    ]
+
     EVENT_FRAMES_SCHEMA = [
         {'name': 'object_id', 'type': 'string'},
         {'name': 'WebId', 'type': 'string'},
@@ -218,7 +248,8 @@ class OSIsoftConstants(object):
         "EndValue": VALUE_DATA_SCHEMA,
         "Categories": CATEGORIES_SCHEMA,
         "Attributes": ATTRIBUTES_SCHEMA,
-        "EventFrames": EVENT_FRAMES_SCHEMA
+        "EventFrames": EVENT_FRAMES_SCHEMA,
+        "All": ALL_COLUMNS
     }
     RECORD_PATH = "recorded"
     SCHEMA_EVENT_FRAMES = [
