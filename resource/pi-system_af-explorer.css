@@ -426,3 +426,8 @@ pi-system-auth-banner {
 .recipe-editor-page .formbased-recipe-infozone h1, .recipe-editor-page .recipe-settings-section1 h1, .recipe-editor-page .formbased-recipe-infozone .recipe-settings-section2, .recipe-editor-page .recipe-settings-section1 .recipe-settings-section2{
         padding: 0px !important;
 }
+
+.elements-dropdown--container {
+    display: inline-flex;
+    vertical-align: middle;
+}

@@ -86,29 +86,14 @@
                                 <span ng-if="group.nbSearchMatches !== group.attributes.length">
                                  - ({{group.nbSearchMatches}}/{{group.attributes.length}} attributes shown)
                             </span>
-                                <select dku-bs-select="{ size: 10 }"
-                                        multiple
-                                        none-selected-text="Load element scope"
-                                        ng-model="selectedElementsByTemplateUI[group.group_name]"
-                                        ng-if="section.type === 'template'"
-                                        ng-disabled="selectedElementsByTemplateUI[group.group_name].length === 0"
-                                        ng-change="applyChangeElementsDropdown(group.group_name)"
-                                >
-                                    <option
-                                            ng-repeat="element in config.elementsByTemplate[group.group_name]"
-                                            value="{{ element.url }}"
-                                            ng-selected="isTemplateAssociatedElementSelected(element)"
-                                    >
-                                        {{ element.title }}
-                                    </option>
-                                </select>
-                                <button class="btn btn--secondary btn--dku-icon-only"
-                                        ng-click="initElementsDropdown(group.group_name)"
-                                        ng-if="section.type === 'template'"
-                                        ng-disabled="selectedElementsByTemplateUI[group.group_name].length > 0"
-                                >
-                                    <i class="dku-icon-arrow-circular-16"></i>
-                                </button>
+                                <dropdown-elements
+                                    elements="config.elementsByTemplate[group.group_name]"
+                                    group-name="group.group_name"
+                                    init-elements-dropdown="initElementsDropdown(templateName)"
+                                    is-template-associated-element-selected="isTemplateAssociatedElementSelected(element)"
+                                    apply-click-elements-dropdown="applyClickElementsDropdown(templateName, element, selected)"
+                                    ng-if="section.type === 'template'"
+                                ></dropdown-elements>
                             </td>
                         </tr>
                         <tr
