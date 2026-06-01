@@ -1218,7 +1218,8 @@ app.component('dropdownElements', {
                 });
             }
 
-            ctrl.onClickElement = function(element) {
+            ctrl.onClickElement = function(element, $event) {
+                $event.stopPropagation();
 
                 let selected;
                 if (ctrl.activeTab === 'template') {

@@ -15,7 +15,7 @@
     <ul class="dropdown-menu elements-dropdown--dropdown">
         <li ng-repeat="element in ctrl.elements"
             value="{{element.url}}"
-            ng-click="ctrl.onClickElement(element)"
+            ng-click="ctrl.onClickElement(element, $event)"
             class="elements-dropdown--element"
         >
             <span>
