@@ -46,30 +46,7 @@
             "definition": "",
             "defaultValue": false
         },
-        {
-            "name": "use_server_url_column",
-            "label": "Use server value per row",
-            "visibilityCondition": "false && model.show_advanced_parameters==true && false",
-            "description": "",
-            "type": "BOOLEAN",
-            "defaultValue": false
-        },
-        {
-            "visibilityCondition": "false && (model.use_server_url_column==true) && (model.show_advanced_parameters==true)",
-            "name": "server_url_column",
-            "label": "Server domain columnn",
-            "description": "Should match the required path for each row",
-            "type": "COLUMN",
-            "columnRole": "input_dataset"
-        },
-        {
-            "visibilityCondition": "false && (model.use_server_url_column==false) && (model.show_advanced_parameters==true)",
-            "name": "server_url",
-            "label": "Server URL",
-            "type": "STRING",
-            "definition": "https://my_server:8082",
-            "defaultValue": ""
-        },
+
         {
             "name": "is_ssl_check_disabled",
             "label": "Disable SSL check",
@@ -121,7 +98,8 @@
         },
         {
             "type": "SEPARATOR",
-            "description": "Source"
+            "description": "Source",
+            "visibilityCondition": false
         },
         {
             "name": "path_column",
@@ -140,24 +118,21 @@
         },
         {
             "type": "SEPARATOR",
-            "description": "Time",
-            "visibilityCondition": "false && ['InterpolatedData', 'RecordedData', 'PlotData', 'EventFrames'].includes(model.data_type)"
+            "description": "Time"
         },
         {
             "type": "SEPARATOR",
-            "description": "Date / time in yyyy-mm-ddThh:mm:ssZ or <a href='https://docs.aveva.com/bundle/pi-web-api-reference/page/help/topics/time-strings.html'>Pi Time String</a> format",
-            "visibilityCondition": "false && ['InterpolatedData', 'RecordedData', 'PlotData', 'EventFrames'].includes(model.data_type)"
+            "description": "Date / time in yyyy-mm-ddThh:mm:ssZ or <a href='https://docs.aveva.com/bundle/pi-web-api-reference/page/help/topics/time-strings.html'>Pi Time String</a> format"
         },
         {
             "name": "use_start_time_column",
             "label": "Use start time value per row",
             "description": "",
-            "visibilityCondition": "['InterpolatedData', 'RecordedData', 'PlotData', 'EventFrames'].includes(model.data_type)",
             "type": "BOOLEAN",
             "defaultValue": false
         },
         {
-            "visibilityCondition": "model.use_start_time_column==true && (['InterpolatedData', 'RecordedData', 'PlotData', 'EventFrames'].includes(model.data_type))",
+            "visibilityCondition": "model.use_start_time_column==true",
             "name": "start_time_column",
             "label": "Start times column",
             "description": "Column type must be string",
@@ -165,7 +140,7 @@
             "columnRole": "input_dataset"
         },
         {
-            "visibilityCondition": "model.use_start_time_column==false && (['InterpolatedData', 'RecordedData', 'PlotData', 'EventFrames', 'SummaryData'].includes(model.data_type))",
+            "visibilityCondition": "model.use_start_time_column==false",
             "name": "start_time",
             "label": "Start time",
             "description": "Optional",
@@ -176,12 +151,11 @@
             "name": "use_end_time_column",
             "label": "Use end time value per row",
             "description": "",
-            "visibilityCondition": "['InterpolatedData', 'RecordedData', 'PlotData', 'EventFrames'].includes(model.data_type)",
             "type": "BOOLEAN",
             "defaultValue": false
         },
         {
-            "visibilityCondition": "model.use_end_time_column==true && (['InterpolatedData', 'RecordedData', 'PlotData', 'EventFrames'].includes(model.data_type))",
+            "visibilityCondition": "model.use_end_time_column==true",
             "name": "end_time_column",
             "label": "End times column",
             "description": "Column type must be string",
@@ -189,106 +163,9 @@
             "columnRole": "input_dataset"
         },
         {
-            "visibilityCondition": "model.use_end_time_column==false && (['InterpolatedData', 'RecordedData', 'PlotData', 'EventFrames', 'SummaryData'].includes(model.data_type))",
+            "visibilityCondition": "model.use_end_time_column==false",
             "name": "end_time",
             "label": "End time",
-            "description": "Optional",
-            "type": "STRING",
-            "defaultValue": ""
-        },
-        {
-            "type": "SEPARATOR",
-            "description": "Interpolation",
-            "visibilityCondition": "['InterpolatedData'].includes(model.data_type)"
-        },
-        {
-            "name": "interval",
-            "label": "Interval",
-            "visibilityCondition": "['InterpolatedData'].includes(model.data_type)",
-            "description": "Optional",
-            "type": "STRING",
-            "defaultValue": ""
-        },
-        {
-            "name": "sync_time",
-            "label": "Sync time",
-            "visibilityCondition": "['InterpolatedData'].includes(model.data_type)",
-            "description": "Optional",
-            "type": "STRING",
-            "defaultValue": ""
-        },
-        {
-            "name": "boundary_type",
-            "label": "Boundary type",
-            "visibilityCondition": "false && (['InterpolatedData'].includes(model.data_type))",
-            "type": "SELECT",
-            "selectChoices":[
-                {"value": "Inside", "label": "Inside"},
-                {"value": "Outside", "label": "Outside"}
-            ],
-            "defaultValue": "Inside"
-        },
-        {
-            "name": "record_boundary_type",
-            "label": "Boundary type",
-            "visibilityCondition": "false && (['RecordedData'].includes(model.data_type))",
-            "type": "SELECT",
-            "selectChoices":[
-                {"value": "Inside", "label": "Inside"},
-                {"value": "Interpolated", "label": "Interpolated"},
-                {"value": "Outside", "label": "Outside"}
-            ],
-            "defaultValue": "Inside"
-        },
-        {
-            "type": "SEPARATOR",
-            "description": "Data to retrieve",
-            "visibilityCondition": false
-        },
-        {
-            "name": "data_type",
-            "label": "Data type",
-            "type": "SELECT",
-            "selectChoices":[
-                {"value": "InterpolatedData", "label": "Interpolated"},
-                {"value": "PlotData", "label": "Plot"},
-                {"value": "RecordedData", "label": "Recorded"},
-                {"value": "Elements", "label": "Elements"},
-                {"value": "Template", "label": "Template"},
-                {"value": "SummaryData", "label": "SummaryData"},
-                {"value": "Value", "label": "Value"},
-                {"value": "EndValue", "label": "EndValue"},
-                {"value": "Categories", "label": "Categories"},
-                {"value": "Attributes", "label": "Attributes"},
-                {"value": "EventFrames", "label": "Event frames"}
-            ],
-            "defaultValue": "RecordedData",
-            "visibilityCondition": false
-        },
-        {
-            "name": "summary_type",
-            "label": "Summary type",
-            "type": "MULTISELECT",
-            "selectChoices":[
-                {"value": "Total", "label": "Total"},
-                {"value": "Average", "label": "Average"},
-                {"value": "Minimum", "label": "Minimum"},
-                {"value": "Maximum", "label": "Maximum"},
-                {"value": "Range", "label": "Range"},
-                {"value": "StdDev", "label": "Standard deviation"},
-                {"value": "PopulationStdDev", "label": "Population standard deviation"},
-                {"value": "Count", "label": "Count"},
-                {"value": "PercentGood", "label": "Percent good"},
-                {"value": "TotalWithUOM", "label": "Total with UOM"},
-                {"value": "All", "label": "All"},
-                {"value": "AllForNonNumeric", "label": "All for non numeric"}
-            ],
-            "visibilityCondition": "false && model.data_type == 'SummaryData'"
-        },
-        {
-            "name": "summary_duration",
-            "label": "Summary duration",
-            "visibilityCondition": "false && model.data_type == 'SummaryData'",
             "description": "Optional",
             "type": "STRING",
             "defaultValue": ""
