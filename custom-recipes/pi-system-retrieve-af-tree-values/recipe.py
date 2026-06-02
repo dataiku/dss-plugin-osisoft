@@ -1,0 +1,262 @@
+# -*- coding: utf-8 -*-
+import dataiku
+import json
+from dataiku.customrecipe import get_input_names_for_role, get_recipe_config, get_output_names_for_role
+import pandas as pd
+from safe_logger import SafeLogger
+from osisoft_plugin_common import (
+    get_credentials, get_combined_description, get_base_for_data_type, check_debug_mode,
+    PerformanceTimer, get_max_count, check_must_convert_object_to_string,
+    convert_schema_objects_to_string, get_advanced_parameters,
+    get_batch_parameters
+)
+from osisoft_client import OSIsoftClient
+from osisoft_constants import OSIsoftConstants
+
+
+logger = SafeLogger("pi-system plugin", forbiden_keys=["token", "password"])
+
+logger.info("PIWebAPI Assets values downloader recipe v{}".format(
+    OSIsoftConstants.PLUGIN_VERSION
+))
+
+
+def get_step_value(item):
+    if item and "Step" in item:
+        if item.get("Step") is True:
+            return "True"
+        else:
+            return "False"
+    return None
+
+
+def assert_necessary_columns_in_dataset(input_columns):
+    NECESSARY_COLUMNS = ["id", "data_type", "summary_type", "boundary_type", "record_boundary_type", "summary_duration"]
+    for necessary_column in NECESSARY_COLUMNS:
+        if necessary_column not in input_columns:
+            raise Exception("Column '{}' in missing from the input dataset".format(necessary_column))
+    return True
+
+
+def normalize_value(value):
+    try:
+        if pd.isna(value):
+            return None
+    except Exception:
+        pass
+    return value
+
+
+def extract_params_from_row(row):
+    data_type = normalize_value(row.get("data_type"))
+    boundary_type = normalize_value(row.get("boundary_type"))
+    record_boundary_type = normalize_value(row.get("record_boundary_type"))
+    interval = normalize_value(row.get("interval"))
+    sync_time = normalize_value(row.get("sync_time"))
+    summary_type = row.get("summary_type", [])
+    summary_type = normalize_value(summary_type)
+    if summary_type and summary_type.startswith("["):
+        summary_type = summary_type.replace("'", '"')
+        summary_type = json.loads(summary_type)
+        summary_type = ",".join(summary_type)
+    else:
+        summary_type = None
+    summary_duration = normalize_value(row.get("summary_duration"))
+    object_id = normalize_value(row.get("id"))
+    return object_id, data_type, boundary_type, record_boundary_type, interval, sync_time, summary_type, summary_duration
+
+
+def format_results(results, output_schema_data_type):
+    default_columns = OSIsoftConstants.RECIPE_SCHEMA_PER_DATA_TYPE.get(output_schema_data_type)
+    # todo: cache the result of this part
+    columns_types = {}
+    for default_column in default_columns:
+        column_name = default_column.get("name")
+        column_type = default_column.get("type")
+        columns_types[column_name] = column_type
+    formated_results = []
+    for result in results:
+        formated_result = {}
+        for column_name in columns_types:
+            formated_result[column_name] = result.get(column_name)
+        formated_results.append(formated_result)
+    return formated_results
+
+
+input_dataset = get_input_names_for_role('input_dataset')
+output_names_stats = get_output_names_for_role('api_output')
+config = get_recipe_config()
+dku_flow_variables = dataiku.get_flow_variables()
+
+logger.info("Initialization with config config={}".format(logger.filter_secrets(config)))
+
+auth_type, username, password, server_url, is_ssl_check_disabled = get_credentials(config)
+is_debug_mode = check_debug_mode(config)
+max_count = get_max_count(config)
+must_convert_object_to_string = check_must_convert_object_to_string(config)
+
+use_server_url_column = config.get("use_server_url_column", False)
+if not server_url and not use_server_url_column:
+    raise ValueError("Server domain not set")
+
+path_column = config.get("path_column", "")
+input_parameters_dataset = dataiku.Dataset(input_dataset[0])
+input_parameters_dataframe = input_parameters_dataset.get_dataframe()
+do_duplicate_input_row = config.get("do_duplicate_input_row", False)
+input_columns = list(input_parameters_dataframe.columns)
+
+self_contained_mode = False
+if not path_column:
+    if assert_necessary_columns_in_dataset(input_columns):
+        self_contained_mode = True
+    else:
+        raise ValueError("There is no parameter column selected.")
+else:
+    input_columns = list(input_parameters_dataframe.columns) if do_duplicate_input_row else []
+
+output_schema_data_type = "All"
+start_time = config.get("start_time")
+end_time = config.get("end_time")
+use_start_time_column = config.get("use_start_time_column", False)
+start_time_column = config.get("start_time_column")
+use_end_time_column = config.get("use_end_time_column", False)
+end_time_column = config.get("end_time_column")
+server_url_column = config.get("server_url_column")
+use_batch_mode, batch_size = get_advanced_parameters(config)
+
+max_request_size, estimated_density, maximum_points_returned = get_batch_parameters(config)
+max_time_to_retrieve_per_batch = estimated_density / maximum_points_returned  # density per hour <- max time is in hour
+
+network_timer = PerformanceTimer()
+processing_timer = PerformanceTimer()
+processing_timer.start()
+
+output_dataset = dataiku.Dataset(output_names_stats[0])
+
+results = []
+time_last_request = None
+client = None
+previous_server_url = ""
+time_not_parsed = True
+
+with output_dataset.get_writer() as writer:
+    first_dataframe = True
+    absolute_index = 0
+    batch_buffer_size = 0
+    buffer = []
+    for index, input_parameters_row in input_parameters_dataframe.iterrows():
+        absolute_index += 1
+        server_url = input_parameters_row.get(server_url_column, server_url) if use_server_url_column else server_url
+        start_time = input_parameters_row.get(start_time_column, start_time) if use_start_time_column else start_time
+        end_time = input_parameters_row.get(end_time_column, end_time) if use_end_time_column else end_time
+        row_name = input_parameters_row.get("Name")
+
+        # if self_contained_mode:
+        object_id, data_type, boundary_type, record_boundary_type, interval, sync_time, summary_type, summary_duration = extract_params_from_row(
+            input_parameters_row
+        )
+        path_column = "id"
+
+        duplicate_initial_row = {}
+        nb_rows_to_process = input_parameters_dataframe.shape[0]
+        for input_column in input_columns:
+            duplicate_initial_row[input_column] = input_parameters_row.get(input_column)
+
+        if client is None or previous_server_url != server_url:
+            client = OSIsoftClient(
+                server_url, auth_type, username, password,
+                is_ssl_check_disabled=is_ssl_check_disabled,
+                is_debug_mode=is_debug_mode, network_timer=network_timer
+            )
+            previous_server_url = server_url
+            if time_not_parsed:
+                # make sure all OSIsoft time string format are evaluated at the same time
+                # rather than at every request, at least for start / end times set in the UI
+                time_not_parsed = False
+                start_time = client.parse_pi_time(start_time)
+                end_time = client.parse_pi_time(end_time)
+                sync_time = client.parse_pi_time(sync_time)
+
+        step_value = None
+
+        if use_batch_mode:
+            buffer.append(
+                {
+                    "WebId": object_id, "data_type": data_type,
+                    "max_count": max_count,
+                    "start_date": start_time,
+                    "end_date": end_time,
+                    "interval": interval,
+                    "sync_time": sync_time,
+                    "boundary_type": boundary_type,
+                    "record_boundary_type": record_boundary_type,
+                    "can_raise": False,
+                    "batch_size": batch_size,
+                    "object_id": object_id,
+                    "summary_type": summary_type,
+                    "summary_duration": summary_duration,
+                    "endpoint_type": "AF",
+                    "estimated_density": estimated_density,
+                    "maximum_points_returned": maximum_points_returned
+                }
+            )
+            batch_buffer_size += 1
+            if (batch_buffer_size >= batch_size) or (absolute_index == nb_rows_to_process):
+                rows = client.get_rows_from_af_trees(
+                    buffer
+                )
+                batch_buffer_size = 0
+                buffer = []
+            else:
+                continue
+        else:
+            rows = client.recursive_get_rows_from_webid(
+                object_id,
+                data_type,
+                start_date=start_time,
+                end_date=end_time,
+                interval=interval,
+                sync_time=sync_time,
+                boundary_type=boundary_type,
+                record_boundary_type=record_boundary_type,
+                max_count=max_count,
+                can_raise=False,
+                endpoint_type="AF",
+                summary_type=summary_type,
+                summary_duration=summary_duration
+            )
+        for row in rows:
+            row["Name"] = row_name
+            row[path_column] = object_id
+            if isinstance(row, list):
+                for line in row:
+                    base = get_base_for_data_type(data_type, object_id, Step=step_value)
+                    base.update(line)
+                    extention = client.unnest_row(base)
+                    results.extend(extention)
+            else:
+                base = get_base_for_data_type(data_type, object_id, Step=step_value)
+                if duplicate_initial_row:
+                    base.update(duplicate_initial_row)
+                base.update(row)
+                extention = client.unnest_row(base)
+                results.extend(extention)
+
+        if output_schema_data_type == "All":
+            results = format_results(results, output_schema_data_type)
+        unnested_items_rows = pd.DataFrame(results)
+        if first_dataframe:
+            default_columns = OSIsoftConstants.RECIPE_SCHEMA_PER_DATA_TYPE.get(output_schema_data_type)
+            if must_convert_object_to_string:
+                default_columns = convert_schema_objects_to_string(default_columns)
+            combined_columns_description = get_combined_description(default_columns, unnested_items_rows)
+            output_dataset.write_schema(combined_columns_description)
+            first_dataframe = False
+        if not unnested_items_rows.empty:
+            writer.write_dataframe(unnested_items_rows)
+        results = []
+        formated_results = []
+
+processing_timer.stop()
+logger.info("Overall timer:{}".format(processing_timer.get_report()))
+logger.info("Network timer:{}".format(network_timer.get_report()))
