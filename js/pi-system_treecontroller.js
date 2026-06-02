@@ -170,6 +170,8 @@ app.controller('AfExplorerFormCtrl', [
             }
         ];
 
+        $scope.elementSearchNoMatch = false;
+
         function formatPreviewValue(value) {
             if (Array.isArray(value)) {
                 return value.join(', ');
@@ -343,6 +345,7 @@ app.controller('AfExplorerFormCtrl', [
             $scope.config.outputSelectedAttributes = [];
             $scope.config.searchMatchedElementPaths = [];
             $scope.config.selectedTemplateNames = [];
+            $scope.elementSearchNoMatch = false;
         }
 
         $scope.resetDatasourceState = function() { //
@@ -389,6 +392,7 @@ app.controller('AfExplorerFormCtrl', [
             $scope.config.attributeList = [];
             $scope.config.searchMatchedElementPaths = [];
             $scope.config.selectedTemplateNames = [];
+            $scope.elementSearchNoMatch = false;
             $scope.initializeTree();
             $scope.getTemplatesFromDB();
             $scope.getCategoriesFromDB();
@@ -488,6 +492,7 @@ app.controller('AfExplorerFormCtrl', [
             $scope.config.searchMatchedElementPaths = [];
             $scope.config.selectedTemplateNames = [];
             $scope.config.attributeSearch = "";
+            $scope.elementSearchNoMatch = false;
             if ($scope.config.activeTab === "element") {
                 $scope.config.template = "-- Any --";
             } else if ($scope.config.activeTab === "template") {
@@ -529,6 +534,9 @@ app.controller('AfExplorerFormCtrl', [
                     $scope.config.treeData = TreeDataService.getTreeData();
                     const matchedAttributes = data.attributes || [];
                     const matchedElementPaths = getMatchedElementPaths(matchedAttributes);
+                    if (matchedElementPaths.length === 0) {
+                        $scope.elementSearchNoMatch = true;
+                    }
                     $scope.config.searchMatchedElementPaths = matchedElementPaths;
                     markSearchResults($scope.config.treeData, matchedElementPaths);
                 }
@@ -701,6 +709,7 @@ app.controller('AfExplorerFormCtrl', [
         };
 
         $scope.searchFromElement = function() {
+            $scope.elementSearchNoMatch = false;
             $scope.doSearch($scope.config.element_name);
         };
 
@@ -708,6 +717,7 @@ app.controller('AfExplorerFormCtrl', [
             $scope.config.searchInProgress = false;
             $scope.config.element_name = "";
             $scope.config.searchMatchedElementPaths = [];
+            $scope.elementSearchNoMatch = false;
             clearSearchHighlights($scope.config.treeData);
         };
 
