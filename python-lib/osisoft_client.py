@@ -244,6 +244,66 @@ class OSIsoftClient(object):
                 for item in items:
                     yield item
 
+    def get_rows_from_af_trees(self, input_rows):
+        batch_requests_parameters = []
+        number_processed_webids = 0
+        number_of_webids_to_process = len(input_rows)
+        web_ids = []
+        event_start_times = []
+        event_end_times = []
+        for input_row in input_rows:
+            max_time_to_retrieve_per_batch = input_row.get("maximum_points_returned") / input_row.get("estimated_density")
+            batch_time = BatchTimeCounter(max_time_to_retrieve_per_batch)
+            endpoint_type = input_row.get("endpoint_type", "event_frames")
+            batch_size = input_row.get("batch_size", 500)
+            estimated_density = input_row.get("estimated_density", 500)
+            maximum_points_returned = input_row.get("maximum_points_returned", 500)
+            event_start_time = event_end_time = None
+            data_type = input_row.get("data_type")
+            if isinstance(input_row, dict):
+                webid = input_row.get("WebId")
+                event_start_time = input_row.get("StartTime")
+                event_end_time = input_row.get("EndTime")
+            else:
+                webid = input_row
+            url = self.endpoint.get_data_from_webid_url(endpoint_type, data_type, webid)
+            start_date = input_row.get("start_date")
+            end_date = input_row.get("end_date")
+            interval = input_row.get("interval")
+            requests_kwargs = self.generic_get_kwargs(**input_row)
+            print("ALX:requests_kwargs={}".format(requests_kwargs))
+            batch_time.add(start_date, end_date, interval)
+            requests_kwargs['url'] = build_query_string(url, requests_kwargs.get("params"))
+            web_ids.append(webid)
+            event_start_times.append(event_start_time)
+            event_end_times.append(event_end_time)
+            batch_requests_parameters.append(requests_kwargs)
+            number_processed_webids += 1
+            if (len(batch_requests_parameters) >= batch_size) or (number_processed_webids == number_of_webids_to_process) or batch_time.is_batch_full():
+                json_responses = self._batch_requests(batch_requests_parameters)
+                batch_requests_parameters = []
+                response_index = 0
+                for json_response in json_responses:
+                    response_content = json_response.get("Content", {})
+                    webid = web_ids[response_index]
+                    event_start_time = event_start_times[response_index]
+                    event_end_time = event_end_times[response_index]
+                    if OSIsoftConstants.DKU_ERROR_KEY in response_content:
+                        if endpoint_type == "event_frames":
+                            response_content['event_frame_webid'] = "{}".format(webid)
+                        yield response_content
+                    items = response_content.get(OSIsoftConstants.API_ITEM_KEY, [])
+                    for item in items:
+                        if event_start_time:
+                            item['StartTime'] = event_start_time
+                        if event_end_time:
+                            item['EndTime'] = event_end_time
+                        if endpoint_type == "event_frames":
+                            item['event_frame_webid'] = "{}".format(webid)
+                        yield item
+                    response_index += 1
+                web_ids = []
+
     def get_rows_from_webids(self, input_rows, data_type, **kwargs):
         endpoint_type = kwargs.get("endpoint_type", "event_frames")
         batch_size = kwargs.get("batch_size", 500)
