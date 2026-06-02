@@ -636,6 +636,11 @@ app.controller('AfExplorerFormCtrl', [
             return Array.from(matchedPathSet);
         }
 
+        $scope.clearAllVisualizedNodes = function() {
+            $scope.config.attributeList = []
+            $scope.config.clickedNodes = []
+        }
+
         $scope.toggleNodeVisualization = function(node) {
             console.log("clicked on ", node)
 
