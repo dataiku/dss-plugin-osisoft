@@ -1202,17 +1202,12 @@ app.component('dropdownElements', {
 
         ctrl.$onInit = function() {
 
-
             ctrl.onClick = function() {
                 if (ctrl.elements?.length > 0) {
                     return;
                 }
 
-                ctrl.initElementsDropdown({ templateName: ctrl.groupName }).then(function(elementUrls) {
-                    // if (ctrl.activeTab === 'template') {
-                    //     ctrl.templatedModeUnselectedElements = elementUrls;
-                    // }
-                });
+                ctrl.initElementsDropdown({ templateName: ctrl.groupName });
             }
 
             ctrl.onClickElement = function(element, $event) {
