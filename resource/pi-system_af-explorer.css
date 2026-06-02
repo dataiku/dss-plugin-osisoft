@@ -266,16 +266,12 @@ pi-system-auth-banner {
 }
 
 .custom-table th {
-    background-color: #f4f4f4;
-    font-weight: bold;
-}
-
-.custom-table tr:nth-child(even) {
-    background-color: #fafafa;
+    background-color: #F9F9F9;
+    font-weight: 400;
 }
 
 .custom-table tr:hover {
-    background-color: #f1f7ff;
+    background-color: #fef9f5;
 }
 
 .custom-table tr.custom-table__group-row td {
@@ -294,7 +290,6 @@ pi-system-auth-banner {
     gap: 8px;
     justify-content: space-between;
     align-items: center;
-    font-size: 16px;
 }
 
 .custom-table__group-name {
@@ -440,7 +435,6 @@ pi-system-auth-banner {
 }
 
 .elements-dropdown--button {
-    font-family: inherit;
     display: flex;
     width: 400px;
     padding: 4px 8px;
@@ -448,6 +442,9 @@ pi-system-auth-banner {
     align-items: center;
     border: 1px solid #CCC;
     background: #FFF;
+    font-weight: 400;
+    font-family: 'SourceSansPro';
+    font-size: 13px;
 }
 
 .elements-dropdown--dropdown {
