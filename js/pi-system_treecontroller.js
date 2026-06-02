@@ -1198,13 +1198,10 @@ app.component('dropdownElements', {
     controllerAs: 'ctrl',
     controller: function() {
         const ctrl = this;
-        ctrl.templatedModeSelectedElements = [];
+        ctrl.templatedModeUnselectedElements = [];
 
         ctrl.$onInit = function() {
 
-            if (ctrl.elements?.length > 0 && ctrl.activeTab === 'template') {
-                ctrl.templatedModeSelectedElements = ctrl.elements.map(element => element.url);
-            }
 
             ctrl.onClick = function() {
                 if (ctrl.elements?.length > 0) {
@@ -1212,30 +1209,30 @@ app.component('dropdownElements', {
                 }
 
                 ctrl.initElementsDropdown({ templateName: ctrl.groupName }).then(function(elementUrls) {
-                    if (ctrl.activeTab === 'template') {
-                        ctrl.templatedModeSelectedElements = elementUrls;
-                    }
+                    // if (ctrl.activeTab === 'template') {
+                    //     ctrl.templatedModeUnselectedElements = elementUrls;
+                    // }
                 });
             }
 
             ctrl.onClickElement = function(element, $event) {
                 $event.stopPropagation();
 
-                let selected;
+                let wasSelected;
                 if (ctrl.activeTab === 'template') {
-                    selected = !ctrl.templatedModeSelectedElements.includes(element.url);
-                    if (selected) {
-                        ctrl.templatedModeSelectedElements.push(element.url)
+                    wasSelected = ctrl.templatedModeUnselectedElements.includes(element.url);
+                    if (wasSelected) {
+                        ctrl.templatedModeUnselectedElements = ctrl.templatedModeUnselectedElements.filter(url => url !== element.url);
                     } else {
-                        ctrl.templatedModeSelectedElements = ctrl.templatedModeSelectedElements.filter(url => url !== element.url);
+                        ctrl.templatedModeUnselectedElements.push(element.url)
                     }
                 } else {
-                    selected = ctrl.isTemplateAssociatedElementSelected({ element: element });
+                    wasSelected = ctrl.isTemplateAssociatedElementSelected({ element: element });
                 }
                 ctrl.applyClickElementsDropdown({
                     templateName: ctrl.groupName,
                     element: element,
-                    selected: selected
+                    selected: wasSelected
                 })
             }
 
@@ -1243,7 +1240,7 @@ app.component('dropdownElements', {
                 if (ctrl.activeTab === 'element') {
                     return ctrl.isTemplateAssociatedElementSelected({element: element});
                 } else {
-                    return ctrl.templatedModeSelectedElements.includes(element.url);
+                    return !ctrl.templatedModeUnselectedElements.includes(element.url);
                 }
             }
 
