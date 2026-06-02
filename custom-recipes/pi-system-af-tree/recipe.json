@@ -2,7 +2,8 @@
     "meta": {
         "label": "AF tree explorer",
         "description": "Explore the AF tree",
-        "icon": "icon-pi-system icon-cogs"
+        "icon": "icon-pi-system icon-cogs",
+        "iconColor": "yellow"
     },
     "kind": "PYTHON",
     "paramsPythonSetup": "browse_af_tree.py",
