@@ -233,6 +233,8 @@ def get_attribute_for_template(client, payload, config):
         None, None, template_name, [],
         elements_max_count=elements_max_count, attributes_max_count=attributes_max_count
     ):
+        if is_sub_attribute_item(result):
+            continue
         attributes.append(result)
         templates_urls.append(result.get("Links", {}).get("Template"))
     templates_names = client.get_attributes_templates_names(templates_urls)
@@ -623,6 +625,12 @@ def is_attribute_item(item):
     if item.get("type") == "attribute":
         return True
     return bool(item.get("path")) and "|" in item.get("path", "")
+
+
+def is_sub_attribute_item(item):
+    if not isinstance(item, dict):
+        return False
+    return len(item.get("Path").split("|")) > 2
 
 
 def insert_missing_element(item, tree):
