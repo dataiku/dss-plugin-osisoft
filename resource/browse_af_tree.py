@@ -427,12 +427,20 @@ def get_template_hierarchy_from_db(client, parent_node, database_name=None):
     if element_templates_url:
         element_templates = client.get_next_item_from_url(element_templates_url)
         for element_template in element_templates:
+            if is_event_frame_template(element_template):
+                continue
             child = get_item_details(element_template)
             child["type"] = "template"
             child["children"] = []
             children.append(child)
         rebuilt_tree = nest_children(children)
     return {"choices": rebuilt_tree}
+
+
+def is_event_frame_template(element_template):
+    if not isinstance(element_template, dict):
+        return False
+    return element_template.get("InstanceType", "") == "EventFrame"
 
 
 def nest_children(items):
