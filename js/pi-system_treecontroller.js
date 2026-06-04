@@ -465,8 +465,9 @@ app.controller('AfExplorerFormCtrl', [
                 .then(function(data) {
                     console.log("get_children_from_db", data);
                     console.log("ALX:data1=" + JSON.stringify(data));
-                    item.children = data.choices;
-                    item.children.forEach(child => {
+                    item.attribute_children = data.choices.filter(node => node.type === 'attribute');
+                    item.children = data.choices.filter(node => node.type === item.type);
+                    item.attribute_children.forEach(child => {
                         child.expanded = false;
                     });
                     markSearchResults(item.children, $scope.config.searchMatchedElementPaths || []);
@@ -565,8 +566,8 @@ app.controller('AfExplorerFormCtrl', [
             return $scope.callPythonDo({ method: "get_attribute_for_template", template_name: node.title}).then(
                 function(data) {
                     console.log("get_attribute_for_template", data);
-                    node.children.push(...data.attributes);
-                    node.children.forEach(child => {
+                    node.attribute_children = data.attributes;
+                    node.attribute_children.forEach(child => {
                         // TODO: do the same for the normal getChild
                         if (child.type === 'attribute') {
                             const elementPath = getElementPathFromAttributePath(child.path);
@@ -684,7 +685,6 @@ app.controller('AfExplorerFormCtrl', [
             nodes.forEach(node => {
                 node.searchHighlighted =
                     node &&
-                    node.type !== "attribute" &&
                     !!node.path &&
                     matchedPathSet.has(node.path);
 
@@ -773,10 +773,8 @@ app.controller('AfExplorerFormCtrl', [
 
         // TODO: mark as loaded elements and replace this logic
         function hasAttributeChildren(node) {
-            if (!Array.isArray(node.children) || node.children.length === 0) {
-                return false
-            }
-            return node.children.some(child => child.type === "attribute");
+            return !(!Array.isArray(node.attribute_children) || node.attribute_children.length === 0);
+
         }
 
         function getChildren(node) {
@@ -791,15 +789,14 @@ app.controller('AfExplorerFormCtrl', [
             // patching it by loading the element before stopping to display it
             // TODO: replace by weak link single loading logic
             getChildren(node).then( node => {
-                const nodeAttributeChildrenPaths = node.children.filter(child => child.type === "attribute" && child.path)
-                    .map(child => child.path)
-                    if (!nodeAttributeChildrenPaths.length) {
-                        return;
-                    }
+                const nodeAttributeChildrenPaths = node.attribute_children.map(child => child.path);
+                if (!nodeAttributeChildrenPaths.length) {
+                    return;
+                }
 
-                    $scope.config.attributeList = $scope.config.attributeList.filter(
-                        attr => !nodeAttributeChildrenPaths.includes(attr.path)
-                    );
+                $scope.config.attributeList = $scope.config.attributeList.filter(
+                    attr => !nodeAttributeChildrenPaths.includes(attr.path)
+                );
             });
         }
 
@@ -844,15 +841,13 @@ app.controller('AfExplorerFormCtrl', [
         function addChildrenToAttributeList(node) {
             const parentTemplateName = node?.template_name;
 
-            node.children.forEach(child => {
-                if (child.type === "attribute") {
-                    if (!child.parent_template_name && parentTemplateName) {
-                        child.parent_template_name = parentTemplateName;
-                    }
-                    const isAlreadyPresent = $scope.config.attributeList.some(attr => attr.path === child.path);
-                    if (!isAlreadyPresent) {
-                        $scope.config.attributeList.push(enrichAttribute(child, node));
-                    }
+            node.attribute_children.forEach(child => {
+                if (!child.parent_template_name && parentTemplateName) {
+                    child.parent_template_name = parentTemplateName;
+                }
+                const isAlreadyPresent = $scope.config.attributeList.some(attr => attr.path === child.path);
+                if (!isAlreadyPresent) {
+                    $scope.config.attributeList.push(enrichAttribute(child, node));
                 }
             });
         }
@@ -1132,9 +1127,7 @@ app.component('treeNode', {
             if (!node || !Array.isArray(node.children) || !node.children.length) {
                 return false;
             }
-            return node.children.some(function(child) {
-                return child && child.type !== 'attribute';
-            });
+            return true;
         };
 
         ctrl.toggleExpand = function(node, $event) {
