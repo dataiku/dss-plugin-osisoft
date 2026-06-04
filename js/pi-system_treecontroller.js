@@ -355,7 +355,6 @@ app.controller('AfExplorerFormCtrl', [
             $scope.database_name = [];
             $scope.config.server_name = null;
             $scope.config.database_name = null;
-            $scope.config.templates = [];
             $scope.config.templateTreeData = [];
             $scope.config.attribute_categories = [];
             $scope.config.element_categories = [];
@@ -368,7 +367,6 @@ app.controller('AfExplorerFormCtrl', [
 
         $scope.onServerChanged = function() {
             $scope.config.database_name = null;
-            $scope.config.templates = [];
             $scope.config.templateTreeData = [];
             $scope.config.attribute_categories = [];
             $scope.config.element_categories = [];
@@ -379,7 +377,6 @@ app.controller('AfExplorerFormCtrl', [
         };
 
         $scope.onDatabaseChanged = function() {
-            $scope.config.templates = [];
             $scope.config.templateTreeData = [];
             $scope.config.attribute_categories = [];
             $scope.config.element_categories = [];
@@ -489,7 +486,6 @@ app.controller('AfExplorerFormCtrl', [
             return $scope.callPythonDo({ method: "get_templates_from_db" }).then(function(data) {
                 console.log("get_templates_from_db", data)
                 const templates = data.choices.filter(template => template.title !== "-- Any --")
-                $scope.config.templates = templates;
                 TreeDataService.setTemplateTreeData(templates);
                 $scope.config.templateTreeData = TreeDataService.getTemplateTreeData();
             });
