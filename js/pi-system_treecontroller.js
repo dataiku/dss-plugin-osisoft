@@ -148,6 +148,7 @@ app.controller('AfExplorerFormCtrl', [
         $scope.config.displayPath = $scope.config.displayPath || false;
         $scope.config.elementsByTemplate = $scope.config.elementsByTemplate || {};
         $scope.config.searchInProgress = $scope.config.searchInProgress || false;
+        $scope.config.loadedAttributes = $scope.config.loadedAttributes || {}
 
         // TODO: get categories from backend for attributes
         // $scope.config.attributeCategoryFilter = $scope.config.attributeCategoryFilter || ""
@@ -225,7 +226,7 @@ app.controller('AfExplorerFormCtrl', [
             $scope.buildGroupedAttributes();
             // Just need to uncheck the current attribute list as it is
             // built with the correct checked state when adding any new elements
-            $scope.config.attributeList.forEach(attribute => {
+            Object.values($scope.config.loadedAttributes).forEach(attribute => {
                 attribute.checked = false;
             });
         }
@@ -345,6 +346,7 @@ app.controller('AfExplorerFormCtrl', [
             $scope.config.outputSelectedAttributes = [];
             $scope.config.searchMatchedElementPaths = [];
             $scope.config.selectedTemplateNames = [];
+            $scope.config.loadedAttributes = {};
             $scope.elementSearchNoMatch = false;
         }
 
@@ -392,6 +394,7 @@ app.controller('AfExplorerFormCtrl', [
             $scope.config.attributeList = [];
             $scope.config.searchMatchedElementPaths = [];
             $scope.config.selectedTemplateNames = [];
+            $scope.config.loadedAttributes = {};
             $scope.elementSearchNoMatch = false;
             $scope.initializeTree();
             $scope.getTemplatesFromDB();
@@ -465,9 +468,14 @@ app.controller('AfExplorerFormCtrl', [
                 .then(function(data) {
                     console.log("get_children_from_db", data);
                     console.log("ALX:data1=" + JSON.stringify(data));
-                    item.attribute_children = data.choices.filter(node => node.type === 'attribute');
+                    item.attribute_children = [];
+                    data.choices.filter(node => node.type === 'attribute').map(attribute => {
+                            addAttributeToLoadedAttributes(attribute, {expanded: false});
+                            item.attribute_children.push(attribute.id);
+                         }
+                    )
                     item.children = data.choices.filter(node => node.type === item.type);
-                    item.attribute_children.forEach(child => {
+                    item.children.forEach(child => {
                         child.expanded = false;
                     });
                     markSearchResults(item.children, $scope.config.searchMatchedElementPaths || []);
@@ -566,16 +574,18 @@ app.controller('AfExplorerFormCtrl', [
             return $scope.callPythonDo({ method: "get_attribute_for_template", template_name: node.title}).then(
                 function(data) {
                     console.log("get_attribute_for_template", data);
-                    node.attribute_children = data.attributes;
-                    node.attribute_children.forEach(child => {
-                        // TODO: do the same for the normal getChild
-                        if (child.type === 'attribute') {
-                            const elementPath = getElementPathFromAttributePath(child.path);
-                            child.expanded = false;
-                            child.parent_element = getElementNameFromPath(elementPath);
-                            child.parent_element_path = elementPath;
+                    node.attribute_children = [];
+                    data.attributes.map(attribute => {
+                            const elementPath = getElementPathFromAttributePath(attribute.path);
+                            // TODO: find out why this is needed
+                            addAttributeToLoadedAttributes(attribute, {
+                                expanded: false,
+                                parent_element: getElementNameFromPath(elementPath),
+                                parent_element_path: elementPath
+                            })
+                            node.attribute_children.push(attribute.id);
                         }
-                    });
+                    )
                     return node;
                 }
             );
@@ -617,16 +627,18 @@ app.controller('AfExplorerFormCtrl', [
                         if (!$scope.templateModeExcludedAttributes[templateName]) {
                             $scope.templateModeExcludedAttributes[templateName] = {}
                         }
-                        $scope.templateModeExcludedAttributes[templateName][element.path] = $scope.config.attributeList.filter(attribute => {
+                        $scope.templateModeExcludedAttributes[templateName][element.path] = $scope.config.attributeList.filter(attrId => {
+                            const attribute = getAttributeFromId(attrId);
                             return attribute.template_name === templateName && attribute.parent_element_path === element.path;
                         });
-                        $scope.config.attributeList = $scope.config.attributeList.filter(attribute => {
+                        $scope.config.attributeList = $scope.config.attributeList.filter(attrId => {
+                            const attribute = getAttributeFromId(attrId);
                             return attribute.template_name !== templateName || attribute.parent_element_path !==
                                 element.path;
                         });
                     } else if (selected) {
-                        const attributesToAdd = $scope.templateModeExcludedAttributes[templateName]?.[element.path];
-                            $scope.config.attributeList.push(...attributesToAdd)
+                        const attributesToAdd = $scope.templateModeExcludedAttributes[templateName]?.[element.path] || [];
+                        $scope.config.attributeList.push(...attributesToAdd)
                     }
                 }
             });
@@ -789,13 +801,8 @@ app.controller('AfExplorerFormCtrl', [
             // patching it by loading the element before stopping to display it
             // TODO: replace by weak link single loading logic
             getChildren(node).then( node => {
-                const nodeAttributeChildrenPaths = node.attribute_children.map(child => child.path);
-                if (!nodeAttributeChildrenPaths.length) {
-                    return;
-                }
-
                 $scope.config.attributeList = $scope.config.attributeList.filter(
-                    attr => !nodeAttributeChildrenPaths.includes(attr.path)
+                    attrId => !node.attribute_children.includes(attrId)
                 );
             });
         }
@@ -841,13 +848,15 @@ app.controller('AfExplorerFormCtrl', [
         function addChildrenToAttributeList(node) {
             const parentTemplateName = node?.template_name;
 
-            node.attribute_children.forEach(child => {
-                if (!child.parent_template_name && parentTemplateName) {
-                    child.parent_template_name = parentTemplateName;
+            node.attribute_children.forEach(attrId => {
+                const attribute = getAttributeFromId(attrId);
+                if (!attribute?.parent_template_name && parentTemplateName) {
+                    attribute.parent_template_name = parentTemplateName;
                 }
-                const isAlreadyPresent = $scope.config.attributeList.some(attr => attr.path === child.path);
+                const isAlreadyPresent = $scope.config.attributeList.includes(attrId);
                 if (!isAlreadyPresent) {
-                    $scope.config.attributeList.push(enrichAttribute(child, node));
+                    enrichAttribute(attribute, node)
+                    $scope.config.attributeList.push(attrId);
                 }
             });
         }
@@ -1013,18 +1022,12 @@ app.controller('AfExplorerFormCtrl', [
             return Object.values(deduplicatedAttributes.reduce(groupAttributesIntoSections(), {}));
         }
 
-        function splitAttributesByTemplatePresence(attributes) {
-            return attributes.reduce(
-                (accumulator, attribute) => {
-                    // TODO: make the attribute have a template name even if no template
-                    const bucket = attribute?.template_name
-                        ? 'attributesWithTemplate'
-                        : 'attributesWithoutTemplate';
-                    accumulator[bucket].push(attribute);
-                    return accumulator;
-                },
-                { attributesWithoutTemplate: [], attributesWithTemplate: [] }
-            );
+        function splitAttributesByTemplatePresence() {
+            const attributes = getAttributeList();
+            return {
+                attributesWithoutTemplate: attributes.filter((attribute) => !attribute?.template_name),
+                attributesWithTemplate: attributes.filter((attribute) => attribute?.template_name)
+            };
         }
 
         function buildGroupedAttributesResult(attributes, groupKey) {
@@ -1041,7 +1044,7 @@ app.controller('AfExplorerFormCtrl', [
         }
 
         $scope.buildGroupedAttributes = function() {
-            const splitAttributes = splitAttributesByTemplatePresence($scope.config.attributeList);
+            const splitAttributes = splitAttributesByTemplatePresence();
             return {
                 attributesWithoutTemplate: buildGroupedAttributesResult(
                     splitAttributes.attributesWithoutTemplate,
@@ -1104,6 +1107,22 @@ app.controller('AfExplorerFormCtrl', [
                 return;
             }
             $scope.config.outputSelectedAttributes[index] = attribute;
+        }
+
+        function getAttributeList() {
+            return $scope.config.attributeList.map(getAttributeFromId).filter(Boolean);
+        }
+
+        function addAttributeToLoadedAttributes(attribute, additionalProperties) {
+            if ($scope.config.loadedAttributes[attribute.id]) {
+                $scope.config.loadedAttributes[attribute.id] = {...$scope.config.loadedAttributes[attribute.id], ...additionalProperties}
+                return;
+            }
+            $scope.config.loadedAttributes[attribute.id] = { ...attribute, ...additionalProperties };
+        }
+
+        function getAttributeFromId(attrId) {
+            return $scope.config.loadedAttributes[attrId];
         }
 
     }]);
