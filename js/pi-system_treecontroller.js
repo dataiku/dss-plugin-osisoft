@@ -229,6 +229,7 @@ app.controller('AfExplorerFormCtrl', [
             Object.values($scope.config.loadedAttributes).forEach(attribute => {
                 attribute.checked = false;
             });
+            $scope.refreshAttributeSection();
         }
 
         $scope.onAdvancedToggle = function() {
@@ -275,6 +276,7 @@ app.controller('AfExplorerFormCtrl', [
             }
             $scope.config.template = $scope.config.template || "-- Any --";
             $scope.onAdvancedToggle();
+            $scope.refreshAttributeSection();
         };
 
         $scope.getServers = function() {
@@ -348,6 +350,7 @@ app.controller('AfExplorerFormCtrl', [
             $scope.config.selectedTemplateNames = [];
             $scope.config.loadedAttributes = {};
             $scope.elementSearchNoMatch = false;
+            $scope.refreshAttributeSection();
         }
 
         $scope.resetDatasourceState = function() { //
@@ -393,6 +396,7 @@ app.controller('AfExplorerFormCtrl', [
             $scope.config.selectedTemplateNames = [];
             $scope.config.loadedAttributes = {};
             $scope.elementSearchNoMatch = false;
+            $scope.refreshAttributeSection();
             $scope.initializeTree();
             $scope.getTemplatesFromDB();
             $scope.getCategoriesFromDB();
@@ -503,6 +507,7 @@ app.controller('AfExplorerFormCtrl', [
             } else if ($scope.config.activeTab === "template") {
                 $scope.config.element_name = "";
             }
+            $scope.refreshAttributeSection();
         }
 
         $scope.setTab = function(tab) {
@@ -632,9 +637,11 @@ app.controller('AfExplorerFormCtrl', [
                             return attribute.template_name !== templateName || attribute.parent_element_path !==
                                 element.path;
                         });
+                        $scope.refreshAttributeSection();
                     } else if (selected) {
                         const attributesToAdd = $scope.templateModeExcludedAttributes[templateName]?.[element.path] || [];
                         $scope.config.attributeList.push(...attributesToAdd)
+                        $scope.refreshAttributeSection();
                     }
                 }
             });
@@ -656,6 +663,7 @@ app.controller('AfExplorerFormCtrl', [
         $scope.clearAllVisualizedNodes = function() {
             $scope.config.attributeList = []
             $scope.config.clickedNodes = []
+            $scope.refreshAttributeSection();
         }
 
         $scope.toggleNodeVisualization = function(node) {
@@ -678,7 +686,9 @@ app.controller('AfExplorerFormCtrl', [
                 $scope.config.clickedNodes.push(node.url);
             }
 
-            $scope.toggleDisplayAttributes(node, !nodeAlreadySelected);
+            $scope.toggleDisplayAttributes(node, !nodeAlreadySelected).then(() => {
+                $scope.refreshAttributeSection();
+            });
 
             // In element node, the visualized nodes are reflected on the elements dropdown
             console.log("clickedNodes: " + JSON.stringify($scope.config.clickedNodes));
@@ -748,6 +758,7 @@ app.controller('AfExplorerFormCtrl', [
                     });
                 });
             });
+            $scope.refreshAttributeSection();
         };
 
         $scope.checkAttribute = function(attributeList) {
@@ -760,6 +771,7 @@ app.controller('AfExplorerFormCtrl', [
                     $scope.addAttributeToSelection(attribute);
                 }
             )
+            $scope.refreshAttributeSection();
         };
 
         $scope.toggleGroupedAttributes = function(group) {
@@ -777,6 +789,7 @@ app.controller('AfExplorerFormCtrl', [
                     });
                 }
             )
+            $scope.refreshAttributeSection();
         };
 
         // TODO: mark as loaded elements and replace this logic
@@ -796,7 +809,7 @@ app.controller('AfExplorerFormCtrl', [
             // It is for now possible to stop displaying an element that was not loaded because of weak links
             // patching it by loading the element before stopping to display it
             // TODO: replace by weak link single loading logic
-            getChildren(node).then( node => {
+            return getChildren(node).then(node => {
                 $scope.config.attributeList = $scope.config.attributeList.filter(
                     attrId => !node.attribute_children.includes(attrId)
                 );
@@ -805,16 +818,15 @@ app.controller('AfExplorerFormCtrl', [
 
         $scope.toggleDisplayAttributes = function(node, add = true) {
             if (!add) {
-               stopDisplayingAttributes(node);
-               return;
+               return stopDisplayingAttributes(node);
             }
             if (!hasAttributeChildren(node)) {
-                $scope.getChildrenFromDB(node).then(newNode => {
+                return $scope.getChildrenFromDB(node).then(newNode => {
                     addChildrenToAttributeList(newNode);
                 });
-                return;
             }
             addChildrenToAttributeList(node);
+            return Promise.resolve();
         }
 
         // Merge frontend data and saved output with loaded attributes
@@ -894,6 +906,7 @@ app.controller('AfExplorerFormCtrl', [
                     $scope.updateAttributeInSelection(attribute)
                 }
             });
+            $scope.refreshAttributeSection();
         }
 
         $scope.updateMergedAttributeAggregate = function(mergedAttribute) {
@@ -908,6 +921,7 @@ app.controller('AfExplorerFormCtrl', [
                     $scope.updateAttributeInSelection(attribute)
                 }
             });
+            $scope.refreshAttributeSection();
         };
 
         function attributeMatchesSearch(attribute_name, template_name, attribute_description="") {
@@ -1065,10 +1079,6 @@ app.controller('AfExplorerFormCtrl', [
             return CheckboxStatus.UNCHECKED;
         }
 
-        // TODO: try to move it to a callback of some kind (will work with a component)
-        $scope.$watch('config.attributeList', function(newVal, oldVal) {
-            $scope.groupedAttributes = $scope.buildGroupedAttributes();
-        }, true);
 
         $scope.refreshAttributeSection = function() {
             $scope.groupedAttributes = $scope.buildGroupedAttributes();

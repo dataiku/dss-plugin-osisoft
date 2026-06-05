@@ -58,7 +58,7 @@ schema = [
     {'name': 'id', 'type': 'string'},
     {'name': 'url', 'type': 'string'},
     {'name': 'data_type', 'type': 'string'},
-    {'name': 'summary_type', 'type': 'array'},
+    {'name': 'summary_type', 'type': 'string'},
     {'name': 'boundary_type', 'type': 'string'},
     {'name': 'record_boundary_type', 'type': 'string'},
     {'name': 'summary_duration', 'type': 'string'},
