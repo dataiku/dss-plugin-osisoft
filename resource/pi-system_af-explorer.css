@@ -322,6 +322,13 @@ pi-system-auth-banner {
 .custom-table__group-name {
 }
 
+.custom-table__attribute-title-info {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 4px;
+}
+
 .attribute-table-block {
     width: 100%;
     margin-bottom: 14px;

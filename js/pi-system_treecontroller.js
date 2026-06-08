@@ -1218,6 +1218,24 @@ app.directive('attributeTableRow', function() {
         bindToController: true,
         controllerAs: 'ctrl',
         controller: function() {
+            const ctrl = this;
+
+            ctrl.showPartialCheckInfo = function() {
+                return ctrl.mergedAttribute.checked === CheckboxStatus.PARTIAL_CHECK;
+            }
+
+            ctrl.generatePartialStateInfo = function() {
+                const listParentElements = ctrl.mergedAttribute.attributes.reduce((acc, attr) =>
+                    {
+                        if (attr.checked) {
+                            acc.push(attr.parent_element);
+                        }
+                        return acc;
+                    }
+                , []);
+                const stringParentElements = listParentElements.join(', ');
+                return 'Already selected for elements: ' + stringParentElements;
+            }
         },
         templateUrl: "/plugins/pi-system/resource/attribute-table-row.html"
     };
