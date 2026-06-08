@@ -24,7 +24,7 @@
                 class="tree-node__content"
             ng-click="ctrl.toggleNodeVisualization({ node: ctrl.node })"
         >
-            <div>
+            <div class="tree-node__content--info">
                 <span class="tree-node__label">{{ ctrl.node.title }}</span>
                 <i ng-show="ctrl.showBreadcrumb(ctrl.node)" class="dku-icon-circle-fill-12 tree-node__content--marker"></i>
                 <i ng-show="ctrl.showPaperclip(ctrl.node)" class="dku-icon-attach-12 tree-node__content--marker"></i>

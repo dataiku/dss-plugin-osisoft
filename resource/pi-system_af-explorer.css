@@ -97,6 +97,14 @@
     cursor: pointer;
 }
 
+.tree-node__content--info {
+    box-sizing: border-box;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    height: 20px;
+}
+
 .tree-node__label {
     flex: 1 1 auto;
     min-width: 0;
