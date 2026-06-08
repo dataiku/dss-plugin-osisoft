@@ -232,6 +232,10 @@ app.controller('AfExplorerFormCtrl', [
             $scope.refreshAttributeSection();
         }
 
+        $scope.isAtLeastPartiallySelected = function(node) {
+            return node.checked === CheckboxStatus.CHECKED || node.checked === CheckboxStatus.PARTIAL_CHECK;
+        };
+
         $scope.onAdvancedToggle = function() {
             if (!$scope.config.show_advanced_parameters) {
                 $scope.config.is_ssl_check_disabled = false;

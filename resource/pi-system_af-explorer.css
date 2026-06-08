@@ -218,6 +218,19 @@ pi-system-auth-banner {
     gap: 8px;
     align-self: stretch;
 }
+
+.custom-table__attribute-row--selected {
+    background: #E6F6F5;
+}
+
+.custom-table__group-row {
+    background-color: #FDF1E7;
+}
+
+.custom-table__group-row--selected {
+    background: #D2EFEE;
+}
+
 .pi-system-explorer__authentication-header {
     display: flex;
     height: 32px;
@@ -295,14 +308,6 @@ pi-system-auth-banner {
 .custom-table th {
     background-color: #F9F9F9;
     font-weight: 400;
-}
-
-.custom-table tr:hover {
-    background-color: #fef9f5;
-}
-
-.custom-table tr.custom-table__group-row td {
-    background-color: #FDF1E7;
 }
 
 .custom-table tr.custom-table__empty-row td {

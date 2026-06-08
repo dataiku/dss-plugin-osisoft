@@ -78,7 +78,8 @@
                                 ng-repeat="group in groupedAttributes[section.key].groups track by group.group_name"
                                 ng-show="!group.isDisplayed"
                         >
-                        <tr class="custom-table__group-row">
+                        <tr class="custom-table__group-row"
+                            ng-class="{ 'custom-table__group-row--selected': isAtLeastPartiallySelected(group) }">
                             <td>
                                 <input type="checkbox" ng-model="group.allChecked"
                                        ng-change="toggleGroupedAttributes(group)" indeterminate="group.checked">
@@ -114,7 +115,9 @@
                                 aggregate-data-type-fields="aggregateDataTypeFields"
                                 on-check-attribute="checkAttribute(mergedAttribute)"
                                 on-update-data-type="updateMergedAttributeDataType(mergedAttribute)"
-                                on-update-aggregate="updateMergedAttributeAggregate(mergedAttribute)">
+                                on-update-aggregate="updateMergedAttributeAggregate(mergedAttribute)"
+                                ng-class="{ 'custom-table__attribute-row--selected': isAtLeastPartiallySelected(mergedAttribute) }"
+                        >
                         </tr>
                         </tbody>
                     </table>
