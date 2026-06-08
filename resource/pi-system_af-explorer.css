@@ -1,3 +1,22 @@
+.tree-node__content--marker {
+    color: #0F8781;
+    flex: 0 0 auto;
+}
+
+.tree-node__content--marker-dot {
+    display: inline-block;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: currentColor;
+}
+
+.tree-node__content--element {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
 .pi-system-preview-dataset-modal {
     width: 75%;
 }
@@ -85,6 +104,14 @@
     min-width: 0;
     padding-right: 8px;
     cursor: pointer;
+}
+
+.tree-node__content--info {
+    box-sizing: border-box;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    height: 20px;
 }
 
 .tree-node__label {
@@ -470,4 +497,3 @@ pi-system-auth-banner {
 .elements-dropdown--element i {
     color: #196BFA;
 }
-

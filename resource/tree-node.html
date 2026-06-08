@@ -20,12 +20,16 @@
             <i ng-if="!ctrl.node.expanded" class="dku-icon-folder-closed-16"></i>
         </span>
 
-        <span
+        <div
                 class="tree-node__content"
-                ng-click="ctrl.toggleNodeVisualization({ node: ctrl.node })"
+            ng-click="ctrl.toggleNodeVisualization({ node: ctrl.node })"
         >
-            <span class="tree-node__label">{{ ctrl.node.title }}</span>
-        </span>
+            <div class="tree-node__content--info">
+                <span class="tree-node__label">{{ ctrl.node.title }}</span>
+                <span ng-show="ctrl.showBreadcrumb(ctrl.node)" class="tree-node__content--marker tree-node__content--marker-dot"></span>
+                <i ng-show="ctrl.showPaperclip(ctrl.node)" class="dku-icon-attach-12 tree-node__content--marker"></i>
+            </div>
+        </div>
         <span class="tree-node__status" ng-if="ctrl.isNodeClicked(ctrl.node)">
             <i class="dku-icon-eye-16"></i>
         </span>
