@@ -1151,6 +1151,14 @@ app.component('treeNode', {
         ctrl.showBreadcrumb = function(node) {
             // TODO: make for element
             // TODO: make for template
+            if (!node?.children || node.children.length === 0) {
+                return false;
+            }
+            return node.children.some(
+                child => {
+                    return ctrl.showPaperclip(child) ||  ctrl.showBreadcrumb(child);
+                }
+            )
         };
 
         function isAttributeSelected(attrId) {
