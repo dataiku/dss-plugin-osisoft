@@ -293,15 +293,21 @@ pi-system-auth-banner {
     align-self: stretch;
 }
 
-.attribute-section__filters--common-toggle {
+.attribute-section__filters-row {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    flex-wrap: wrap;
+}
+
+.attribute-section__filters-toggle {
     display: flex;
     align-items: center;
     gap: 4px;
     height: 30px;
-    flex-direction: row;
 }
 
-.attribute-section__filters--common-toggle .dku-toggle {
+.attribute-section__filters-toggle .dku-toggle {
     margin-left: 0px;
     top: 0;
 }

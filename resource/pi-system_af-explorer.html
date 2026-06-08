@@ -36,18 +36,21 @@
                         >
                         </basic-search-box>
                     </div>
-                    <div>
-                        <label style="display: inline-flex; align-items: center; gap: 4px;">
-                            <input type="checkbox" ng-model="config.displayPath" style="margin: 0;"/>
-                            Display attribute paths
-                        </label>
-                    </div>
-                    <div class="attribute-section__filters--common-toggle">
-                        <label class="dku-toggle">
-                            <input type="checkbox" ng-model="config.onlyDisplayCommon" ng-change="refreshAttributeSection()">
-                            <span></span>
-                        </label>
-                        <span>Only common attributes</span>
+                    <div class="attribute-section__filters-row">
+                        <div class="attribute-section__filters-toggle">
+                            <label class="dku-toggle">
+                                <input type="checkbox" ng-model="config.displayPath">
+                                <span></span>
+                            </label>
+                            <span>Display attribute paths</span>
+                        </div>
+                        <div class="attribute-section__filters-toggle">
+                            <label class="dku-toggle">
+                                <input type="checkbox" ng-model="config.onlyDisplayCommon" ng-change="refreshAttributeSection()">
+                                <span></span>
+                            </label>
+                            <span>Only common attributes</span>
+                        </div>
                     </div>
                     <!--                <div>-->
                     <!--                    Filter by category-->
