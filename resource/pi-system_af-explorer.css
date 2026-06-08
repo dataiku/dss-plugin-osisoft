@@ -305,6 +305,8 @@ pi-system-auth-banner {
     align-items: center;
     gap: 4px;
     height: 30px;
+    margin-bottom: 0;
+    cursor: pointer;
 }
 
 .attribute-section__filters-toggle .dku-toggle {
