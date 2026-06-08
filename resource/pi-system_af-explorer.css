@@ -1,3 +1,13 @@
+.tree-node__content--marker {
+   color:  #0F8781;
+}
+
+.tree-node__content--element {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
 .pi-system-preview-dataset-modal {
     width: 75%;
 }

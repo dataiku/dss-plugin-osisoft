@@ -1148,6 +1148,22 @@ app.component('treeNode', {
     controller: function() {
         const ctrl = this;
 
+        ctrl.showBreadcrumb = function(node) {
+            // TODO: make for element
+            // TODO: make for template
+        };
+
+        function isAttributeSelected(attrId) {
+            return ctrl.config.outputSelectedAttributes.find(attribute => attribute.id === attrId);
+        }
+
+        ctrl.showPaperclip = function(node) {
+            if (!node?.attribute_children) {
+                return false;
+            }
+            return node?.attribute_children.some(attributeId => isAttributeSelected(attributeId));
+        };
+
         ctrl.hasRenderableChildren = function(node) {
             if (!node || !Array.isArray(node.children) || !node.children.length) {
                 return false;
