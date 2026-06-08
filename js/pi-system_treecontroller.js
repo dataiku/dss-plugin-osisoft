@@ -1149,8 +1149,6 @@ app.component('treeNode', {
         const ctrl = this;
 
         ctrl.showBreadcrumb = function(node) {
-            // TODO: make for element
-            // TODO: make for template
             if (!node?.children || node.children.length === 0) {
                 return false;
             }

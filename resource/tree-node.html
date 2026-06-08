@@ -26,7 +26,7 @@
         >
             <div class="tree-node__content--info">
                 <span class="tree-node__label">{{ ctrl.node.title }}</span>
-                <i ng-show="ctrl.showBreadcrumb(ctrl.node)" class="dku-icon-circle-fill-12 tree-node__content--marker"></i>
+                <span ng-show="ctrl.showBreadcrumb(ctrl.node)" class="tree-node__content--marker tree-node__content--marker-dot"></span>
                 <i ng-show="ctrl.showPaperclip(ctrl.node)" class="dku-icon-attach-12 tree-node__content--marker"></i>
             </div>
         </div>
