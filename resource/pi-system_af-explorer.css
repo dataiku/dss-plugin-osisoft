@@ -155,7 +155,7 @@
     align-items: flex-start;
     flex: 1 0 0;
     align-self: stretch;
-    flex-direction: row-reverse;
+    flex-direction: row;
 }
 .pi-system-explorer__main {
     display: flex;
