@@ -1213,6 +1213,31 @@ app.component('treeNode', {
     templateUrl: "/plugins/pi-system/resource/tree-node.html"
 });
 
+app.directive('attributeTableBlock', function() {
+    return {
+        restrict: 'A',
+        scope: {
+            section: '=',
+            groupedAttributes: '=',
+            config: '=',
+            aggregateDataTypeFields: '<',
+            onToggleSelectAllGroupedAttributes: '&',
+            onToggleGroupedAttributes: '&',
+            onIsAtLeastPartiallySelected: '&',
+            onInitElementsDropdown: '&',
+            onIsTemplateAssociatedElementSelected: '&',
+            onApplyClickElementsDropdown: '&',
+            onCheckAttribute: '&',
+            onUpdateDataType: '&',
+            onUpdateAggregate: '&'
+        },
+        bindToController: true,
+        controller: function() {},
+        controllerAs: 'ctrl',
+        templateUrl: "/plugins/pi-system/resource/attribute-table-block.html"
+    };
+});
+
 // TODO: see if cleaner architecture
 app.directive('attributeTableRow', function() {
     return {
