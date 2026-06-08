@@ -293,6 +293,19 @@ pi-system-auth-banner {
     align-self: stretch;
 }
 
+.attribute-section__filters--common-toggle {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    height: 30px;
+    flex-direction: row;
+}
+
+.attribute-section__filters--common-toggle .dku-toggle {
+    margin-left: 0px;
+    top: 0;
+}
+
 .custom-table {
     border-collapse: collapse;
     width: 100%;

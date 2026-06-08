@@ -42,6 +42,13 @@
                             Display attribute paths
                         </label>
                     </div>
+                    <div class="attribute-section__filters--common-toggle">
+                        <label class="dku-toggle">
+                            <input type="checkbox" ng-model="config.onlyDisplayCommon" ng-change="refreshAttributeSection()">
+                            <span></span>
+                        </label>
+                        <span>Only common attributes</span>
+                    </div>
                     <!--                <div>-->
                     <!--                    Filter by category-->
                     <!--                    <select dku-bs-select ng-model="config.attribute_category"-->

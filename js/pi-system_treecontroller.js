@@ -146,6 +146,7 @@ app.controller('AfExplorerFormCtrl', [
         $scope.config.selectedTemplateNames = $scope.config.selectedTemplateNames || []; // la liste des templates sélectionnés (checkbox cochée) parmi ceux affichés
         $scope.config.attributeSearch =  $scope.config.attributeSearch || "";
         $scope.config.displayPath = $scope.config.displayPath || false;
+        $scope.config.onlyDisplayCommon = $scope.config.onlyDisplayCommon || false;
         $scope.config.elementsByTemplate = $scope.config.elementsByTemplate || {};
         $scope.config.searchInProgress = $scope.config.searchInProgress || false;
         $scope.config.loadedAttributes = $scope.config.loadedAttributes || {}
@@ -1032,7 +1033,12 @@ app.controller('AfExplorerFormCtrl', [
         }
 
         function buildAggregatedAttributes(attributes, groupKey) {
-            const deduplicatedAttributes = Object.values(attributes.reduce(conflateAttributes(groupKey), {}));
+            let deduplicatedAttributes = Object.values(attributes.reduce(conflateAttributes(groupKey), {})).map(conflatedAttribute => {
+                if ($scope.config.onlyDisplayCommon && conflatedAttribute.parent_elements.length < $scope.config.clickedNodes.length) {
+                    conflatedAttribute.isDisplayed = false;
+                }
+                return conflatedAttribute;
+            });
             return Object.values(deduplicatedAttributes.reduce(groupAttributesIntoSections(), {}));
         }
 
