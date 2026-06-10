@@ -51,3 +51,8 @@
                ng-if="aggregate.type === 'number'">
     </div>
 </td>
+<td>
+    <!-- Category placeholder -->
+    <span ng-if="ctrl.mergedAttribute.conflicting_categories" style="display: flex; align-items: center; gap: 4px"><i class="dku-icon-warning-outline-16"></i>Conflict</span>
+    <span ng-if="!ctrl.mergedAttribute.conflicting_categories">{{ctrl.mergedAttribute.category_names.join(", ")}}</span>
+</td>

@@ -943,6 +943,16 @@ app.controller('AfExplorerFormCtrl', [
             return (templateNameMatches || attributeNameMatches || attributeDescriptionMatches)
         }
 
+        function arraysEqual(a, b) {
+            if (!a && !b) {
+                return true;
+            }
+            if (!a || !b) {
+                return false;
+            }
+            return a.length === b.length && a.every((v, i) => v === b[i]);
+        }
+
         // Attributes are shared between templates
         // Meaning all elements with the same template will share the attributes in this template
         // If multiple elements with the same template are selected, we only show the attribute once
@@ -967,6 +977,8 @@ app.controller('AfExplorerFormCtrl', [
                         data_type: attr.data_type,
                         data_types: [],
                         isDisplayed: attributeMatchesSearch(attr.title, attr[groupKey], attr.description),
+                        category_names: attr.category_names,
+                        conflicting_categories: false
                     };
 
                     getAggregateNames().forEach(aggregateName => {
@@ -1000,6 +1012,12 @@ app.controller('AfExplorerFormCtrl', [
                         acc[key][aggregateName] = null;
                     }
                 });
+
+                // Check categories are identical
+                if (acc[key].conflicting_categories || !arraysEqual(acc[key].category_names, attr.category_names)) {
+                    acc[key].category_names = [];
+                    acc[key].conflicting_categories = true;
+                }
 
                 return acc
             }

@@ -12,11 +12,12 @@
             <th ng-if="ctrl.config.displayPath">Path</th>
             <th>Data type</th>
             <th>Aggregates</th>
+            <th>Category</th>
         </tr>
         </thead>
         <tbody ng-if="ctrl.groupedAttributes[ctrl.section.key].empty">
         <tr class="custom-table__empty-row">
-            <td colspan="{{ctrl.config.displayPath ? 6 : 5}}">{{ctrl.section.emptyMessage}}</td>
+            <td colspan="{{ctrl.config.displayPath ? 7 : 6}}">{{ctrl.section.emptyMessage}}</td>
         </tr>
         </tbody>
         <tbody
@@ -28,7 +29,7 @@
                 <input type="checkbox" ng-model="group.allChecked"
                        ng-change="ctrl.onToggleGroupedAttributes({ group: group })" indeterminate="group.checked">
             </td>
-            <td colspan="{{ctrl.config.displayPath ? 5 : 4}}">
+            <td colspan="{{ctrl.config.displayPath ? 6 : 5}}">
                 <div class="custom-table__group-actions">
                     <div>
                         <span class="custom-table__group-name">{{group.group_name}}</span>
