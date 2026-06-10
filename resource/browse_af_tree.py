@@ -44,7 +44,8 @@ def do(payload, config, plugin_config, inputs):
     )
 
     method = payload.get("method")
-    logger.info("Running do for method '{}'".format(method))
+    parameter_name = payload.get("parameterName")
+    logger.info("Running do for method '{}' / parameter '{}'".format(method, parameter_name))
     if method == "get_query_catalogs":
         return get_query_catalogs(payload, config)
     if method == "get_children_from_db":
@@ -61,8 +62,6 @@ def do(payload, config, plugin_config, inputs):
         return get_attribute_for_template(client, payload, config)
     if method == "do_search":
         return do_search(client, payload, config, network_timer)
-
-    parameter_name = payload.get("parameterName")
 
     if parameter_name == "server_name":
         choices = []

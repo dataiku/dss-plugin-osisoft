@@ -35,11 +35,25 @@ def next_tree_item(tree_data):
         yield item
 
 
+def filter_dictionary_keys(input_dict, keys_to_filter):
+    filtered_dict = input_dict or []
+    for key_to_filter in keys_to_filter:
+        filtered_dict[key_to_filter] = "{} elements".format(len(filtered_dict.get(key_to_filter, [])))
+    return filtered_dict
+
+
 output_names_stats = get_output_names_for_role('api_output')
 config = get_recipe_config()
 tree_data = config.get("treeData", [])
 
-logger.info("Initialization with config config={}".format(logger.filter_secrets(config)))
+filtered_config = logger.filter_secrets(config)
+filtered_config = filter_dictionary_keys(filtered_config, [
+       "attributeList", "outputSelectedAttributes", "loadedAttributes",
+       "templateTreeData", "attribute_categories", "element_categories", "treeData", "clickedNodes"
+    ]
+)
+
+logger.info("Initialization with config config={}".format(filtered_config))
 
 auth_type, username, password, server_url, is_ssl_check_disabled = get_credentials(config)
 is_ssl_check_disabled = config.get("is_ssl_check_disabled", False)  # Because no advanced parameter switch
