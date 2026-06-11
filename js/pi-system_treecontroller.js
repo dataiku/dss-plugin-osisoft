@@ -104,6 +104,11 @@ const CheckboxStatus = Object.freeze({
     PARTIAL_CHECK: 'PARTIAL_CHECK',
 });
 
+const GroupMode = Object.freeze({
+    TEMPLATE: 'TEMPLATE',
+    CATEGORY: 'CATEGORY',
+});
+
 app.service('TreeDataService', function() {
     // This will store the shared tree data
     this.treeData = [];
@@ -155,22 +160,6 @@ app.controller('AfExplorerFormCtrl', [
         // $scope.config.attributeCategoryFilter = $scope.config.attributeCategoryFilter || ""
 
         $scope.aggregateDataTypeFields = aggregateDataTypeFields;
-        $scope.attributeGroupSections = [
-            {
-                type: 'element',
-                key: 'attributesWithoutTemplate',
-                title: 'Elements',
-                emptyMessage: 'No attributes without template matched your selection',
-                shouldDisplay: () => $scope.config.activeTab === "element"
-            },
-            {
-                type: 'template',
-                key: 'attributesGroupedByTemplate',
-                title: 'Templates',
-                emptyMessage: 'No templated attributes matched your selection',
-                shouldDisplay: () => true
-            }
-        ];
 
         $scope.elementSearchNoMatch = false;
 
@@ -224,7 +213,7 @@ app.controller('AfExplorerFormCtrl', [
 
         $scope.clearOutputSelection = function() {
             $scope.config.outputSelectedAttributes = [];
-            $scope.buildGroupedAttributes();
+            $scope.refreshAttributeSection();
             // Just need to uncheck the current attribute list as it is
             // built with the correct checked state when adding any new elements
             Object.values($scope.config.loadedAttributes).forEach(attribute => {
@@ -255,6 +244,7 @@ app.controller('AfExplorerFormCtrl', [
         $scope.init = function() {
             $scope.config.show_advanced_parameters = $scope.config.show_advanced_parameters || false;
             $scope.config.activeTab = $scope.config.activeTab || 'element';
+            $scope.groupMode = $scope.groupMode || GroupMode.TEMPLATE;
             DataikuAPI.plugins.listAccessiblePresets('pi-system', $stateParams.projectKey, 'basic-auth').success(function(data) {
                 $scope.inlineParams = data.inlineParams;
                 $scope.inlinePluginParams = data.inlinePluginParams;
@@ -956,69 +946,89 @@ app.controller('AfExplorerFormCtrl', [
         // Attributes are shared between templates
         // Meaning all elements with the same template will share the attributes in this template
         // If multiple elements with the same template are selected, we only show the attribute once
-        function conflateAttributes(groupKey) {
-            return (acc, attr) => {
-                // TODO: switch to id
-                const key = attr[groupKey] + "::" + attr.title;
-
-                if (!acc[key]) {
-                    acc[key] = {
-                        title: attr.title,
-                        description: attr.description,
-                        groupKey: groupKey,
-                        group: attr[groupKey],
-                        template_names: [],
-                        parent_elements: [],
-                        checked: null, // Used to determine UI checkbox state
-                        allChecked: attr.checked,
-                        attributes: [],
-                        checkStates: [],
-                        paths: [],
-                        data_type: attr.data_type,
-                        data_types: [],
-                        isDisplayed: attributeMatchesSearch(attr.title, attr[groupKey], attr.description),
-                        category_names: attr.category_names,
-                        conflicting_categories: false
-                    };
-
-                    getAggregateNames().forEach(aggregateName => {
-                        acc[key][aggregateName] = attr[aggregateName];
-                        acc[key][getAggregateValuesKey(aggregateName)] = [];
-                    });
-                }
-
-                acc[key].checkStates.push(attr.checked)
-                acc[key].template_names.push(attr.template_name)
-                acc[key].paths.push(attr.path)
-                acc[key].parent_elements.push(attr.parent_element);
-                acc[key].checked = getCheckboxStatus(acc[key].checkStates); // TODO maybe move out
-                acc[key].allChecked = acc[key].allChecked && attr.checked
-                acc[key].attributes.push(attr);
-                acc[key].data_types.push(attr.data_type);
-
-                if (acc[key].data_type !== attr.data_type) {
-                    acc[key].data_type = null;
-                }
-
-                getAggregateNames().forEach(aggregateName => {
-                    acc[key][getAggregateValuesKey(aggregateName)].push(attr[aggregateName]);
-                    if ($scope.aggregateDataTypeFields.aggregates[aggregateName].type === 'multiselect') {
-                        if (!stringArraysEqual(acc[key][aggregateName], attr[aggregateName])) {
-                            acc[key][aggregateName] = [];
-                        }
-                        return;
-                    }
-                    if (acc[key][aggregateName] !== attr[aggregateName]) {
-                        acc[key][aggregateName] = null;
-                    }
+        function getGroups(attr, groupProperty) {
+            const groupPropertyValues = attr[groupProperty];
+            if (Array.isArray(groupPropertyValues)) {
+                return groupPropertyValues.map(value => {
+                    return {key: value + "::" + attr.title, value: value};
                 });
+            }
+            return [ { key: groupPropertyValues + "::" + attr.title, value: groupPropertyValues } ];
+        }
 
-                // Check categories are identical
-                if (acc[key].conflicting_categories || !arraysEqual(acc[key].category_names, attr.category_names)) {
-                    acc[key].category_names = [];
-                    acc[key].conflicting_categories = true;
+        function initConflatedAttribute(attr, groupProperty, group) {
+            const conflatedAttribute = {
+                title: attr.title,
+                description: attr.description,
+                // TODO: see if this is necessary
+                groupProperty: groupProperty,
+                group: group.value,
+                template_names: [],
+                parent_elements: [],
+                checked: null, // Used to determine UI checkbox state
+                allChecked: attr.checked,
+                attributes: [],
+                checkStates: [],
+                paths: [],
+                data_type: attr.data_type,
+                data_types: [],
+                // TODO: why pass groupProperty instead of template_name here
+                isDisplayed: attributeMatchesSearch(attr.title, attr[groupProperty], attr.description),
+                category_names: attr.category_names,
+                conflicting_categories: false
+            };
+
+            getAggregateNames().forEach(aggregateName => {
+                conflatedAttribute[aggregateName] = attr[aggregateName];
+                conflatedAttribute[getAggregateValuesKey(aggregateName)] = [];
+            });
+
+            return conflatedAttribute;
+        }
+
+        function updateConflatedAttribute(conflatedAttribute, attr) {
+            conflatedAttribute.checkStates.push(attr.checked);
+            conflatedAttribute.template_names.push(attr.template_name);
+            conflatedAttribute.paths.push(attr.path);
+            conflatedAttribute.parent_elements.push(attr.parent_element);
+            conflatedAttribute.checked = getCheckboxStatus(conflatedAttribute.checkStates); // TODO maybe move out
+            conflatedAttribute.allChecked = conflatedAttribute.allChecked && attr.checked;
+            conflatedAttribute.attributes.push(attr);
+            conflatedAttribute.data_types.push(attr.data_type);
+
+            if (conflatedAttribute.data_type !== attr.data_type) {
+                conflatedAttribute.data_type = null;
+            }
+
+            getAggregateNames().forEach(aggregateName => {
+                conflatedAttribute[getAggregateValuesKey(aggregateName)].push(attr[aggregateName]);
+                if ($scope.aggregateDataTypeFields.aggregates[aggregateName].type === 'multiselect') {
+                    if (!stringArraysEqual(conflatedAttribute[aggregateName], attr[aggregateName])) {
+                        conflatedAttribute[aggregateName] = [];
+                    }
+                    return;
                 }
+                if (conflatedAttribute[aggregateName] !== attr[aggregateName]) {
+                    conflatedAttribute[aggregateName] = null;
+                }
+            });
 
+            // Check categories are identical
+            if (conflatedAttribute.conflicting_categories || !arraysEqual(conflatedAttribute.category_names, attr.category_names)) {
+                conflatedAttribute.category_names = [];
+                conflatedAttribute.conflicting_categories = true;
+            }
+        }
+
+        function conflateAttributes(groupProperty) {
+            return (acc, attr) => {
+                const groups = getGroups(attr, groupProperty);
+                for (const group of groups) {
+                    if (!acc[group.key]) {
+                        acc[group.key] = initConflatedAttribute(attr, groupProperty, group);
+                    }
+                    updateConflatedAttribute(acc[group.key], attr);
+                }
                 return acc
             }
         }
@@ -1050,8 +1060,8 @@ app.controller('AfExplorerFormCtrl', [
             }
         }
 
-        function buildAggregatedAttributes(attributes, groupKey) {
-            let deduplicatedAttributes = Object.values(attributes.reduce(conflateAttributes(groupKey), {})).map(conflatedAttribute => {
+        function buildAggregatedAttributes(attributes, groupProperty) {
+            let deduplicatedAttributes = Object.values(attributes.reduce(conflateAttributes(groupProperty), {})).map(conflatedAttribute => {
                 if ($scope.config.onlyDisplayCommon && conflatedAttribute.parent_elements.length < $scope.config.clickedNodes.length) {
                     conflatedAttribute.isDisplayed = false;
                 }
@@ -1060,16 +1070,16 @@ app.controller('AfExplorerFormCtrl', [
             return Object.values(deduplicatedAttributes.reduce(groupAttributesIntoSections(), {}));
         }
 
-        function splitAttributesByTemplatePresence() {
+        function splitAttributesOnProperty(splitProperty) {
             const attributes = getAttributeList();
             return {
-                attributesWithoutTemplate: attributes.filter((attribute) => !attribute?.template_name),
-                attributesWithTemplate: attributes.filter((attribute) => attribute?.template_name)
+                attributesWithProperty: attributes.filter((attribute) => attribute?.[splitProperty]),
+                attributesWithoutProperty: attributes.filter((attribute) => !attribute?.[splitProperty])
             };
         }
 
-        function buildGroupedAttributesResult(attributes, groupKey) {
-            const groups = buildAggregatedAttributes(attributes, groupKey);
+        function buildGroupedAttributesResult(attributes, groupProperty) {
+            const groups = buildAggregatedAttributes(attributes, groupProperty);
             const displayedGroups = groups.filter(group => !group.isDisplayed);
             // TODO: probably turn this into a reduce
             return {
@@ -1081,18 +1091,39 @@ app.controller('AfExplorerFormCtrl', [
             }
         }
 
-        $scope.buildGroupedAttributes = function() {
-            const splitAttributes = splitAttributesByTemplatePresence();
+        $scope.buildGroupedAttributes = function(grouping) {
+            const splitAttributes = splitAttributesOnProperty('template_name');
             return {
-                attributesWithoutTemplate: buildGroupedAttributesResult(
-                    splitAttributes.attributesWithoutTemplate,
-                    'parent_element'
+                attributesWithProperty: buildGroupedAttributesResult(
+                    splitAttributes.attributesWithProperty,
+                    grouping.groupProperty
                 ),
-                attributesGroupedByTemplate: buildGroupedAttributesResult(
-                    splitAttributes.attributesWithTemplate,
-                    'template_name'
+                attributesWithoutProperty: buildGroupedAttributesResult(
+                    splitAttributes.attributesWithoutProperty,
+                    grouping.fallbackGroupProperty
                 )
             };
+        }
+
+        function getGrouping() {
+            let groupProperty = 'template_name';
+            if ($scope.groupMode === GroupMode.CATEGORY) {
+                groupProperty = 'category_names';
+            }
+            return {
+                groupProperty: groupProperty,
+                fallbackGroupProperty: 'parent_element',
+            }
+        }
+
+        $scope.getAttributeTableTitle = function(fallback=false) {
+            if (fallback) {
+                return "Elements";
+            }
+            if ($scope.groupMode === GroupMode.CATEGORY) {
+                return "Categories";
+            }
+            return "Templates";
         }
 
         function getCheckboxStatus(checkboxStatuses) {
@@ -1107,9 +1138,14 @@ app.controller('AfExplorerFormCtrl', [
             return CheckboxStatus.UNCHECKED;
         }
 
-
         $scope.refreshAttributeSection = function() {
-            $scope.groupedAttributes = $scope.buildGroupedAttributes();
+            const grouping = getGrouping();
+            const groupedAttributes = $scope.buildGroupedAttributes(grouping)
+            $scope.groupedAttributes = groupedAttributes.attributesWithProperty;
+            $scope.groupedAttributesFallbackGrouping = groupedAttributes.attributesWithoutProperty;
+            console.log("Attribute List", getAttributeList())
+            console.log("Grouped attributes", $scope.groupedAttributes)
+            console.log("Grouped fallback attributes", $scope.groupedAttributesFallbackGrouping)
         }
 
         $scope.addAttributeToSelection = function(attribute) {
@@ -1157,6 +1193,15 @@ app.controller('AfExplorerFormCtrl', [
 
         function getAttributeFromId(attrId) {
             return $scope.config.loadedAttributes[attrId];
+        }
+
+        $scope.changeGroupingMode = function() {
+            if ($scope.groupMode === GroupMode.CATEGORY) {
+                $scope.groupMode = GroupMode.TEMPLATE;
+            } else {
+                $scope.groupMode = GroupMode.CATEGORY;
+            }
+            $scope.refreshAttributeSection();
         }
 
     }]);
@@ -1235,7 +1280,10 @@ app.directive('attributeTableBlock', function() {
     return {
         restrict: 'A',
         scope: {
-            section: '=',
+            title: '<',
+            displayElementDropdown: '<',
+            excludedColumns: '<',
+            groupMode: '<',
             groupedAttributes: '=',
             config: '=',
             aggregateDataTypeFields: '<',
@@ -1261,6 +1309,7 @@ app.directive('attributeTableRow', function() {
     return {
         restrict: 'A',
         scope: {
+            groupMode: '<',
             mergedAttribute: '=',
             displayPath: '<',
             aggregateDataTypeFields: '<',

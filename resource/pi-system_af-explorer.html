@@ -100,6 +100,7 @@
                         >
                         </basic-search-box>
                     </div>
+                    <button ng-click="changeGroupingMode()">Change grouping mode</button>
                     <div class="attribute-section__filters-row">
                         <label class="attribute-section__filters-toggle">
                             <span class="dku-toggle dku-toggle-no-content">
@@ -126,11 +127,30 @@
                 </div>
                 <div
                         attribute-table-block
-                        ng-repeat="section in attributeGroupSections track by section.key"
-                        ng-if="section.shouldDisplay()"
-                        section="section"
+                        ng-if="groupedAttributesFallbackGrouping && !groupedAttributesFallbackGrouping.empty"
+                        grouped-attributes="groupedAttributesFallbackGrouping"
+                        config="config"
+                        title="getAttributeTableTitle(true)"
+                        group-mode="groupMode"
+                        display-element-dropdown="false"
+                        aggregate-data-type-fields="aggregateDataTypeFields"
+                        on-toggle-select-all-grouped-attributes="toggleSelectAllGroupedAttributes(groupedAttributeGroup)"
+                        on-toggle-grouped-attributes="toggleGroupedAttributes(group)"
+                        on-is-at-least-partially-selected="isAtLeastPartiallySelected(item)"
+                        on-init-elements-dropdown="initElementsDropdown(templateName)"
+                        on-is-template-associated-element-selected="isTemplateAssociatedElementSelected(element)"
+                        on-apply-click-elements-dropdown="applyClickElementsDropdown(templateName, element, selected)"
+                        on-check-attribute="checkAttribute(mergedAttribute)"
+                        on-update-data-type="updateMergedAttributeDataType(mergedAttribute)"
+                        on-update-aggregate="updateMergedAttributeAggregate(mergedAttribute)">
+                </div>
+                <div
+                        attribute-table-block
                         grouped-attributes="groupedAttributes"
                         config="config"
+                        title="getAttributeTableTitle()"
+                        group-mode="groupMode"
+                        display-element-dropdown="true"
                         aggregate-data-type-fields="aggregateDataTypeFields"
                         on-toggle-select-all-grouped-attributes="toggleSelectAllGroupedAttributes(groupedAttributeGroup)"
                         on-toggle-grouped-attributes="toggleGroupedAttributes(group)"

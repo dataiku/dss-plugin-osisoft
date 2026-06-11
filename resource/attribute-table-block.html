@@ -1,27 +1,30 @@
-<div class="attribute-table-block" ng-if="ctrl.section.shouldDisplay()">
-    <div class="attribute-table-block__title"><strong>{{ctrl.section.title}}</strong></div>
+<!--TODO: check if we display the section in the calling template-->
+<!--            TODO: remove section.key - can use all the attributes passed-->
+<div class="attribute-table-block">
+    <div class="attribute-table-block__title"><strong>{{ctrl.title}}</strong></div>
     <table class="custom-table">
         <thead>
         <tr>
-            <th><input type="checkbox" ng-model="ctrl.groupedAttributes[ctrl.section.key].allChecked"
-                       ng-change="ctrl.onToggleSelectAllGroupedAttributes({ groupedAttributeGroup: ctrl.groupedAttributes[ctrl.section.key] })"
-                       ng-disabled="!ctrl.groupedAttributes[ctrl.section.key].groups.length"
-                       indeterminate="ctrl.groupedAttributes[ctrl.section.key].checked"></th>
+            <th><input type="checkbox" ng-model="ctrl.groupedAttributes.allChecked"
+                       ng-change="ctrl.onToggleSelectAllGroupedAttributes({ groupedAttributeGroup: ctrl.groupedAttributes })"
+                       ng-disabled="!ctrl.groupedAttributes.groups.length"
+                       indeterminate="ctrl.groupedAttributes.checked"></th>
             <th>Title</th>
             <th>Description</th>
             <th ng-if="ctrl.config.displayPath">Path</th>
             <th>Data type</th>
             <th>Aggregates</th>
-            <th>Category</th>
+            <th ng-if="ctrl.groupMode !== 'CATEGORY'">Category</th>
+            <th ng-if="ctrl.groupMode !== 'TEMPLATE'">Template</th>
         </tr>
         </thead>
-        <tbody ng-if="ctrl.groupedAttributes[ctrl.section.key].empty">
+        <tbody ng-if="ctrl.groupedAttributes.empty">
         <tr class="custom-table__empty-row">
-            <td colspan="{{ctrl.config.displayPath ? 7 : 6}}">{{ctrl.section.emptyMessage}}</td>
+            <td colspan="{{ctrl.config.displayPath ? 7 : 6}}">No attributes matched your selection</td>
         </tr>
         </tbody>
         <tbody
-                ng-repeat="group in ctrl.groupedAttributes[ctrl.section.key].groups track by group.group_name"
+                ng-repeat="group in ctrl.groupedAttributes.groups track by group.group_name"
                 ng-show="!group.isDisplayed">
         <tr class="custom-table__group-row"
             ng-class="{ 'custom-table__group-row--selected': ctrl.onIsAtLeastPartiallySelected({ item: group }) }">
@@ -44,7 +47,7 @@
                             is-template-associated-element-selected="ctrl.onIsTemplateAssociatedElementSelected({ element: element })"
                             apply-click-elements-dropdown="ctrl.onApplyClickElementsDropdown({ templateName: templateName, element: element, selected: selected })"
                             active-tab="ctrl.config.activeTab"
-                            ng-if="ctrl.section.type === 'template'">
+                            ng-if="ctrl.displayElementDropdown">
                     </dropdown-elements>
                 </div>
             </td>
@@ -53,6 +56,7 @@
                 ng-repeat="mergedAttribute in group.attributes track by mergedAttribute.title"
                 ng-show="mergedAttribute.isDisplayed"
                 attribute-table-row
+                group-mode="ctrl.groupMode"
                 merged-attribute="mergedAttribute"
                 display-path="ctrl.config.displayPath"
                 aggregate-data-type-fields="ctrl.aggregateDataTypeFields"
