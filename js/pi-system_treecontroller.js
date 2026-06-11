@@ -956,12 +956,10 @@ app.controller('AfExplorerFormCtrl', [
             return [ { key: groupPropertyValues + "::" + attr.title, value: groupPropertyValues } ];
         }
 
-        function initConflatedAttribute(attr, groupProperty, group) {
+        function initConflatedAttribute(attr, group) {
             const conflatedAttribute = {
                 title: attr.title,
                 description: attr.description,
-                // TODO: see if this is necessary
-                groupProperty: groupProperty,
                 group: group.value,
                 template_name: attr.template_name,
                 parent_elements: [],
@@ -972,8 +970,7 @@ app.controller('AfExplorerFormCtrl', [
                 paths: [],
                 data_type: attr.data_type,
                 data_types: [],
-                // TODO: why pass groupProperty instead of template_name here
-                isDisplayed: attributeMatchesSearch(attr.title, attr[groupProperty], attr.description),
+                isDisplayed: attributeMatchesSearch(attr.title, attr.template_name, attr.description),
                 category_names: attr.category_names,
                 conflicting_categories: false
             };
@@ -1024,7 +1021,7 @@ app.controller('AfExplorerFormCtrl', [
                 const groups = getGroups(attr, groupProperty);
                 for (const group of groups) {
                     if (!acc[group.key]) {
-                        acc[group.key] = initConflatedAttribute(attr, groupProperty, group);
+                        acc[group.key] = initConflatedAttribute(attr, group);
                     }
                     updateConflatedAttribute(acc[group.key], attr);
                 }
