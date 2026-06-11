@@ -47,7 +47,7 @@
                             is-template-associated-element-selected="ctrl.onIsTemplateAssociatedElementSelected({ element: element })"
                             apply-click-elements-dropdown="ctrl.onApplyClickElementsDropdown({ templateName: templateName, element: element, selected: selected })"
                             active-tab="ctrl.config.activeTab"
-                            ng-if="ctrl.displayElementDropdown">
+                            ng-if="ctrl.displayElementDropdown && ctrl.groupMode === 'TEMPLATE'">
                     </dropdown-elements>
                 </div>
             </td>
