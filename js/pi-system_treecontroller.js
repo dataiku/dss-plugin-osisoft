@@ -963,7 +963,7 @@ app.controller('AfExplorerFormCtrl', [
                 // TODO: see if this is necessary
                 groupProperty: groupProperty,
                 group: group.value,
-                template_names: [],
+                template_name: attr.template_name,
                 parent_elements: [],
                 checked: null, // Used to determine UI checkbox state
                 allChecked: attr.checked,
@@ -988,7 +988,6 @@ app.controller('AfExplorerFormCtrl', [
 
         function updateConflatedAttribute(conflatedAttribute, attr) {
             conflatedAttribute.checkStates.push(attr.checked);
-            conflatedAttribute.template_names.push(attr.template_name);
             conflatedAttribute.paths.push(attr.path);
             conflatedAttribute.parent_elements.push(attr.parent_element);
             conflatedAttribute.checked = getCheckboxStatus(conflatedAttribute.checkStates); // TODO maybe move out
