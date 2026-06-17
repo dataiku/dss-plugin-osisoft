@@ -196,6 +196,21 @@ class Cache {
             };
         });
     }
+
+    async clear() {
+        return new Promise((resolve, reject) => {
+            const transaction = this.db.transaction([this.attributesStoreName], "readwrite");
+            transaction.oncomplete = () => {
+                resolve();
+            };
+            transaction.onerror = () => {
+                reject(transaction.error);
+            };
+
+            const attributeStore = transaction.objectStore(this.attributesStoreName);
+            attributeStore.clear();
+        });
+    }
 }
 
 app.controller('AfExplorerFormCtrl', [
@@ -417,7 +432,6 @@ app.controller('AfExplorerFormCtrl', [
             $scope.config.searchMatchedElementPaths = [];
             $scope.config.selectedTemplateNames = [];
             // TODO: switch to cleanup cache
-            $scope.config.loadedAttributes = {};
             $scope.elementSearchNoMatch = false;
             $scope.refreshAttributeSection();
         }
@@ -458,18 +472,23 @@ app.controller('AfExplorerFormCtrl', [
         };
 
         $scope.refreshCachedTree = function() {
-            $scope.config.treeData = [];
-            $scope.config.clickedNodes = [];
-            $scope.attributeList = [];
-            $scope.config.searchMatchedElementPaths = [];
-            $scope.config.selectedTemplateNames = [];
-            // TODO: switch to cleanup cache
-            $scope.config.loadedAttributes = {};
-            $scope.elementSearchNoMatch = false;
-            $scope.refreshAttributeSection();
-            $scope.initializeTree();
-            $scope.getTemplatesFromDB();
-            $scope.getCategoriesFromDB();
+            initCache().then(function() {
+                return $scope.cache.clear();
+            }).then(function() {
+                $scope.config.treeData = [];
+                $scope.config.clickedNodes = [];
+                $scope.attributeList = [];
+                $scope.config.searchMatchedElementPaths = [];
+                $scope.config.selectedTemplateNames = [];
+                // TODO: switch to cleanup cache
+                $scope.elementSearchNoMatch = false;
+                $scope.refreshAttributeSection();
+                return $q.all([
+                    $scope.initializeTree(),
+                    $scope.getTemplatesFromDB(),
+                    $scope.getCategoriesFromDB()
+                ]);
+            });
         }
 
         let presetWatchInitialized = false;
