@@ -962,6 +962,7 @@ app.controller('AfExplorerFormCtrl', [
                     if (!isAlreadyPresent) {
                         enrichAttribute(attribute, node);
                         $scope.attributeList.push(attribute);
+                        $scope.cache.addOrUpdate(attribute);
                         $scope.$applyAsync();
                     }
                 });
