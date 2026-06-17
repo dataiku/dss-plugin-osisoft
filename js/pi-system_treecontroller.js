@@ -282,7 +282,7 @@ app.controller('AfExplorerFormCtrl', [
             // Just need to uncheck the current attribute list as it is
             // built with the correct checked state when adding any new elements
             // TODO: switch to mass update in cache
-            Object.values($scope.config.loadedAttributes).forEach(attribute => {
+            Object.values($scope.attributeList).forEach(attribute => {
                 attribute.checked = false;
             });
             $scope.refreshAttributeSection();
