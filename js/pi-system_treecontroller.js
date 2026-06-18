@@ -169,6 +169,7 @@ class Cache {
             const request = objectStore.get(attrId);
             request.onerror = (event) => {
                 console.error("Could not get attribute " + attrId + " from cache")
+                reject(request.error);
             };
             request.onsuccess = (event) => {
                 resolve(request.result);
@@ -192,7 +193,7 @@ class Cache {
             const attributeStore = transaction.objectStore(this.attributesStoreName);
             const request = attributeStore.put(attribute);
             request.onsuccess = (event) => {
-                // event.target.result === customer.ssn;
+                resolve(attribute)
             };
         });
     }
@@ -562,24 +563,30 @@ app.controller('AfExplorerFormCtrl', [
             if (item.type === "template") {
                 return getAttributesForTemplate(item);
             }
-            console.log("ALX:gcfd:" + JSON.stringify(item));
             return $scope.callPythonDo({ method: "get_children_from_db", parent: item })
                 .then(function(data) {
                     console.log("get_children_from_db", data);
-                    console.log("ALX:data1=" + JSON.stringify(data));
+                    const attributeLoadPromises = [];
                     item.attribute_children = [];
-                    data.choices.filter(node => node.type === 'attribute').map(attribute => {
-                            addAttributeToLoadedAttributes(attribute, {expanded: false});
+                    const loadedAttributes = data.choices.filter(node => node.type === 'attribute');
+                    loadedAttributes.forEach(attribute => {
+                            attributeLoadPromises.push(
+                                addAttributeToLoadedAttributes(attribute, {expanded: false})
+                            );
                             item.attribute_children.push(attribute.id);
                          }
-                    )
+                    );
                     item.children = data.choices.filter(node => node.type === item.type);
                     item.children.forEach(child => {
                         child.expanded = false;
                     });
                     markSearchResults(item.children, $scope.config.searchMatchedElementPaths || []);
-                    console.log(item);
-                    return item;
+                    return Promise.all(attributeLoadPromises).then(() => {
+                        return {
+                            updatedNode: item,
+                            loadedAttributes: loadedAttributes
+                        }
+                    });
                 });
         }
 
@@ -669,12 +676,14 @@ app.controller('AfExplorerFormCtrl', [
             return attributePath.split('|')?.[0];
         }
 
+        // TODO: align it on the return for getChildrenFromDb
         function getAttributesForTemplate(node) {
             return $scope.callPythonDo({ method: "get_attribute_for_template", template_name: node.title}).then(
                 function(data) {
                     console.log("get_attribute_for_template", data);
                     node.attribute_children = [];
-                    data.attributes.map(attribute => {
+                    const loadedAttributes = data.attributes;
+                    loadedAttributes.map(attribute => {
                             const elementPath = getElementPathFromAttributePath(attribute.path);
                             addAttributeToLoadedAttributes(attribute, {
                                 expanded: false,
@@ -684,7 +693,10 @@ app.controller('AfExplorerFormCtrl', [
                             node.attribute_children.push(attribute.id);
                         }
                     )
-                    return node;
+                    return {
+                        updatedNode: node,
+                        loadedAttributes: loadedAttributes
+                    };
                 }
             );
         }
@@ -783,6 +795,8 @@ app.controller('AfExplorerFormCtrl', [
 
             $scope.toggleDisplayAttributes(node, !nodeAlreadySelected).then(() => {
                 $scope.refreshAttributeSection();
+                // Necessary because no digest cycle triggered for awaited cache reads
+                $scope.$applyAsync();
             });
 
             // In element node, the visualized nodes are reflected on the elements dropdown
@@ -893,21 +907,52 @@ app.controller('AfExplorerFormCtrl', [
 
         }
 
-        function getChildren(node) {
+        function getChildrenIfMissing(node) {
             if (hasAttributeChildren(node)) {
                 return Promise.resolve(node);
             }
-            return $scope.getChildrenFromDB(node);
+            return $scope.getChildrenFromDB(node).then(data => {
+                return data.updatedNode;
+            });
         }
 
         function stopDisplayingAttributes(node) {
             // It is for now possible to stop displaying an element that was not loaded because of weak links
             // patching it by loading the element before stopping to display it
             // TODO: replace by weak link single loading logic
-            return getChildren(node).then(node => {
+            return getChildrenIfMissing(node).then(node => {
                 $scope.attributeList = $scope.attributeList.filter(
                     attribute => !node.attribute_children.includes(attribute.id)
                 );
+            });
+        }
+
+        // Put node children in the displayed attribute list
+        // Enrich them with data from the selected list + their parent
+        function addChildrenToAttributeList(node, loadedAttributes) {
+            console.log("enriching children and adding them to the attributeList")
+            const parentTemplateName = node?.template_name;
+
+            loadedAttributes.forEach(attribute => {
+                if (!attribute?.parent_template_name && parentTemplateName) {
+                    attribute.parent_template_name = parentTemplateName;
+                }
+                const isAlreadyPresent = $scope.attributeList.find(attr => attr.id === attribute.id);
+                if (!isAlreadyPresent) {
+                    enrichAttribute(attribute, node);
+                    $scope.attributeList.push(attribute);
+                }
+            });
+
+            return loadedAttributes
+        }
+
+        function loadAndAddChildrenAttributes(node) {
+            console.log("loading children from db and adding them to the list")
+            return $scope.getChildrenFromDB(node).then(data => {
+                console.log("node", data.node)
+                console.log("loadedAttributes", data.loadedAttributes)
+                return addChildrenToAttributeList(data.updatedNode, data.loadedAttributes);
             });
         }
 
@@ -916,11 +961,27 @@ app.controller('AfExplorerFormCtrl', [
                return stopDisplayingAttributes(node);
             }
             if (!hasAttributeChildren(node)) {
-                return $scope.getChildrenFromDB(node).then(newNode => {
-                    return addChildrenToAttributeList(newNode);
-                });
+                console.log("loading children from the first time")
+                return loadAndAddChildrenAttributes(node);
             }
-            return addChildrenToAttributeList(node);
+            return Promise.all(
+                node.attribute_children.map(attributeId => {
+                    return $scope.cache.getAttribute(attributeId).then(loadedAttribute => {
+                        if (!loadedAttribute) {
+                            throw new Error("Could not load attribute " + attributeId + " from the cache");
+                        }
+                        return loadedAttribute;
+                    });
+                })
+            ).then((loadedAttributes) => {
+                // When all the attributes are properly fetched from the cache, they can be added to the attribute list
+                console.log("loaded the attributes from the cache and adding them")
+                return addChildrenToAttributeList(node, loadedAttributes);
+            }).catch(() => {
+                console.log("could not load attributes from the cache, refetching")
+                // if they are not in the cache, we refetch them all from db and update the cache
+                return loadAndAddChildrenAttributes(node);
+            })
         }
 
         // Merge frontend data and saved output with loaded attributes
@@ -944,29 +1005,6 @@ app.controller('AfExplorerFormCtrl', [
                 }
             });
             return attribute;
-        }
-
-        // Put node children in the displayed attribute list
-        function addChildrenToAttributeList(node) {
-            const parentTemplateName = node?.template_name;
-
-            return Promise.all(node.attribute_children.map(attrId => {
-                return getAttributeFromId(attrId).then((attribute) => {
-                    if (!attribute) {
-                        return;
-                    }
-                    if (!attribute?.parent_template_name && parentTemplateName) {
-                        attribute.parent_template_name = parentTemplateName;
-                    }
-                    const isAlreadyPresent = $scope.attributeList.find(attr => attr.id === attrId);
-                    if (!isAlreadyPresent) {
-                        enrichAttribute(attribute, node);
-                        $scope.attributeList.push(attribute);
-                        $scope.cache.addOrUpdate(attribute);
-                        $scope.$applyAsync();
-                    }
-                });
-            }));
         }
 
         function getAggregateNames() {
