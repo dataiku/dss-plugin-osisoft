@@ -47,8 +47,8 @@
                     <i class="dku-icon-dismiss-16"></i>
                     Clear all
                 </button>
-                <ul ng-if="config.activeTab === 'element' && treeData && treeData.length">
-                    <li ng-repeat="node in treeData track by node.id">
+                <ul ng-if="config.activeTab === 'element' && elementTree && elementTree.length">
+                    <li ng-repeat="node in elementTree track by node.id">
                         <tree-node node="node" get-children-from-db="getChildrenFromDB" toggle-display-attributes="toggleDisplayAttributes"
                                    config="config" clicked-nodes="config.clickedNodes" toggle-node-visualization="toggleNodeVisualization(node)">
                         </tree-node>

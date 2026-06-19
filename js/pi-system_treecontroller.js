@@ -115,10 +115,10 @@ class Cache {
         this.dbName = [projectKey, server, database].join("::")
         this.dbVersion = 1
         this.attributesStoreName = "attributes"
-        this.treeDataStoreName = "treeData"
-        this.stores = [this.attributesStoreName, this.treeDataStoreName]
+        this.elementTreeStoreName = "elementTree"
+        this.stores = [this.attributesStoreName, this.elementTreeStoreName]
 
-        this.treeDataRecordId = "treeData"
+        this.elementTreeRecordId = "elementTree"
     }
 
     async init() {
@@ -149,8 +149,8 @@ class Cache {
         return this.getObject(this.attributesStoreName, attrId);
     }
 
-    async getTreeData() {
-        return this.getObject(this.treeDataStoreName, this.treeDataRecordId).then((data) => data.nodes);
+    async getElementTree() {
+        return this.getObject(this.elementTreeStoreName, this.elementTreeRecordId).then((data) => data.nodes);
     }
 
     async getObject(objectStoreName, objectId) {
@@ -172,11 +172,11 @@ class Cache {
         return this.addOrUpdate(attribute, this.attributesStoreName);
     }
 
-    async addOrUpdateTreeData(treeData) {
+    async addOrUpdateElementTree(elementTree) {
         return this.addOrUpdate({
-                id: this.treeDataRecordId,
-                nodes: treeData
-        }, this.treeDataStoreName);
+                id: this.elementTreeRecordId,
+                nodes: elementTree
+        }, this.elementTreeStoreName);
     }
 
     async addOrUpdate(object, objectStoreName) {
@@ -347,17 +347,17 @@ app.controller('AfExplorerFormCtrl', [
                 });
             }).error(setErrorInScope.bind($scope.errorScope));
             if ($scope.authConfigured() === true) {
-                // We try getting the treeData from cache. If we can't we open the authSection
-                // And we will load the treeData from db once the user has logged in
+                // We try getting the elementTree from cache. If we can't we open the authSection
+                // And we will load the elementTree from db once the user has logged in
                 // This is brittle and should probably changed in the future
                 initCache().then(() => {
                     // TODO: also init template and categories from cache
-                    return $scope.cache.getTreeData();
-                }).then((treeData) => {
-                    if (!treeData) {
+                    return $scope.cache.getElementTree();
+                }).then((elementTree) => {
+                    if (!elementTree) {
                         $scope.authSectionVisible = true;
                     }
-                    $scope.treeData = treeData;
+                    $scope.elementTree = elementTree;
                     $scope.showTreeData = true;
                     $scope.$applyAsync();
                 })
@@ -412,7 +412,7 @@ app.controller('AfExplorerFormCtrl', [
                 $scope.showTreeData = true;
                 $scope.authSectionVisible = false;
                 console.info("[LOGIN][UI] success", {
-                    tree_count: Array.isArray($scope.treeData) ? $scope.treeData.length : 0,
+                    tree_count: Array.isArray($scope.elementTree) ? $scope.elementTree.length : 0,
                     template_tree_count: Array.isArray($scope.config.templateTreeData) ? $scope.config.templateTreeData.length : 0
                 });
             }).catch(() => {
@@ -427,7 +427,7 @@ app.controller('AfExplorerFormCtrl', [
         }
 
         $scope.cleanTree = function() { // utile quand on change de serveur ou de db dans la config
-            $scope.treeData = [];
+            $scope.elementTree = [];
             $scope.config.clickedNodes = [];
             $scope.attributeList = [];
             $scope.config.outputSelectedAttributes = [];
@@ -476,7 +476,7 @@ app.controller('AfExplorerFormCtrl', [
         $scope.refreshCachedTree = function() {
             // WTF are we doing here
             $scope.cache.clear().then(function() {
-                $scope.treeData = [];
+                $scope.elementTree = [];
                 $scope.config.clickedNodes = [];
                 $scope.attributeList = [];
                 $scope.config.searchMatchedElementPaths = [];
@@ -489,7 +489,7 @@ app.controller('AfExplorerFormCtrl', [
                     $scope.getCategoriesFromDB()
                 ]);
             }).then(() => {
-                cacheTreeData();
+                cacheElementTree();
             })
         }
 
@@ -536,7 +536,7 @@ app.controller('AfExplorerFormCtrl', [
             return $scope.cache.init();
         }
 
-        function buildPersistedTreeDataSnapshot(nodes) {
+        function buildPersistedElementTreeSnapshot(nodes) {
             return nodes.map(node => {
                 const persistedNode = {};
 
@@ -545,7 +545,7 @@ app.controller('AfExplorerFormCtrl', [
                        return;
                    }
                    if (key === "children" && Array.isArray(node.children)) {
-                       persistedNode.children = buildPersistedTreeDataSnapshot(node.children);
+                       persistedNode.children = buildPersistedElementTreeSnapshot(node.children);
                        return;
                    }
                    persistedNode[key] = node[key];
@@ -554,16 +554,16 @@ app.controller('AfExplorerFormCtrl', [
             });
         }
 
-        function cacheTreeData() {
-            const snapshot = buildPersistedTreeDataSnapshot($scope.treeData);
-            return $scope.cache.addOrUpdateTreeData(snapshot);
+        function cacheElementTree() {
+            const snapshot = buildPersistedElementTreeSnapshot($scope.elementTree);
+            return $scope.cache.addOrUpdateElementTree(snapshot);
         };
 
 
         $scope.getElementTreeFromDB = function() {
             return $scope.callPythonDo({ method: "get_children_from_db", parent: $scope.config.database_name }).then(function(data) {
                 console.log("get_children_from_db", data);
-                $scope.treeData = data.choices;
+                $scope.elementTree = data.choices;
                 return data;
             });
         };
@@ -577,7 +577,7 @@ app.controller('AfExplorerFormCtrl', [
                 $scope.getCategoriesFromDB()
             ]).then(function(results) {
                 // TODO: cache the data
-                cacheTreeData();
+                cacheElementTree();
                 $scope.config.loadedDatabaseName = $scope.config.database_name || null;
                 return results;
             });
@@ -605,7 +605,7 @@ app.controller('AfExplorerFormCtrl', [
                         child.expanded = false;
                     });
                     markSearchResults(item.children, $scope.config.searchMatchedElementPaths || []);
-                    cacheTreeData();
+                    cacheElementTree();
                     return Promise.all(attributeLoadPromises).then(() => {
                         return {
                             updatedNode: item,
@@ -666,18 +666,18 @@ app.controller('AfExplorerFormCtrl', [
         $scope.doSearch = function(element_name) {
             $scope.config.searchInProgress = true;
             $scope.config.searchMatchedElementPaths = [];
-            $scope.callPythonDo({ method: "do_search", element_name: element_name, treeData: $scope.treeData }).then(
+            $scope.callPythonDo({ method: "do_search", element_name: element_name, elementTree: $scope.elementTree }).then(
                 function(data) {
                     console.log("do_search", data);
-                    $scope.treeData = data.choices;
+                    $scope.elementTree = data.choices;
                     const matchedAttributes = data.attributes || [];
                     const matchedElementPaths = getMatchedElementPaths(matchedAttributes);
                     if (matchedElementPaths.length === 0) {
                         $scope.elementSearchNoMatch = true;
                     }
                     $scope.config.searchMatchedElementPaths = matchedElementPaths;
-                    markSearchResults($scope.treeData, matchedElementPaths);
-                    cacheTreeData();
+                    markSearchResults($scope.elementTree, matchedElementPaths);
+                    cacheElementTree();
                 }
             );
         };
@@ -869,7 +869,7 @@ app.controller('AfExplorerFormCtrl', [
             $scope.config.element_name = "";
             $scope.config.searchMatchedElementPaths = [];
             $scope.elementSearchNoMatch = false;
-            clearSearchHighlights($scope.treeData);
+            clearSearchHighlights($scope.elementTree);
         };
 
         $scope.toggleSelectAllGroupedAttributes = function(groupedAttributes) {
