@@ -106,6 +106,166 @@ class OSIsoftClient(object):
             else:
                 done = True
 
+    def smart_get_rows_from_webid(self, webid, data_type, **kwargs):
+        kwargs["endpoint_type"] = kwargs.get("endpoint_type", "event_frames")
+        kwargs["can_raise"] = kwargs.get("can_raise", True)
+        request_kwargs = copy.deepcopy(kwargs)
+        max_count = kwargs.get("max_count")
+        if not max_count:
+            rows = self.get_rows_from_webid(webid, data_type, **request_kwargs)
+            for row in rows:
+                yield row
+            return
+
+        start_epoch = self.parse_pi_time(kwargs["start_date"], to_epoch=True)
+        end_epoch = self.parse_pi_time(kwargs["end_date"], to_epoch=True)
+        if start_epoch is None or end_epoch is None or end_epoch <= start_epoch:
+            return
+
+        total_duration = end_epoch - start_epoch
+        sample_duration = self._get_sample_duration(total_duration)
+        sample_rows = []
+        previous_item_timestamp = None
+        last_sampled_duration = sample_duration
+
+        while start_epoch < end_epoch and not sample_rows:
+            sample_start_epoch = start_epoch
+            sample_end_epoch = min(end_epoch, start_epoch + sample_duration)
+            sample_rows, previous_item_timestamp, sample_end_epoch = self._download_adaptive_window_from_webid(
+                webid,
+                data_type,
+                sample_start_epoch,
+                sample_end_epoch,
+                previous_item_timestamp,
+                **request_kwargs
+            )
+            for row in sample_rows:
+                yield row
+            start_epoch = sample_end_epoch
+            last_sampled_duration = sample_end_epoch - sample_start_epoch
+            sample_duration = min(sample_duration * 2.0, max(end_epoch - start_epoch, 0))
+
+        estimated_window_duration = self._estimate_optimal_window_duration(
+            sample_rows,
+            last_sampled_duration,
+            max_count,
+            max(sample_duration, self._get_min_window_duration(total_duration))
+        )
+
+        while start_epoch < end_epoch:
+            remaining_duration = end_epoch - start_epoch
+            window_duration = min(estimated_window_duration, remaining_duration)
+            window_end_epoch = start_epoch + window_duration
+            rows, previous_item_timestamp, actual_window_end_epoch = self._download_adaptive_window_from_webid(
+                webid,
+                data_type,
+                start_epoch,
+                window_end_epoch,
+                previous_item_timestamp,
+                **request_kwargs
+            )
+            for row in rows:
+                yield row
+            estimated_window_duration = self._estimate_optimal_window_duration(
+                rows,
+                actual_window_end_epoch - start_epoch,
+                max_count,
+                estimated_window_duration
+            )
+            start_epoch = actual_window_end_epoch
+
+    def _download_adaptive_window_from_webid(self, webid, data_type, start_epoch, end_epoch, previous_item_timestamp, **kwargs):
+        request_kwargs = copy.deepcopy(kwargs)
+        request_kwargs.pop("start_date", None)
+        request_kwargs.pop("end_date", None)
+        min_window_duration = self._get_min_window_duration(end_epoch - start_epoch)
+        current_start_epoch = start_epoch
+        current_end_epoch = end_epoch
+        while current_start_epoch < current_end_epoch:
+            try:
+                rows, last_row_timestamp = self._collect_rows_from_webid_window(
+                    webid,
+                    data_type,
+                    epoch_to_iso(current_start_epoch),
+                    epoch_to_iso(current_end_epoch),
+                    previous_item_timestamp,
+                    **request_kwargs
+                )
+                return rows, last_row_timestamp, current_end_epoch
+            except Exception as err:
+                if not is_parameter_greater_than_max_allowed(err):
+                    raise
+                current_duration = current_end_epoch - current_start_epoch
+                if current_duration <= min_window_duration:
+                    raise
+                current_end_epoch = current_start_epoch + (current_duration / 2.0)
+        return [], previous_item_timestamp, end_epoch
+
+    def _collect_rows_from_webid_window(self, webid, data_type, start_date, end_date, previous_item_timestamp, **kwargs):
+        logger.info("Attempting smart download webids from {} to {}".format(start_date, end_date))
+        rows_buffer = []
+        max_count = kwargs.get("max_count")
+        last_emitted_timestamp = previous_item_timestamp
+        done = False
+        while not done:
+            request_kwargs = copy.deepcopy(kwargs)
+            request_kwargs["start_date"] = start_date
+            request_kwargs["end_date"] = end_date
+            rows = self.get_rows_from_webid(webid, data_type, **request_kwargs)
+            counter = 0
+            last_received_timestamp = None
+            row = None
+            try:
+                row = next(rows)
+            except StopIteration:
+                row = None
+            except Exception:
+                raise
+            if row:
+                row_timestamp = row.get("Timestamp")
+                last_received_timestamp = row_timestamp
+                if not last_emitted_timestamp or last_emitted_timestamp != row_timestamp:
+                    rows_buffer.append(row)
+                    last_emitted_timestamp = row_timestamp or last_emitted_timestamp
+                counter += 1
+                for row in rows:
+                    rows_buffer.append(row)
+                    row_timestamp = row.get("Timestamp")
+                    last_received_timestamp = row_timestamp
+                    last_emitted_timestamp = row_timestamp or last_emitted_timestamp
+                    counter += 1
+            if counter == max_count and last_received_timestamp:
+                logger.warning("Number of replies equals maxCount. Shifting startDate and trying one more time.")
+                start_date = last_received_timestamp
+                previous_item_timestamp = last_received_timestamp
+            else:
+                done = True
+        return rows_buffer, last_emitted_timestamp
+
+    def _estimate_optimal_window_duration(self, rows, sampled_duration, max_count, fallback_duration):
+        min_window_duration = self._get_min_window_duration(sampled_duration)
+        if sampled_duration <= 0:
+            return max(fallback_duration, min_window_duration)
+        if not rows:
+            return max(fallback_duration, min_window_duration)
+        points_per_second = float(len(rows)) / float(sampled_duration)
+        if points_per_second <= 0:
+            return max(fallback_duration, min_window_duration)
+        target_count = max(int(max_count * 0.8), 1)
+        estimated_duration = float(target_count) / points_per_second
+        return max(estimated_duration, min_window_duration)
+
+    def _get_sample_duration(self, total_duration):
+        min_window_duration = self._get_min_window_duration(total_duration)
+        if total_duration <= 0:
+            return min_window_duration
+        return max(total_duration / 10.0, min_window_duration)
+
+    def _get_min_window_duration(self, duration):
+        if duration and duration > 1:
+            return min(1.0, duration)
+        return 0.001
+
     def recursive_get_rows_from_item(self, item, data_type, start_date=None, end_date=None,
                                      interval=None, sync_time=None, boundary_type=None, record_boundary_type=None,
                                      can_raise=True, object_id=None, endpoint_type="event_frames", search_full_hierarchy=None,
