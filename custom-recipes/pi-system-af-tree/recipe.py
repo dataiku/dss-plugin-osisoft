@@ -47,7 +47,7 @@ config = get_recipe_config()
 filtered_config = logger.filter_secrets(config)
 filtered_config = filter_dictionary_keys(filtered_config, [
        "attributeList", "outputSelectedAttributes", "loadedAttributes",
-       "templateTreeData", "attribute_categories", "element_categories", "clickedNodes"
+       "attribute_categories", "element_categories", "clickedNodes"
     ]
 )
 

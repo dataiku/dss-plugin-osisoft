@@ -54,8 +54,8 @@
                         </tree-node>
                     </li>
                 </ul>
-                <ul ng-if="config.activeTab === 'template' && config.templateTreeData && config.templateTreeData.length">
-                    <li ng-repeat="node in config.templateTreeData track by node.id">
+                <ul ng-if="config.activeTab === 'template' && templateTree && templateTree.length">
+                    <li ng-repeat="node in templateTree track by node.id">
                         <tree-node node="node" get-children-from-db="getChildrenFromDB" toggle-display-attributes="toggleDisplayAttributes"
                                    config="config" clicked-nodes="config.clickedNodes" toggle-node-visualization="toggleNodeVisualization(node)">
                         </tree-node>
