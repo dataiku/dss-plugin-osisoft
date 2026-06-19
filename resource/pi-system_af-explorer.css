@@ -1,3 +1,22 @@
+.tree-node__content--marker {
+    color: #0F8781;
+    flex: 0 0 auto;
+}
+
+.tree-node__content--marker-dot {
+    display: inline-block;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: currentColor;
+}
+
+.tree-node__content--element {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
 .pi-system-preview-dataset-modal {
     width: 75%;
 }
@@ -87,6 +106,14 @@
     cursor: pointer;
 }
 
+.tree-node__content--info {
+    box-sizing: border-box;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    height: 20px;
+}
+
 .tree-node__label {
     flex: 1 1 auto;
     min-width: 0;
@@ -128,7 +155,7 @@
     align-items: flex-start;
     flex: 1 0 0;
     align-self: stretch;
-    flex-direction: row-reverse;
+    flex-direction: row;
 }
 .pi-system-explorer__main {
     display: flex;
@@ -191,6 +218,19 @@ pi-system-auth-banner {
     gap: 8px;
     align-self: stretch;
 }
+
+.custom-table__attribute-row--selected {
+    background: #E6F6F5;
+}
+
+.custom-table__group-row {
+    background-color: #FDF1E7;
+}
+
+.custom-table__group-row--selected {
+    background: #D2EFEE;
+}
+
 .pi-system-explorer__authentication-header {
     display: flex;
     height: 32px;
@@ -253,6 +293,27 @@ pi-system-auth-banner {
     align-self: stretch;
 }
 
+.attribute-section__filters-row {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    flex-wrap: wrap;
+}
+
+.attribute-section__filters-toggle {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    height: 30px;
+    margin-bottom: 0;
+    cursor: pointer;
+}
+
+.attribute-section__filters-toggle .dku-toggle {
+    margin-left: 0px;
+    top: 0;
+}
+
 .custom-table {
     border-collapse: collapse;
     width: 100%;
@@ -270,14 +331,6 @@ pi-system-auth-banner {
     font-weight: 400;
 }
 
-.custom-table tr:hover {
-    background-color: #fef9f5;
-}
-
-.custom-table tr.custom-table__group-row td {
-    background-color: #FDF1E7;
-}
-
 .custom-table tr.custom-table__empty-row td {
     color: #666;
     font-style: italic;
@@ -293,6 +346,13 @@ pi-system-auth-banner {
 }
 
 .custom-table__group-name {
+}
+
+.custom-table__attribute-title-info {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 4px;
 }
 
 .attribute-table-block {
@@ -470,4 +530,3 @@ pi-system-auth-banner {
 .elements-dropdown--element i {
     color: #196BFA;
 }
-

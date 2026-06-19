@@ -1,9 +1,22 @@
 <td>
     <input type="checkbox" ng-model="ctrl.mergedAttribute.allChecked"
            ng-change="ctrl.onCheckAttribute({ mergedAttribute: ctrl.mergedAttribute })"
-           indeterminate="ctrl.mergedAttribute.checked">
+           indeterminate="ctrl.mergedAttribute.checked"
+           ng-if="!ctrl.showPartialCheckInfo()"
+    >
+    <input type="checkbox" ng-model="ctrl.mergedAttribute.allChecked"
+           ng-change="ctrl.onCheckAttribute({ mergedAttribute: ctrl.mergedAttribute })"
+           indeterminate="ctrl.mergedAttribute.checked"
+           ng-if="ctrl.showPartialCheckInfo()"
+           toggle="tooltip-bottom"
+           ng-attr-title="{{ ctrl.generatePartialStateInfo() }}"
+    >
 </td>
-<td>{{ctrl.mergedAttribute.title}}</td>
+<td>
+    <div class="custom-table__attribute-title-info">
+        {{ctrl.mergedAttribute.title}}
+    </div>
+</td>
 <td>{{ctrl.mergedAttribute.description}}</td>
 <td ng-if="ctrl.displayPath">
     <span ng-repeat="path in ctrl.mergedAttribute.paths">

@@ -1,127 +1,5 @@
 <link rel="stylesheet" href="/plugins/pi-system/resource/pi-system_af-explorer.css">
 <div class="generic-class" ng-controller="AfExplorerFormCtrl" ng-init="init()">
-    <div class="pi-system-explorer__main">
-        <div class="pi-system-explorer__header">
-            <div>
-                Welcome to Pi System Plugin
-            </div>
-            <button
-                    class="btn btn--outline btn--primary btn--dku-icon"
-                    ng-click="showDatasetPreviewModal()"
-                    ng-disabled="!config.outputSelectedAttributes.length">
-                <i class="dku-icon-dataset-16"></i>
-                Preview dataset
-            </button>
-        </div>
-        <div class="pi-system-explorer__content">
-            <pi-system-auth-banner></pi-system-auth-banner>
-            <div class="control-group removed-if-manual-query" ng-show="false" ng-if="config.database_name">
-                <label class="control-label">Tree</label>
-                <div class="controls">
-                    <select dku-bs-select ng-model="config.treeData"
-                            ng-options="dbn.value as dbn.label for dbn in [config.treeData]">
-                    </select>
-                </div>
-            </div>
-            <!-- TODO: move the table to a separate component-->
-            <!-- Attributes Section -->
-            <div class="attribute-tab pi-system-explorer__center-view" ng-if="showTreeData">
-                <div class="attribute-section__search">
-                    <div><strong>Attributes and templates</strong></div>
-                    <div>
-                        <basic-search-box
-                                ng-model="config.attributeSearch"
-                                placeholder="Search attribute or template name"
-                                ng-change="refreshAttributeSection()"
-                        >
-                        </basic-search-box>
-                    </div>
-                    <div>
-                        <label style="display: inline-flex; align-items: center; gap: 4px;">
-                            <input type="checkbox" ng-model="config.displayPath" style="margin: 0;"/>
-                            Display attribute paths
-                        </label>
-                    </div>
-                    <!--                <div>-->
-                    <!--                    Filter by category-->
-                    <!--                    <select dku-bs-select ng-model="config.attribute_category"-->
-                    <!--                            ng-options="dbn.title as dbn.title for dbn in config.attribute_categories"-->
-                    <!--                            ng-init="getCategoriesFromDB()"-->
-                    <!--                            ng-change="refreshAttributeSection()"></select>-->
-                    <!--                </div>-->
-                </div>
-                <div class="attribute-table-block"
-                     ng-repeat="section in attributeGroupSections track by section.key"
-                     ng-if="section.shouldDisplay()">
-                    <div class="attribute-table-block__title"><strong>{{section.title}}</strong></div>
-                    <table class="custom-table">
-                        <thead>
-                        <tr>
-                            <th><input type="checkbox" ng-model="groupedAttributes[section.key].allChecked"
-                                       ng-change="toggleSelectAllGroupedAttributes(groupedAttributes[section.key])"
-                                       ng-disabled="!groupedAttributes[section.key].groups.length"
-                                       indeterminate="groupedAttributes[section.key].checked"></th>
-
-                            <th>Title</th>
-                            <th>Description</th>
-                            <th ng-if="config.displayPath">Path</th>
-                            <th>Data type</th>
-                            <th>Aggregates</th>
-                        </tr>
-                        </thead>
-                        <tbody ng-if="groupedAttributes[section.key].empty">
-                        <tr class="custom-table__empty-row">
-                            <td colspan="{{config.displayPath ? 6 : 5}}">{{section.emptyMessage}}</td>
-                        </tr>
-                        </tbody>
-                        <tbody
-                                ng-repeat="group in groupedAttributes[section.key].groups track by group.group_name"
-                                ng-show="!group.isDisplayed"
-                        >
-                        <tr class="custom-table__group-row">
-                            <td>
-                                <input type="checkbox" ng-model="group.allChecked"
-                                       ng-change="toggleGroupedAttributes(group)" indeterminate="group.checked">
-                            </td>
-                            <td colspan="{{config.displayPath ? 5 : 4}}"">
-                                <div class="custom-table__group-actions">
-                                    <div>
-                                        <span class="custom-table__group-name">
-                                            {{group.group_name}}
-                                        </span>
-                                                <span ng-if="group.nbSearchMatches !== group.attributes.length">
-                                             - ({{group.nbSearchMatches}}/{{group.attributes.length}} attributes shown)
-                                        </span>
-                                    </div>
-                                    <dropdown-elements
-                                            elements="config.elementsByTemplate[group.group_name]"
-                                            group-name="group.group_name"
-                                            init-elements-dropdown="initElementsDropdown(templateName)"
-                                            is-template-associated-element-selected="isTemplateAssociatedElementSelected(element)"
-                                            apply-click-elements-dropdown="applyClickElementsDropdown(templateName, element, selected)"
-                                            active-tab="config.activeTab"
-                                            ng-if="section.type === 'template'"
-                                    ></dropdown-elements>
-                                </div>
-                            </td>
-                        </tr>
-                        <tr
-                                ng-repeat="mergedAttribute in group.attributes track by mergedAttribute.title"
-                                ng-show="mergedAttribute.isDisplayed"
-                                attribute-table-row
-                                merged-attribute="mergedAttribute"
-                                display-path="config.displayPath"
-                                aggregate-data-type-fields="aggregateDataTypeFields"
-                                on-check-attribute="checkAttribute(mergedAttribute)"
-                                on-update-data-type="updateMergedAttributeDataType(mergedAttribute)"
-                                on-update-aggregate="updateMergedAttributeAggregate(mergedAttribute)">
-                        </tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
-    </div>
     <div class="pi-system-explorer__tree-view-container" ng-if="showTreeData">
         <div ng-if="config.database_name" class="pi-system-explorer__tree-view">
             <div class="tree-view__header">
@@ -183,6 +61,87 @@
                         </tree-node>
                     </li>
                 </ul>
+            </div>
+        </div>
+    </div>
+    <div class="pi-system-explorer__main">
+        <div class="pi-system-explorer__header">
+            <div>
+                Welcome to Pi System Plugin
+            </div>
+            <button
+                    class="btn btn--outline btn--primary btn--dku-icon"
+                    ng-click="showDatasetPreviewModal()"
+                    ng-disabled="!config.outputSelectedAttributes.length">
+                <i class="dku-icon-dataset-16"></i>
+                Preview dataset
+            </button>
+        </div>
+        <div class="pi-system-explorer__content">
+            <pi-system-auth-banner></pi-system-auth-banner>
+            <div class="control-group removed-if-manual-query" ng-show="false" ng-if="config.database_name">
+                <label class="control-label">Tree</label>
+                <div class="controls">
+                    <select dku-bs-select ng-model="config.treeData"
+                            ng-options="dbn.value as dbn.label for dbn in [config.treeData]">
+                    </select>
+                </div>
+            </div>
+            <!-- TODO: move the table to a separate component-->
+            <!-- Attributes Section -->
+            <div class="attribute-tab pi-system-explorer__center-view" ng-if="showTreeData">
+                <div class="attribute-section__search">
+                    <div><strong>Attributes and templates</strong></div>
+                    <div>
+                        <basic-search-box
+                                ng-model="config.attributeSearch"
+                                placeholder="Search attribute or template name"
+                                ng-change="refreshAttributeSection()"
+                        >
+                        </basic-search-box>
+                    </div>
+                    <div class="attribute-section__filters-row">
+                        <label class="attribute-section__filters-toggle">
+                            <span class="dku-toggle dku-toggle-no-content">
+                                <input type="checkbox" ng-model="config.displayPath">
+                                <span></span>
+                            </span>
+                            <span>Display attribute paths</span>
+                        </label>
+                        <label class="attribute-section__filters-toggle">
+                            <span class="dku-toggle dku-toggle-no-content">
+                                <input type="checkbox" ng-model="config.onlyDisplayCommon" ng-change="refreshAttributeSection()">
+                                <span></span>
+                            </span>
+                            <span>Only common attributes</span>
+                        </label>
+                    </div>
+                    <!--                <div>-->
+                    <!--                    Filter by category-->
+                    <!--                    <select dku-bs-select ng-model="config.attribute_category"-->
+                    <!--                            ng-options="dbn.title as dbn.title for dbn in config.attribute_categories"-->
+                    <!--                            ng-init="getCategoriesFromDB()"-->
+                    <!--                            ng-change="refreshAttributeSection()"></select>-->
+                    <!--                </div>-->
+                </div>
+                <div
+                        attribute-table-block
+                        ng-repeat="section in attributeGroupSections track by section.key"
+                        ng-if="section.shouldDisplay()"
+                        section="section"
+                        grouped-attributes="groupedAttributes"
+                        config="config"
+                        aggregate-data-type-fields="aggregateDataTypeFields"
+                        on-toggle-select-all-grouped-attributes="toggleSelectAllGroupedAttributes(groupedAttributeGroup)"
+                        on-toggle-grouped-attributes="toggleGroupedAttributes(group)"
+                        on-is-at-least-partially-selected="isAtLeastPartiallySelected(item)"
+                        on-init-elements-dropdown="initElementsDropdown(templateName)"
+                        on-is-template-associated-element-selected="isTemplateAssociatedElementSelected(element)"
+                        on-apply-click-elements-dropdown="applyClickElementsDropdown(templateName, element, selected)"
+                        on-check-attribute="checkAttribute(mergedAttribute)"
+                        on-update-data-type="updateMergedAttributeDataType(mergedAttribute)"
+                        on-update-aggregate="updateMergedAttributeAggregate(mergedAttribute)">
+                </div>
             </div>
         </div>
     </div>

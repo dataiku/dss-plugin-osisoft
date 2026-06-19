@@ -44,7 +44,8 @@ def do(payload, config, plugin_config, inputs):
     )
 
     method = payload.get("method")
-    logger.info("Running do for method '{}'".format(method))
+    parameter_name = payload.get("parameterName")
+    logger.info("Running do for method '{}' / parameter '{}'".format(method, parameter_name))
     if method == "get_query_catalogs":
         return get_query_catalogs(payload, config)
     if method == "get_children_from_db":
@@ -61,8 +62,6 @@ def do(payload, config, plugin_config, inputs):
         return get_attribute_for_template(client, payload, config)
     if method == "do_search":
         return do_search(client, payload, config, network_timer)
-
-    parameter_name = payload.get("parameterName")
 
     if parameter_name == "server_name":
         choices = []
@@ -233,6 +232,8 @@ def get_attribute_for_template(client, payload, config):
         None, None, template_name, [],
         elements_max_count=elements_max_count, attributes_max_count=attributes_max_count
     ):
+        if is_sub_attribute_item(result):
+            continue
         attributes.append(result)
         templates_urls.append(result.get("Links", {}).get("Template"))
     templates_names = client.get_attributes_templates_names(templates_urls)
@@ -425,12 +426,20 @@ def get_template_hierarchy_from_db(client, parent_node, database_name=None):
     if element_templates_url:
         element_templates = client.get_next_item_from_url(element_templates_url)
         for element_template in element_templates:
+            if is_event_frame_template(element_template):
+                continue
             child = get_item_details(element_template)
             child["type"] = "template"
             child["children"] = []
             children.append(child)
         rebuilt_tree = nest_children(children)
     return {"choices": rebuilt_tree}
+
+
+def is_event_frame_template(element_template):
+    if not isinstance(element_template, dict):
+        return False
+    return element_template.get("InstanceType", "") == "EventFrame"
 
 
 def nest_children(items):
@@ -623,6 +632,12 @@ def is_attribute_item(item):
     if item.get("type") == "attribute":
         return True
     return bool(item.get("path")) and "|" in item.get("path", "")
+
+
+def is_sub_attribute_item(item):
+    if not isinstance(item, dict):
+        return False
+    return len(item.get("Path").split("|")) > 2
 
 
 def insert_missing_element(item, tree):
