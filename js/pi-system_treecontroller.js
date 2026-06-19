@@ -250,11 +250,13 @@ app.controller('AfExplorerFormCtrl', [
 
         // $scope.config.selectedTemplateNames =  []; // la liste des templates sélectionnés utilisées pour filtrer le search. Stale
 
-        $scope.searchMatchedElementPaths =  []; // la liste pour highlighter les elements de la recherche
-        $scope.attributeSearch =  "";
-        $scope.displayPath =  false;
-        $scope.onlyDisplayCommon =  false;
-        $scope.searchInProgress =  false;
+        $scope.ui = {
+            searchMatchedElementPaths: [], // la liste pour highlighter les elements de la recherche
+            attributeSearch: "",
+            displayPath: false,
+            onlyDisplayCommon: false,
+            searchInProgress: false
+        };
 
         // TODO: get categories from backend for attributes
         // $scope.config.attributeCategoryFilter = $scope.config.attributeCategoryFilter || ""
@@ -461,7 +463,7 @@ app.controller('AfExplorerFormCtrl', [
             $scope.config.clickedNodes = [];
             $scope.attributeList = [];
             $scope.config.outputSelectedAttributes = [];
-            $scope.searchMatchedElementPaths = [];
+            $scope.ui.searchMatchedElementPaths = [];
             // $scope.config.selectedTemplateNames = [];
             // TODO: switch to cleanup cache
             $scope.elementSearchNoMatch = false;
@@ -509,7 +511,7 @@ app.controller('AfExplorerFormCtrl', [
                 $scope.elementTree = [];
                 $scope.config.clickedNodes = [];
                 $scope.attributeList = [];
-                $scope.searchMatchedElementPaths = [];
+                $scope.ui.searchMatchedElementPaths = [];
                 // $scope.config.selectedTemplateNames = [];
                 $scope.elementSearchNoMatch = false;
                 $scope.refreshAttributeSection();
@@ -639,7 +641,7 @@ app.controller('AfExplorerFormCtrl', [
                     item.children.forEach(child => {
                         child.expanded = false;
                     });
-                    markSearchResults(item.children, $scope.searchMatchedElementPaths || []);
+                    markSearchResults(item.children, $scope.ui.searchMatchedElementPaths || []);
                     cacheElementTree();
                     return Promise.all(attributeLoadPromises).then(() => {
                         return {
@@ -663,9 +665,9 @@ app.controller('AfExplorerFormCtrl', [
         function resetRightPanelForCurrentTabContext() {
             $scope.config.clickedNodes = [];
             $scope.attributeList = [];
-            $scope.searchMatchedElementPaths = [];
+            $scope.ui.searchMatchedElementPaths = [];
             // $scope.config.selectedTemplateNames = [];
-            $scope.attributeSearch = "";
+            $scope.ui.attributeSearch = "";
             $scope.elementSearchNoMatch = false;
             if ($scope.config.activeTab === "element") {
                 $scope.config.template = "-- Any --";
@@ -700,8 +702,8 @@ app.controller('AfExplorerFormCtrl', [
         }
 
         $scope.doSearch = function(element_name) {
-            $scope.searchInProgress = true;
-            $scope.searchMatchedElementPaths = [];
+            $scope.ui.searchInProgress = true;
+            $scope.ui.searchMatchedElementPaths = [];
             $scope.callPythonDo({ method: "do_search", element_name: element_name, elementTree: $scope.elementTree }).then(
                 function(data) {
                     console.log("do_search", data);
@@ -711,7 +713,7 @@ app.controller('AfExplorerFormCtrl', [
                     if (matchedElementPaths.length === 0) {
                         $scope.elementSearchNoMatch = true;
                     }
-                    $scope.searchMatchedElementPaths = matchedElementPaths;
+                    $scope.ui.searchMatchedElementPaths = matchedElementPaths;
                     markSearchResults($scope.elementTree, matchedElementPaths);
                     cacheElementTree();
                 }
@@ -901,9 +903,9 @@ app.controller('AfExplorerFormCtrl', [
         };
 
         $scope.clearSearch = function() {
-            $scope.searchInProgress = false;
+            $scope.ui.searchInProgress = false;
             $scope.config.element_name = "";
-            $scope.searchMatchedElementPaths = [];
+            $scope.ui.searchMatchedElementPaths = [];
             $scope.elementSearchNoMatch = false;
             clearSearchHighlights($scope.elementTree);
         };
@@ -1122,14 +1124,10 @@ app.controller('AfExplorerFormCtrl', [
         };
 
         function attributeMatchesSearch(attribute_name, template_name, attribute_description="") {
-            if ($scope.attributeSearch === "") {
+            if ($scope.ui.attributeSearch === "") {
                 return true;
             }
-            console.log("attributeSearch", $scope.attributeSearch)
-            console.log("attribute_name", attribute_name)
-            console.log("template_name", template_name)
-            console.log("attribute_description", attribute_description)
-            const lowercasedSearch = $scope.attributeSearch.toLowerCase();
+            const lowercasedSearch = $scope.ui.attributeSearch.toLowerCase();
             const templateNameMatches = template_name.toLowerCase().includes(lowercasedSearch);
             const attributeNameMatches = attribute_name.toLowerCase().includes(lowercasedSearch);
             let attributeDescriptionMatches = false;
@@ -1264,7 +1262,7 @@ app.controller('AfExplorerFormCtrl', [
 
         function buildAggregatedAttributes(attributes, groupProperty) {
             let deduplicatedAttributes = Object.values(attributes.reduce(conflateAttributes(groupProperty), {})).map(conflatedAttribute => {
-                if ($scope.onlyDisplayCommon && conflatedAttribute.parent_elements.length < $scope.config.clickedNodes.length) {
+                if ($scope.ui.onlyDisplayCommon && conflatedAttribute.parent_elements.length < $scope.config.clickedNodes.length) {
                     conflatedAttribute.isDisplayed = false;
                 }
                 return conflatedAttribute;

@@ -24,7 +24,7 @@
                                 id="get-query-dim-prop" ng-disabled="!config.element_name">Search
                         </button>
                     </div>
-                    <div class="tree-view__search-actions" ng-if="searchInProgress">
+                    <div class="tree-view__search-actions" ng-if="ui.searchInProgress">
                         <button ng-click="clearSearch()" class="btn btn--secondary link-like">
                             Clear search
                         </button>
@@ -86,7 +86,7 @@
                     <div><strong>Attributes and templates</strong></div>
                     <div>
                         <basic-search-box
-                                ng-model="attributeSearch"
+                                ng-model="ui.attributeSearch"
                                 placeholder="Search attribute or template name"
                                 ng-change="refreshAttributeSection()"
                         >
@@ -96,14 +96,14 @@
                     <div class="attribute-section__filters-row">
                         <label class="attribute-section__filters-toggle">
                             <span class="dku-toggle dku-toggle-no-content">
-                                <input type="checkbox" ng-model="displayPath">
+                                <input type="checkbox" ng-model="ui.displayPath">
                                 <span></span>
                             </span>
                             <span>Display attribute paths</span>
                         </label>
                         <label class="attribute-section__filters-toggle">
                             <span class="dku-toggle dku-toggle-no-content">
-                                <input type="checkbox" ng-model="onlyDisplayCommon" ng-change="refreshAttributeSection()">
+                                <input type="checkbox" ng-model="ui.onlyDisplayCommon" ng-change="refreshAttributeSection()">
                                 <span></span>
                             </span>
                             <span>Only common attributes</span>
@@ -122,7 +122,7 @@
                         ng-if="groupedAttributesFallbackGrouping && !groupedAttributesFallbackGrouping.empty"
                         grouped-attributes="groupedAttributesFallbackGrouping"
                         config="config"
-                        display-path="displayPath"
+                        display-path="ui.displayPath"
                         title="getAttributeTableTitle(true)"
                         group-mode="groupMode"
                         display-element-dropdown="false"
@@ -141,7 +141,7 @@
                         attribute-table-block
                         grouped-attributes="groupedAttributes"
                         config="config"
-                        display-path="displayPath"
+                        display-path="ui.displayPath"
                         title="getAttributeTableTitle()"
                         group-mode="groupMode"
                         display-element-dropdown="true"
