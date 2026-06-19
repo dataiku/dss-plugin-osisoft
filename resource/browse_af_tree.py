@@ -82,9 +82,6 @@ def do(payload, config, plugin_config, inputs):
             return build_select_choices(choices)
         else:
             return build_select_choices()
-    if parameter_name == "treeData":
-        return {"choices": config.get("treeData")}
-
     return build_select_choices()
 
 
@@ -334,8 +331,7 @@ def do_search(client, payload, config, network_timer):
 
     if not use_clicked_element_nodes_scope and not use_selected_template_names_scope:
         clicked_nodes = []
-    # root_tree = payload.get("root_tree")
-    root_tree = config.get("treeData", [])
+    root_tree = payload.get("treeData", payload.get("root_tree", []))
     root_tree_before_search = copy.deepcopy(root_tree)
     # https://dku-qa-osi.francecentral.cloudapp.azure.com/piwebapi/assetdatabases/F1RD3VEt1yTvt0ip6-a5yeEVsgbMcrwu_Je0qg9btcZIvPswT1NJU09GVC1QSS1TRVJWXFdFTEw
     database_webid = database_name.split("/")[-1]

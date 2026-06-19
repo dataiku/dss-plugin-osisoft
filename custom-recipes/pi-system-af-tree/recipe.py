@@ -44,12 +44,10 @@ def filter_dictionary_keys(input_dict, keys_to_filter):
 
 output_names_stats = get_output_names_for_role('api_output')
 config = get_recipe_config()
-tree_data = config.get("treeData", [])
-
 filtered_config = logger.filter_secrets(config)
 filtered_config = filter_dictionary_keys(filtered_config, [
        "attributeList", "outputSelectedAttributes", "loadedAttributes",
-       "templateTreeData", "attribute_categories", "element_categories", "treeData", "clickedNodes"
+       "templateTreeData", "attribute_categories", "element_categories", "clickedNodes"
     ]
 )
 

@@ -109,34 +109,16 @@ const GroupMode = Object.freeze({
     CATEGORY: 'CATEGORY',
 });
 
-app.service('TreeDataService', function() {
-    // This will store the shared tree data
-    this.treeData = [];
-    this.templateTreeData = [];
-
-    // Optional: helper methods
-    this.setTreeData = function(data) {
-        this.treeData = data;
-    };
-
-    this.getTreeData = function() {
-        return this.treeData;
-    };
-
-    this.setTemplateTreeData = function(data) {
-        this.templateTreeData = data;
-    };
-
-    this.getTemplateTreeData = function() {
-        return this.templateTreeData;
-    };
-});
-
 class Cache {
     constructor(projectKey, server, database) {
+        // TODO: include preset in db name
         this.dbName = [projectKey, server, database].join("::")
         this.dbVersion = 1
         this.attributesStoreName = "attributes"
+        this.treeDataStoreName = "treeData"
+        this.stores = [this.attributesStoreName, this.treeDataStoreName]
+
+        this.treeDataRecordId = "treeData"
     }
 
     async init() {
@@ -145,9 +127,11 @@ class Cache {
 
             request.onupgradeneeded = () => {
                 this.db = request.result;
-                if (!this.db.objectStoreNames.contains(this.attributesStoreName)) {
-                    this.db.createObjectStore(this.attributesStoreName, { keyPath: "id" });
-                }
+                this.stores.forEach(storeName => {
+                    if (!this.db.objectStoreNames.contains(storeName)) {
+                        this.db.createObjectStore(storeName, { keyPath: "id" });
+                    }
+                })
             };
 
             request.onsuccess = () => {
@@ -161,14 +145,21 @@ class Cache {
         });
     }
 
-    // TODO: make generic across stores/objects
     async getAttribute(attrId) {
+        return this.getObject(this.attributesStoreName, attrId);
+    }
+
+    async getTreeData() {
+        return this.getObject(this.treeDataStoreName, this.treeDataRecordId).then((data) => data.nodes);
+    }
+
+    async getObject(objectStoreName, objectId) {
         return new Promise((resolve, reject) => {
-            const transaction = this.db.transaction([this.attributesStoreName]);
-            const objectStore = transaction.objectStore(this.attributesStoreName);
-            const request = objectStore.get(attrId);
+            const transaction = this.db.transaction([objectStoreName]);
+            const objectStore = transaction.objectStore(objectStoreName);
+            const request = objectStore.get(objectId);
             request.onerror = (event) => {
-                console.error("Could not get attribute " + attrId + " from cache")
+                console.error("Could not get object " + objectId + " from cache")
                 reject(request.error);
             };
             request.onsuccess = (event) => {
@@ -177,30 +168,38 @@ class Cache {
         })
     }
 
-    async addOrUpdate(attribute) {
+    async addOrUpdateAttribute(attribute) {
+        return this.addOrUpdate(attribute, this.attributesStoreName);
+    }
+
+    async addOrUpdateTreeData(treeData) {
+        return this.addOrUpdate({
+                id: this.treeDataRecordId,
+                nodes: treeData
+        }, this.treeDataStoreName);
+    }
+
+    async addOrUpdate(object, objectStoreName) {
         return new Promise((resolve, reject) => {
-            const transaction = this.db.transaction([this.attributesStoreName], "readwrite");
-            transaction.oncomplete = (event) => {
-                // Do something when the data is added
-                resolve();
-            };
-
+            const transaction = this.db.transaction([objectStoreName], "readwrite");
             transaction.onerror = (event) => {
-                // Do something on error
-                console.error("Could not get attribute " + attrId + " from cache")
+                reject(transaction.error)
             };
 
-            const attributeStore = transaction.objectStore(this.attributesStoreName);
-            const request = attributeStore.put(attribute);
+            const objectStore = transaction.objectStore(objectStoreName);
+            const request = objectStore.put(object);
             request.onsuccess = (event) => {
-                resolve(attribute)
+                resolve(object)
+            };
+            request.onerror = (event) => {
+                reject(request.error)
             };
         });
     }
 
     async clear() {
         return new Promise((resolve, reject) => {
-            const transaction = this.db.transaction([this.attributesStoreName], "readwrite");
+            const transaction = this.db.transaction(this.stores, "readwrite");
             transaction.oncomplete = () => {
                 resolve();
             };
@@ -208,8 +207,10 @@ class Cache {
                 reject(transaction.error);
             };
 
-            const attributeStore = transaction.objectStore(this.attributesStoreName);
-            attributeStore.clear();
+            this.stores.forEach(storeName => {
+                const objectStore = transaction.objectStore(storeName);
+                objectStore.clear();
+            })
         });
     }
 }
@@ -218,9 +219,8 @@ app.controller('AfExplorerFormCtrl', [
     '$scope',
     '$stateParams',
     '$q',
-    'TreeDataService',
     'CreateModalFromTemplate',
-    function($scope, $stateParams, $q, TreeDataService, CreateModalFromTemplate) {
+    function($scope, $stateParams, $q, CreateModalFromTemplate) {
 
         $scope.paramDesc = {
             'parameterSetId': 'basic-auth',
@@ -347,12 +347,20 @@ app.controller('AfExplorerFormCtrl', [
                 });
             }).error(setErrorInScope.bind($scope.errorScope));
             if ($scope.authConfigured() === true) {
-                const hasTreeData = Array.isArray($scope.config.treeData) && $scope.config.treeData.length > 0;
-                $scope.authSectionVisible = !hasTreeData;
-                $scope.showTreeData = hasTreeData;
-                initCache().then(
-                    $scope.refreshAttributeSection
-                )
+                // We try getting the treeData from cache. If we can't we open the authSection
+                // And we will load the treeData from db once the user has logged in
+                // This is brittle and should probably changed in the future
+                initCache().then(() => {
+                    // TODO: also init template and categories from cache
+                    return $scope.cache.getTreeData();
+                }).then((treeData) => {
+                    if (!treeData) {
+                        $scope.authSectionVisible = true;
+                    }
+                    $scope.treeData = treeData;
+                    $scope.showTreeData = true;
+                    $scope.$applyAsync();
+                })
             }
             $scope.config.template = $scope.config.template || "-- Any --";
             $scope.onAdvancedToggle();
@@ -400,25 +408,18 @@ app.controller('AfExplorerFormCtrl', [
                 database_name: $scope.config.database_name
             });
 
-            initCache()
-                .then(function() {
-                    return $scope.updateDatas();
-                })
-                .then(
-                    function() {
-                        $scope.showTreeData = true;
-                        $scope.authSectionVisible = false;
-                        console.info("[LOGIN][UI] success", {
-                            tree_count: Array.isArray($scope.config.treeData) ? $scope.config.treeData.length : 0,
-                            template_tree_count: Array.isArray($scope.config.templateTreeData) ? $scope.config.templateTreeData.length : 0
-                        });
-                    },
-                    function(error) {
-                        $scope.showTreeData = false;
-                        $scope.authSectionVisible = true;
-                        console.error("[LOGIN][UI] failed", error);
-                    }
-                );
+            $scope.getFromCacheOrFetchBaselineObjects().then(() => {
+                $scope.showTreeData = true;
+                $scope.authSectionVisible = false;
+                console.info("[LOGIN][UI] success", {
+                    tree_count: Array.isArray($scope.treeData) ? $scope.treeData.length : 0,
+                    template_tree_count: Array.isArray($scope.config.templateTreeData) ? $scope.config.templateTreeData.length : 0
+                });
+            }).catch(() => {
+                $scope.showTreeData = false;
+                $scope.authSectionVisible = true;
+                console.error("[LOGIN][UI] failed", error);
+            })
         };
 
         $scope.hasPreset = function() {
@@ -426,7 +427,7 @@ app.controller('AfExplorerFormCtrl', [
         }
 
         $scope.cleanTree = function() { // utile quand on change de serveur ou de db dans la config
-            $scope.config.treeData = [];
+            $scope.treeData = [];
             $scope.config.clickedNodes = [];
             $scope.attributeList = [];
             $scope.config.outputSelectedAttributes = [];
@@ -473,23 +474,23 @@ app.controller('AfExplorerFormCtrl', [
         };
 
         $scope.refreshCachedTree = function() {
-            initCache().then(function() {
-                return $scope.cache.clear();
-            }).then(function() {
-                $scope.config.treeData = [];
+            // WTF are we doing here
+            $scope.cache.clear().then(function() {
+                $scope.treeData = [];
                 $scope.config.clickedNodes = [];
                 $scope.attributeList = [];
                 $scope.config.searchMatchedElementPaths = [];
                 $scope.config.selectedTemplateNames = [];
-                // TODO: switch to cleanup cache
                 $scope.elementSearchNoMatch = false;
                 $scope.refreshAttributeSection();
                 return $q.all([
-                    $scope.initializeTree(),
+                    $scope.getElementTreeFromDB(),
                     $scope.getTemplatesFromDB(),
                     $scope.getCategoriesFromDB()
                 ]);
-            });
+            }).then(() => {
+                cacheTreeData();
+            })
         }
 
         let presetWatchInitialized = false;
@@ -535,25 +536,48 @@ app.controller('AfExplorerFormCtrl', [
             return $scope.cache.init();
         }
 
-        $scope.initializeTree = function() {
-            if (!$scope.config.treeData || $scope.config.treeData.length === 0) {
-                return $scope.callPythonDo({ method: "get_children_from_db", parent: $scope.config.database_name }).then(function(data) {
-                    console.log("get_children_from_db", data);
-                    TreeDataService.setTreeData(data.choices);
-                    $scope.config.treeData = TreeDataService.getTreeData();
-                    return data;
-                });
-            }
-            return $q.when({ choices: $scope.config.treeData || [] });
+        function buildPersistedTreeDataSnapshot(nodes) {
+            return nodes.map(node => {
+                const persistedNode = {};
+
+                Object.keys(node).forEach(key => {
+                   if (key === "searchHighlighted" || key === "expanded") {
+                       return;
+                   }
+                   if (key === "children" && Array.isArray(node.children)) {
+                       persistedNode.children = buildPersistedTreeDataSnapshot(node.children);
+                       return;
+                   }
+                   persistedNode[key] = node[key];
+               });
+                return persistedNode;
+            });
+        }
+
+        function cacheTreeData() {
+            const snapshot = buildPersistedTreeDataSnapshot($scope.treeData);
+            return $scope.cache.addOrUpdateTreeData(snapshot);
         };
 
-        $scope.updateDatas = function() {
+
+        $scope.getElementTreeFromDB = function() {
+            return $scope.callPythonDo({ method: "get_children_from_db", parent: $scope.config.database_name }).then(function(data) {
+                console.log("get_children_from_db", data);
+                $scope.treeData = data.choices;
+                return data;
+            });
+        };
+
+        $scope.getFromCacheOrFetchBaselineObjects = function() {
+            // TODO: get from cache or fetch
             $scope.cleanTree();
             return $q.all([
-                $scope.initializeTree(),
+                $scope.getElementTreeFromDB(),
                 $scope.getTemplatesFromDB(),
                 $scope.getCategoriesFromDB()
             ]).then(function(results) {
+                // TODO: cache the data
+                cacheTreeData();
                 $scope.config.loadedDatabaseName = $scope.config.database_name || null;
                 return results;
             });
@@ -581,6 +605,7 @@ app.controller('AfExplorerFormCtrl', [
                         child.expanded = false;
                     });
                     markSearchResults(item.children, $scope.config.searchMatchedElementPaths || []);
+                    cacheTreeData();
                     return Promise.all(attributeLoadPromises).then(() => {
                         return {
                             updatedNode: item,
@@ -595,8 +620,7 @@ app.controller('AfExplorerFormCtrl', [
             return $scope.callPythonDo({ method: "get_templates_from_db" }).then(function(data) {
                 console.log("get_templates_from_db", data)
                 const templates = data.choices.filter(template => template.title !== "-- Any --")
-                TreeDataService.setTemplateTreeData(templates);
-                $scope.config.templateTreeData = TreeDataService.getTemplateTreeData();
+                $scope.config.templateTreeData = templates;
             });
         }
 
@@ -642,18 +666,18 @@ app.controller('AfExplorerFormCtrl', [
         $scope.doSearch = function(element_name) {
             $scope.config.searchInProgress = true;
             $scope.config.searchMatchedElementPaths = [];
-            $scope.callPythonDo({ method: "do_search", element_name: element_name, root_tree: $scope.config.treeData }).then(
+            $scope.callPythonDo({ method: "do_search", element_name: element_name, treeData: $scope.treeData }).then(
                 function(data) {
                     console.log("do_search", data);
-                    TreeDataService.setTreeData(data.choices);
-                    $scope.config.treeData = TreeDataService.getTreeData();
+                    $scope.treeData = data.choices;
                     const matchedAttributes = data.attributes || [];
                     const matchedElementPaths = getMatchedElementPaths(matchedAttributes);
                     if (matchedElementPaths.length === 0) {
                         $scope.elementSearchNoMatch = true;
                     }
                     $scope.config.searchMatchedElementPaths = matchedElementPaths;
-                    markSearchResults($scope.config.treeData, matchedElementPaths);
+                    markSearchResults($scope.treeData, matchedElementPaths);
+                    cacheTreeData();
                 }
             );
         };
@@ -845,7 +869,7 @@ app.controller('AfExplorerFormCtrl', [
             $scope.config.element_name = "";
             $scope.config.searchMatchedElementPaths = [];
             $scope.elementSearchNoMatch = false;
-            clearSearchHighlights($scope.config.treeData);
+            clearSearchHighlights($scope.treeData);
         };
 
         $scope.toggleSelectAllGroupedAttributes = function(groupedAttributes) {
@@ -941,6 +965,7 @@ app.controller('AfExplorerFormCtrl', [
                 if (!isAlreadyPresent) {
                     enrichAttribute(attribute, node);
                     $scope.attributeList.push(attribute);
+                    // $scope.$applyAsync();
                 }
             });
 
@@ -1320,7 +1345,7 @@ app.controller('AfExplorerFormCtrl', [
 
         async function addAttributeToLoadedAttributes(attribute, additionalProperties) {
             const cachedAttribute = { ...attribute, ...additionalProperties };
-            return $scope.cache.addOrUpdate(cachedAttribute);
+            return $scope.cache.addOrUpdateAttribute(cachedAttribute);
         }
 
 

@@ -47,8 +47,8 @@
                     <i class="dku-icon-dismiss-16"></i>
                     Clear all
                 </button>
-                <ul ng-if="config.activeTab === 'element' && config.treeData && config.treeData.length">
-                    <li ng-repeat="node in config.treeData track by node.id">
+                <ul ng-if="config.activeTab === 'element' && treeData && treeData.length">
+                    <li ng-repeat="node in treeData track by node.id">
                         <tree-node node="node" get-children-from-db="getChildrenFromDB" toggle-display-attributes="toggleDisplayAttributes"
                                    config="config" clicked-nodes="config.clickedNodes" toggle-node-visualization="toggleNodeVisualization(node)">
                         </tree-node>
@@ -79,14 +79,6 @@
         </div>
         <div class="pi-system-explorer__content">
             <pi-system-auth-banner></pi-system-auth-banner>
-            <div class="control-group removed-if-manual-query" ng-show="false" ng-if="config.database_name">
-                <label class="control-label">Tree</label>
-                <div class="controls">
-                    <select dku-bs-select ng-model="config.treeData"
-                            ng-options="dbn.value as dbn.label for dbn in [config.treeData]">
-                    </select>
-                </div>
-            </div>
             <!-- TODO: move the table to a separate component-->
             <!-- Attributes Section -->
             <div class="attribute-tab pi-system-explorer__center-view" ng-if="showTreeData">
