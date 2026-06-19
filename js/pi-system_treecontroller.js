@@ -248,8 +248,7 @@ app.controller('AfExplorerFormCtrl', [
         // TODO: move to cache
         $scope.config.elementsByTemplate = $scope.config.elementsByTemplate || {};
 
-        // TODO: memory only
-        $scope.config.selectedTemplateNames =  []; // la liste des templates sélectionnés (checkbox cochée) parmi ceux affichés
+        // $scope.config.selectedTemplateNames =  []; // la liste des templates sélectionnés utilisées pour filtrer le search. Stale
 
         $scope.searchMatchedElementPaths =  []; // la liste pour highlighter les elements de la recherche
         $scope.attributeSearch =  "";
@@ -463,7 +462,7 @@ app.controller('AfExplorerFormCtrl', [
             $scope.attributeList = [];
             $scope.config.outputSelectedAttributes = [];
             $scope.searchMatchedElementPaths = [];
-            $scope.config.selectedTemplateNames = [];
+            // $scope.config.selectedTemplateNames = [];
             // TODO: switch to cleanup cache
             $scope.elementSearchNoMatch = false;
             $scope.refreshAttributeSection();
@@ -511,7 +510,7 @@ app.controller('AfExplorerFormCtrl', [
                 $scope.config.clickedNodes = [];
                 $scope.attributeList = [];
                 $scope.searchMatchedElementPaths = [];
-                $scope.config.selectedTemplateNames = [];
+                // $scope.config.selectedTemplateNames = [];
                 $scope.elementSearchNoMatch = false;
                 $scope.refreshAttributeSection();
                 return $q.all([
@@ -665,7 +664,7 @@ app.controller('AfExplorerFormCtrl', [
             $scope.config.clickedNodes = [];
             $scope.attributeList = [];
             $scope.searchMatchedElementPaths = [];
-            $scope.config.selectedTemplateNames = [];
+            // $scope.config.selectedTemplateNames = [];
             $scope.attributeSearch = "";
             $scope.elementSearchNoMatch = false;
             if ($scope.config.activeTab === "element") {
