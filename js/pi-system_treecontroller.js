@@ -117,10 +117,12 @@ class Cache {
         this.attributesStoreName = "attributes"
         this.elementTreeStoreName = "elementTree"
         this.templateTreeStoreName = "templateTree"
-        this.stores = [this.attributesStoreName, this.elementTreeStoreName, this.templateTreeStoreName]
+        this.elementsByTemplateStoreName = "elementsByTemplate"
+        this.stores = [this.attributesStoreName, this.elementTreeStoreName, this.templateTreeStoreName, this.elementsByTemplateStoreName]
 
         this.elementTreeRecordId = "elementTree"
         this.templateTreeRecordId = "templateTree"
+        this.elementsByTemplateRecordId = "elementsByTemplate"
     }
 
     async init() {
@@ -159,6 +161,10 @@ class Cache {
         return this.getObject(this.templateTreeStoreName, this.templateTreeRecordId).then((data) => data.nodes);
     }
 
+    async getElementsByTemplate() {
+        return this.getObject(this.elementsByTemplateStoreName, this.elementsByTemplateRecordId).then((data) => data.nodes);
+    }
+
     async getObject(objectStoreName, objectId) {
         return new Promise((resolve, reject) => {
             const transaction = this.db.transaction([objectStoreName]);
@@ -190,6 +196,13 @@ class Cache {
                 id: this.templateTreeRecordId,
                 nodes: templateTree
         }, this.templateTreeStoreName);
+    }
+
+    async addOrUpdateElementsByTemplate(elementsByTemplate) {
+        return this.addOrUpdate({
+                id: this.elementsByTemplateRecordId,
+                elementsByTemplate: elementsByTemplate
+        }, this.elementsByTemplateStoreName);
     }
 
     async addOrUpdate(object, objectStoreName) {
@@ -240,13 +253,9 @@ app.controller('AfExplorerFormCtrl', [
             'mandatory': true
         };
 
-        $scope.attributeList = []; // la liste des attributs qui sont affichés sur le main panel à droite
-
-        // TODO: stay in config
-        $scope.config.outputSelectedAttributes = $scope.config.outputSelectedAttributes || []; // la liste des attributs qui sont séléctionnés pour être dans l'output dataset
-
-        // TODO: move to cache
-        $scope.config.elementsByTemplate = $scope.config.elementsByTemplate || {};
+        $scope.attributeList = []; // The list of attributes that are currently displayed in the main panel
+        $scope.config.outputSelectedAttributes = $scope.config.outputSelectedAttributes || []; // The list of attributes selected by the user
+        $scope.elementsByTemplate = {};
 
         // $scope.config.selectedTemplateNames =  []; // la liste des templates sélectionnés utilisées pour filtrer le search. Stale
 
@@ -378,9 +387,10 @@ app.controller('AfExplorerFormCtrl', [
                 initCache().then(() => {
                     return $q.all([
                         $scope.cache.getElementTree(),
-                        $scope.cache.getTemplateTree()
+                        $scope.cache.getTemplateTree(),
+                        $scope.cache.getElementsByTemplate()
                     ]);
-                }).then(([elementTree, templateTree]) => {
+                }).then(([elementTree, templateTree, elementsByTemplate]) => {
                     if (!elementTree || !templateTree) {
                         $scope.authSectionVisible = true;
                         $scope.showTreeData = false;
@@ -390,6 +400,7 @@ app.controller('AfExplorerFormCtrl', [
                     $scope.authSectionVisible = false;
                     $scope.elementTree = elementTree;
                     $scope.templateTree = templateTree;
+                    $scope.elementsByTemplate = elementsByTemplate || {};
                     $scope.showTreeData = true;
                     $scope.$applyAsync();
                 }).catch(() => {
@@ -466,6 +477,7 @@ app.controller('AfExplorerFormCtrl', [
             $scope.attributeList = [];
             $scope.config.outputSelectedAttributes = [];
             $scope.ui.searchMatchedElementPaths = [];
+            $scope.elementsByTemplate = {};
             // $scope.config.selectedTemplateNames = [];
             // TODO: switch to cleanup cache
             $scope.elementSearchNoMatch = false;
@@ -515,6 +527,7 @@ app.controller('AfExplorerFormCtrl', [
                 $scope.attributeList = [];
                 $scope.ui.searchMatchedElementPaths = [];
                 // $scope.config.selectedTemplateNames = [];
+                $scope.elementsByTemplate = {};
                 $scope.elementSearchNoMatch = false;
                 $scope.refreshAttributeSection();
                 return $q.all([
@@ -596,6 +609,15 @@ app.controller('AfExplorerFormCtrl', [
         function cacheTemplateTree() {
             const snapshot = buildPersistedTreeSnapshot($scope.templateTree);
             return $scope.cache.addOrUpdateTemplateTree(snapshot);
+        }
+
+        function cacheElementsByTemplate() {
+            $scope.cache.addOrUpdateElementsByTemplate($scope.elementsByTemplate);
+        }
+
+        function updateElementsByTemplate(templateName, elements) {
+            $scope.elementsByTemplate[templateName] = elements;
+
         }
 
 
@@ -773,7 +795,8 @@ app.controller('AfExplorerFormCtrl', [
             return $scope.callPythonDo({ method: "get_elements_for_template", template_name: templateName}).then(
                 function(data) {
                     console.log("get_elements_for_template", data);
-                    $scope.config.elementsByTemplate[templateName] = data.elements;
+                    $scope.elementsByTemplate[templateName] = data.elements;
+                    cacheElementsByTemplate();
                 }
             );
         }
@@ -781,13 +804,15 @@ app.controller('AfExplorerFormCtrl', [
         $scope.templateModeExcludedAttributes = {};
 
         $scope.initElementsDropdown = async function(templateName) {
-            const existingElements = $scope.config.elementsByTemplate[templateName];
+            const existingElements = $scope.elementsByTemplate[templateName];
+            console.log("elementsbytemplate", $scope.elementsByTemplate)
+            console.log("existingElements", existingElements)
             if (Array.isArray(existingElements)) {
                 return existingElements.map(element => element.url);
             }
 
             await $scope.getElementsForTemplate(templateName);
-            return $scope.config.elementsByTemplate[templateName].map(element => element.url);
+            return $scope.elementsByTemplate[templateName].map(element => element.url);
         }
 
         $scope.applyClickElementsDropdown = function(templateName, element, selected) {
@@ -1483,6 +1508,7 @@ app.directive('attributeTableBlock', function() {
             displayPath: '<',
             excludedColumns: '<',
             groupMode: '<',
+            elementsByTemplate: '<',
             groupedAttributes: '=',
             config: '=',
             aggregateDataTypeFields: '<',
