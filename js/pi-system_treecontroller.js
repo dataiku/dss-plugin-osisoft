@@ -251,12 +251,15 @@ app.controller('AfExplorerFormCtrl', [
         // $scope.config.selectedTemplateNames =  []; // la liste des templates sélectionnés utilisées pour filtrer le search. Stale
 
         $scope.ui = {
+            clickedNodes: [],
             searchMatchedElementPaths: [], // la liste pour highlighter les elements de la recherche
             attributeSearch: "",
             displayPath: false,
             onlyDisplayCommon: false,
             searchInProgress: false
         };
+
+        $scope.authSectionVisible = false;
 
         // TODO: get categories from backend for attributes
         // $scope.config.attributeCategoryFilter = $scope.config.attributeCategoryFilter || ""
@@ -384,6 +387,7 @@ app.controller('AfExplorerFormCtrl', [
                         $scope.$applyAsync();
                         return;
                     }
+                    $scope.authSectionVisible = false;
                     $scope.elementTree = elementTree;
                     $scope.templateTree = templateTree;
                     $scope.showTreeData = true;
@@ -410,8 +414,6 @@ app.controller('AfExplorerFormCtrl', [
                 $scope.database_name = data.choices;
             });
         };
-
-        $scope.authSectionVisible = $scope.authSectionVisible || true;
 
         $scope.toggleAuthSection = function() {
             $scope.authSectionVisible = !$scope.authSectionVisible;
@@ -460,7 +462,7 @@ app.controller('AfExplorerFormCtrl', [
 
         $scope.cleanTree = function() { // utile quand on change de serveur ou de db dans la config
             $scope.elementTree = [];
-            $scope.config.clickedNodes = [];
+            $scope.ui.clickedNodes = [];
             $scope.attributeList = [];
             $scope.config.outputSelectedAttributes = [];
             $scope.ui.searchMatchedElementPaths = [];
@@ -509,7 +511,7 @@ app.controller('AfExplorerFormCtrl', [
             // WTF are we doing here
             $scope.cache.clear().then(function() {
                 $scope.elementTree = [];
-                $scope.config.clickedNodes = [];
+                $scope.ui.clickedNodes = [];
                 $scope.attributeList = [];
                 $scope.ui.searchMatchedElementPaths = [];
                 // $scope.config.selectedTemplateNames = [];
@@ -573,7 +575,7 @@ app.controller('AfExplorerFormCtrl', [
                 const persistedNode = {};
 
                 Object.keys(node).forEach(key => {
-                   if (key === "searchHighlighted" || key === "expanded") {
+                   if (key === "searchHighlighted") {
                        return;
                    }
                    if (key === "children" && Array.isArray(node.children)) {
@@ -663,7 +665,7 @@ app.controller('AfExplorerFormCtrl', [
         }
 
         function resetRightPanelForCurrentTabContext() {
-            $scope.config.clickedNodes = [];
+            $scope.ui.clickedNodes = [];
             $scope.attributeList = [];
             $scope.ui.searchMatchedElementPaths = [];
             // $scope.config.selectedTemplateNames = [];
@@ -764,7 +766,7 @@ app.controller('AfExplorerFormCtrl', [
         }
 
         $scope.isTemplateAssociatedElementSelected = function(element) {
-            return $scope.config.clickedNodes.includes(element.url);
+            return $scope.ui.clickedNodes.includes(element.url);
         }
 
         $scope.getElementsForTemplate = function (templateName) {
@@ -831,7 +833,7 @@ app.controller('AfExplorerFormCtrl', [
 
         $scope.clearAllVisualizedNodes = function() {
             $scope.attributeList = []
-            $scope.config.clickedNodes = []
+            $scope.ui.clickedNodes = []
             $scope.refreshAttributeSection();
         }
 
@@ -846,13 +848,13 @@ app.controller('AfExplorerFormCtrl', [
                 $scope.config.template = "-- Any --";
             }
 
-            const indexClickedNode = $scope.config.clickedNodes.indexOf(node.url);
+            const indexClickedNode = $scope.ui.clickedNodes.indexOf(node.url);
             const nodeAlreadySelected = indexClickedNode > -1;
             // If the node is already clicked, remove it from clicked nodes - else add it
             if (nodeAlreadySelected) {
-                $scope.config.clickedNodes.splice(indexClickedNode, 1);
+                $scope.ui.clickedNodes.splice(indexClickedNode, 1);
             } else {
-                $scope.config.clickedNodes.push(node.url);
+                $scope.ui.clickedNodes.push(node.url);
             }
 
             $scope.toggleDisplayAttributes(node, !nodeAlreadySelected).then(() => {
@@ -862,7 +864,7 @@ app.controller('AfExplorerFormCtrl', [
             });
 
             // In element node, the visualized nodes are reflected on the elements dropdown
-            console.log("clickedNodes: " + JSON.stringify($scope.config.clickedNodes));
+            console.log("clickedNodes: " + JSON.stringify($scope.ui.clickedNodes));
         };
 
         function markSearchResults(nodes, matchedElementPaths) {
@@ -1262,7 +1264,7 @@ app.controller('AfExplorerFormCtrl', [
 
         function buildAggregatedAttributes(attributes, groupProperty) {
             let deduplicatedAttributes = Object.values(attributes.reduce(conflateAttributes(groupProperty), {})).map(conflatedAttribute => {
-                if ($scope.ui.onlyDisplayCommon && conflatedAttribute.parent_elements.length < $scope.config.clickedNodes.length) {
+                if ($scope.ui.onlyDisplayCommon && conflatedAttribute.parent_elements.length < $scope.ui.clickedNodes.length) {
                     conflatedAttribute.isDisplayed = false;
                 }
                 return conflatedAttribute;
@@ -1407,6 +1409,7 @@ app.component('treeNode', {
         node: '=',
         getChildrenFromDb: '<',
         toggleDisplayAttributes: '<',
+        clickedNodes: '<',
         config: '<',
         toggleNodeVisualization: '&',
     },
@@ -1461,7 +1464,7 @@ app.component('treeNode', {
 
         ctrl.isNodeClicked = function(node) {
             // the click is entirely based on node.url
-            return ctrl.config.clickedNodes.includes(node.url);
+            return ctrl.clickedNodes.includes(node.url);
         };
 
         ctrl.isSearchResult = function(node) {

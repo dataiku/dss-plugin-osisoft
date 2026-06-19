@@ -43,21 +43,21 @@
                 <button
                         class="btn btn--outline btn--secondary btn--dku-icon"
                         ng-click="clearAllVisualizedNodes()"
-                        ng-if="config.clickedNodes.length > 0">
+                        ng-if="ui.clickedNodes.length > 0">
                     <i class="dku-icon-dismiss-16"></i>
                     Clear all
                 </button>
                 <ul ng-if="config.activeTab === 'element' && elementTree && elementTree.length">
                     <li ng-repeat="node in elementTree track by node.id">
                         <tree-node node="node" get-children-from-db="getChildrenFromDB" toggle-display-attributes="toggleDisplayAttributes"
-                                   config="config" clicked-nodes="config.clickedNodes" toggle-node-visualization="toggleNodeVisualization(node)">
+                                   config="config" clicked-nodes="ui.clickedNodes" toggle-node-visualization="toggleNodeVisualization(node)">
                         </tree-node>
                     </li>
                 </ul>
                 <ul ng-if="config.activeTab === 'template' && templateTree && templateTree.length">
                     <li ng-repeat="node in templateTree track by node.id">
                         <tree-node node="node" get-children-from-db="getChildrenFromDB" toggle-display-attributes="toggleDisplayAttributes"
-                                   config="config" clicked-nodes="config.clickedNodes" toggle-node-visualization="toggleNodeVisualization(node)">
+                                   config="config" clicked-nodes="ui.clickedNodes" toggle-node-visualization="toggleNodeVisualization(node)">
                         </tree-node>
                     </li>
                 </ul>
