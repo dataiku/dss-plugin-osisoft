@@ -241,14 +241,21 @@ app.controller('AfExplorerFormCtrl', [
         };
 
         $scope.attributeList = []; // la liste des attributs qui sont affichés sur le main panel à droite
+
+        // TODO: stay in config
         $scope.config.outputSelectedAttributes = $scope.config.outputSelectedAttributes || []; // la liste des attributs qui sont séléctionnés pour être dans l'output dataset
-        $scope.config.searchMatchedElementPaths = $scope.config.searchMatchedElementPaths || []; // la liste pour highlighter les elements de la recherche
-        $scope.config.selectedTemplateNames = $scope.config.selectedTemplateNames || []; // la liste des templates sélectionnés (checkbox cochée) parmi ceux affichés
-        $scope.config.attributeSearch =  $scope.config.attributeSearch || "";
-        $scope.config.displayPath = $scope.config.displayPath || false;
-        $scope.config.onlyDisplayCommon = $scope.config.onlyDisplayCommon || false;
+
+        // TODO: move to cache
         $scope.config.elementsByTemplate = $scope.config.elementsByTemplate || {};
-        $scope.config.searchInProgress = $scope.config.searchInProgress || false;
+
+        // TODO: memory only
+        $scope.config.selectedTemplateNames =  []; // la liste des templates sélectionnés (checkbox cochée) parmi ceux affichés
+
+        $scope.searchMatchedElementPaths =  []; // la liste pour highlighter les elements de la recherche
+        $scope.attributeSearch =  "";
+        $scope.displayPath =  false;
+        $scope.onlyDisplayCommon =  false;
+        $scope.searchInProgress =  false;
 
         // TODO: get categories from backend for attributes
         // $scope.config.attributeCategoryFilter = $scope.config.attributeCategoryFilter || ""
@@ -455,7 +462,7 @@ app.controller('AfExplorerFormCtrl', [
             $scope.config.clickedNodes = [];
             $scope.attributeList = [];
             $scope.config.outputSelectedAttributes = [];
-            $scope.config.searchMatchedElementPaths = [];
+            $scope.searchMatchedElementPaths = [];
             $scope.config.selectedTemplateNames = [];
             // TODO: switch to cleanup cache
             $scope.elementSearchNoMatch = false;
@@ -503,7 +510,7 @@ app.controller('AfExplorerFormCtrl', [
                 $scope.elementTree = [];
                 $scope.config.clickedNodes = [];
                 $scope.attributeList = [];
-                $scope.config.searchMatchedElementPaths = [];
+                $scope.searchMatchedElementPaths = [];
                 $scope.config.selectedTemplateNames = [];
                 $scope.elementSearchNoMatch = false;
                 $scope.refreshAttributeSection();
@@ -633,7 +640,7 @@ app.controller('AfExplorerFormCtrl', [
                     item.children.forEach(child => {
                         child.expanded = false;
                     });
-                    markSearchResults(item.children, $scope.config.searchMatchedElementPaths || []);
+                    markSearchResults(item.children, $scope.searchMatchedElementPaths || []);
                     cacheElementTree();
                     return Promise.all(attributeLoadPromises).then(() => {
                         return {
@@ -657,9 +664,9 @@ app.controller('AfExplorerFormCtrl', [
         function resetRightPanelForCurrentTabContext() {
             $scope.config.clickedNodes = [];
             $scope.attributeList = [];
-            $scope.config.searchMatchedElementPaths = [];
+            $scope.searchMatchedElementPaths = [];
             $scope.config.selectedTemplateNames = [];
-            $scope.config.attributeSearch = "";
+            $scope.attributeSearch = "";
             $scope.elementSearchNoMatch = false;
             if ($scope.config.activeTab === "element") {
                 $scope.config.template = "-- Any --";
@@ -694,8 +701,8 @@ app.controller('AfExplorerFormCtrl', [
         }
 
         $scope.doSearch = function(element_name) {
-            $scope.config.searchInProgress = true;
-            $scope.config.searchMatchedElementPaths = [];
+            $scope.searchInProgress = true;
+            $scope.searchMatchedElementPaths = [];
             $scope.callPythonDo({ method: "do_search", element_name: element_name, elementTree: $scope.elementTree }).then(
                 function(data) {
                     console.log("do_search", data);
@@ -705,7 +712,7 @@ app.controller('AfExplorerFormCtrl', [
                     if (matchedElementPaths.length === 0) {
                         $scope.elementSearchNoMatch = true;
                     }
-                    $scope.config.searchMatchedElementPaths = matchedElementPaths;
+                    $scope.searchMatchedElementPaths = matchedElementPaths;
                     markSearchResults($scope.elementTree, matchedElementPaths);
                     cacheElementTree();
                 }
@@ -896,9 +903,9 @@ app.controller('AfExplorerFormCtrl', [
         };
 
         $scope.clearSearch = function() {
-            $scope.config.searchInProgress = false;
+            $scope.searchInProgress = false;
             $scope.config.element_name = "";
-            $scope.config.searchMatchedElementPaths = [];
+            $scope.searchMatchedElementPaths = [];
             $scope.elementSearchNoMatch = false;
             clearSearchHighlights($scope.elementTree);
         };
@@ -1119,10 +1126,14 @@ app.controller('AfExplorerFormCtrl', [
         };
 
         function attributeMatchesSearch(attribute_name, template_name, attribute_description="") {
-            if ($scope.config.attributeSearch === "") {
+            if ($scope.attributeSearch === "") {
                 return true;
             }
-            const lowercasedSearch = $scope.config.attributeSearch.toLowerCase();
+            console.log("attributeSearch", $scope.attributeSearch)
+            console.log("attribute_name", attribute_name)
+            console.log("template_name", template_name)
+            console.log("attribute_description", attribute_description)
+            const lowercasedSearch = $scope.attributeSearch.toLowerCase();
             const templateNameMatches = template_name.toLowerCase().includes(lowercasedSearch);
             const attributeNameMatches = attribute_name.toLowerCase().includes(lowercasedSearch);
             let attributeDescriptionMatches = false;
@@ -1257,7 +1268,7 @@ app.controller('AfExplorerFormCtrl', [
 
         function buildAggregatedAttributes(attributes, groupProperty) {
             let deduplicatedAttributes = Object.values(attributes.reduce(conflateAttributes(groupProperty), {})).map(conflatedAttribute => {
-                if ($scope.config.onlyDisplayCommon && conflatedAttribute.parent_elements.length < $scope.config.clickedNodes.length) {
+                if ($scope.onlyDisplayCommon && conflatedAttribute.parent_elements.length < $scope.config.clickedNodes.length) {
                     conflatedAttribute.isDisplayed = false;
                 }
                 return conflatedAttribute;
@@ -1472,6 +1483,7 @@ app.directive('attributeTableBlock', function() {
         scope: {
             title: '<',
             displayElementDropdown: '<',
+            displayPath: '<',
             excludedColumns: '<',
             groupMode: '<',
             groupedAttributes: '=',
