@@ -231,6 +231,7 @@ def get_attribute_for_template(client, payload, config):
     ):
         if is_sub_attribute_item(result):
             continue
+        result[ 'template_name' ] = template_name
         attributes.append(result)
         templates_urls.append(result.get("Links", {}).get("Template"))
     templates_names = client.get_attributes_templates_names(templates_urls)

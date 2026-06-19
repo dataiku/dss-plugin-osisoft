@@ -736,7 +736,6 @@ app.controller('AfExplorerFormCtrl', [
             return attributePath.split('|')?.[0];
         }
 
-        // TODO: align it on the return for getChildrenFromDb
         function getAttributesForTemplate(node) {
             return $scope.callPythonDo({ method: "get_attribute_for_template", template_name: node.title}).then(
                 function(data) {
@@ -1053,8 +1052,6 @@ app.controller('AfExplorerFormCtrl', [
             attribute.checked = !!(selectedAttribute);
             if (parentNode.type === "element") {
                 attribute.parent_element = parentNode?.title;
-            } else if (parentNode.type === "template") {
-                attribute.template_name = parentNode?.title;
             }
             attribute.data_type = selectedAttribute?.data_type ? selectedAttribute.data_type : $scope.aggregateDataTypeFields.data_type.defaultValue;
             Object.entries($scope.aggregateDataTypeFields.aggregates).forEach(([aggregateName, aggregate]) => {
