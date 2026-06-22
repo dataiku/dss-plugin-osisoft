@@ -154,15 +154,15 @@ class Cache {
     }
 
     async getElementTree() {
-        return this.getObject(this.elementTreeStoreName, this.elementTreeRecordId).then((data) => data.nodes);
+        return this.getObject(this.elementTreeStoreName, this.elementTreeRecordId).then((data) => data?.nodes);
     }
 
     async getTemplateTree() {
-        return this.getObject(this.templateTreeStoreName, this.templateTreeRecordId).then((data) => data.nodes);
+        return this.getObject(this.templateTreeStoreName, this.templateTreeRecordId).then((data) => data?.nodes);
     }
 
     async getElementsByTemplate() {
-        return this.getObject(this.elementsByTemplateStoreName, this.elementsByTemplateRecordId).then((data) => data.nodes);
+        return this.getObject(this.elementsByTemplateStoreName, this.elementsByTemplateRecordId).then((data) => data?.nodes);
     }
 
     async getObject(objectStoreName, objectId) {
@@ -201,7 +201,7 @@ class Cache {
     async addOrUpdateElementsByTemplate(elementsByTemplate) {
         return this.addOrUpdate({
                 id: this.elementsByTemplateRecordId,
-                elementsByTemplate: elementsByTemplate
+                nodes: elementsByTemplate
         }, this.elementsByTemplateStoreName);
     }
 
@@ -358,7 +358,7 @@ app.controller('AfExplorerFormCtrl', [
 
         $scope.init = function() {
             $scope.config.show_advanced_parameters = $scope.config.show_advanced_parameters || false;
-            $scope.config.activeTab = $scope.config.activeTab || 'element';
+            $scope.activeTab = $scope.activeTab || 'element'; // TODO: remove from config
             $scope.templateTree = $scope.templateTree || [];
             $scope.groupMode = $scope.groupMode || GroupMode.TEMPLATE;
             DataikuAPI.plugins.listAccessiblePresets('pi-system', $stateParams.projectKey, 'basic-auth').success(function(data) {
@@ -384,32 +384,10 @@ app.controller('AfExplorerFormCtrl', [
                 // We try getting the elementTree from cache. If we can't we open the authSection
                 // And we will load the elementTree from db once the user has logged in
                 // This is brittle and should probably changed in the future
-                initCache().then(() => {
-                    return $q.all([
-                        $scope.cache.getElementTree(),
-                        $scope.cache.getTemplateTree(),
-                        $scope.cache.getElementsByTemplate()
-                    ]);
-                }).then(([elementTree, templateTree, elementsByTemplate]) => {
-                    if (!elementTree || !templateTree) {
-                        $scope.authSectionVisible = true;
-                        $scope.showTreeData = false;
-                        $scope.$applyAsync();
-                        return;
-                    }
-                    $scope.authSectionVisible = false;
-                    $scope.elementTree = elementTree;
-                    $scope.templateTree = templateTree;
-                    $scope.elementsByTemplate = elementsByTemplate || {};
-                    $scope.showTreeData = true;
-                    $scope.$applyAsync();
-                }).catch(() => {
-                    $scope.authSectionVisible = true;
-                    $scope.showTreeData = false;
-                    $scope.$applyAsync();
-                })
+                console.log("autconfigured")
+                initData();
             }
-            $scope.config.template = $scope.config.template || "-- Any --";
+            $scope.config.template = $scope.config.template || "-- Any --"; // TODO: understand wtf it is used for anymore
             $scope.onAdvancedToggle();
         };
 
@@ -433,6 +411,42 @@ app.controller('AfExplorerFormCtrl', [
         $scope.authConfigured = function() {
             return $scope.hasPreset() && !!$scope.config.database_name && !!$scope.config.server_name;
         }
+
+       function initData() {
+            initCache().catch((error) => {
+                console.log("initCache error", error);
+                $scope.authSectionVisible = true;
+                $scope.showTreeData = false;
+                $scope.$applyAsync();
+                throw error;
+            }).then(() => {
+                return $q.all([
+                    $scope.cache.getElementTree(),
+                    $scope.cache.getTemplateTree(),
+                    $scope.cache.getElementsByTemplate()
+                ]).catch((error) => {
+                    console.log("error", error)
+                    $scope.authSectionVisible = true;
+                    $scope.showTreeData = false;
+                    $scope.$applyAsync();
+                    throw error;
+                });
+            }).then(([elementTree, templateTree, elementsByTemplate]) => {
+                if (!elementTree || !templateTree) {
+                    $scope.authSectionVisible = true;
+                    $scope.showTreeData = false;
+                    $scope.$applyAsync();
+                    return;
+                }
+                $scope.authSectionVisible = false;
+                $scope.elementTree = elementTree;
+                $scope.templateTree = templateTree;
+                $scope.elementsByTemplate = elementsByTemplate || {};
+                $scope.showTreeData = true;
+                $scope.$applyAsync();
+            })
+        }
+
         $scope.login = function() {
             const hasPreset = $scope.hasPreset();
             const hasServer = !!$scope.config.server_name;
@@ -453,18 +467,22 @@ app.controller('AfExplorerFormCtrl', [
                 database_name: $scope.config.database_name
             });
 
-            $scope.getFromCacheOrFetchBaselineObjects().then(() => {
-                $scope.showTreeData = true;
-                $scope.authSectionVisible = false;
-                console.info("[LOGIN][UI] success", {
-                    tree_count: Array.isArray($scope.elementTree) ? $scope.elementTree.length : 0,
-                    template_tree_count: Array.isArray($scope.templateTree) ? $scope.templateTree.length : 0
-                });
-            }).catch(() => {
-                $scope.showTreeData = false;
-                $scope.authSectionVisible = true;
-                console.error("[LOGIN][UI] failed", error);
-            })
+            initData();
+            // initCache().catch((error) => {
+            //     throw new Error("Could not initialize cache: " + error);
+            // }).then($scope.getFromCacheOrFetchBaselineObjects).then(() => {
+            //     $scope.showTreeData = true;
+            //     $scope.authSectionVisible = false;
+            //     console.info("[LOGIN][UI] success", {
+            //         tree_count: Array.isArray($scope.elementTree) ? $scope.elementTree.length : 0,
+            //         template_tree_count: Array.isArray($scope.templateTree) ? $scope.templateTree.length : 0
+            //     })
+            // }).catch((error) => {
+            //     // not sure it's what we want
+            //     $scope.showTreeData = false;
+            //     $scope.authSectionVisible = true;
+            //     console.error("[LOGIN][UI] failed", error);
+            // })
         };
 
         $scope.hasPreset = function() {
@@ -490,7 +508,7 @@ app.controller('AfExplorerFormCtrl', [
             $scope.config.server_name = null;
             $scope.config.database_name = null;
             $scope.templateTree = [];
-            $scope.config.attribute_categories = [];
+            $scope.config.attribute_categories = []; // TODO: check if this is used anywher
             $scope.config.element_categories = [];
             $scope.config.loadedDatabaseName = null;
             $scope.attributeList = [];
@@ -700,20 +718,20 @@ app.controller('AfExplorerFormCtrl', [
             // $scope.config.selectedTemplateNames = [];
             $scope.ui.attributeSearch = "";
             $scope.elementSearchNoMatch = false;
-            if ($scope.config.activeTab === "element") {
+            if ($scope.activeTab === "element") {
                 $scope.config.template = "-- Any --";
-            } else if ($scope.config.activeTab === "template") {
+            } else if ($scope.activeTab === "template") {
                 $scope.config.element_name = "";
             }
             $scope.refreshAttributeSection();
         }
 
         $scope.setTab = function(tab) {
-            const previousTab = $scope.config.activeTab;
+            const previousTab = $scope.activeTab;
             if (tab !== previousTab) {
                 resetRightPanelForCurrentTabContext();
             }
-            $scope.config.activeTab = tab;
+            $scope.activeTab = tab;
         };
 
         $scope.getCategoriesFromDB = function() {
@@ -818,21 +836,26 @@ app.controller('AfExplorerFormCtrl', [
             console.log("elementsbytemplate", $scope.elementsByTemplate)
             console.log("existingElements", existingElements)
             if (Array.isArray(existingElements)) {
+                console.log("here")
                 return existingElements.map(element => element.url);
             }
-
+            console.log("fetching")
             await $scope.getElementsForTemplate(templateName);
             return $scope.elementsByTemplate[templateName].map(element => element.url);
         }
 
+        // FIXME: the parent_element_path is not properly present !!! probably because loaded from cache
+        // should be properly populated f we want the condition l835 to populate
         $scope.applyClickElementsDropdown = function(templateName, element, selected) {
             $scope.$applyAsync(() => {
                 // TODO: redo everything by templateID
-
-                if ($scope.config.activeTab === 'element') {
+                console.log("$scope.templateModeExcludedAttributes", $scope.templateModeExcludedAttributes)
+                console.log("in apply click")
+                if ($scope.activeTab === 'element') {
                     $scope.toggleNodeVisualization(element);
-                } else if ($scope.config.activeTab === 'template') {
+                } else if ($scope.activeTab === 'template') {
                     if (!selected) {
+                        console.log("not selected (apply click) - removing from attributelist ")
                         if (!$scope.templateModeExcludedAttributes[templateName]) {
                             $scope.templateModeExcludedAttributes[templateName] = {}
                         }

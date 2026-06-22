@@ -4,14 +4,14 @@
         <div ng-if="config.database_name" class="pi-system-explorer__tree-view">
             <div class="tree-view__header">
                 <div class="tree-view__tabs">
-                    <div class="tree-view__tab" ng-click="setTab('element')" ng-class="{active: config.activeTab === 'element'}">
+                    <div class="tree-view__tab" ng-click="setTab('element')" ng-class="{active: activeTab === 'element'}">
                         <div class="tree-view__tab-content">Elements</div>
                     </div>
-                    <div class="tree-view__tab" ng-click="setTab('template')" ng-class="{active: config.activeTab === 'template'}">
+                    <div class="tree-view__tab" ng-click="setTab('template')" ng-class="{active: activeTab === 'template'}">
                         <div class="tree-view__tab-content">Templates</div>
                     </div>
                 </div>
-                <div class="tree-view__search-panel" ng-if="config.activeTab === 'element'">
+                <div class="tree-view__search-panel" ng-if="activeTab === 'element'">
                     <div class="tree-view__search-row">
                         <basic-search-box
                                 ng-model="config.element_name"
@@ -47,14 +47,14 @@
                     <i class="dku-icon-dismiss-16"></i>
                     Clear all
                 </button>
-                <ul ng-if="config.activeTab === 'element' && elementTree && elementTree.length">
+                <ul ng-if="activeTab === 'element' && elementTree && elementTree.length">
                     <li ng-repeat="node in elementTree track by node.id">
                         <tree-node node="node" get-children-from-db="getChildrenFromDB" toggle-display-attributes="toggleDisplayAttributes"
                                    config="config" clicked-nodes="ui.clickedNodes" toggle-node-visualization="toggleNodeVisualization(node)">
                         </tree-node>
                     </li>
                 </ul>
-                <ul ng-if="config.activeTab === 'template' && templateTree && templateTree.length">
+                <ul ng-if="activeTab === 'template' && templateTree && templateTree.length">
                     <li ng-repeat="node in templateTree track by node.id">
                         <tree-node node="node" get-children-from-db="getChildrenFromDB" toggle-display-attributes="toggleDisplayAttributes"
                                    config="config" clicked-nodes="ui.clickedNodes" toggle-node-visualization="toggleNodeVisualization(node)">
