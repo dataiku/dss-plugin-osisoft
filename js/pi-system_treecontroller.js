@@ -653,14 +653,21 @@ app.controller('AfExplorerFormCtrl', [
                     console.log("get_children_from_db", data);
                     const attributeLoadPromises = [];
                     item.attribute_children = [];
-                    const loadedAttributes = data.choices.filter(node => node.type === 'attribute');
-                    loadedAttributes.forEach(attribute => {
-                            attributeLoadPromises.push(
-                                addAttributeToLoadedAttributes(attribute, {expanded: false})
-                            );
-                            item.attribute_children.push(attribute.id);
-                         }
+                    const loadedAttributes = data.choices.filter(node => node.type === 'attribute').map(attribute =>
+                        {
+                            return { ...attribute,
+                                expanded: false,
+                                parent_element: item.title,
+                                parent_element_path: item.path
+                            };
+                        }
                     );
+                    loadedAttributes.forEach(attribute => {
+                        attributeLoadPromises.push(
+                            addAttributeToLoadedAttributes(attribute)
+                        );
+                        item.attribute_children.push(attribute.id);
+                    });
                     item.children = data.choices.filter(node => node.type === item.type);
                     item.children.forEach(child => {
                         child.expanded = false;
@@ -767,17 +774,20 @@ app.controller('AfExplorerFormCtrl', [
                 function(data) {
                     console.log("get_attribute_for_template", data);
                     node.attribute_children = [];
-                    const loadedAttributes = data.attributes;
-                    loadedAttributes.map(attribute => {
-                            const elementPath = getElementPathFromAttributePath(attribute.path);
-                            addAttributeToLoadedAttributes(attribute, {
-                                expanded: false,
-                                parent_element: getElementNameFromPath(elementPath),
-                                parent_element_path: elementPath
-                            })
+                    const loadedAttributes = data.attributes.map(attribute => {
+                        const elementPath = getElementPathFromAttributePath(attribute.path);
+                        return {
+                            ...attribute,
+                            expanded: false,
+                            parent_element: getElementNameFromPath(elementPath),
+                            parent_element_path: elementPath
+                        };
+                    })
+                    loadedAttributes.forEach(attribute => {
+                            addAttributeToLoadedAttributes(attribute);
                             node.attribute_children.push(attribute.id);
                         }
-                    )
+                    );
                     cacheTemplateTree();
                     return {
                         updatedNode: node,
@@ -1406,9 +1416,8 @@ app.controller('AfExplorerFormCtrl', [
             $scope.config.outputSelectedAttributes[index] = attribute;
         }
 
-        async function addAttributeToLoadedAttributes(attribute, additionalProperties) {
-            const cachedAttribute = { ...attribute, ...additionalProperties };
-            return $scope.cache.addOrUpdateAttribute(cachedAttribute);
+        async function addAttributeToLoadedAttributes(attribute) {
+            return $scope.cache.addOrUpdateAttribute(attribute);
         }
 
 
