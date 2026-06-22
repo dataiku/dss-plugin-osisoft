@@ -1536,6 +1536,7 @@ app.directive('attributeTableBlock', function() {
         restrict: 'A',
         scope: {
             title: '<',
+            activeTab: '<',
             displayElementDropdown: '<',
             displayPath: '<',
             excludedColumns: '<',
