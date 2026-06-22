@@ -1160,22 +1160,18 @@ app.controller('AfExplorerFormCtrl', [
             $scope.refreshAttributeSection();
         };
 
-        function attributeMatchesSearch(attribute_name, template_name, attribute_description="") {
+        function attributeMatchesSearch(attribute_name, group_name, attribute_description="") {
             if ($scope.ui.attributeSearch === "") {
                 return true;
             }
             const lowercasedSearch = $scope.ui.attributeSearch.toLowerCase();
-            let templateNameMatches = false;
-            // if the attribute is without template, no check
-            if (template_name) {
-                templateNameMatches = template_name.toLowerCase().includes(lowercasedSearch);
-            }
+            const groupNameMatches = group_name.toLowerCase().includes(lowercasedSearch);
             const attributeNameMatches = attribute_name.toLowerCase().includes(lowercasedSearch);
             let attributeDescriptionMatches = false;
             if (attribute_description) {
                 attributeDescriptionMatches = attribute_description.toLowerCase().includes(lowercasedSearch);
             }
-            return (templateNameMatches || attributeNameMatches || attributeDescriptionMatches)
+            return (groupNameMatches || attributeNameMatches || attributeDescriptionMatches)
         }
 
         function arraysEqual(a, b) {
@@ -1215,7 +1211,7 @@ app.controller('AfExplorerFormCtrl', [
                 paths: [],
                 data_type: attr.data_type,
                 data_types: [],
-                isDisplayed: attributeMatchesSearch(attr.title, attr.template_name, attr.description),
+                isDisplayed: attributeMatchesSearch(attr.title, group.value, attr.description),
                 category_names: attr.category_names,
                 conflicting_categories: false
             };
