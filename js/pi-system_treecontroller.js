@@ -467,21 +467,6 @@ app.controller('AfExplorerFormCtrl', [
             });
 
             initData();
-            // initCache().catch((error) => {
-            //     throw new Error("Could not initialize cache: " + error);
-            // }).then($scope.getFromCacheOrFetchBaselineObjects).then(() => {
-            //     $scope.showTreeData = true;
-            //     $scope.authSectionVisible = false;
-            //     console.info("[LOGIN][UI] success", {
-            //         tree_count: Array.isArray($scope.elementTree) ? $scope.elementTree.length : 0,
-            //         template_tree_count: Array.isArray($scope.templateTree) ? $scope.templateTree.length : 0
-            //     })
-            // }).catch((error) => {
-            //     // not sure it's what we want
-            //     $scope.showTreeData = false;
-            //     $scope.authSectionVisible = true;
-            //     console.error("[LOGIN][UI] failed", error);
-            // })
         };
 
         $scope.hasPreset = function() {
@@ -507,8 +492,6 @@ app.controller('AfExplorerFormCtrl', [
             $scope.config.server_name = null;
             $scope.config.database_name = null;
             $scope.templateTree = [];
-            $scope.config.attribute_categories = []; // TODO: check if this is used anywher
-            $scope.config.element_categories = [];
             $scope.config.loadedDatabaseName = null;
             $scope.attributeList = [];
             $scope.config.outputSelectedAttributes = [];
@@ -519,8 +502,6 @@ app.controller('AfExplorerFormCtrl', [
         $scope.onServerChanged = function() {
             $scope.config.database_name = null;
             $scope.templateTree = [];
-            $scope.config.attribute_categories = [];
-            $scope.config.element_categories = [];
             $scope.config.loadedDatabaseName = null;
             $scope.showTreeData = false;
             $scope.cleanTree();
@@ -529,8 +510,6 @@ app.controller('AfExplorerFormCtrl', [
 
         $scope.onDatabaseChanged = function() {
             $scope.templateTree = [];
-            $scope.config.attribute_categories = [];
-            $scope.config.element_categories = [];
             $scope.config.loadedDatabaseName = null;
             $scope.showTreeData = false;
             $scope.cleanTree();
@@ -731,21 +710,21 @@ app.controller('AfExplorerFormCtrl', [
             $scope.activeTab = tab;
         };
 
-        $scope.getCategoriesFromDB = function() {
-            $scope.config.attribute_categories = [];
-            $scope.config.element_categories = [];
-            const attributeCategoriesPromise = $scope.callPythonDo({ method: "get_attribute_categories_from_db" }).then(function(data) {
-                console.log("get_attribute_categories_from_db", data);
-                $scope.config.attribute_categories = data.choices;
-                return data;
-            });
-            const elementCategoriesPromise = $scope.callPythonDo({ method: "get_element_categories_from_db" }).then(function(data) {
-                console.log("get_element_categories_from_db", data);
-                $scope.config.element_categories = data.choices;
-                return data;
-            });
-            return $q.all([attributeCategoriesPromise, elementCategoriesPromise]);
-        }
+        // $scope.getCategoriesFromDB = function() {
+        //     $scope.config.attribute_categories = [];
+        //     $scope.config.element_categories = [];
+        //     const attributeCategoriesPromise = $scope.callPythonDo({ method: "get_attribute_categories_from_db" }).then(function(data) {
+        //         console.log("get_attribute_categories_from_db", data);
+        //         $scope.config.attribute_categories = data.choices;
+        //         return data;
+        //     });
+        //     const elementCategoriesPromise = $scope.callPythonDo({ method: "get_element_categories_from_db" }).then(function(data) {
+        //         console.log("get_element_categories_from_db", data);
+        //         $scope.config.element_categories = data.choices;
+        //         return data;
+        //     });
+        //     return $q.all([attributeCategoriesPromise, elementCategoriesPromise]);
+        // }
 
         $scope.doSearch = function(element_name) {
             $scope.ui.searchInProgress = true;
