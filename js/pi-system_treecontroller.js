@@ -1165,7 +1165,11 @@ app.controller('AfExplorerFormCtrl', [
                 return true;
             }
             const lowercasedSearch = $scope.ui.attributeSearch.toLowerCase();
-            const templateNameMatches = template_name.toLowerCase().includes(lowercasedSearch);
+            let templateNameMatches = false;
+            // if the attribute is without template, no check
+            if (template_name) {
+                templateNameMatches = template_name.toLowerCase().includes(lowercasedSearch);
+            }
             const attributeNameMatches = attribute_name.toLowerCase().includes(lowercasedSearch);
             let attributeDescriptionMatches = false;
             if (attribute_description) {
