@@ -358,7 +358,7 @@ app.controller('AfExplorerFormCtrl', [
 
         $scope.init = function() {
             $scope.config.show_advanced_parameters = $scope.config.show_advanced_parameters || false;
-            $scope.activeTab = $scope.activeTab || 'element'; // TODO: remove from config
+            $scope.activeTab = $scope.activeTab || 'element';
             $scope.templateTree = $scope.templateTree || [];
             $scope.groupMode = $scope.groupMode || GroupMode.TEMPLATE;
             DataikuAPI.plugins.listAccessiblePresets('pi-system', $stateParams.projectKey, 'basic-auth').success(function(data) {
@@ -387,7 +387,6 @@ app.controller('AfExplorerFormCtrl', [
                 console.log("autconfigured")
                 initData();
             }
-            $scope.config.template = $scope.config.template || "-- Any --"; // TODO: understand wtf it is used for anymore
             $scope.onAdvancedToggle();
         };
 
@@ -718,9 +717,7 @@ app.controller('AfExplorerFormCtrl', [
             // $scope.config.selectedTemplateNames = [];
             $scope.ui.attributeSearch = "";
             $scope.elementSearchNoMatch = false;
-            if ($scope.activeTab === "element") {
-                $scope.config.template = "-- Any --";
-            } else if ($scope.activeTab === "template") {
+            if ($scope.activeTab === "template") {
                 $scope.config.element_name = "";
             }
             $scope.refreshAttributeSection();
@@ -897,14 +894,6 @@ app.controller('AfExplorerFormCtrl', [
 
         $scope.toggleNodeVisualization = function(node) {
             console.log("clicked on ", node)
-
-            // Keep right-side attribute search when active so multi-node clicks can
-            // enrich results with the same filter (ex: "Load" on California + Fresno).
-            // TODO: understand why we need a reset if the attribute search is empty
-            if (node?.type === "element") {
-                // TODO: factorize this reset
-                $scope.config.template = "-- Any --";
-            }
 
             const indexClickedNode = $scope.ui.clickedNodes.indexOf(node.url);
             const nodeAlreadySelected = indexClickedNode > -1;

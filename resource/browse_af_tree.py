@@ -251,28 +251,25 @@ def get_attribute_for_template(client, payload, config):
 
 def do_search(client, payload, config, network_timer):
     logger.info(
-        "Start call [do_search] database_name={}, active_tab={}, element_name={}, attribute_name={}, template={}, "
+        "Start call [do_search] database_name={}, active_tab={}, element_name={}, attribute_name={}, "
         "element_category={}, attribute_category={}, clicked_nodes_count={}, selected_template_names_count={}".format(
             config.get("database_name"),
             config.get("activeTab"),
             config.get("element_name"),
             config.get("attribute_name"),
-            config.get("template", None),
             config.get("element_category", None),
             config.get("attribute_category", None),
             len(config.get("clickedNodes", [])) if isinstance(config.get("clickedNodes", []), list) else 0,
             len(config.get("selectedTemplateNames", [])) if isinstance(config.get("selectedTemplateNames", []), list) else 0
         )
     )
-    template_name = config.get("template", None)
     category_name = config.get("element_category", None)
     clicked_nodes = config.get("clickedNodes", [])
     if not isinstance(clicked_nodes, list):
         clicked_nodes = []
     active_tab = config.get("activeTab")
     selected_template_names = config.get("selectedTemplateNames", [])
-    if template_name == "-- Any --":
-        template_name = None
+    template_name = None # Legacy variable, to be reused for template filtering
     if not isinstance(selected_template_names, list):
         selected_template_names = []
     selected_template_names = [
@@ -369,13 +366,12 @@ def do_search(client, payload, config, network_timer):
     logger.info("Search network timer:{}".format(network_timer.get_report()))
     result = {"choices": rebuilt_tree, "attributes": attributes_copy}
     logger.info(
-        "End call [do_search] database_name={}, active_tab={}, element_name={}, attribute_name={}, template={}, "
+        "End call [do_search] database_name={}, active_tab={}, element_name={}, attribute_name={}, "
         "element_category={}, attribute_category={}, clicked_nodes_count={}, selected_template_names_count={}".format(
             config.get("database_name"),
             config.get("activeTab"),
             config.get("element_name"),
             config.get("attribute_name"),
-            config.get("template", None),
             config.get("element_category", None),
             config.get("attribute_category", None),
             len(config.get("clickedNodes", [])) if isinstance(config.get("clickedNodes", []), list) else 0,
