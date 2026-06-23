@@ -65,6 +65,9 @@
         </div>
     </div>
     <div class="pi-system-explorer__main">
+        <div ng-if="errorBannerVisible" class="alert alert-warning pi-system-explorer__error-banner">
+            {{errorBannerMessage}}
+        </div>
         <div class="pi-system-explorer__header">
             <div>
                 Welcome to Pi System Plugin

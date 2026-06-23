@@ -268,7 +268,10 @@ app.controller('AfExplorerFormCtrl', [
             searchInProgress: false
         };
 
-        $scope.authSectionVisible = false;
+        $scope.authSectionVisible = true;
+        $scope.showTreeData = false;
+        $scope.errorBannerVisible = false;
+        $scope.errorBannerMessage = '';
 
         // TODO: get categories from backend for attributes
         // $scope.config.attributeCategoryFilter = $scope.config.attributeCategoryFilter || ""
@@ -384,8 +387,15 @@ app.controller('AfExplorerFormCtrl', [
                 // We try getting the elementTree from cache. If we can't we open the authSection
                 // And we will load the elementTree from db once the user has logged in
                 // This is brittle and should probably changed in the future
-                console.log("autconfigured")
-                initData();
+                initData().then(() => {
+                    $scope.authSectionVisible = false;
+                    $scope.showTreeData = true;
+                }).catch(() => {
+                    $scope.errorBannerMessage = 'There was a problem fetching data';
+                    $scope.errorBannerVisible = true;
+                }).then(() => {
+                    $scope.$applyAsync()
+                })
             }
             $scope.onAdvancedToggle();
         };
@@ -411,37 +421,72 @@ app.controller('AfExplorerFormCtrl', [
             return $scope.hasPreset() && !!$scope.config.database_name && !!$scope.config.server_name;
         }
 
+        function loadObject(cacheGetter, dbGetter, cacheSetter, scopeKey) {
+            let fromDb = false;
+            return cacheGetter()
+                .catch(() => {
+                    fromDb = true;
+                    return dbGetter()
+                })
+                .then(object => {
+                    if (object === undefined || object.length === 0) {
+                        fromDb = true;
+                        return dbGetter();
+                    }
+                    return object;
+                })
+                .catch(error => {
+                    throw new Error(`Could not load ${scopeKey} from cache and then DB: ${error}`);
+                })
+                .then(object => {
+                    if (!object || object.length === 0) {
+                        throw new Error(`Could not load ${scopeKey} from DB`);
+                    }
+                    $scope[scopeKey] = object;
+                    if (fromDb) {
+                        cacheSetter(object);
+                    }
+                });
+        }
+
+        function loadElementTree() {
+            return loadObject(
+                () => $scope.cache.getElementTree(),
+                () => $scope.getElementTreeFromDB(),
+                 () => $scope.cache.addOrUpdateElementTree(),
+                'elementTree',
+            );
+        }
+
+        function loadTemplateTree() {
+            return loadObject(
+                () => $scope.cache.getTemplateTree(),
+                () => $scope.getTemplatesFromDB(),
+                () => $scope.cache.addOrUpdateTemplateTree(),
+                'templateTree',
+            );
+        }
+
+        function loadElementsByTemplate() {
+            return $scope.cache.getElementsByTemplate().then(elementsByTemplate => {
+                $scope.elementsByTemplate =  elementsByTemplate || {}
+            });
+        }
+
+        // Fetching data - only once auth has been verified
        function initData() {
-            initCache().catch((error) => {
-                console.log("initCache error", error);
-                $scope.authSectionVisible = true;
-                $scope.showTreeData = false;
-                $scope.$applyAsync();
-                throw error;
+            return initCache().catch((error) => {
+                // TODO: figure out what we want in that case
+                throw new Error(`There was an error initializing cache: ${error}`);
             }).then(() => {
                 return $q.all([
-                    $scope.cache.getElementTree(),
-                    $scope.cache.getTemplateTree(),
-                    $scope.cache.getElementsByTemplate()
-                ]).catch((error) => {
-                    console.log("error", error)
-                    $scope.authSectionVisible = true;
-                    $scope.showTreeData = false;
-                    $scope.$applyAsync();
-                    throw error;
-                });
-            }).then(([elementTree, templateTree, elementsByTemplate]) => {
-                if (!elementTree || !templateTree) {
-                    $scope.authSectionVisible = true;
-                    $scope.showTreeData = false;
-                    $scope.$applyAsync();
-                    return;
-                }
-                $scope.authSectionVisible = false;
-                $scope.elementTree = elementTree;
-                $scope.templateTree = templateTree;
-                $scope.elementsByTemplate = elementsByTemplate || {};
-                $scope.showTreeData = true;
+                    loadElementTree(),
+                    loadTemplateTree(),
+                    loadElementsByTemplate()
+                ])
+            }).catch((error) => {
+                throw new Error(`There was an error initializing data: ${error}`);
+            }).then(() => {
                 $scope.$applyAsync();
             })
         }
@@ -461,12 +506,19 @@ app.controller('AfExplorerFormCtrl', [
                 return;
             }
 
-            console.info("[LOGIN][UI] dispatching login API calls", {
-                server_name: $scope.config.server_name,
-                database_name: $scope.config.database_name
-            });
-
-            initData();
+            initData().then(() => {
+                $scope.authSectionVisible = false;
+                $scope.showTreeData = true;
+            }).catch(() => {
+                $scope.authSectionVisible = true;
+                $scope.showTreeData = false;
+                $scope.errorBannerMessage = 'There was a problem fetching data';
+                $scope.errorBannerVisible = true;
+            }).then(() => {
+                console.log("treedata", $scope.showTreeData);
+                console.log("treedata", $scope.elementTree);
+                $scope.$applyAsync()
+            })
         };
 
         $scope.hasPreset = function() {
@@ -516,7 +568,6 @@ app.controller('AfExplorerFormCtrl', [
         };
 
         $scope.refreshCachedTree = function() {
-            // WTF are we doing here
             $scope.cache.clear().then(function() {
                 $scope.elementTree = [];
                 $scope.ui.clickedNodes = [];
@@ -526,13 +577,17 @@ app.controller('AfExplorerFormCtrl', [
                 $scope.elementsByTemplate = {};
                 $scope.elementSearchNoMatch = false;
                 $scope.refreshAttributeSection();
+                // TODO: need to assign those
                 return $q.all([
                     $scope.getElementTreeFromDB(),
                     $scope.getTemplatesFromDB(),
-                    $scope.getCategoriesFromDB()
                 ]);
-            }).then(() => {
+            }).then(([elementTree, templateTree]) => {
+                $scope.elementTree = elementTree;
+                $scope.templateTree = templateTree;
                 cacheElementTree();
+                cacheTemplateTree();
+                $scope.$applyAsync();
             })
         }
 
@@ -611,32 +666,25 @@ app.controller('AfExplorerFormCtrl', [
             $scope.cache.addOrUpdateElementsByTemplate($scope.elementsByTemplate);
         }
 
-        function updateElementsByTemplate(templateName, elements) {
-            $scope.elementsByTemplate[templateName] = elements;
-
-        }
-
-
         $scope.getElementTreeFromDB = function() {
             return $scope.callPythonDo({ method: "get_children_from_db", parent: $scope.config.database_name }).then(function(data) {
                 console.log("get_children_from_db", data);
-                $scope.elementTree = data.choices;
-                return data;
+                return data.choices;
             });
         };
 
         $scope.getFromCacheOrFetchBaselineObjects = function() {
-            // TODO: get from cache or fetch
             $scope.cleanTree();
             return $q.all([
                 $scope.getElementTreeFromDB(),
                 $scope.getTemplatesFromDB(),
-                $scope.getCategoriesFromDB()
-            ]).then(function(results) {
+            ]).then(function([elementTree, templateTree]) {
+                $scope.elementTree = elementTree;
+                $scope.templateTree = templateTree;
                 cacheElementTree();
                 cacheTemplateTree();
                 $scope.config.loadedDatabaseName = $scope.config.database_name || null;
-                return results;
+                return [elementTree, templateTree];
             });
         }
 
@@ -683,9 +731,7 @@ app.controller('AfExplorerFormCtrl', [
         $scope.getTemplatesFromDB = function() {
             return $scope.callPythonDo({ method: "get_templates_from_db" }).then(function(data) {
                 console.log("get_templates_from_db", data)
-                const templates = data.choices.filter(template => template.title !== "-- Any --")
-                $scope.templateTree = templates;
-                cacheTemplateTree();
+                return data.choices.filter(template => template.title !== "-- Any --")
             });
         }
 
@@ -1409,12 +1455,6 @@ app.controller('AfExplorerFormCtrl', [
 
         async function addAttributeToLoadedAttributes(attribute) {
             return $scope.cache.addOrUpdateAttribute(attribute);
-        }
-
-
-        // TODO: get in cache
-        async function getAttributeFromId(attrId) {
-            return $scope.cache.getAttribute(attrId);
         }
 
         $scope.changeGroupingMode = function() {

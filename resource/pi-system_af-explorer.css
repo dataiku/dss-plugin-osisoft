@@ -188,6 +188,12 @@
     align-self: stretch;
 }
 
+.pi-system-explorer__error-banner {
+    width: 100%;
+    box-sizing: border-box;
+    margin: 0;
+}
+
 pi-system-auth-banner {
     display: block;
     width: 100%;
