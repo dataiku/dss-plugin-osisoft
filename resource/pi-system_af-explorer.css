@@ -222,6 +222,7 @@ pi-system-auth-banner {
     display: flex;
     align-items: center;
     gap: 8px;
+    justify-content: space-between;
     align-self: stretch;
 }
 
@@ -246,6 +247,18 @@ pi-system-auth-banner {
     flex: 1 0 0;
     border: 1px solid #999;
     background: linear-gradient(0deg, rgba(242, 242,242,0.50) 100%), #FFFFFF;
+    justify-content: space-between;
+}
+
+.pi-system-explorer__authentication-close {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 16px;
+    height: 16px;
+    cursor: pointer;
+    color: #222;
+    flex: 0 0 auto;
 }
 
 .pi-system-explorer__authentication-body {
