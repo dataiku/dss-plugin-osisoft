@@ -95,7 +95,14 @@
                         >
                         </basic-search-box>
                     </div>
-                    <button ng-click="changeGroupingMode()">Change grouping mode</button>
+                    <div class="attribute-section__grouping-toggle">
+                        <div class="attribute-section__grouping-toggle--element" ng-click="changeGroupingMode('TEMPLATE')" ng-class="{active: groupMode === 'TEMPLATE'}">
+                            <div class="attribute-section__grouping-toggle-content">Templates</div>
+                        </div>
+                        <div class="attribute-section__grouping-toggle--element" ng-click="changeGroupingMode('CATEGORY')" ng-class="{active: groupMode === 'CATEGORY'}">
+                            <div class="attribute-section__grouping-toggle-content">Categories</div>
+                        </div>
+                    </div>
                     <div class="attribute-section__filters-row">
                         <label class="attribute-section__filters-toggle">
                             <span class="dku-toggle dku-toggle-no-content">

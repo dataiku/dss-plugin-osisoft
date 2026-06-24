@@ -437,6 +437,48 @@ pi-system-auth-banner {
     font-weight: 600;
 }
 
+/* TODO: cleanup toggle implem here and for element/template thing */
+.attribute-section__grouping-toggle {
+    display: flex;
+    max-width: 190px;
+    height: 30px;
+    border: 1px solid #BEBEC1;
+    border-radius: 4px;
+    background: #FFF;
+    overflow: hidden;
+}
+
+.attribute-section__grouping-toggle--element {
+    display: flex;
+    flex: 1 1 0;
+    min-width: 0;
+    cursor: pointer;
+}
+
+.attribute-section__grouping-toggle--element + .attribute-section__grouping-toggle--element {
+    border-left: 1px solid #BBB;
+}
+
+.attribute-section__grouping-toggle--element.active {
+    background: #E7F3FF;
+}
+
+.attribute-section__grouping-toggle-content {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    padding: 4px 8px;
+    color: #000;
+    font-size: 16px;
+    line-height: 20px;
+    font-weight: 200;
+}
+
+.attribute-section__grouping-toggle--element.active .attribute-section__grouping-toggle-content {
+    font-weight: 600;
+}
+
 .tree-view__search-panel {
     display: flex;
     flex-direction: column;

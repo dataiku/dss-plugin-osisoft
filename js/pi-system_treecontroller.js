@@ -1457,8 +1457,8 @@ app.controller('AfExplorerFormCtrl', [
             return $scope.cache.addOrUpdateAttribute(attribute);
         }
 
-        $scope.changeGroupingMode = function() {
-            if ($scope.groupMode === GroupMode.CATEGORY) {
+        $scope.changeGroupingMode = function(mode) {
+            if (mode === 'TEMPLATE') {
                 $scope.groupMode = GroupMode.TEMPLATE;
             } else {
                 $scope.groupMode = GroupMode.CATEGORY;
