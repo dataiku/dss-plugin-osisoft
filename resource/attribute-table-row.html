@@ -51,3 +51,12 @@
                ng-if="aggregate.type === 'number'">
     </div>
 </td>
+<td ng-if="ctrl.groupMode !== 'CATEGORY'">
+    <span ng-if="ctrl.mergedAttribute.conflicting_categories" style="display: flex; align-items: center; gap: 4px" toggle="tooltip" title="These attributes belong to different categories">
+        <i class="dku-icon-warning-outline-16"></i>Conflict
+    </span>
+    <span ng-if="!ctrl.mergedAttribute.conflicting_categories">{{ctrl.mergedAttribute.category_names.join(", ")}}</span>
+</td>
+<td ng-if="ctrl.groupMode !== 'TEMPLATE'">
+    <span>{{ctrl.mergedAttribute.template_name}}</span>
+</td>
