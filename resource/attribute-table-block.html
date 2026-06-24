@@ -11,7 +11,7 @@
                        indeterminate="ctrl.groupedAttributes.checked"></th>
             <th>Title</th>
             <th>Description</th>
-            <th ng-if="ctrl.config.displayPath">Path</th>
+            <th ng-if="ctrl.displayPath">Path</th>
             <th>Data type</th>
             <th>Aggregates</th>
             <th ng-if="ctrl.groupMode !== 'CATEGORY'">Category</th>
@@ -20,7 +20,7 @@
         </thead>
         <tbody ng-if="ctrl.groupedAttributes.empty">
         <tr class="custom-table__empty-row">
-            <td colspan="{{ctrl.config.displayPath ? 7 : 6}}">No attributes matched your selection</td>
+            <td colspan="{{ctrl.displayPath ? 7 : 6}}">No attributes matched your selection</td>
         </tr>
         </tbody>
         <tbody
@@ -32,7 +32,7 @@
                 <input type="checkbox" ng-model="group.allChecked"
                        ng-change="ctrl.onToggleGroupedAttributes({ group: group })" indeterminate="group.checked">
             </td>
-            <td colspan="{{ctrl.config.displayPath ? 6 : 5}}">
+            <td colspan="{{ctrl.displayPath ? 6 : 5}}">
                 <div class="custom-table__group-actions">
                     <div>
                         <span class="custom-table__group-name">{{group.group_name}}</span>
@@ -41,12 +41,12 @@
                         </span>
                     </div>
                     <dropdown-elements
-                            elements="ctrl.config.elementsByTemplate[group.group_name]"
+                            elements="ctrl.elementsByTemplate[group.group_name]"
                             group-name="group.group_name"
                             init-elements-dropdown="ctrl.onInitElementsDropdown({ templateName: templateName })"
                             is-template-associated-element-selected="ctrl.onIsTemplateAssociatedElementSelected({ element: element })"
                             apply-click-elements-dropdown="ctrl.onApplyClickElementsDropdown({ templateName: templateName, element: element, selected: selected })"
-                            active-tab="ctrl.config.activeTab"
+                            active-tab="ctrl.activeTab"
                             ng-if="ctrl.displayElementDropdown && ctrl.groupMode === 'TEMPLATE'">
                     </dropdown-elements>
                 </div>
@@ -58,7 +58,7 @@
                 attribute-table-row
                 group-mode="ctrl.groupMode"
                 merged-attribute="mergedAttribute"
-                display-path="ctrl.config.displayPath"
+                display-path="ctrl.displayPath"
                 aggregate-data-type-fields="ctrl.aggregateDataTypeFields"
                 on-check-attribute="ctrl.onCheckAttribute({ mergedAttribute: mergedAttribute })"
                 on-update-data-type="ctrl.onUpdateDataType({ mergedAttribute: mergedAttribute })"

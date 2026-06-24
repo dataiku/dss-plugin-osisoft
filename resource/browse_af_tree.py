@@ -82,9 +82,6 @@ def do(payload, config, plugin_config, inputs):
             return build_select_choices(choices)
         else:
             return build_select_choices()
-    if parameter_name == "treeData":
-        return {"choices": config.get("treeData")}
-
     return build_select_choices()
 
 
@@ -241,6 +238,7 @@ def get_attribute_for_template(client, payload, config):
     for attribute, attribute_template_name in zip(attributes, templates_names):
         if attribute_template_name == template_name:
             item = get_item_details(attribute)
+            item[ 'template_name' ] = template_name
             items.append(item)
     result = {"choices": [], "attributes": items}
     logger.info(
@@ -253,28 +251,25 @@ def get_attribute_for_template(client, payload, config):
 
 def do_search(client, payload, config, network_timer):
     logger.info(
-        "Start call [do_search] database_name={}, active_tab={}, element_name={}, attribute_name={}, template={}, "
+        "Start call [do_search] database_name={}, active_tab={}, element_name={}, attribute_name={}, "
         "element_category={}, attribute_category={}, clicked_nodes_count={}, selected_template_names_count={}".format(
             config.get("database_name"),
             config.get("activeTab"),
             config.get("element_name"),
             config.get("attribute_name"),
-            config.get("template", None),
             config.get("element_category", None),
             config.get("attribute_category", None),
             len(config.get("clickedNodes", [])) if isinstance(config.get("clickedNodes", []), list) else 0,
             len(config.get("selectedTemplateNames", [])) if isinstance(config.get("selectedTemplateNames", []), list) else 0
         )
     )
-    template_name = config.get("template", None)
     category_name = config.get("element_category", None)
     clicked_nodes = config.get("clickedNodes", [])
     if not isinstance(clicked_nodes, list):
         clicked_nodes = []
     active_tab = config.get("activeTab")
     selected_template_names = config.get("selectedTemplateNames", [])
-    if template_name == "-- Any --":
-        template_name = None
+    template_name = None # Legacy variable, to be reused for template filtering
     if not isinstance(selected_template_names, list):
         selected_template_names = []
     selected_template_names = [
@@ -334,8 +329,7 @@ def do_search(client, payload, config, network_timer):
 
     if not use_clicked_element_nodes_scope and not use_selected_template_names_scope:
         clicked_nodes = []
-    # root_tree = payload.get("root_tree")
-    root_tree = config.get("treeData", [])
+    root_tree = payload.get("elementTree", payload.get("root_tree", []))
     root_tree_before_search = copy.deepcopy(root_tree)
     # https://dku-qa-osi.francecentral.cloudapp.azure.com/piwebapi/assetdatabases/F1RD3VEt1yTvt0ip6-a5yeEVsgbMcrwu_Je0qg9btcZIvPswT1NJU09GVC1QSS1TRVJWXFdFTEw
     database_webid = database_name.split("/")[-1]
@@ -372,13 +366,12 @@ def do_search(client, payload, config, network_timer):
     logger.info("Search network timer:{}".format(network_timer.get_report()))
     result = {"choices": rebuilt_tree, "attributes": attributes_copy}
     logger.info(
-        "End call [do_search] database_name={}, active_tab={}, element_name={}, attribute_name={}, template={}, "
+        "End call [do_search] database_name={}, active_tab={}, element_name={}, attribute_name={}, "
         "element_category={}, attribute_category={}, clicked_nodes_count={}, selected_template_names_count={}".format(
             config.get("database_name"),
             config.get("activeTab"),
             config.get("element_name"),
             config.get("attribute_name"),
-            config.get("template", None),
             config.get("element_category", None),
             config.get("attribute_category", None),
             len(config.get("clickedNodes", [])) if isinstance(config.get("clickedNodes", []), list) else 0,
