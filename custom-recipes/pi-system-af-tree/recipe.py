@@ -3,7 +3,7 @@ import json
 from dataiku.customrecipe import get_recipe_config, get_output_names_for_role
 from safe_logger import SafeLogger
 from osisoft_plugin_common import (
-    get_credentials, PerformanceTimer
+    get_credentials, PerformanceTimer, get_credentials
 )
 from osisoft_constants import OSIsoftConstants
 
@@ -84,13 +84,49 @@ schema = [
 output_dataset.write_schema(schema)
 
 selectedAttributes = config.get("outputSelectedAttributes", [])
-with output_dataset.get_writer() as writer:
-    for item in selectedAttributes:
-        if item.get("checked", True) is True:
-            item["category_names"] = json.dumps(item.get("category_names", []))
-            item["summary_type"] = json.dumps(item.get("summary_type", []))
-            item["paths"] = json.dumps(item.get("paths", []))
-            writer.write_row_dict(item)
+
+raw_and_type = False
+if raw_and_type:
+    with output_dataset.get_writer() as writer:
+        for item in selectedAttributes:
+            if item.get("checked", True) is True:
+                item["category_names"] = json.dumps(item.get("category_names", []))
+                item["summary_type"] = json.dumps(item.get("summary_type", []))
+                item["paths"] = json.dumps(item.get("paths", []))
+                writer.write_row_dict(item)
+else:
+    from osisoft_client import OSIsoftClient
+
+    auth_type, username, password, server_url, is_ssl_check_disabled = get_credentials(config)
+    network_timer = PerformanceTimer()
+    client = OSIsoftClient(
+        server_url, auth_type, username, password,
+        is_ssl_check_disabled=is_ssl_check_disabled,
+        network_timer=network_timer
+    )
+    count = 0
+    with output_dataset.get_writer() as writer:
+        while selectedAttributes:
+            selectedAttribute = selectedAttributes.pop()
+            kwarg = {
+                "url": selectedAttribute.get("url")
+            }
+            # last one is never pushed
+            response = client.push_to_batch(selectedAttribute, **kwarg) # called 62 times
+            count += 1
+            if not selectedAttributes:
+                # Reached the last element, forcing the flush
+                for selectedAttribute_back, reply in response:
+                    data_type = selectedAttribute_back.get("data_type")
+                    selectedAttribute_back["url"] = reply.get("Content", {}).get("Links", {}).get(data_type)
+                    writer.write_row_dict(selectedAttribute_back)
+                response = client.flush_batch()
+
+            for selectedAttribute_back, reply in response:
+                data_type = selectedAttribute_back.get("data_type")
+                selectedAttribute_back["url"] = reply.get("Content", {}).get("Links", {}).get(data_type)
+                writer.write_row_dict(selectedAttribute_back)
+
 
 processing_timer.stop()
 logger.info("Overall timer:{}".format(processing_timer.get_report()))

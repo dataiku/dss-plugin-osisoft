@@ -42,6 +42,8 @@ class OSIsoftClient(object):
         self.is_debug_mode = is_debug_mode
         self.debug_level = None
         self.network_timer = network_timer
+        self.batch_requests_parameters = []
+        self.batch_post_processing = []
 
     def get_auth(self, auth_type, username, password):
         if auth_type == "basic":
@@ -51,7 +53,7 @@ class OSIsoftClient(object):
         else:
             return None
 
-    def recursive_get_rows_from_webid(self, webid, data_type, **kwargs):
+    def recursive_get_rows_from_webid(self, webid, data_type, url=None, **kwargs):
         # Split the time range until no more HTTP 400
         kwargs["endpoint_type"] = kwargs.get("endpoint_type", "event_frames")
         kwargs["can_raise"] = kwargs.get("can_raise", True)
@@ -62,7 +64,7 @@ class OSIsoftClient(object):
         previous_item_timestamp = False
         while not done:
             logger.info("Attempting download webids from {} to {}".format(start_date, end_date))
-            rows = self.get_rows_from_webid(webid, data_type, **kwargs)
+            rows = self.get_rows_from_webid(webid, data_type, url=url, **kwargs)
             counter = 0
             try:
                 row = next(rows)
@@ -83,7 +85,7 @@ class OSIsoftClient(object):
                     kwargs["start_date"] = start_timestamp
                     kwargs["end_date"] = half_time_iso
                     first_half_rows = self.recursive_get_rows_from_webid(
-                        webid, data_type, **kwargs
+                        webid, data_type, url=url, **kwargs
                     )
                     for row in first_half_rows:
                         yield row
@@ -91,7 +93,7 @@ class OSIsoftClient(object):
                     kwargs["start_date"] = half_time_iso
                     kwargs["end_date"] = end_timestamp
                     second_half_rows = self.recursive_get_rows_from_webid(
-                        webid, data_type, **kwargs
+                        webid, data_type, url=url, **kwargs
                     )
                     for row in second_half_rows:
                         yield row
@@ -223,10 +225,11 @@ class OSIsoftClient(object):
             return iso_to_epoch(iso_timestamp)
         return iso_timestamp
 
-    def get_rows_from_webid(self, webid, data_type, **kwargs):
+    def get_rows_from_webid(self, webid, data_type, url=None,  **kwargs):
         endpoint_type = kwargs.get("endpoint_type", "event_frames")
         kwargs["endpoint_type"] = endpoint_type
-        url = self.endpoint.get_data_from_webid_url(endpoint_type, data_type, webid)
+        if not url:
+            url = self.endpoint.get_data_from_webid_url(endpoint_type, data_type, webid)
         has_more = True
         while has_more:
             json_response, has_more = self.get_paginated(
@@ -271,7 +274,6 @@ class OSIsoftClient(object):
             end_date = input_row.get("end_date")
             interval = input_row.get("interval")
             requests_kwargs = self.generic_get_kwargs(**input_row)
-            print("ALX:requests_kwargs={}".format(requests_kwargs))
             batch_time.add(start_date, end_date, interval)
             requests_kwargs['url'] = build_query_string(url, requests_kwargs.get("params"))
             web_ids.append(webid)
@@ -390,6 +392,23 @@ class OSIsoftClient(object):
                 continue
             batch_section = json_response.get("{}".format(index), {})
             yield batch_section
+
+    def push_to_batch(self, post_processing, **requests_kwargs):
+        self.batch_requests_parameters.append(requests_kwargs)
+        self.batch_post_processing.append(post_processing)
+        if len(self.batch_requests_parameters) > 50:
+            response = self.flush_batch()
+            for row in response:
+                yield row
+        else:
+            return
+
+    def flush_batch(self):
+        response = self._batch_requests(self.batch_requests_parameters)
+        for post_processing, row in zip(self.batch_post_processing, response):
+            yield (post_processing, row)
+        self.batch_requests_parameters = []
+        self.batch_post_processing = []
 
     def generic_get_kwargs(self, **kwargs):
         headers = self.get_requests_headers()

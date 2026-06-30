@@ -150,6 +150,7 @@ with output_dataset.get_writer() as writer:
         start_time = input_parameters_row.get(start_time_column, start_time) if use_start_time_column else start_time
         end_time = input_parameters_row.get(end_time_column, end_time) if use_end_time_column else end_time
         row_name = input_parameters_row.get("Name")
+        url = input_parameters_row.get("url")
 
         # if self_contained_mode:
         object_id, data_type, boundary_type, record_boundary_type, interval, sync_time, summary_type, summary_duration = extract_params_from_row(
@@ -213,6 +214,7 @@ with output_dataset.get_writer() as writer:
             rows = client.recursive_get_rows_from_webid(
                 object_id,
                 data_type,
+                url=url,
                 start_date=start_time,
                 end_date=end_time,
                 interval=interval,
