@@ -607,18 +607,33 @@ class OSIsoftClient(object):
     def post(self, url, headers, params, data, can_raise=True, error_source=None):
         url = build_query_string(url, params)
         logger.info("Trying to post to {}".format(url))
-        if self.network_timer:
-            self.network_timer.start(url)
-        response = self.session.post(
-            url=url,
-            headers=headers,
-            json=data
-        )
-        if self.network_timer:
-            self.network_timer.stop()
-        if self.is_debug_mode:
-            logger.info("post response.content={}".format(response.content)[:self.get_debug_level()])
-            logger.info("post response.status={}".format(response.status_code))
+        limit = RecordsLimit(OSIsoftConstants.MAXIMUM_RETRIES_ON_THROTTLING)
+        count = 0
+        try:
+            response = None
+            while is_server_throttling(response):
+                if self.network_timer:
+                    self.network_timer.start(url)
+                response = self.session.post(
+                    url=url,
+                    headers=headers,
+                    json=data
+                )
+                if self.network_timer:
+                    self.network_timer.stop()
+                if self.is_debug_mode:
+                    logger.info("post response.content={}".format(response.content)[:self.get_debug_level()])
+                    logger.info("post response.status={}".format(response.status_code))
+                if limit.is_reached():
+                    error_message = "The maximum number of retries has been reached."
+                    break
+                else:
+                    count += 1
+        except Exception as err:
+            error_message = "Could not connect. Error: {}{}".format(formatted_error_source(error_source), err)
+            logger.error(error_message)
+            if can_raise:
+                raise PISystemClientError(error_message)
         self.assert_valid_response(response, can_raise=can_raise, error_source=error_source)
         return response
 
@@ -990,15 +1005,16 @@ class OSIsoftClient(object):
                 "headers": self.get_requests_headers()
             }
             batch_requests_parameters.append(request_kwargs)
-        json_responses = self._batch_requests(batch_requests_parameters)
-        for json_response in json_responses:
-            response_content = json_response.get("Content", {})
-            template_path = response_content.get("Path", "")
-            template_name_match = re.search(r'ElementTemplates\[([^\]]+)\]', template_path)
-            template_name = None
-            if template_name_match:
-                template_name = template_name_match.group(1)
-            templates_names.append(template_name)
+        batch_size = 500
+        for start_index in range(0, len(batch_requests_parameters), batch_size):
+            for json_response in self._batch_requests(batch_requests_parameters[start_index:start_index + batch_size]):
+                response_content = json_response.get("Content", {})
+                template_path = response_content.get("Path", "")
+                template_name_match = re.search(r'ElementTemplates\[([^\]]+)\]', template_path)
+                template_name = None
+                if template_name_match:
+                    template_name = template_name_match.group(1)
+                templates_names.append(template_name)
         return templates_names
 
     def split_element_attribute(self, path_element):
