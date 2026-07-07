@@ -280,6 +280,8 @@ app.controller('AfExplorerFormCtrl', [
 
         $scope.elementSearchNoMatch = false;
 
+        $scope.selectedElementPaths = buildSelectedElementPaths()
+
         function formatPreviewValue(value) {
             if (Array.isArray(value)) {
                 return value.join(', ');
@@ -287,8 +289,12 @@ app.controller('AfExplorerFormCtrl', [
             return value;
         }
 
+        function buildSelectedElementPaths() {
+            return $scope.config.outputSelectedAttributes.flatMap(attribute => attribute.paths).map(getElementPathFromAttributePath);
+        }
+
         function buildSelectedAttributesTable() {
-            return ($scope.config.outputSelectedAttributes || [])
+            return $scope.config.outputSelectedAttributes
                 .filter(attribute => attribute.checked !== false)
                 .map(attribute => ({
                     title: attribute.title || '',
@@ -330,6 +336,7 @@ app.controller('AfExplorerFormCtrl', [
 
         $scope.clearOutputSelection = function() {
             $scope.config.outputSelectedAttributes = [];
+            $scope.selectedElementPaths = []
             $scope.refreshAttributeSection();
             // Just need to uncheck the current attribute list as it is
             // built with the correct checked state when adding any new elements
@@ -530,6 +537,7 @@ app.controller('AfExplorerFormCtrl', [
             $scope.ui.clickedNodes = [];
             $scope.attributeList = [];
             $scope.config.outputSelectedAttributes = [];
+            $scope.selectedElementPaths = []
             $scope.ui.searchMatchedElementPaths = [];
             $scope.elementsByTemplate = {};
             // $scope.config.selectedTemplateNames = [];
@@ -547,6 +555,7 @@ app.controller('AfExplorerFormCtrl', [
             $scope.config.loadedDatabaseName = null;
             $scope.attributeList = [];
             $scope.config.outputSelectedAttributes = [];
+            $scope.selectedElementPaths = []
             $scope.showTreeData = false;
             $scope.cleanTree();
         };
@@ -805,6 +814,7 @@ app.controller('AfExplorerFormCtrl', [
             return splitPath?.[splitPath.length - 1];
         }
 
+        // TODO: check there cannot be pipes in names
         function getElementPathFromAttributePath(attributePath) {
             return attributePath.split('|')?.[0];
         }
@@ -1430,6 +1440,7 @@ app.controller('AfExplorerFormCtrl', [
             }
             attribute.checked = true;
             $scope.config.outputSelectedAttributes.push(attribute);
+            $scope.selectedElementPaths = buildSelectedElementPaths();
             console.log("Removed attribute from selection", attribute);
         }
 
@@ -1441,6 +1452,7 @@ app.controller('AfExplorerFormCtrl', [
             }
             attribute.checked = false;
             $scope.config.outputSelectedAttributes.splice(index, 1);
+            $scope.selectedElementPaths = buildSelectedElementPaths();
             console.log("Removed attribute from selection", attribute);
         }
 
@@ -1451,6 +1463,7 @@ app.controller('AfExplorerFormCtrl', [
                 return;
             }
             $scope.config.outputSelectedAttributes[index] = attribute;
+            $scope.selectedElementPaths = buildSelectedElementPaths();
         }
 
         async function addAttributeToLoadedAttributes(attribute) {
@@ -1477,6 +1490,7 @@ app.component('treeNode', {
         clickedNodes: '<',
         config: '<',
         toggleNodeVisualization: '&',
+        selectedElementPaths: '<'
     },
 
     controllerAs: 'ctrl',
@@ -1485,25 +1499,16 @@ app.component('treeNode', {
         const ctrl = this;
 
         ctrl.showBreadcrumb = function(node) {
-            if (!node?.children || node.children.length === 0) {
+            if (ctrl.showPaperclip(node)) {
                 return false;
             }
-            return node.children.some(
-                child => {
-                    return ctrl.showPaperclip(child) ||  ctrl.showBreadcrumb(child);
-                }
-            )
+            return node?.paths?.some(path => {
+                return ctrl.selectedElementPaths.some(selectedPath => selectedPath.startsWith(path))
+            });
         };
 
-        function isAttributeSelected(attrId) {
-            return ctrl.config.outputSelectedAttributes.find(attribute => attribute.id === attrId);
-        }
-
         ctrl.showPaperclip = function(node) {
-            if (!node?.attribute_children) {
-                return false;
-            }
-            return node?.attribute_children.some(attributeId => isAttributeSelected(attributeId));
+            return node?.paths?.some(path => ctrl.selectedElementPaths.includes(path));
         };
 
         ctrl.hasRenderableChildren = function(node) {
