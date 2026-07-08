@@ -25,9 +25,14 @@
     height: 75vh;
 }
 
+.h100.mainPane {
+    overflow: visible;
+}
+
 /* Make custom UI full width */
 .fh.w800.oa {
     width: 100% !important;
+    overflow: visible;
 }
 
 /* Hide standard recipe header */
@@ -156,6 +161,10 @@
     flex: 1 0 0;
     align-self: stretch;
     flex-direction: row;
+    /*ad-hoc calculation of the size of the top header*/
+    /*necessary to make scrollbars appear as the parents are absolutely positioned*/
+    height: calc(100vh - 90px);
+    width: calc(100vw - 42px);
 }
 .pi-system-explorer__main {
     display: flex;
@@ -163,6 +172,7 @@
     align-items: flex-start;
     flex: 1 0 0;
     align-self: stretch;
+    min-width: 0;
 }
 
 .pi-system-explorer__header {
@@ -186,6 +196,7 @@
     gap: 16px;
     flex: 1 0 0;
     align-self: stretch;
+    overflow: auto;
 }
 
 .pi-system-explorer__error-banner {
@@ -203,13 +214,15 @@ pi-system-auth-banner {
 .pi-system-explorer__tree-view-container {
     display: flex;
     width: 252px;
-    padding: 16px 12px;
+    /*ad-hoc size to fit the absolutely placed run button at the bottom*/
+    padding: 16px 12px 46px 12px;
     flex-direction: column;
     align-items: flex-start;
     gap: 12px;
     align-self: stretch;
     border-right: 1px solid #BBB;
     background: #FFF;
+    min-height: 0;
 }
 
 .pi-system-explorer__authentication {
@@ -389,6 +402,7 @@ pi-system-auth-banner {
     align-items: stretch;
     gap: 12px;
     width: 100%;
+    height: 100%;
 }
 
 .tree-view__header {
@@ -513,6 +527,7 @@ pi-system-auth-banner {
     display: flex;
     flex-direction: column;
     gap: 8px;
+    overflow: auto;
 }
 
 .tab-container {

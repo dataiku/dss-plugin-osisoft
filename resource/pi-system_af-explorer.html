@@ -33,13 +33,6 @@
                         No matching element found
                     </div>
                 </div>
-            </div>
-            <div class="tree-view__content">
-<!--                <div>-->
-<!--                    Filter by category<select dku-bs-select ng-model="config.element_category"-->
-<!--                                              ng-options="dbn.title as dbn.title for dbn in config.element_categories" ng-init="getCategoriesFromDB()"-->
-<!--                                              ng-change="doSearch(config.element_name, config.attribute_name)"/>-->
-<!--                </div>-->
                 <button
                         class="btn btn--outline btn--secondary btn--dku-icon"
                         ng-click="clearAllVisualizedNodes()"
@@ -47,6 +40,13 @@
                     <i class="dku-icon-dismiss-16"></i>
                     Clear all
                 </button>
+            </div>
+            <div class="tree-view__content">
+<!--                <div>-->
+<!--                    Filter by category<select dku-bs-select ng-model="config.element_category"-->
+<!--                                              ng-options="dbn.title as dbn.title for dbn in config.element_categories" ng-init="getCategoriesFromDB()"-->
+<!--                                              ng-change="doSearch(config.element_name, config.attribute_name)"/>-->
+<!--                </div>-->
                 <ul ng-if="activeTab === 'element' && elementTree && elementTree.length">
                     <li ng-repeat="node in elementTree track by node.id">
                         <tree-node node="node" get-children-from-db="getChildrenFromDB" toggle-display-attributes="toggleDisplayAttributes"
