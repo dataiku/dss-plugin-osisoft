@@ -816,6 +816,28 @@ class OSIsoftClient(object):
             params["startIndex"] = start_index
             json_response = self.get(url=url, headers=headers, params=params)
 
+    def search_element_attributes(self, database, template=None, full_search=True, selected_fields=[]):
+        headers = self.get_requests_headers()
+        tempo_maxcount = OSIsoftConstants.DEFAULT_MAXCOUNT
+        params = {
+            "maxCount": tempo_maxcount,
+            "associations": "Paths",
+        }
+        if template:
+            params["elementTemplate"] = template
+        if full_search:
+            params["searchFullHierarchy"] = True
+        if selected_fields:
+            params["selectedFields"] = ";".join(selected_fields)
+        next_url = "{}/elementattributes".format(database)
+        while next_url:
+            json_response = self.get(url=next_url, headers=headers, params=params)
+            items = json_response.get(OSIsoftConstants.API_ITEM_KEY, [])
+            next_url = json_response.get("Links", {}).get("Next", None)
+            params = {}
+            for item in items:
+                yield item
+
     def batched_search(self, database, element_name, attribute_name, element_category,
                        attribute_category, template, restrict_to_elements,
                        elements_max_count=None, attributes_max_count=None):

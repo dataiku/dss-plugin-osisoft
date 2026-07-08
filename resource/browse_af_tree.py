@@ -220,27 +220,10 @@ def get_attribute_for_template(client, payload, config):
             )
         )
         return result
-    # when searching for template : attribute_name=None, element_category=None, attribute_category=None
-    elements_max_count, attributes_max_count = get_max_counts(config)
     attributes = []
-    templates_urls = []
-    for result in client.batched_search(
-        database_name, None, None,
-        None, None, template_name, [],
-        elements_max_count=elements_max_count, attributes_max_count=attributes_max_count
-    ):
-        if is_sub_attribute_item(result):
-            continue
-        attributes.append(result)
-        templates_urls.append(result.get("Links", {}).get("Template"))
-    templates_names = client.get_attributes_templates_names(templates_urls)
-    items = []
-    for attribute, attribute_template_name in zip(attributes, templates_names):
-        if attribute_template_name == template_name:
-            item = get_item_details(attribute)
-            item[ 'template_name' ] = template_name
-            items.append(item)
-    result = {"choices": [], "attributes": items}
+    for attribute in client.search_element_attributes(database_name, template=template_name, full_search=True):
+        attributes.append(get_item_details(attribute))
+    result = {"choices": [], "attributes": attributes}
     logger.info(
         "End call [get_attribute_for_template] database_name={}, template_name={}".format(
             database_name, template_name
