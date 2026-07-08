@@ -1693,6 +1693,14 @@ app.component('dropdownElements', {
             ctrl.getSelectedElementsCount = function() {
                 return ctrl.elements.filter(element => ctrl.isElementSelected(element)).length;
             }
+
+            ctrl.visualized = function(element) {
+                return ctrl.isElementSelected(element);
+            }
+
+            ctrl.notVisualized = function(element) {
+                return !ctrl.isElementSelected(element);
+            }
         }
     },
     templateUrl: "/plugins/pi-system/resource/dropdown-elements.html"

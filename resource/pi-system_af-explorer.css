@@ -598,6 +598,10 @@ pi-system-auth-banner {
     justify-content: space-between;
 }
 
+.elements-dropdown--element-separator {
+    border-bottom: 1px solid #d9d9d9;
+}
+
 .elements-dropdown--element:hover {
     background: #F4F7F8;
 }
