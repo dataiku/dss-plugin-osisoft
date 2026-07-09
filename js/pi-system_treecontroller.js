@@ -878,7 +878,7 @@ app.controller('AfExplorerFormCtrl', [
 
         // FIXME: the parent_element_path is not properly present !!! probably because loaded from cache
         // should be properly populated f we want the condition l835 to populate
-        $scope.applyClickElementsDropdown = function(templateName, element, selected) {
+        $scope.applyClickElementsDropdown = function(templateName, element, wasUnselected) {
             $scope.$applyAsync(() => {
                 // TODO: redo everything by templateID
                 console.log("$scope.templateModeExcludedAttributes", $scope.templateModeExcludedAttributes)
@@ -886,8 +886,8 @@ app.controller('AfExplorerFormCtrl', [
                 if ($scope.activeTab === 'element') {
                     $scope.toggleNodeVisualization(element);
                 } else if ($scope.activeTab === 'template') {
-                    if (!selected) {
-                        console.log("not selected (apply click) - removing from attributelist ")
+                    if (!wasUnselected) {
+                        console.log("not unselected (apply click) - removing from attributelist ")
                         if (!$scope.templateModeExcludedAttributes[templateName]) {
                             $scope.templateModeExcludedAttributes[templateName] = {}
                         }
@@ -899,7 +899,7 @@ app.controller('AfExplorerFormCtrl', [
                                 element.path;
                         });
                         $scope.refreshAttributeSection();
-                    } else if (selected) {
+                    } else if (wasUnselected) {
                         const attributesToAdd = $scope.templateModeExcludedAttributes[templateName]?.[element.path] || [];
                         $scope.attributeList.push(...attributesToAdd)
                         $scope.refreshAttributeSection();
@@ -1659,21 +1659,26 @@ app.component('dropdownElements', {
             ctrl.onClickElement = function(element, $event) {
                 $event.stopPropagation();
 
-                let wasSelected;
+                let wasUnselected;
                 if (ctrl.activeTab === 'template') {
-                    wasSelected = ctrl.templatedModeUnselectedElements.includes(element.url);
-                    if (wasSelected) {
+                    wasUnselected = ctrl.templatedModeUnselectedElements.includes(element.url);
+                    if (wasUnselected) {
                         ctrl.templatedModeUnselectedElements = ctrl.templatedModeUnselectedElements.filter(url => url !== element.url);
                     } else {
                         ctrl.templatedModeUnselectedElements.push(element.url)
+                        console.log("ctrl.templatedModeUnselectedElements", ctrl.templatedModeUnselectedElements)
+                        console.log("ctrl.elements", ctrl.elements)
+                        if (ctrl.templatedModeUnselectedElements.length === ctrl.elements.length) {
+                            console.log("empty dropdown")
+                        }
                     }
                 } else {
-                    wasSelected = ctrl.isTemplateAssociatedElementSelected({ element: element });
+                    wasUnselected = ctrl.isTemplateAssociatedElementSelected({ element: element });
                 }
                 ctrl.applyClickElementsDropdown({
                     templateName: ctrl.groupName,
                     element: element,
-                    selected: wasSelected
+                    wasUnselected: wasUnselected
                 })
             }
 
@@ -1687,6 +1692,14 @@ app.component('dropdownElements', {
 
             ctrl.getSelectedElementsCount = function() {
                 return ctrl.elements.filter(element => ctrl.isElementSelected(element)).length;
+            }
+
+            ctrl.visualized = function(element) {
+                return ctrl.isElementSelected(element);
+            }
+
+            ctrl.notVisualized = function(element) {
+                return !ctrl.isElementSelected(element);
             }
         }
     },
