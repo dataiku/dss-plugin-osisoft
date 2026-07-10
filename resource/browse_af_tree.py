@@ -222,7 +222,7 @@ def get_attribute_for_template(client, payload, config):
         return result
     attributes = []
     for attribute in client.search_element_attributes(
-        database_name, template=template_name, full_search=True, 
+        database_name, template=template_name, full_search=True,
         selected_fields=[
             "Links.Next", "Items.WebId", "Items.Name", "Items.Description",
             "Items.Path", "Items.Paths", "Items.Type", "Items.CategoryNames", "Items.Links.Self"
