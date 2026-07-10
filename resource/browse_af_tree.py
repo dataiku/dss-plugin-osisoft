@@ -222,6 +222,7 @@ def get_attribute_for_template(client, payload, config):
         return result
     attributes = []
     for attribute in client.search_element_attributes(database_name, template=template_name, full_search=True):
+        attribute["TemplateName"] = template_name
         attributes.append(get_item_details(attribute))
     result = {"choices": [], "attributes": attributes}
     logger.info(
