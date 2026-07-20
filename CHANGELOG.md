@@ -1,5 +1,9 @@
 # Changelog
 
+## Version 1.5.0 - Enhancement release - 2026-07-20
+
+- Added supported Python versions: 3.11, 3.12, 3.13, 3.14
+
 ## [Version 1.4.2](https://github.com/dataiku/dss-plugin-pi-server/releases/tag/v1.4.2) - Bugfix release - 2026-04-17
 
 - Fix issue with writing single value to static AF attributes
