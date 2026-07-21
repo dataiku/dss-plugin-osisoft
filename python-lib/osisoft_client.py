@@ -42,6 +42,8 @@ class OSIsoftClient(object):
         self.is_debug_mode = is_debug_mode
         self.debug_level = None
         self.network_timer = network_timer
+        self.batch_requests_parameters = []
+        self.batch_post_processing = []
 
     def get_auth(self, auth_type, username, password):
         if auth_type == "basic":
@@ -816,6 +818,27 @@ class OSIsoftClient(object):
             params["startIndex"] = start_index
             json_response = self.get(url=url, headers=headers, params=params)
 
+    def get_template_attributes(self, database, template_name):
+        attributes = []
+        url = "{}/elementtemplates".format(database)
+        headers = self.get_requests_headers()
+        while url:
+            json_response = self.get(url=url, headers=headers, params={})
+            url = json_response.get("Links", {}).get("Next", None)
+            element_templates = json_response.get(OSIsoftConstants.API_ITEM_KEY, [])
+            for element_template in element_templates:
+                name = element_template.get("Name")
+                if name == template_name:
+                    next_url = element_template.get("Links", {}).get("AttributeTemplates")
+                    while next_url:
+                        json_response = self.get(url=next_url, headers=headers, params={})
+                        next_url = json_response.get("Links", {}).get("Next", None)
+                        attribute_templates = json_response.get(OSIsoftConstants.API_ITEM_KEY, [])
+                        for attribute_template in attribute_templates:
+                            attributes.append(get_item_details(attribute_template))
+                    return attributes
+        return attributes
+
     def batched_search(self, database, element_name, attribute_name, element_category,
                        attribute_category, template, restrict_to_elements,
                        elements_max_count=None, attributes_max_count=None):
@@ -897,6 +920,23 @@ class OSIsoftClient(object):
                 sub_items = content.get("Items", [])
                 for sub_item in sub_items:
                     yield sub_item
+
+    def push_to_batch(self, post_processing, **requests_kwargs):
+        self.batch_requests_parameters.append(requests_kwargs)
+        self.batch_post_processing.append(post_processing)
+        if len(self.batch_requests_parameters) > 50:
+            response = self.flush_batch()
+            for row in response:
+                yield row
+        else:
+            return
+
+    def flush_batch(self):
+        response = self._batch_requests(self.batch_requests_parameters)
+        for post_processing, row in zip(self.batch_post_processing, response):
+            yield (post_processing, row)
+        self.batch_requests_parameters = []
+        self.batch_post_processing = []
 
     def build_element_query(self, **kwargs):
         element_query_keys = {

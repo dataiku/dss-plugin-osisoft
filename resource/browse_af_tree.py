@@ -60,6 +60,8 @@ def do(payload, config, plugin_config, inputs):
         return get_elements_for_template(client, payload, config)
     if method == "get_attribute_for_template":
         return get_attribute_for_template(client, payload, config)
+    if method == "get_template_attributes":
+        return get_template_attributes(client, payload, config)
     if method == "do_search":
         return do_search(client, payload, config, network_timer)
 
@@ -248,6 +250,22 @@ def get_attribute_for_template(client, payload, config):
     )
     return result
 
+def get_template_attributes(client, payload, config):
+    database_name = config.get("database_name")
+    template_name = payload.get("template_name", None)
+    logger.info(
+        "Start call [get_template_attributes] database_name={}, template_name={}".format(
+            database_name, template_name
+        )
+    )
+    template_attributes = client.get_template_attributes(database_name, template_name)
+    result = {"choices": [], "attributes": template_attributes}
+    logger.info(
+        "End call [get_template_attributes] database_name={}, template_name={}".format(
+            database_name, template_name
+        )
+    )
+    return result
 
 def do_search(client, payload, config, network_timer):
     logger.info(
