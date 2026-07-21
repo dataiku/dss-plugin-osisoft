@@ -133,7 +133,8 @@ class Cache {
                 this.db = request.result;
                 this.stores.forEach(storeName => {
                     if (!this.db.objectStoreNames.contains(storeName)) {
-                        this.db.createObjectStore(storeName, { keyPath: "id" });
+                        const keyPath = storeName === this.attributesStoreName ? "path" : "id";
+                        this.db.createObjectStore(storeName, { keyPath: keyPath });
                     }
                 })
             };
@@ -149,8 +150,8 @@ class Cache {
         });
     }
 
-    async getAttribute(attrId) {
-        return this.getObject(this.attributesStoreName, attrId);
+    async getAttributeByPath(attributePath) {
+        return this.getObject(this.attributesStoreName, attributePath);
     }
 
     async getElementTree() {
@@ -719,7 +720,7 @@ app.controller('AfExplorerFormCtrl', [
                         attributeLoadPromises.push(
                             addAttributeToLoadedAttributes(attribute)
                         );
-                        item.attribute_children.push(attribute.id);
+                        item.attribute_children.push(attribute.path);
                     });
                     item.children = data.choices.filter(node => node.type === item.type);
                     item.children.forEach(child => {
@@ -835,7 +836,7 @@ app.controller('AfExplorerFormCtrl', [
                     })
                     loadedAttributes.forEach(attribute => {
                             addAttributeToLoadedAttributes(attribute);
-                            node.attribute_children.push(attribute.id);
+                            node.attribute_children.push(attribute.path);
                         }
                     );
                     cacheTemplateTree();
@@ -1068,7 +1069,7 @@ app.controller('AfExplorerFormCtrl', [
             // TODO: replace by weak link single loading logic
             return getChildrenIfMissing(node).then(node => {
                 $scope.attributeList = $scope.attributeList.filter(
-                    attribute => !node.attribute_children.includes(attribute.id)
+                    attribute => !node.attribute_children.includes(attribute.path)
                 );
             });
         }
@@ -1083,7 +1084,7 @@ app.controller('AfExplorerFormCtrl', [
                 if (!attribute?.parent_template_name && parentTemplateName) {
                     attribute.parent_template_name = parentTemplateName;
                 }
-                const isAlreadyPresent = $scope.attributeList.find(attr => attr.id === attribute.id);
+                const isAlreadyPresent = $scope.attributeList.find(attr => attr.path === attribute.path);
                 if (!isAlreadyPresent) {
                     enrichAttribute(attribute, node);
                     $scope.attributeList.push(attribute);
@@ -1112,10 +1113,10 @@ app.controller('AfExplorerFormCtrl', [
                 return loadAndAddChildrenAttributes(node);
             }
             return Promise.all(
-                node.attribute_children.map(attributeId => {
-                    return $scope.cache.getAttribute(attributeId).then(loadedAttribute => {
+                node.attribute_children.map(attributePath => {
+                    return $scope.cache.getAttributeByPath(attributePath).then(loadedAttribute => {
                         if (!loadedAttribute) {
-                            throw new Error("Could not load attribute " + attributeId + " from the cache");
+                            throw new Error("Could not load attribute " + attributePath + " from the cache by path");
                         }
                         return loadedAttribute;
                     });
