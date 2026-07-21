@@ -816,6 +816,27 @@ class OSIsoftClient(object):
             params["startIndex"] = start_index
             json_response = self.get(url=url, headers=headers, params=params)
 
+    def get_template_attributes(self, database, template_name):
+        attributes = []
+        url = "{}/elementtemplates".format(database)
+        headers = self.get_requests_headers()
+        while url:
+            json_response = self.get(url=url, headers=headers, params={})
+            url = json_response.get("Links", {}).get("Next", None)
+            element_templates = json_response.get(OSIsoftConstants.API_ITEM_KEY, [])
+            for element_template in element_templates:
+                name = element_template.get("Name")
+                if name == template_name:
+                    next_url = element_template.get("Links", {}).get("AttributeTemplates")
+                    while next_url:
+                        json_response = self.get(url=next_url, headers=headers, params={})
+                        next_url = json_response.get("Links", {}).get("Next", None)
+                        attribute_templates = json_response.get(OSIsoftConstants.API_ITEM_KEY, [])
+                        for attribute_template in attribute_templates:
+                            attributes.append(get_item_details(attribute_template))
+                    return attributes
+        return attributes
+
     def batched_search(self, database, element_name, attribute_name, element_category,
                        attribute_category, template, restrict_to_elements,
                        elements_max_count=None, attributes_max_count=None):
