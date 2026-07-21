@@ -1,11 +1,11 @@
 import dataiku
-import json
 from dataiku.customrecipe import get_recipe_config, get_output_names_for_role
 from safe_logger import SafeLogger
 from osisoft_plugin_common import (
     get_credentials, PerformanceTimer
 )
 from osisoft_constants import OSIsoftConstants
+from osisoft_client import OSIsoftClient
 
 
 logger = SafeLogger("pi-system plugin", forbiden_keys=["token", "password"])
@@ -69,6 +69,7 @@ schema = [
     {'name': 'paths', 'type': 'string'},
     {'name': 'id', 'type': 'string'},
     {'name': 'url', 'type': 'string'},
+    {'name': 'endpoint_url', 'type': 'string'},
     {'name': 'data_type', 'type': 'string'},
     {'name': 'summary_type', 'type': 'string'},
     {'name': 'boundary_type', 'type': 'string'},
@@ -82,13 +83,47 @@ schema = [
 output_dataset.write_schema(schema)
 
 selectedAttributes = config.get("outputSelectedAttributes", [])
+
+client = OSIsoftClient(
+    server_url, auth_type, username, password,
+    is_ssl_check_disabled=is_ssl_check_disabled,
+    network_timer=network_timer
+)
+
 with output_dataset.get_writer() as writer:
-    for item in selectedAttributes:
-        if item.get("checked", True) is True:
-            item["category_names"] = json.dumps(item.get("category_names", []))
-            item["summary_type"] = json.dumps(item.get("summary_type", []))
-            item["paths"] = json.dumps(item.get("paths", []))
-            writer.write_row_dict(item)
+    while selectedAttributes:
+        selectedAttribute = selectedAttributes.pop()
+        selectedAttribute["url"] = None
+        selected_attribute_url = selectedAttribute.get("url")
+        if selected_attribute_url:
+            kwarg = {
+                "url": "{}?associations=Paths".format(selected_attribute_url),
+            }
+        else:
+            attribute_path = selectedAttribute.get("path")
+            search_url = client.endpoint.get_base_url() + "/attributes?associations=Paths&path={}".format(attribute_path)
+            # https://server/piwebapi/attributes?path=\\server\factory\INST-001-Temperature|InstrumentType
+            kwarg = {
+                "url": search_url,
+            }
+        # last one is never pushed
+        response = client.push_to_batch(selectedAttribute, **kwarg)
+        if not selectedAttributes:
+            # Reached the last element, forcing the flush
+            for selectedAttribute_back, reply in response:
+                data_type = selectedAttribute_back.get("data_type")
+                selectedAttribute_back["endpoint_url"] = reply.get("Content", {}).get("Links", {}).get(data_type)
+                selectedAttribute_back["paths"] = reply.get("Paths")
+                selectedAttribute_back["id"] = reply.get("WebId")
+                writer.write_row_dict(selectedAttribute_back)
+            response = client.flush_batch()
+
+        for selectedAttribute_back, reply in response:
+            data_type = selectedAttribute_back.get("data_type")
+            selectedAttribute_back["endpoint_url"] = reply.get("Content", {}).get("Links", {}).get(data_type)
+            selectedAttribute_back["paths"] = reply.get("Content", {}).get("Paths")
+            selectedAttribute_back["id"] = reply.get("Content", {}).get("WebId")
+            writer.write_row_dict(selectedAttribute_back)
 
 processing_timer.stop()
 logger.info("Overall timer:{}".format(processing_timer.get_report()))

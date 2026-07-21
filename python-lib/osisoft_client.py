@@ -42,6 +42,8 @@ class OSIsoftClient(object):
         self.is_debug_mode = is_debug_mode
         self.debug_level = None
         self.network_timer = network_timer
+        self.batch_requests_parameters = []
+        self.batch_post_processing = []
 
     def get_auth(self, auth_type, username, password):
         if auth_type == "basic":
@@ -897,6 +899,23 @@ class OSIsoftClient(object):
                 sub_items = content.get("Items", [])
                 for sub_item in sub_items:
                     yield sub_item
+
+    def push_to_batch(self, post_processing, **requests_kwargs):
+        self.batch_requests_parameters.append(requests_kwargs)
+        self.batch_post_processing.append(post_processing)
+        if len(self.batch_requests_parameters) > 50:
+            response = self.flush_batch()
+            for row in response:
+                yield row
+        else:
+            return
+
+    def flush_batch(self):
+        response = self._batch_requests(self.batch_requests_parameters)
+        for post_processing, row in zip(self.batch_post_processing, response):
+            yield (post_processing, row)
+        self.batch_requests_parameters = []
+        self.batch_post_processing = []
 
     def build_element_query(self, **kwargs):
         element_query_keys = {
