@@ -700,7 +700,7 @@ app.controller('AfExplorerFormCtrl', [
 
         $scope.getChildrenFromDB = function(item) {
             if (item.type === "template") {
-                return getAttributesForTemplate(item);
+                return populateTreeTemplateAttributes(item);
             }
             return $scope.callPythonDo({ method: "get_children_from_db", parent: item })
                 .then(function(data) {
@@ -732,7 +732,7 @@ app.controller('AfExplorerFormCtrl', [
                         return {
                             updatedNode: item,
                             loadedAttributes: loadedAttributes
-                        }
+                        };
                     });
                 });
         }
@@ -820,32 +820,59 @@ app.controller('AfExplorerFormCtrl', [
             return attributePath.split('|')?.[0];
         }
 
-        function getAttributesForTemplate(node) {
-            return $scope.callPythonDo({ method: "get_attribute_for_template", template_name: node.title}).then(
+        function getTemplateGenericAttributes(templateName) {
+            return $scope.callPythonDo({ method: "get_template_attributes", template_name: templateName}).then(
                 function(data) {
-                    console.log("get_attribute_for_template", data);
-                    node.attribute_children = [];
-                    const loadedAttributes = data.attributes.map(attribute => {
-                        const elementPath = getElementPathFromAttributePath(attribute.path);
-                        return {
-                            ...attribute,
-                            expanded: false,
-                            parent_element: getElementNameFromPath(elementPath),
-                            parent_element_path: elementPath
-                        };
-                    })
-                    loadedAttributes.forEach(attribute => {
-                            addAttributeToLoadedAttributes(attribute);
-                            node.attribute_children.push(attribute.path);
-                        }
-                    );
-                    cacheTemplateTree();
-                    return {
-                        updatedNode: node,
-                        loadedAttributes: loadedAttributes
-                    };
+                    return data.attributes;
                 }
             );
+        }
+
+        function buildAttributePath(elementPath, attributeName) {
+            return elementPath + '|' + attributeName;
+        }
+
+        function getAttributesForTemplate(templateName) {
+            return Promise.all([
+                getTemplateGenericAttributes(templateName),
+                $scope.getElementsForTemplate(templateName)
+            ])
+            .then(([ genericAttributes, templateElements ]) =>
+                {
+                    return genericAttributes.map((genericAttribute) => {
+                        return templateElements.map((element) => {
+                            console.log(genericAttribute, element);
+                            return{
+                                path: buildAttributePath(element.path, genericAttribute.title),
+                                category_names: genericAttribute.category_names,
+                                value_type: genericAttribute.value_type,
+                                title: genericAttribute.title,
+                                description: genericAttribute.description,
+                                expanded: false,
+                                parent_element: element.title,
+                                parent_element_path: element.path,
+                                template_name: templateName
+                            };
+                        })
+                    }).flat();
+                }
+            )
+        }
+
+        function populateTreeTemplateAttributes(node) {
+            const templateName = node.title;
+            return getAttributesForTemplate(templateName).then((loadedAttributes) => {
+                node.attribute_children = [];
+                loadedAttributes.forEach((attribute) => {
+                    addAttributeToLoadedAttributes(attribute);
+                    node.attribute_children.push(attribute.path);
+                })
+                cacheTemplateTree();
+                return {
+                    updatedNode: node,
+                    loadedAttributes: loadedAttributes
+                };
+            })
         }
 
         $scope.isTemplateAssociatedElementSelected = function(element) {
@@ -858,6 +885,7 @@ app.controller('AfExplorerFormCtrl', [
                     console.log("get_elements_for_template", data);
                     $scope.elementsByTemplate[templateName] = data.elements;
                     cacheElementsByTemplate();
+                    return data.elements;
                 }
             );
         }
