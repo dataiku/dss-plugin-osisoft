@@ -816,6 +816,57 @@ class OSIsoftClient(object):
             params["startIndex"] = start_index
             json_response = self.get(url=url, headers=headers, params=params)
 
+    def search_element_attributes(self, database, template=None, full_search=True, selected_fields=[]):
+        headers = self.get_requests_headers()
+        tempo_maxcount = OSIsoftConstants.DEFAULT_MAXCOUNT
+        params = {
+            "maxCount": tempo_maxcount,
+            "associations": "Paths",
+        }
+        valid_attributes_names = []
+        if template:
+            params["elementTemplate"] = template
+            valid_attributes_names = self.get_attribute_templates_names(database, template)
+        if full_search:
+            params["searchFullHierarchy"] = True
+        if selected_fields:
+            params["selectedFields"] = ";".join(selected_fields)
+        next_url = "{}/elementattributes".format(database)
+        while next_url:
+            json_response = self.get(url=next_url, headers=headers, params=params)
+            items = json_response.get(OSIsoftConstants.API_ITEM_KEY, [])
+            next_url = json_response.get("Links", {}).get("Next", None)
+            params = {}
+            if template:
+                for item in items:
+                    if item.get("Name") not in valid_attributes_names:
+                        continue
+                    yield item
+            else:
+                for item in items:
+                    yield item
+
+    def get_attribute_templates_names(self, database, template):
+        names = []
+        url = "{}/elementtemplates".format(database)
+        headers = self.get_requests_headers()
+        params = {
+            "query": template
+        }
+        json_response = self.get(url=url, headers=headers, params=params)
+        items = json_response.get("Items", [])
+        if len(items)==1:
+            item = items[0]
+            attribute_templates_url = item.get("Links", {}).get("AttributeTemplates")
+            while attribute_templates_url:
+                json_response = self.get(url=attribute_templates_url, headers=headers, params={})
+                attribute_templates_url = json_response.get("Links", {}).get("Next")
+                items = json_response.get("Items", [])
+                for item in items:
+                    name = item.get("Name")
+                    names.append(name)
+        return names
+
     def batched_search(self, database, element_name, attribute_name, element_category,
                        attribute_category, template, restrict_to_elements,
                        elements_max_count=None, attributes_max_count=None):
