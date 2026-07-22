@@ -201,6 +201,8 @@ class OSIsoftConstants(object):
         {'name': 'Errors', 'type': 'object'}
     ]
     DEFAULT_MAXCOUNT = 1000
+    AF_TREE_ELEMENTS_MAX_COUNT = 100
+    AF_TREE_ATTRIBUTES_MAX_COUNT = 100
     DEFAULT_SCHEME = "https"
     DEFAULT_WAIT_BEFORE_RETRY = 60
     DKU_ERROR_KEY = "Errors"

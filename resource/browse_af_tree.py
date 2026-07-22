@@ -323,8 +323,6 @@ def do_search(client, payload, config, network_timer):
     root_tree_before_search = copy.deepcopy(root_tree)
     # https://dku-qa-osi.francecentral.cloudapp.azure.com/piwebapi/assetdatabases/F1RD3VEt1yTvt0ip6-a5yeEVsgbMcrwu_Je0qg9btcZIvPswT1NJU09GVC1QSS1TRVJWXFdFTEw
     database_webid = database_name.split("/")[-1]
-    elements_max_count, attributes_max_count = get_max_counts(config)
-
     attributes = []
     if use_selected_template_names_scope:
         # In template tab with selected template nodes, scope searches to all selected templates.
@@ -332,15 +330,13 @@ def do_search(client, payload, config, network_timer):
         for selected_template_name in selected_template_names:
             for result in client.batched_search(
                 database_name, None, attribute_name,
-                element_category, attribute_category, selected_template_name, [],
-                elements_max_count=elements_max_count, attributes_max_count=attributes_max_count
+                element_category, attribute_category, selected_template_name, []
             ):
                 attributes.append(result)
     else:
         for result in client.batched_search(
             database_name, element_name, attribute_name,
-            element_category, attribute_category, template_name, clicked_nodes,
-            elements_max_count=elements_max_count, attributes_max_count=attributes_max_count
+            element_category, attribute_category, template_name, clicked_nodes
         ):
             # result["checked"] = True
             attributes.append(result)
@@ -631,23 +627,3 @@ def insert_missing_element(item, tree):
         return
     tree.put(elements_paths_tokens, item)
 
-
-def get_max_counts(config):
-    show_advanced_parameters = config.get("show_advanced_parameters", False)
-    if not show_advanced_parameters:
-        return 100, 100
-
-    def parse_max_count(value, default):
-        if value is None or value == "":
-            return default
-        try:
-            value = int(value)
-        except (TypeError, ValueError):
-            return default
-        if value <= 0:
-            return None
-        return value
-
-    elements_max_count = parse_max_count(config.get("elements_max_count"), 100)
-    attributes_max_count = parse_max_count(config.get("attributes_max_count"), 100)
-    return elements_max_count, attributes_max_count
