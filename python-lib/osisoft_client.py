@@ -867,6 +867,33 @@ class OSIsoftClient(object):
                     names.append(name)
         return names
 
+    def elements_search(self, database, name_filter=None, description_filter=None, category_name=None, template_name=None, element_type=None):
+        # https://dku-qa-osi.francecentral.cloudapp.azure.com/piwebapi/assetdatabases/webid/elements?searchFullHierarchy=true&nameFilter=Fresno
+        results = []
+        elements_query = {
+            "searchFullHierarchy": True,
+            "associations": "Paths"
+        }
+        elements_url = "{}/elements".format(database)
+        headers = self.get_requests_headers()
+        if name_filter:
+            elements_query["nameFilter"] = name_filter
+        if description_filter:
+            elements_query["descriptionFilter"] = description_filter
+        if category_name:
+            elements_query["categoryName"] = category_name
+        if template_name:
+            elements_query["templateName"] = template_name
+        if element_type:
+            elements_query["elementType"] = element_type
+        while elements_url:
+            json_response = self.get(url=elements_url, headers=headers, params=elements_query, error_source="elements_search")
+            results = json_response.get(OSIsoftConstants.API_ITEM_KEY, [])
+            elements_url = json_response.get("Links", {}).get("Next", None)
+            elements_query = None
+            for result in results:
+                yield result
+
     def batched_search(self, database, element_name, attribute_name, element_category,
                        attribute_category, template, restrict_to_elements):
         elements_query = {
