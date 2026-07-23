@@ -311,6 +311,20 @@ app.controller('AfExplorerFormCtrl', [
         $scope.showDatasetPreviewModal = function() {
             const modalScope = $scope.$new();
 
+            modalScope.rebuildPreviewDatasetTable = function() {
+                modalScope.previewRows = buildSelectedAttributesTable();
+            }
+
+            modalScope.uncheckAttribute = function(row) {
+                $scope.removeAttributeFromSelection(row);
+                modalScope.rebuildPreviewDatasetTable();
+            }
+
+            modalScope.clearSelection = function() {
+                $scope.clearOutputSelection();
+                modalScope.rebuildPreviewDatasetTable();
+            }
+
             modalScope.previewColumns = [
                 { key: 'title', label: 'Title' },
                 { key: 'template_name', label: 'Template' },
@@ -324,10 +338,7 @@ app.controller('AfExplorerFormCtrl', [
                 { key: 'sync_time', label: 'Sync time' },
             ];
 
-            modalScope.previewRows = buildSelectedAttributesTable();
-            modalScope.$watch('config.outputSelectedAttributes', function() {
-                modalScope.previewRows = buildSelectedAttributesTable();
-            }, true);
+            modalScope.rebuildPreviewDatasetTable();
 
             CreateModalFromTemplate('/plugins/pi-system/resource/pi-system_preview-dataset-modal.html', modalScope);
         };
@@ -1451,6 +1462,7 @@ app.controller('AfExplorerFormCtrl', [
             attribute.checked = false;
             $scope.config.outputSelectedAttributes.splice(index, 1);
             $scope.selectedElementPaths = buildSelectedElementPaths();
+            $scope.refreshAttributeSection();
             console.log("Removed attribute from selection", attribute);
         }
 
