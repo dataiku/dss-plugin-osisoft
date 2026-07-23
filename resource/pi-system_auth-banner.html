@@ -58,14 +58,6 @@
                     title="This will clear your current workstate, like opened elements and current searches, but your selected attributes will remain">
                 Refresh local data
             </button>
-            <div>
-                <div>Elements max count</div>
-                <div><input type="number" ng-model="config.elements_max_count" placeholder="100"/></div>
-            </div>
-            <div>
-                <div>Attributes max count</div>
-                <div><input type="number" ng-model="config.attributes_max_count" placeholder="100"/></div>
-            </div>
         </div>
         <div class="pi-system-explorer__authentication__submit">
             <button ng-click="login()" ng-disabled="!authConfigured()" class="btn btn--primary link-like" id="load-tree-data">Login</button>

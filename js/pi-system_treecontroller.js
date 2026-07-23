@@ -354,15 +354,6 @@ app.controller('AfExplorerFormCtrl', [
         $scope.onAdvancedToggle = function() {
             if (!$scope.config.show_advanced_parameters) {
                 $scope.config.is_ssl_check_disabled = false;
-                $scope.config.elements_max_count = null;
-                $scope.config.attributes_max_count = null;
-            } else {
-                if ($scope.config.elements_max_count === null || $scope.config.elements_max_count === undefined || $scope.config.elements_max_count === "") {
-                    $scope.config.elements_max_count = 100;
-                }
-                if ($scope.config.attributes_max_count === null || $scope.config.attributes_max_count === undefined || $scope.config.attributes_max_count === "") {
-                    $scope.config.attributes_max_count = 100;
-                }
             }
         };
 

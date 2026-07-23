@@ -868,27 +868,24 @@ class OSIsoftClient(object):
         return names
 
     def batched_search(self, database, element_name, attribute_name, element_category,
-                       attribute_category, template, restrict_to_elements,
-                       elements_max_count=None, attributes_max_count=None):
+                       attribute_category, template, restrict_to_elements):
         elements_query = {
             "templateName": template,
             "categoryName": element_category,
             "nameFilter": element_name,
             "searchFullHierarchy": "true",
-            "associations": "Paths"
+            "associations": "Paths",
+            "maxCount": OSIsoftConstants.AF_TREE_ELEMENTS_MAX_COUNT
         }
-        if elements_max_count:
-            elements_query["maxCount"] = elements_max_count
         attribute_query = {
             "searchFullHierarchy": "true",
-            "associations": "Paths"
+            "associations": "Paths",
+            "maxCount": OSIsoftConstants.AF_TREE_ATTRIBUTES_MAX_COUNT
         }
         if attribute_name:
             attribute_query["nameFilter"] = attribute_name
         if attribute_category:
             attribute_query["categoryName"] = attribute_category
-        if attributes_max_count:
-            attribute_query["maxCount"] = attributes_max_count
         elements_url = "{}/elements".format(database)
         if not restrict_to_elements:
             request_body = {
