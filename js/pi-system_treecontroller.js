@@ -295,19 +295,17 @@ app.controller('AfExplorerFormCtrl', [
 
         function buildSelectedAttributesTable() {
             return $scope.config.outputSelectedAttributes
-                .filter(attribute => attribute.checked !== false)
-                .map(attribute => ({
-                    title: attribute.title || '',
-                    template_name: attribute.template_name || '',
-                    path: attribute.path || '',
-                    data_type: attribute.data_type || '',
-                    summary_type: formatPreviewValue(attribute.summary_type || []),
-                    boundary_type: attribute.boundary_type || '',
-                    record_boundary_type: attribute.record_boundary_type || '',
-                    summary_duration: attribute.summary_duration || '',
-                    interval: attribute.interval || '',
-                    sync_time: attribute.sync_time || '',
-                }));
+                .reduce((acc, attr) => {
+                    const key = attr.parent_element_path;
+                    if (!acc[key]) {
+                        acc[key] = {
+                            title: attr.parent_element,
+                            attributes: []
+                        }
+                    }
+                    acc[key].attributes.push(attr)
+                    return acc;
+                }, {});
         }
 
         $scope.showDatasetPreviewModal = function() {

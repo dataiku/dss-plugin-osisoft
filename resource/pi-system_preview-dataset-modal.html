@@ -8,11 +8,11 @@
             <i class="dku-icon-dismiss-16"></i>
             Clear selection
         </button>
-        <div ng-if="!previewRows.length" class="alert alert-info">
+        <div ng-if="!config.outputSelectedAttributes.length" class="alert alert-info">
             No attributes selected yet.
         </div>
-        <div ng-if="previewRows.length">
-            <p>{{previewRows.length}} selected attribute(s)</p>
+        <div ng-if="config.outputSelectedAttributes.length">
+            <p>{{config.outputSelectedAttributes.length}} selected attribute(s)</p>
             <div class="scroll">
                 <table class="table table-striped table-condensed">
                     <thead>
@@ -21,8 +21,13 @@
                         </tr>
                     </thead>
                     <tbody>
-                        <tr ng-repeat="row in previewRows track by $index">
-                            <td ng-repeat="column in previewColumns">{{row[column.key]}}</td>
+                        <tr ng-repeat-start="(groupKey, subgroup) in previewRows">
+                            <td colspan="{{previewColumns.length}}"><strong>{{subgroup.title}}</strong></td>
+                        </tr>
+                        <tr ng-repeat="row in subgroup.attributes track by row.path" ng-repeat-end>
+                            <td ng-repeat="column in previewColumns">
+                                {{column.key === 'summary_type' && row[column.key] ? row[column.key].join(', ') : row[column.key]}}
+                            </td>
                         </tr>
                     </tbody>
                 </table>
