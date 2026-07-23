@@ -293,42 +293,73 @@ app.controller('AfExplorerFormCtrl', [
             return $scope.config.outputSelectedAttributes.flatMap(attribute => attribute.paths).map(getElementPathFromAttributePath);
         }
 
-        function buildSelectedAttributesTable() {
-            return $scope.config.outputSelectedAttributes
-                .reduce((acc, attr) => {
-                    const key = attr.parent_element_path;
-                    if (!acc[key]) {
-                        acc[key] = {
-                            title: attr.parent_element,
-                            attributes: []
-                        }
+        function groupSelectedAttributes() {
+            return (acc, attr) => {
+                const key = attr.parent_element_path;
+                if (!acc[key]) {
+                    acc[key] = {
+                        group_name: attr.parent_element,
+                        checked_ui: attr.checked, // dummy variable for ng-model
+                        checked: CheckboxStatus.CHECKED, // acutally used to determine UI checkbox state
+                        attributes: [],
+                        children_checked: [],
+                        isDisplayed: true,
+                        nbSearchMatches: 0
                     }
-                    acc[key].attributes.push(attr)
-                    return acc;
-                }, {});
+                }
+                console.log("acc", acc[key])
+
+                if (attr.isDisplayed) {
+                    acc[key].children_checked.push(attr.checked);
+                    acc[key].checked_ui = acc[key].checked_ui && attr.checked
+                }
+                acc[key].checked = getCheckboxStatus(acc[key].children_checked);
+                acc[key].attributes.push(attr);
+                acc[key].isDisplayed = acc[key].isDisplayed && !attr.isDisplayed;
+                acc[key].nbSearchMatches += +attr.isDisplayed;
+                return acc;
+            }
         }
+
 
         $scope.showDatasetPreviewModal = function() {
             const modalScope = $scope.$new();
+            modalScope.CheckboxStatus = CheckboxStatus;
+            modalScope.currentlySelectedAttributes = structuredClone($scope.config.outputSelectedAttributes);
+            modalScope.currentlySelectedAttributes.forEach((attribute) => {
+                attribute.checked = true;
+                attribute.isDisplayed = true;
+            });
 
             modalScope.rebuildPreviewDatasetTable = function() {
                 modalScope.previewRows = buildSelectedAttributesTable();
             }
 
-            modalScope.uncheckAttribute = function(row) {
-                $scope.removeAttributeFromSelection(row);
-                modalScope.rebuildPreviewDatasetTable();
+            function buildSelectedAttributesTable() {
+                return modalScope.currentlySelectedAttributes.reduce(groupSelectedAttributes(), {});
             }
 
-            modalScope.clearSelection = function() {
-                $scope.clearOutputSelection();
+            modalScope.toggleElementSelection = function(subgroup) {
+                const shouldCheck = subgroup.checked !== CheckboxStatus.CHECKED;
+                subgroup.attributes.forEach((attribute) => {
+                    attribute.checked = shouldCheck;
+                });
                 modalScope.rebuildPreviewDatasetTable();
-            }
+            };
+
+            modalScope.toggleAttributeSelection = function(row) {
+                row.checked = !row.checked;
+                modalScope.rebuildPreviewDatasetTable();
+            };
+            //
+            // modalScope.clearSelection = function() {
+            //     $scope.clearOutputSelection();
+            //     modalScope.rebuildPreviewDatasetTable();
+            // }
 
             modalScope.previewColumns = [
                 { key: 'title', label: 'Title' },
                 { key: 'template_name', label: 'Template' },
-                { key: 'path', label: 'Path' },
                 { key: 'data_type', label: 'Data type' },
                 { key: 'summary_type', label: 'Summary type' },
                 { key: 'boundary_type', label: 'Boundary type' },
@@ -887,6 +918,7 @@ app.controller('AfExplorerFormCtrl', [
 
         // FIXME: the parent_element_path is not properly present !!! probably because loaded from cache
         // should be properly populated f we want the condition l835 to populate
+        // TODO: check if fixme is up to date
         $scope.applyClickElementsDropdown = function(templateName, element, wasUnselected) {
             $scope.$applyAsync(() => {
                 // TODO: redo everything by templateID

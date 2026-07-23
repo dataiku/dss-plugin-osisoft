@@ -12,32 +12,53 @@
             No attributes selected yet.
         </div>
         <div ng-if="config.outputSelectedAttributes.length">
-            <p>{{config.outputSelectedAttributes.length}} selected attribute(s)</p>
-            <div class="scroll">
-                <table class="table table-striped table-condensed">
-                    <thead>
-                        <tr>
-                            <th></th>
-                            <th ng-repeat="column in previewColumns">{{column.label}}</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr ng-repeat-start="(groupKey, subgroup) in previewRows">
-                            <td colspan="{{previewColumns.length + 1}}"><strong>{{subgroup.title}}</strong></td>
-                        </tr>
-                        <tr ng-repeat="row in subgroup.attributes track by row.path" ng-repeat-end>
-                            <td>
-                                <input
-                                    type="checkbox"
-                                    ng-model="row.checked"
-                                    ng-change="uncheckAttribute(row)">
-                            </td>
-                            <td ng-repeat="column in previewColumns">
-                                {{column.key === 'summary_type' && row[column.key] ? row[column.key].join(', ') : row[column.key]}}
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
+            <div class="attribute-table-block">
+                <div class="attribute-table-block__title">
+                    <strong>{{config.outputSelectedAttributes.length}} selected attribute(s)</strong>
+                </div>
+                <div class="scroll">
+                    <table class="custom-table">
+                        <thead>
+                            <tr>
+                                <th></th>
+                                <th ng-repeat="column in previewColumns">{{column.label}}</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr
+                                    ng-repeat-start="(groupKey, subgroup) in previewRows"
+                                    class="custom-table__group-row custom-table__group-row--selected">
+                                <td>
+                                    <input
+                                            type="checkbox"
+                                            ng-checked="subgroup.checked_ui"
+                                            ng-click="toggleElementSelection(subgroup)"
+                                            indeterminate="subgroup.checked">
+                                </td>
+                                <td colspan="{{previewColumns.length + 1}}"><strong>{{subgroup.group_name}}</strong></td>
+                            </tr>
+                            <tr
+                                    ng-repeat="row in subgroup.attributes track by row.path"
+                                    ng-repeat-end
+                                    ng-class="{ 'custom-table__attribute-row--selected': row.checked }">
+                                <td>
+                                    <input
+                                        type="checkbox"
+                                        ng-checked="row.checked"
+                                        ng-click="toggleAttributeSelection(row)">
+                                </td>
+                                <td ng-repeat="column in previewColumns">
+                                    <div ng-if="column.key === 'title'" class="custom-table__attribute-title-info">
+                                        {{row[column.key]}}
+                                    </div>
+                                    <span ng-if="column.key !== 'title'">
+                                        {{column.key === 'summary_type' && row[column.key] ? row[column.key].join(', ') : row[column.key]}}
+                                    </span>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </div>
     </div>
