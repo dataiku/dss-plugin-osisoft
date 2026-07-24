@@ -20,7 +20,7 @@
         </thead>
         <tbody ng-if="ctrl.groupedAttributes.empty">
         <tr class="custom-table__empty-row">
-            <td colspan="{{ctrl.displayPath ? 7 : 6}}">No attributes matched your selection</td>
+            <td colspan="{{ctrl.getVisibleAttributeColumnCount(true)}}">No attributes matched your selection</td>
         </tr>
         </tbody>
         <tbody
@@ -32,7 +32,7 @@
                 <input type="checkbox" ng-model="group.allChecked"
                        ng-change="ctrl.onToggleGroupedAttributes({ group: group })" indeterminate="group.checked">
             </td>
-            <td colspan="{{ctrl.displayPath ? 6 : 5}}">
+            <td colspan="{{ctrl.getVisibleAttributeColumnCount(false)}}">
                 <div class="custom-table__group-actions">
                     <div>
                         <span class="custom-table__group-name">{{group.group_name}}</span>

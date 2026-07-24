@@ -324,52 +324,23 @@ app.controller('AfExplorerFormCtrl', [
 
         $scope.showDatasetPreviewModal = function() {
             const modalScope = $scope.$new();
-            modalScope.CheckboxStatus = CheckboxStatus;
-            modalScope.currentlySelectedAttributes = structuredClone($scope.config.outputSelectedAttributes);
-            modalScope.currentlySelectedAttributes.forEach((attribute) => {
-                attribute.checked = true;
-                attribute.isDisplayed = true;
-            });
 
-            modalScope.rebuildPreviewDatasetTable = function() {
-                modalScope.previewRows = buildSelectedAttributesTable();
+            function rebuildGroupedSelectedAttributes() {
+                modalScope.groupedSelectedAttributes = buildGroupedAttributesResult(
+                    $scope.config.outputSelectedAttributes,
+                    "parent_element_path",
+                    "parent_element"
+                );
             }
 
-            function buildSelectedAttributesTable() {
-                return modalScope.currentlySelectedAttributes.reduce(groupSelectedAttributes(), {});
-            }
+            rebuildGroupedSelectedAttributes();
 
-            modalScope.toggleElementSelection = function(subgroup) {
-                const shouldCheck = subgroup.checked !== CheckboxStatus.CHECKED;
-                subgroup.attributes.forEach((attribute) => {
-                    attribute.checked = shouldCheck;
-                });
-                modalScope.rebuildPreviewDatasetTable();
-            };
-
-            modalScope.toggleAttributeSelection = function(row) {
-                row.checked = !row.checked;
-                modalScope.rebuildPreviewDatasetTable();
-            };
-            //
-            // modalScope.clearSelection = function() {
-            //     $scope.clearOutputSelection();
-            //     modalScope.rebuildPreviewDatasetTable();
-            // }
-
-            modalScope.previewColumns = [
-                { key: 'title', label: 'Title' },
-                { key: 'template_name', label: 'Template' },
-                { key: 'data_type', label: 'Data type' },
-                { key: 'summary_type', label: 'Summary type' },
-                { key: 'boundary_type', label: 'Boundary type' },
-                { key: 'record_boundary_type', label: 'Record boundary type' },
-                { key: 'summary_duration', label: 'Summary duration' },
-                { key: 'interval', label: 'Interval' },
-                { key: 'sync_time', label: 'Sync time' },
-            ];
-
-            modalScope.rebuildPreviewDatasetTable();
+            modalScope.$watchCollection(
+                function() {
+                    return $scope.config.outputSelectedAttributes;
+                },
+                rebuildGroupedSelectedAttributes
+            );
 
             CreateModalFromTemplate('/plugins/pi-system/resource/pi-system_preview-dataset-modal.html', modalScope);
         };
@@ -1275,14 +1246,16 @@ app.controller('AfExplorerFormCtrl', [
         // Attributes are shared between templates
         // Meaning all elements with the same template will share the attributes in this template
         // If multiple elements with the same template are selected, we only show the attribute once
-        function getGroups(attr, groupProperty) {
-            const groupPropertyValues = attr[groupProperty];
-            if (Array.isArray(groupPropertyValues)) {
-                return groupPropertyValues.map(value => {
+        function getGroups(attr, groupingKey, titleKey) {
+            const groupingPropertyValues = attr[groupingKey];
+            const groupTitles = attr[titleKey];
+            if (Array.isArray(groupingPropertyValues)) {
+                // Not working with different grouping and title key if array of values
+                return groupingPropertyValues.map(( value, index ) => {
                     return {key: value + "::" + attr.title, value: value};
                 });
             }
-            return [ { key: groupPropertyValues + "::" + attr.title, value: groupPropertyValues } ];
+            return [ { key: groupingPropertyValues + "::" + attr.title, value: groupTitles } ];
         }
 
         function initConflatedAttribute(attr, group) {
@@ -1345,9 +1318,9 @@ app.controller('AfExplorerFormCtrl', [
             }
         }
 
-        function conflateAttributes(groupProperty) {
+        function conflateAttributes(groupingKey, titleKey) {
             return (acc, attr) => {
-                const groups = getGroups(attr, groupProperty);
+                const groups = getGroups(attr, groupingKey, titleKey);
                 for (const group of groups) {
                     if (!acc[group.key]) {
                         acc[group.key] = initConflatedAttribute(attr, group);
@@ -1385,8 +1358,8 @@ app.controller('AfExplorerFormCtrl', [
             }
         }
 
-        function buildAggregatedAttributes(attributes, groupProperty) {
-            let deduplicatedAttributes = Object.values(attributes.reduce(conflateAttributes(groupProperty), {})).map(conflatedAttribute => {
+        function buildAggregatedAttributes(attributes, groupingKey, titleKey) {
+            let deduplicatedAttributes = Object.values(attributes.reduce(conflateAttributes(groupingKey, titleKey), {})).map(conflatedAttribute => {
                 if ($scope.ui.onlyDisplayCommon && conflatedAttribute.parent_elements.length < $scope.ui.clickedNodes.length) {
                     conflatedAttribute.isDisplayed = false;
                 }
@@ -1397,14 +1370,21 @@ app.controller('AfExplorerFormCtrl', [
 
         function splitAttributesOnProperty(splitProperty) {
             const attributes = $scope.attributeList;
+            function hasGroupingValue(attribute) {
+                const value = attribute?.[splitProperty];
+                if (Array.isArray(value)) {
+                    return value.length > 0;
+                }
+                return !!value;
+            }
             return {
-                attributesWithProperty: attributes.filter((attribute) => attribute?.[splitProperty]),
-                attributesWithoutProperty: attributes.filter((attribute) => !attribute?.[splitProperty])
+                attributesWithProperty: attributes.filter(hasGroupingValue),
+                attributesWithoutProperty: attributes.filter((attribute) => !hasGroupingValue(attribute))
             };
         }
 
-        function buildGroupedAttributesResult(attributes, groupProperty) {
-            const groups = buildAggregatedAttributes(attributes, groupProperty);
+        function buildGroupedAttributesResult(attributes, groupingKey, titleKey) {
+            const groups = buildAggregatedAttributes(attributes, groupingKey, titleKey);
             const displayedGroups = groups.filter(group => !group.isDisplayed);
             // TODO: probably turn this into a reduce
             return {
@@ -1417,27 +1397,31 @@ app.controller('AfExplorerFormCtrl', [
         }
 
         $scope.buildGroupedAttributes = function(grouping) {
-            const splitAttributes = splitAttributesOnProperty('template_name');
+            const splitAttributes = splitAttributesOnProperty(grouping.group.groupingKey);
             return {
                 attributesWithProperty: buildGroupedAttributesResult(
                     splitAttributes.attributesWithProperty,
-                    grouping.groupProperty
+                    grouping.group.groupingKey,
+                    grouping.group.titleKey
                 ),
                 attributesWithoutProperty: buildGroupedAttributesResult(
                     splitAttributes.attributesWithoutProperty,
-                    grouping.fallbackGroupProperty
+                    grouping.fallbackGroup.groupingKey,
+                    grouping.fallbackGroup.titleKey
                 )
             };
         }
 
         function getGrouping() {
-            let groupProperty = 'template_name';
-            if ($scope.groupMode === GroupMode.CATEGORY) {
-                groupProperty = 'category_names';
-            }
             return {
-                groupProperty: groupProperty,
-                fallbackGroupProperty: 'parent_element',
+                group: {
+                    groupingKey: $scope.groupMode === GroupMode.CATEGORY ? 'category_names' : 'template_name',
+                    titleKey: $scope.groupMode === GroupMode.CATEGORY ? 'category_names' : 'template_name'
+                },
+                fallbackGroup: {
+                    groupingKey: 'parent_element_path', // Elements can have duplicated names
+                    titleKey: 'parent_element'
+                },
             }
         }
 
@@ -1611,7 +1595,25 @@ app.directive('attributeTableBlock', function() {
             onUpdateAggregate: '&'
         },
         bindToController: true,
-        controller: function() {},
+        controller: function() {
+            const ctrl = this;
+
+            ctrl.getVisibleAttributeColumnCount = function(includeCheckbox) {
+                let count = includeCheckbox ? 5 : 4;
+
+                if (ctrl.displayPath) {
+                    count += 1;
+                }
+                if (ctrl.groupMode !== 'CATEGORY') {
+                    count += 1;
+                }
+                if (ctrl.groupMode !== 'TEMPLATE') {
+                    count += 1;
+                }
+
+                return count;
+            };
+        },
         controllerAs: 'ctrl',
         templateUrl: "/plugins/pi-system/resource/attribute-table-block.html"
     };

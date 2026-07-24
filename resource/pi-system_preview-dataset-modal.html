@@ -17,47 +17,27 @@
                     <strong>{{config.outputSelectedAttributes.length}} selected attribute(s)</strong>
                 </div>
                 <div class="scroll">
-                    <table class="custom-table">
-                        <thead>
-                            <tr>
-                                <th></th>
-                                <th ng-repeat="column in previewColumns">{{column.label}}</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr
-                                    ng-repeat-start="(groupKey, subgroup) in previewRows"
-                                    class="custom-table__group-row custom-table__group-row--selected">
-                                <td>
-                                    <input
-                                            type="checkbox"
-                                            ng-checked="subgroup.checked_ui"
-                                            ng-click="toggleElementSelection(subgroup)"
-                                            indeterminate="subgroup.checked">
-                                </td>
-                                <td colspan="{{previewColumns.length + 1}}"><strong>{{subgroup.group_name}}</strong></td>
-                            </tr>
-                            <tr
-                                    ng-repeat="row in subgroup.attributes track by row.path"
-                                    ng-repeat-end
-                                    ng-class="{ 'custom-table__attribute-row--selected': row.checked }">
-                                <td>
-                                    <input
-                                        type="checkbox"
-                                        ng-checked="row.checked"
-                                        ng-click="toggleAttributeSelection(row)">
-                                </td>
-                                <td ng-repeat="column in previewColumns">
-                                    <div ng-if="column.key === 'title'" class="custom-table__attribute-title-info">
-                                        {{row[column.key]}}
-                                    </div>
-                                    <span ng-if="column.key !== 'title'">
-                                        {{column.key === 'summary_type' && row[column.key] ? row[column.key].join(', ') : row[column.key]}}
-                                    </span>
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
+                    <div
+                            attribute-table-block
+                            grouped-attributes="groupedSelectedAttributes"
+                            config="config"
+                            display-path="false"
+                            elements-by-template="{}"
+                            title="'Selected Attributes'"
+                            group-mode="None"
+                            display-element-dropdown="false"
+                            active-tab="None"
+                            aggregate-data-type-fields="aggregateDataTypeFields"
+                            on-toggle-select-all-grouped-attributes="toggleSelectAllGroupedAttributes(groupedAttributeGroup)"
+                            on-toggle-grouped-attributes="toggleGroupedAttributes(group)"
+                            on-is-at-least-partially-selected="isAtLeastPartiallySelected(item)"
+                            on-init-elements-dropdown="initElementsDropdown(templateName)"
+                            on-is-template-associated-element-selected="isTemplateAssociatedElementSelected(element)"
+                            on-apply-click-elements-dropdown="None"
+                            on-check-attribute="checkAttribute(mergedAttribute)"
+                            on-update-data-type="updateMergedAttributeDataType(mergedAttribute)"
+                            on-update-aggregate="updateMergedAttributeAggregate(mergedAttribute)">
+                    </div>
                 </div>
             </div>
         </div>
