@@ -275,6 +275,8 @@ app.controller('AfExplorerFormCtrl', [
             clickedNodes: [],
             searchMatchedElementPaths: [], // la liste pour highlighter les elements de la recherche
             attributeSearch: "",
+            templateSearch: "",
+            templateSearchResults: [],
             displayPath: false,
             onlyDisplayCommon: false,
             searchInProgress: false
@@ -740,6 +742,7 @@ app.controller('AfExplorerFormCtrl', [
             $scope.ui.searchMatchedElementPaths = [];
             // $scope.config.selectedTemplateNames = [];
             $scope.ui.attributeSearch = "";
+            $scope.ui.templateSearch = "";
             $scope.elementSearchNoMatch = false;
             if ($scope.activeTab === "template") {
                 $scope.config.element_name = "";
@@ -939,6 +942,38 @@ app.controller('AfExplorerFormCtrl', [
             // In element node, the visualized nodes are reflected on the elements dropdown
             console.log("clickedNodes: " + JSON.stringify($scope.ui.clickedNodes));
         };
+
+        function templateMatchesSearch(searchText, templateName) {
+            if (!searchText) {
+                return false;
+            }
+            const lowercasedSearch = searchText.toLowerCase();
+            const templateNameMatches = templateName.toLowerCase().includes(lowercasedSearch);
+            return templateNameMatches;
+        }
+
+        function highlightMatchingTemplates(templateList, parent) {
+            templateList.forEach((template) => {
+                if (templateMatchesSearch($scope.ui.templateSearch, template.title)) {
+                    template.searchHighlighted = true;
+                    $scope.ui.templateSearchResults.push(template);
+                    if (parent) {
+                        parent.expanded = true;
+                    }
+                } else {
+                    template.searchHighlighted = false;
+                }
+                if (template.children.length > 0) {
+                    highlightMatchingTemplates(template.children, template);
+                }
+            })
+        }
+
+        $scope.applyTemplateSearch = function() {
+            console.log("$scope.templateTree", $scope.templateTree)
+            $scope.ui.templateSearchResults = [];
+            highlightMatchingTemplates($scope.templateTree);
+        }
 
         function markSearchResults(nodes, matchedElementPaths) {
             if (!Array.isArray(nodes)) {
@@ -1511,7 +1546,8 @@ app.component('treeNode', {
         clickedNodes: '<',
         config: '<',
         toggleNodeVisualization: '&',
-        selectedElementPaths: '<'
+        selectedElementPaths: '<',
+        hideChildren: '<?'
     },
 
     controllerAs: 'ctrl',
@@ -1539,9 +1575,20 @@ app.component('treeNode', {
             return true;
         };
 
+        ctrl.canExpand = function(node) {
+            return !ctrl.hideChildren && !!node?.has_children;
+        };
+
+        ctrl.showElementFolder = function(node) {
+            return ctrl.canExpand(node) && node.type === 'element';
+        };
+
         ctrl.toggleExpand = function(node, $event) {
             if ($event) {
                 $event.stopPropagation();
+            }
+            if (!ctrl.canExpand(node)) {
+                return;
             }
             // Loading children before toggling the node
             if (!node.expanded && (!node.children?.length || !ctrl.hasRenderableChildren(node))) {
