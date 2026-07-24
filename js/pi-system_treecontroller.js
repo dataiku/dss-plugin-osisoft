@@ -282,45 +282,9 @@ app.controller('AfExplorerFormCtrl', [
 
         $scope.selectedElementPaths = buildSelectedElementPaths()
 
-        function formatPreviewValue(value) {
-            if (Array.isArray(value)) {
-                return value.join(', ');
-            }
-            return value;
-        }
-
         function buildSelectedElementPaths() {
             return $scope.config.outputSelectedAttributes.flatMap(attribute => attribute.paths).map(getElementPathFromAttributePath);
         }
-
-        function groupSelectedAttributes() {
-            return (acc, attr) => {
-                const key = attr.parent_element_path;
-                if (!acc[key]) {
-                    acc[key] = {
-                        group_name: attr.parent_element,
-                        checked_ui: attr.checked, // dummy variable for ng-model
-                        checked: CheckboxStatus.CHECKED, // acutally used to determine UI checkbox state
-                        attributes: [],
-                        children_checked: [],
-                        isDisplayed: true,
-                        nbSearchMatches: 0
-                    }
-                }
-                console.log("acc", acc[key])
-
-                if (attr.isDisplayed) {
-                    acc[key].children_checked.push(attr.checked);
-                    acc[key].checked_ui = acc[key].checked_ui && attr.checked
-                }
-                acc[key].checked = getCheckboxStatus(acc[key].children_checked);
-                acc[key].attributes.push(attr);
-                acc[key].isDisplayed = acc[key].isDisplayed && !attr.isDisplayed;
-                acc[key].nbSearchMatches += +attr.isDisplayed;
-                return acc;
-            }
-        }
-
 
         $scope.showDatasetPreviewModal = function() {
             const modalScope = $scope.$new();
@@ -345,24 +309,12 @@ app.controller('AfExplorerFormCtrl', [
             CreateModalFromTemplate('/plugins/pi-system/resource/pi-system_preview-dataset-modal.html', modalScope);
         };
 
-        $scope.clearOutputSelection = function() {
-            $scope.config.outputSelectedAttributes = [];
-            $scope.selectedElementPaths = []
-            $scope.refreshAttributeSection();
-            // Just need to uncheck the current attribute list as it is
-            // built with the correct checked state when adding any new elements
-            // TODO: switch to mass update in cache
-            Object.values($scope.attributeList).forEach(attribute => {
-                attribute.checked = false;
-            });
-            $scope.refreshAttributeSection();
-        }
-
         $scope.isAtLeastPartiallySelected = function(node) {
             return node.checked === CheckboxStatus.CHECKED || node.checked === CheckboxStatus.PARTIAL_CHECK;
         };
 
         $scope.onAdvancedToggle = function() {
+            // TODO: cleanup the max count things
             if (!$scope.config.show_advanced_parameters) {
                 $scope.config.is_ssl_check_disabled = false;
                 $scope.config.elements_max_count = null;
