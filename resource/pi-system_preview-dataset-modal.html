@@ -10,6 +10,12 @@
                 <div class="attribute-table-block__title">
                     <strong>{{config.outputSelectedAttributes.length}} selected attribute(s)</strong>
                 </div>
+                <div class="pi-system-preview-dataset-modal__search">
+                    <basic-search-box
+                            ng-model="ui.previewAttributeSearch"
+                            placeholder="Search attribute or element name">
+                    </basic-search-box>
+                </div>
                 <div class="scroll">
                     <div
                             attribute-table-block

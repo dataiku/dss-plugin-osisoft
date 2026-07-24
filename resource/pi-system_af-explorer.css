@@ -25,6 +25,10 @@
     height: 75vh;
 }
 
+.pi-system-preview-dataset-modal__search {
+    margin-bottom: 12px;
+}
+
 .h100.mainPane {
     overflow: visible;
 }

@@ -301,12 +301,16 @@ app.controller('AfExplorerFormCtrl', [
 
         $scope.showDatasetPreviewModal = function() {
             const modalScope = $scope.$new();
+            modalScope.ui = {
+                previewAttributeSearch: ""
+            };
 
             function rebuildGroupedSelectedAttributes() {
                 modalScope.groupedSelectedAttributes = buildGroupedAttributesResult(
                     $scope.config.outputSelectedAttributes,
                     "parent_element_path",
-                    "parent_element"
+                    "parent_element",
+                    modalScope.ui.previewAttributeSearch
                 );
             }
 
@@ -315,6 +319,13 @@ app.controller('AfExplorerFormCtrl', [
             modalScope.$watchCollection(
                 function() {
                     return $scope.config.outputSelectedAttributes;
+                },
+                rebuildGroupedSelectedAttributes
+            );
+
+            modalScope.$watch(
+                function() {
+                    return modalScope.ui.previewAttributeSearch;
                 },
                 rebuildGroupedSelectedAttributes
             );
@@ -1196,11 +1207,11 @@ app.controller('AfExplorerFormCtrl', [
             $scope.refreshAttributeSection();
         };
 
-        function attributeMatchesSearch(attribute_name, group_name, attribute_description="") {
-            if ($scope.ui.attributeSearch === "") {
+        function attributeMatchesSearch(searchText, attribute_name, group_name, attribute_description="") {
+            if (!searchText) {
                 return true;
             }
-            const lowercasedSearch = $scope.ui.attributeSearch.toLowerCase();
+            const lowercasedSearch = searchText.toLowerCase();
             const groupNameMatches = group_name.toLowerCase().includes(lowercasedSearch);
             const attributeNameMatches = attribute_name.toLowerCase().includes(lowercasedSearch);
             let attributeDescriptionMatches = false;
@@ -1244,7 +1255,7 @@ app.controller('AfExplorerFormCtrl', [
             } ];
         }
 
-        function initConflatedAttribute(attr, group) {
+        function initConflatedAttribute(attr, group, searchText) {
             const conflatedAttribute = {
                 title: attr.title,
                 description: attr.description,
@@ -1261,7 +1272,7 @@ app.controller('AfExplorerFormCtrl', [
                 paths: [],
                 data_type: attr.data_type,
                 data_types: [],
-                isDisplayed: attributeMatchesSearch(attr.title, group.value, attr.description),
+                isDisplayed: attributeMatchesSearch(searchText, attr.title, group.value, attr.description),
                 category_names: attr.category_names,
                 conflicting_categories: false
             };
@@ -1307,12 +1318,12 @@ app.controller('AfExplorerFormCtrl', [
             }
         }
 
-        function conflateAttributes(groupingKey, titleKey) {
+        function conflateAttributes(groupingKey, titleKey, searchText) {
             return (acc, attr) => {
                 const groups = getGroups(attr, groupingKey, titleKey);
                 for (const group of groups) {
                     if (!acc[group.key]) {
-                        acc[group.key] = initConflatedAttribute(attr, group);
+                        acc[group.key] = initConflatedAttribute(attr, group, searchText);
                     }
                     updateConflatedAttribute(acc[group.key], attr);
                 }
@@ -1349,8 +1360,8 @@ app.controller('AfExplorerFormCtrl', [
             }
         }
 
-        function buildAggregatedAttributes(attributes, groupingKey, titleKey) {
-            let deduplicatedAttributes = Object.values(attributes.reduce(conflateAttributes(groupingKey, titleKey), {})).map(conflatedAttribute => {
+        function buildAggregatedAttributes(attributes, groupingKey, titleKey, searchText) {
+            let deduplicatedAttributes = Object.values(attributes.reduce(conflateAttributes(groupingKey, titleKey, searchText), {})).map(conflatedAttribute => {
                 if ($scope.ui.onlyDisplayCommon && conflatedAttribute.parent_elements.length < $scope.ui.clickedNodes.length) {
                     conflatedAttribute.isDisplayed = false;
                 }
@@ -1374,8 +1385,8 @@ app.controller('AfExplorerFormCtrl', [
             };
         }
 
-        function buildGroupedAttributesResult(attributes, groupingKey, titleKey) {
-            const groups = buildAggregatedAttributes(attributes, groupingKey, titleKey);
+        function buildGroupedAttributesResult(attributes, groupingKey, titleKey, searchText) {
+            const groups = buildAggregatedAttributes(attributes, groupingKey, titleKey, searchText);
             const displayedGroups = groups.filter(group => !group.isDisplayed);
             // TODO: probably turn this into a reduce
             return {
@@ -1393,12 +1404,14 @@ app.controller('AfExplorerFormCtrl', [
                 attributesWithProperty: buildGroupedAttributesResult(
                     splitAttributes.attributesWithProperty,
                     grouping.group.groupingKey,
-                    grouping.group.titleKey
+                    grouping.group.titleKey,
+                    $scope.ui.attributeSearch
                 ),
                 attributesWithoutProperty: buildGroupedAttributesResult(
                     splitAttributes.attributesWithoutProperty,
                     grouping.fallbackGroup.groupingKey,
-                    grouping.fallbackGroup.titleKey
+                    grouping.fallbackGroup.titleKey,
+                    $scope.ui.attributeSearch
                 )
             };
         }
