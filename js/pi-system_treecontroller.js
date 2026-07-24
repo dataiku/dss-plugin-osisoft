@@ -109,6 +109,18 @@ const GroupMode = Object.freeze({
     CATEGORY: 'CATEGORY',
 });
 
+function prettifyElementPath(elementPath, databaseName) {
+    console.log("databasename", databaseName)
+    const pathParts = elementPath.split('\\').filter(Boolean);
+    const databaseIndex = pathParts.indexOf(databaseName);
+
+    if (databaseIndex === -1) {
+        return pathParts.join(" > ");
+    }
+
+    return pathParts.slice(databaseIndex + 1).join(" > ");
+}
+
 class Cache {
     constructor(projectKey, server, database) {
         // TODO: include preset in db name
@@ -277,6 +289,7 @@ app.controller('AfExplorerFormCtrl', [
         // $scope.config.attributeCategoryFilter = $scope.config.attributeCategoryFilter || ""
 
         $scope.aggregateDataTypeFields = aggregateDataTypeFields;
+        $scope.prettifyElementPath = prettifyElementPath;
 
         $scope.elementSearchNoMatch = false;
 
@@ -380,8 +393,17 @@ app.controller('AfExplorerFormCtrl', [
             $scope.callPythonDo({ parameterName: "database_name" }).then(function(data) {
                 console.log("database_name", data);
                 $scope.database_name = data.choices;
+                $scope.config.database_title = getDatabaseTitle($scope.config.database_name);
             });
         };
+
+        function getDatabaseTitle(databaseName) {
+            const matchingDatabase = ($scope.database_name || []).find(function(database) {
+                return database.value === databaseName;
+            });
+
+            return matchingDatabase?.label || null;
+        }
 
         $scope.toggleAuthSection = function() {
             $scope.authSectionVisible = !$scope.authSectionVisible;
@@ -514,6 +536,7 @@ app.controller('AfExplorerFormCtrl', [
             $scope.database_name = [];
             $scope.config.server_name = null;
             $scope.config.database_name = null;
+            $scope.config.database_title = null;
             $scope.templateTree = [];
             $scope.config.loadedDatabaseName = null;
             $scope.attributeList = [];
@@ -525,6 +548,7 @@ app.controller('AfExplorerFormCtrl', [
 
         $scope.onServerChanged = function() {
             $scope.config.database_name = null;
+            $scope.config.database_title = null;
             $scope.templateTree = [];
             $scope.config.loadedDatabaseName = null;
             $scope.showTreeData = false;
@@ -533,6 +557,7 @@ app.controller('AfExplorerFormCtrl', [
         };
 
         $scope.onDatabaseChanged = function() {
+            $scope.config.database_title = getDatabaseTitle($scope.config.database_name);
             $scope.templateTree = [];
             $scope.config.loadedDatabaseName = null;
             $scope.showTreeData = false;
@@ -1523,23 +1548,23 @@ app.component('treeNode', {
 });
 
 app.directive('attributeTableBlock', function() {
-    return {
-        restrict: 'A',
-        scope: {
-            title: '<',
-            activeTab: '<',
-            displayElementDropdown: '<',
-            displayPath: '<',
-            excludedColumns: '<',
-            groupMode: '<',
-            elementsByTemplate: '<',
-            groupedAttributes: '=',
-            config: '=',
-            aggregateDataTypeFields: '<',
-            onToggleSelectAllGroupedAttributes: '&',
-            onToggleGroupedAttributes: '&',
-            onIsAtLeastPartiallySelected: '&',
-            onInitElementsDropdown: '&',
+        return {
+            restrict: 'A',
+            scope: {
+                title: '<',
+                activeTab: '<',
+                displayElementDropdown: '<',
+                displayPath: '<',
+                excludedColumns: '<',
+                groupMode: '<',
+                elementsByTemplate: '<',
+                groupedAttributes: '=',
+                config: '=',
+                aggregateDataTypeFields: '<',
+                onToggleSelectAllGroupedAttributes: '&',
+                onToggleGroupedAttributes: '&',
+                onIsAtLeastPartiallySelected: '&',
+                onInitElementsDropdown: '&',
             onIsTemplateAssociatedElementSelected: '&',
             onApplyClickElementsDropdown: '&',
             onCheckAttribute: '&',
@@ -1632,6 +1657,7 @@ app.component('dropdownElements', {
     bindings: {
         elements: '<',
         groupName: '<',
+        databaseName: '<',
         initElementsDropdown: '&',
         isTemplateAssociatedElementSelected: '&',
         applyClickElementsDropdown: '&',
@@ -1641,6 +1667,7 @@ app.component('dropdownElements', {
     controller: function() {
         const ctrl = this;
         ctrl.templatedModeUnselectedElements = [];
+        ctrl.prettifyElementPath = prettifyElementPath;
 
         ctrl.$onInit = function() {
 
