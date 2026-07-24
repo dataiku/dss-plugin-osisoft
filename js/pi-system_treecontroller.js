@@ -1229,10 +1229,19 @@ app.controller('AfExplorerFormCtrl', [
             if (Array.isArray(groupingPropertyValues)) {
                 // Not working with different grouping and title key if array of values
                 return groupingPropertyValues.map(( value, index ) => {
-                    return {key: value + "::" + attr.title, value: value};
+                    return {
+                        key: value + "::" + attr.title,
+                        sectionKey: value,
+                        value: value
+                    };
                 });
             }
-            return [ { key: groupingPropertyValues + "::" + attr.title, value: groupTitles } ];
+            return [ {
+                key: groupingPropertyValues + "::" + attr.title,
+                sectionKey: groupingPropertyValues,
+                value: groupTitles,
+                path: groupingPropertyValues
+            } ];
         }
 
         function initConflatedAttribute(attr, group) {
@@ -1240,6 +1249,9 @@ app.controller('AfExplorerFormCtrl', [
                 title: attr.title,
                 description: attr.description,
                 group: group.value,
+                group_key: group.key,
+                section_key: group.sectionKey,
+                group_path: group.path,
                 template_name: attr.template_name,
                 parent_elements: [],
                 checked: null, // Used to determine UI checkbox state
@@ -1310,10 +1322,12 @@ app.controller('AfExplorerFormCtrl', [
 
         function groupAttributesIntoSections() {
             return (acc, attr) => {
-                const key = attr.group;
+                const key = attr.section_key;
                 if (!acc[key]) {
                     acc[key] = {
                         group_name: attr.group,
+                        group_key: key,
+                        group_path: attr.group_path,
                         allChecked: attr.checked,
                         checked: CheckboxStatus.UNCHECKED, // Used to determine UI checkbox state
                         attributes: [],
@@ -1553,6 +1567,8 @@ app.directive('attributeTableBlock', function() {
             scope: {
                 title: '<',
                 activeTab: '<',
+                databaseName: '<?',
+                displayGroupPath: '<?',
                 displayElementDropdown: '<',
                 displayPath: '<',
                 excludedColumns: '<',
@@ -1574,6 +1590,8 @@ app.directive('attributeTableBlock', function() {
         bindToController: true,
         controller: function() {
             const ctrl = this;
+
+            ctrl.prettifyElementPath = prettifyElementPath;
 
             ctrl.getVisibleAttributeColumnCount = function(includeCheckbox) {
                 let count = includeCheckbox ? 5 : 4;

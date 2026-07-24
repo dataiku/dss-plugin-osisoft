@@ -377,7 +377,18 @@ pi-system-auth-banner {
     align-items: center;
 }
 
+.custom-table__group-header {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
 .custom-table__group-name {
+    font-weight: 600;
+}
+
+.custom-table__group-path {
+    margin-left: auto;
 }
 
 .custom-table__attribute-title-info {
