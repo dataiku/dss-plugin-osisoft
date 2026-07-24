@@ -15,9 +15,13 @@
             <i ng-if="ctrl.node.has_children && !ctrl.node.expanded" class="dku-icon-chevron-right-16"></i>
         </span>
 
-        <span class="tree-node__folder" ng-if="ctrl.node.has_children">
+        <span class="tree-node__folder" ng-if="ctrl.node.has_children && ctrl.node.type === 'element'">
             <i ng-if="ctrl.node.expanded" class="dku-icon-folder-open-16"></i>
             <i ng-if="!ctrl.node.expanded" class="dku-icon-folder-closed-16"></i>
+        </span>
+
+        <span class="tree-node__folder" ng-if="ctrl.node.type === 'template'">
+            <i class="dku-icon-file-16"></i>
         </span>
 
         <div
