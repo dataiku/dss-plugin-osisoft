@@ -109,6 +109,18 @@ const GroupMode = Object.freeze({
     CATEGORY: 'CATEGORY',
 });
 
+function prettifyElementPath(elementPath, databaseName) {
+    console.log("databasename", databaseName)
+    const pathParts = elementPath.split('\\').filter(Boolean);
+    const databaseIndex = pathParts.indexOf(databaseName);
+
+    if (databaseIndex === -1) {
+        return pathParts.join(" > ");
+    }
+
+    return pathParts.slice(databaseIndex + 1).join(" > ");
+}
+
 class Cache {
     constructor(projectKey, server, database) {
         // TODO: include preset in db name
@@ -277,81 +289,56 @@ app.controller('AfExplorerFormCtrl', [
         // $scope.config.attributeCategoryFilter = $scope.config.attributeCategoryFilter || ""
 
         $scope.aggregateDataTypeFields = aggregateDataTypeFields;
+        $scope.prettifyElementPath = prettifyElementPath;
 
         $scope.elementSearchNoMatch = false;
 
         $scope.selectedElementPaths = buildSelectedElementPaths()
 
-        function formatPreviewValue(value) {
-            if (Array.isArray(value)) {
-                return value.join(', ');
-            }
-            return value;
-        }
-
         function buildSelectedElementPaths() {
             return $scope.config.outputSelectedAttributes.flatMap(attribute => attribute.paths).map(getElementPathFromAttributePath);
         }
 
-        function buildSelectedAttributesTable() {
-            return $scope.config.outputSelectedAttributes
-                .filter(attribute => attribute.checked !== false)
-                .map(attribute => ({
-                    title: attribute.title || '',
-                    template_name: attribute.template_name || '',
-                    path: attribute.path || '',
-                    data_type: attribute.data_type || '',
-                    summary_type: formatPreviewValue(attribute.summary_type || []),
-                    boundary_type: attribute.boundary_type || '',
-                    record_boundary_type: attribute.record_boundary_type || '',
-                    summary_duration: attribute.summary_duration || '',
-                    interval: attribute.interval || '',
-                    sync_time: attribute.sync_time || '',
-                }));
-        }
-
         $scope.showDatasetPreviewModal = function() {
             const modalScope = $scope.$new();
+            modalScope.ui = {
+                previewAttributeSearch: ""
+            };
 
-            modalScope.previewColumns = [
-                { key: 'title', label: 'Title' },
-                { key: 'template_name', label: 'Template' },
-                { key: 'path', label: 'Path' },
-                { key: 'data_type', label: 'Data type' },
-                { key: 'summary_type', label: 'Summary type' },
-                { key: 'boundary_type', label: 'Boundary type' },
-                { key: 'record_boundary_type', label: 'Record boundary type' },
-                { key: 'summary_duration', label: 'Summary duration' },
-                { key: 'interval', label: 'Interval' },
-                { key: 'sync_time', label: 'Sync time' },
-            ];
+            function rebuildGroupedSelectedAttributes() {
+                modalScope.groupedSelectedAttributes = buildGroupedAttributesResult(
+                    $scope.config.outputSelectedAttributes,
+                    "parent_element_path",
+                    "parent_element",
+                    modalScope.ui.previewAttributeSearch
+                );
+            }
 
-            modalScope.previewRows = buildSelectedAttributesTable();
-            modalScope.$watch('config.outputSelectedAttributes', function() {
-                modalScope.previewRows = buildSelectedAttributesTable();
-            }, true);
+            rebuildGroupedSelectedAttributes();
+
+            modalScope.$watchCollection(
+                function() {
+                    return $scope.config.outputSelectedAttributes;
+                },
+                rebuildGroupedSelectedAttributes
+            );
+
+            modalScope.$watch(
+                function() {
+                    return modalScope.ui.previewAttributeSearch;
+                },
+                rebuildGroupedSelectedAttributes
+            );
 
             CreateModalFromTemplate('/plugins/pi-system/resource/pi-system_preview-dataset-modal.html', modalScope);
         };
-
-        $scope.clearOutputSelection = function() {
-            $scope.config.outputSelectedAttributes = [];
-            $scope.selectedElementPaths = []
-            $scope.refreshAttributeSection();
-            // Just need to uncheck the current attribute list as it is
-            // built with the correct checked state when adding any new elements
-            // TODO: switch to mass update in cache
-            Object.values($scope.attributeList).forEach(attribute => {
-                attribute.checked = false;
-            });
-            $scope.refreshAttributeSection();
-        }
 
         $scope.isAtLeastPartiallySelected = function(node) {
             return node.checked === CheckboxStatus.CHECKED || node.checked === CheckboxStatus.PARTIAL_CHECK;
         };
 
         $scope.onAdvancedToggle = function() {
+            // TODO: cleanup the max count things
             if (!$scope.config.show_advanced_parameters) {
                 $scope.config.is_ssl_check_disabled = false;
             }
@@ -408,8 +395,17 @@ app.controller('AfExplorerFormCtrl', [
             $scope.callPythonDo({ parameterName: "database_name" }).then(function(data) {
                 console.log("database_name", data);
                 $scope.database_name = data.choices;
+                $scope.config.database_title = getDatabaseTitle($scope.config.database_name);
             });
         };
+
+        function getDatabaseTitle(databaseName) {
+            const matchingDatabase = ($scope.database_name || []).find(function(database) {
+                return database.value === databaseName;
+            });
+
+            return matchingDatabase?.label || null;
+        }
 
         $scope.toggleAuthSection = function() {
             $scope.authSectionVisible = !$scope.authSectionVisible;
@@ -542,6 +538,7 @@ app.controller('AfExplorerFormCtrl', [
             $scope.database_name = [];
             $scope.config.server_name = null;
             $scope.config.database_name = null;
+            $scope.config.database_title = null;
             $scope.templateTree = [];
             $scope.config.loadedDatabaseName = null;
             $scope.attributeList = [];
@@ -553,6 +550,7 @@ app.controller('AfExplorerFormCtrl', [
 
         $scope.onServerChanged = function() {
             $scope.config.database_name = null;
+            $scope.config.database_title = null;
             $scope.templateTree = [];
             $scope.config.loadedDatabaseName = null;
             $scope.showTreeData = false;
@@ -561,6 +559,7 @@ app.controller('AfExplorerFormCtrl', [
         };
 
         $scope.onDatabaseChanged = function() {
+            $scope.config.database_title = getDatabaseTitle($scope.config.database_name);
             $scope.templateTree = [];
             $scope.config.loadedDatabaseName = null;
             $scope.showTreeData = false;
@@ -869,6 +868,7 @@ app.controller('AfExplorerFormCtrl', [
 
         // FIXME: the parent_element_path is not properly present !!! probably because loaded from cache
         // should be properly populated f we want the condition l835 to populate
+        // TODO: check if fixme is up to date
         $scope.applyClickElementsDropdown = function(templateName, element, wasUnselected) {
             $scope.$applyAsync(() => {
                 // TODO: redo everything by templateID
@@ -1198,11 +1198,11 @@ app.controller('AfExplorerFormCtrl', [
             $scope.refreshAttributeSection();
         };
 
-        function attributeMatchesSearch(attribute_name, group_name, attribute_description="") {
-            if ($scope.ui.attributeSearch === "") {
+        function attributeMatchesSearch(searchText, attribute_name, group_name, attribute_description="") {
+            if (!searchText) {
                 return true;
             }
-            const lowercasedSearch = $scope.ui.attributeSearch.toLowerCase();
+            const lowercasedSearch = searchText.toLowerCase();
             const groupNameMatches = group_name.toLowerCase().includes(lowercasedSearch);
             const attributeNameMatches = attribute_name.toLowerCase().includes(lowercasedSearch);
             let attributeDescriptionMatches = false;
@@ -1225,21 +1225,35 @@ app.controller('AfExplorerFormCtrl', [
         // Attributes are shared between templates
         // Meaning all elements with the same template will share the attributes in this template
         // If multiple elements with the same template are selected, we only show the attribute once
-        function getGroups(attr, groupProperty) {
-            const groupPropertyValues = attr[groupProperty];
-            if (Array.isArray(groupPropertyValues)) {
-                return groupPropertyValues.map(value => {
-                    return {key: value + "::" + attr.title, value: value};
+        function getGroups(attr, groupingKey, titleKey) {
+            const groupingPropertyValues = attr[groupingKey];
+            const groupTitles = attr[titleKey];
+            if (Array.isArray(groupingPropertyValues)) {
+                // Not working with different grouping and title key if array of values
+                return groupingPropertyValues.map(( value, index ) => {
+                    return {
+                        key: value + "::" + attr.title,
+                        sectionKey: value,
+                        value: value
+                    };
                 });
             }
-            return [ { key: groupPropertyValues + "::" + attr.title, value: groupPropertyValues } ];
+            return [ {
+                key: groupingPropertyValues + "::" + attr.title,
+                sectionKey: groupingPropertyValues,
+                value: groupTitles,
+                path: groupingPropertyValues
+            } ];
         }
 
-        function initConflatedAttribute(attr, group) {
+        function initConflatedAttribute(attr, group, searchText) {
             const conflatedAttribute = {
                 title: attr.title,
                 description: attr.description,
                 group: group.value,
+                group_key: group.key,
+                section_key: group.sectionKey,
+                group_path: group.path,
                 template_name: attr.template_name,
                 parent_elements: [],
                 checked: null, // Used to determine UI checkbox state
@@ -1249,7 +1263,7 @@ app.controller('AfExplorerFormCtrl', [
                 paths: [],
                 data_type: attr.data_type,
                 data_types: [],
-                isDisplayed: attributeMatchesSearch(attr.title, group.value, attr.description),
+                isDisplayed: attributeMatchesSearch(searchText, attr.title, group.value, attr.description),
                 category_names: attr.category_names,
                 conflicting_categories: false
             };
@@ -1295,12 +1309,12 @@ app.controller('AfExplorerFormCtrl', [
             }
         }
 
-        function conflateAttributes(groupProperty) {
+        function conflateAttributes(groupingKey, titleKey, searchText) {
             return (acc, attr) => {
-                const groups = getGroups(attr, groupProperty);
+                const groups = getGroups(attr, groupingKey, titleKey);
                 for (const group of groups) {
                     if (!acc[group.key]) {
-                        acc[group.key] = initConflatedAttribute(attr, group);
+                        acc[group.key] = initConflatedAttribute(attr, group, searchText);
                     }
                     updateConflatedAttribute(acc[group.key], attr);
                 }
@@ -1310,10 +1324,12 @@ app.controller('AfExplorerFormCtrl', [
 
         function groupAttributesIntoSections() {
             return (acc, attr) => {
-                const key = attr.group;
+                const key = attr.section_key;
                 if (!acc[key]) {
                     acc[key] = {
                         group_name: attr.group,
+                        group_key: key,
+                        group_path: attr.group_path,
                         allChecked: attr.checked,
                         checked: CheckboxStatus.UNCHECKED, // Used to determine UI checkbox state
                         attributes: [],
@@ -1335,8 +1351,8 @@ app.controller('AfExplorerFormCtrl', [
             }
         }
 
-        function buildAggregatedAttributes(attributes, groupProperty) {
-            let deduplicatedAttributes = Object.values(attributes.reduce(conflateAttributes(groupProperty), {})).map(conflatedAttribute => {
+        function buildAggregatedAttributes(attributes, groupingKey, titleKey, searchText) {
+            let deduplicatedAttributes = Object.values(attributes.reduce(conflateAttributes(groupingKey, titleKey, searchText), {})).map(conflatedAttribute => {
                 if ($scope.ui.onlyDisplayCommon && conflatedAttribute.parent_elements.length < $scope.ui.clickedNodes.length) {
                     conflatedAttribute.isDisplayed = false;
                 }
@@ -1347,14 +1363,21 @@ app.controller('AfExplorerFormCtrl', [
 
         function splitAttributesOnProperty(splitProperty) {
             const attributes = $scope.attributeList;
+            function hasGroupingValue(attribute) {
+                const value = attribute?.[splitProperty];
+                if (Array.isArray(value)) {
+                    return value.length > 0;
+                }
+                return !!value;
+            }
             return {
-                attributesWithProperty: attributes.filter((attribute) => attribute?.[splitProperty]),
-                attributesWithoutProperty: attributes.filter((attribute) => !attribute?.[splitProperty])
+                attributesWithProperty: attributes.filter(hasGroupingValue),
+                attributesWithoutProperty: attributes.filter((attribute) => !hasGroupingValue(attribute))
             };
         }
 
-        function buildGroupedAttributesResult(attributes, groupProperty) {
-            const groups = buildAggregatedAttributes(attributes, groupProperty);
+        function buildGroupedAttributesResult(attributes, groupingKey, titleKey, searchText) {
+            const groups = buildAggregatedAttributes(attributes, groupingKey, titleKey, searchText);
             const displayedGroups = groups.filter(group => !group.isDisplayed);
             // TODO: probably turn this into a reduce
             return {
@@ -1367,27 +1390,33 @@ app.controller('AfExplorerFormCtrl', [
         }
 
         $scope.buildGroupedAttributes = function(grouping) {
-            const splitAttributes = splitAttributesOnProperty('template_name');
+            const splitAttributes = splitAttributesOnProperty(grouping.group.groupingKey);
             return {
                 attributesWithProperty: buildGroupedAttributesResult(
                     splitAttributes.attributesWithProperty,
-                    grouping.groupProperty
+                    grouping.group.groupingKey,
+                    grouping.group.titleKey,
+                    $scope.ui.attributeSearch
                 ),
                 attributesWithoutProperty: buildGroupedAttributesResult(
                     splitAttributes.attributesWithoutProperty,
-                    grouping.fallbackGroupProperty
+                    grouping.fallbackGroup.groupingKey,
+                    grouping.fallbackGroup.titleKey,
+                    $scope.ui.attributeSearch
                 )
             };
         }
 
         function getGrouping() {
-            let groupProperty = 'template_name';
-            if ($scope.groupMode === GroupMode.CATEGORY) {
-                groupProperty = 'category_names';
-            }
             return {
-                groupProperty: groupProperty,
-                fallbackGroupProperty: 'parent_element',
+                group: {
+                    groupingKey: $scope.groupMode === GroupMode.CATEGORY ? 'category_names' : 'template_name',
+                    titleKey: $scope.groupMode === GroupMode.CATEGORY ? 'category_names' : 'template_name'
+                },
+                fallbackGroup: {
+                    groupingKey: 'parent_element_path', // Elements can have duplicated names
+                    titleKey: 'parent_element'
+                },
             }
         }
 
@@ -1444,6 +1473,7 @@ app.controller('AfExplorerFormCtrl', [
             attribute.checked = false;
             $scope.config.outputSelectedAttributes.splice(index, 1);
             $scope.selectedElementPaths = buildSelectedElementPaths();
+            $scope.refreshAttributeSection();
             console.log("Removed attribute from selection", attribute);
         }
 
@@ -1536,23 +1566,25 @@ app.component('treeNode', {
 });
 
 app.directive('attributeTableBlock', function() {
-    return {
-        restrict: 'A',
-        scope: {
-            title: '<',
-            activeTab: '<',
-            displayElementDropdown: '<',
-            displayPath: '<',
-            excludedColumns: '<',
-            groupMode: '<',
-            elementsByTemplate: '<',
-            groupedAttributes: '=',
-            config: '=',
-            aggregateDataTypeFields: '<',
-            onToggleSelectAllGroupedAttributes: '&',
-            onToggleGroupedAttributes: '&',
-            onIsAtLeastPartiallySelected: '&',
-            onInitElementsDropdown: '&',
+        return {
+            restrict: 'A',
+            scope: {
+                title: '<',
+                activeTab: '<',
+                databaseName: '<?',
+                displayGroupPath: '<?',
+                displayElementDropdown: '<',
+                displayPath: '<',
+                excludedColumns: '<',
+                groupMode: '<',
+                elementsByTemplate: '<',
+                groupedAttributes: '=',
+                config: '=',
+                aggregateDataTypeFields: '<',
+                onToggleSelectAllGroupedAttributes: '&',
+                onToggleGroupedAttributes: '&',
+                onIsAtLeastPartiallySelected: '&',
+                onInitElementsDropdown: '&',
             onIsTemplateAssociatedElementSelected: '&',
             onApplyClickElementsDropdown: '&',
             onCheckAttribute: '&',
@@ -1560,7 +1592,27 @@ app.directive('attributeTableBlock', function() {
             onUpdateAggregate: '&'
         },
         bindToController: true,
-        controller: function() {},
+        controller: function() {
+            const ctrl = this;
+
+            ctrl.prettifyElementPath = prettifyElementPath;
+
+            ctrl.getVisibleAttributeColumnCount = function(includeCheckbox) {
+                let count = includeCheckbox ? 5 : 4;
+
+                if (ctrl.displayPath) {
+                    count += 1;
+                }
+                if (ctrl.groupMode !== 'CATEGORY') {
+                    count += 1;
+                }
+                if (ctrl.groupMode !== 'TEMPLATE') {
+                    count += 1;
+                }
+
+                return count;
+            };
+        },
         controllerAs: 'ctrl',
         templateUrl: "/plugins/pi-system/resource/attribute-table-block.html"
     };
@@ -1627,6 +1679,7 @@ app.component('dropdownElements', {
     bindings: {
         elements: '<',
         groupName: '<',
+        databaseName: '<',
         initElementsDropdown: '&',
         isTemplateAssociatedElementSelected: '&',
         applyClickElementsDropdown: '&',
@@ -1636,6 +1689,7 @@ app.component('dropdownElements', {
     controller: function() {
         const ctrl = this;
         ctrl.templatedModeUnselectedElements = [];
+        ctrl.prettifyElementPath = prettifyElementPath;
 
         ctrl.$onInit = function() {
 

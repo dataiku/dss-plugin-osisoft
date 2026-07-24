@@ -19,8 +19,11 @@
             class="elements-dropdown--element"
             ng-class="{'elements-dropdown--element-separator': $last}"
         >
-            <span>
-                {{element.title}}
+            <span class="elements-dropdown--element-label">
+                <span class="elements-dropdown--element-name">{{element.title}}</span>
+                <span class="elements-dropdown--element-path">
+                    {{ctrl.prettifyElementPath(element.path, ctrl.databaseName)}}
+                </span>
             </span>
             <i class="dku-icon-eye-16" ng-show="ctrl.isElementSelected(element)"></i>
         </li>
@@ -29,8 +32,11 @@
             ng-click="ctrl.onClickElement(element, $event)"
             class="elements-dropdown--element"
         >
-            <span>
-                {{element.title}}
+            <span class="elements-dropdown--element-label">
+                <span class="elements-dropdown--element-name">{{element.title}}</span>
+                <span class="elements-dropdown--element-path">
+                    {{ctrl.prettifyElementPath(element.path, ctrl.databaseName)}}
+                </span>
             </span>
             <i class="dku-icon-eye-16" ng-show="ctrl.isElementSelected(element)"></i>
         </li>
