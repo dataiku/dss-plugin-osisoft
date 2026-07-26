@@ -1,7 +1,13 @@
 <div class="pi-system-explorer__authentication">
     <div class="pi-system-explorer__authentication-header-row">
-        <div class="pi-system-explorer__authentication-header" ng-click="toggleAuthSection()">
+        <div class="pi-system-explorer__authentication-header">
             <strong>Login</strong>
+            <span
+                    class="pi-system-explorer__authentication-close"
+                    ng-click="toggleAuthSection()">
+            <i ng-if="authSectionVisible" class="dku-icon-chevron-up-20"></i>
+            <i ng-if="!authSectionVisible" class="dku-icon-chevron-down-20"></i>
+        </span>
         </div>
     </div>
     <div class="pi-system-explorer__authentication-body" ng-show="authSectionVisible">
@@ -52,17 +58,9 @@
                     title="This will clear your current workstate, like opened elements and current searches, but your selected attributes will remain">
                 Refresh local data
             </button>
-            <div>
-                <div>Elements max count</div>
-                <div><input type="number" ng-model="config.elements_max_count" placeholder="100"/></div>
-            </div>
-            <div>
-                <div>Attributes max count</div>
-                <div><input type="number" ng-model="config.attributes_max_count" placeholder="100"/></div>
-            </div>
         </div>
         <div class="pi-system-explorer__authentication__submit">
-            <button ng-click="explore()" class="btn btn--primary link-like" id="load-tree-data">Login</button>
+            <button ng-click="login()" ng-disabled="!authConfigured()" class="btn btn--primary link-like" id="load-tree-data">Login</button>
         </div>
     </div>
 </div>

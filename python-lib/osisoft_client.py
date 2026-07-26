@@ -667,18 +667,33 @@ class OSIsoftClient(object):
     def post(self, url, headers, params, data, can_raise=True, error_source=None):
         url = build_query_string(url, params)
         logger.info("Trying to post to {}".format(url))
-        if self.network_timer:
-            self.network_timer.start(url)
-        response = self.session.post(
-            url=url,
-            headers=headers,
-            json=data
-        )
-        if self.network_timer:
-            self.network_timer.stop()
-        if self.is_debug_mode:
-            logger.info("post response.content={}".format(response.content)[:self.get_debug_level()])
-            logger.info("post response.status={}".format(response.status_code))
+        limit = RecordsLimit(OSIsoftConstants.MAXIMUM_RETRIES_ON_THROTTLING)
+        count = 0
+        try:
+            response = None
+            while is_server_throttling(response):
+                if self.network_timer:
+                    self.network_timer.start(url)
+                response = self.session.post(
+                    url=url,
+                    headers=headers,
+                    json=data
+                )
+                if self.network_timer:
+                    self.network_timer.stop()
+                if self.is_debug_mode:
+                    logger.info("post response.content={}".format(response.content)[:self.get_debug_level()])
+                    logger.info("post response.status={}".format(response.status_code))
+                if limit.is_reached():
+                    error_message = "The maximum number of retries has been reached."
+                    break
+                else:
+                    count += 1
+        except Exception as err:
+            error_message = "Could not connect. Error: {}{}".format(formatted_error_source(error_source), err)
+            logger.error(error_message)
+            if can_raise:
+                raise PISystemClientError(error_message)
         self.assert_valid_response(response, can_raise=can_raise, error_source=error_source)
         return response
 
@@ -861,28 +876,76 @@ class OSIsoftClient(object):
             params["startIndex"] = start_index
             json_response = self.get(url=url, headers=headers, params=params)
 
+    def search_element_attributes(self, database, template=None, full_search=True, selected_fields=[]):
+        headers = self.get_requests_headers()
+        tempo_maxcount = OSIsoftConstants.DEFAULT_MAXCOUNT
+        params = {
+            "maxCount": tempo_maxcount,
+            "associations": "Paths",
+        }
+        valid_attributes_names = []
+        if template:
+            params["elementTemplate"] = template
+            valid_attributes_names = self.get_attribute_templates_names(database, template)
+        if full_search:
+            params["searchFullHierarchy"] = True
+        if selected_fields:
+            params["selectedFields"] = ";".join(selected_fields)
+        next_url = "{}/elementattributes".format(database)
+        while next_url:
+            json_response = self.get(url=next_url, headers=headers, params=params)
+            items = json_response.get(OSIsoftConstants.API_ITEM_KEY, [])
+            next_url = json_response.get("Links", {}).get("Next", None)
+            params = {}
+            if template:
+                for item in items:
+                    if item.get("Name") not in valid_attributes_names:
+                        continue
+                    yield item
+            else:
+                for item in items:
+                    yield item
+
+    def get_attribute_templates_names(self, database, template):
+        names = []
+        url = "{}/elementtemplates".format(database)
+        headers = self.get_requests_headers()
+        params = {
+            "query": template
+        }
+        json_response = self.get(url=url, headers=headers, params=params)
+        items = json_response.get("Items", [])
+        if len(items)==1:
+            item = items[0]
+            attribute_templates_url = item.get("Links", {}).get("AttributeTemplates")
+            while attribute_templates_url:
+                json_response = self.get(url=attribute_templates_url, headers=headers, params={})
+                attribute_templates_url = json_response.get("Links", {}).get("Next")
+                items = json_response.get("Items", [])
+                for item in items:
+                    name = item.get("Name")
+                    names.append(name)
+        return names
+
     def batched_search(self, database, element_name, attribute_name, element_category,
-                       attribute_category, template, restrict_to_elements,
-                       elements_max_count=None, attributes_max_count=None):
+                       attribute_category, template, restrict_to_elements):
         elements_query = {
             "templateName": template,
             "categoryName": element_category,
             "nameFilter": element_name,
             "searchFullHierarchy": "true",
-            "associations": "Paths"
+            "associations": "Paths",
+            "maxCount": OSIsoftConstants.AF_TREE_ELEMENTS_MAX_COUNT
         }
-        if elements_max_count:
-            elements_query["maxCount"] = elements_max_count
         attribute_query = {
             "searchFullHierarchy": "true",
-            "associations": "Paths"
+            "associations": "Paths",
+            "maxCount": OSIsoftConstants.AF_TREE_ATTRIBUTES_MAX_COUNT
         }
         if attribute_name:
             attribute_query["nameFilter"] = attribute_name
         if attribute_category:
             attribute_query["categoryName"] = attribute_category
-        if attributes_max_count:
-            attribute_query["maxCount"] = attributes_max_count
         elements_url = "{}/elements".format(database)
         if not restrict_to_elements:
             request_body = {
@@ -1050,15 +1113,16 @@ class OSIsoftClient(object):
                 "headers": self.get_requests_headers()
             }
             batch_requests_parameters.append(request_kwargs)
-        json_responses = self._batch_requests(batch_requests_parameters)
-        for json_response in json_responses:
-            response_content = json_response.get("Content", {})
-            template_path = response_content.get("Path", "")
-            template_name_match = re.search(r'ElementTemplates\[([^\]]+)\]', template_path)
-            template_name = None
-            if template_name_match:
-                template_name = template_name_match.group(1)
-            templates_names.append(template_name)
+        batch_size = 500
+        for start_index in range(0, len(batch_requests_parameters), batch_size):
+            for json_response in self._batch_requests(batch_requests_parameters[start_index:start_index + batch_size]):
+                response_content = json_response.get("Content", {})
+                template_path = response_content.get("Path", "")
+                template_name_match = re.search(r'ElementTemplates\[([^\]]+)\]', template_path)
+                template_name = None
+                if template_name_match:
+                    template_name = template_name_match.group(1)
+                templates_names.append(template_name)
         return templates_names
 
     def split_element_attribute(self, path_element):

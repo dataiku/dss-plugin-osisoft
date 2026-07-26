@@ -104,157 +104,251 @@ const CheckboxStatus = Object.freeze({
     PARTIAL_CHECK: 'PARTIAL_CHECK',
 });
 
-app.service('TreeDataService', function() {
-    // This will store the shared tree data
-    this.treeData = [];
-    this.templateTreeData = [];
-
-    // Optional: helper methods
-    this.setTreeData = function(data) {
-        this.treeData = data;
-    };
-
-    this.getTreeData = function() {
-        return this.treeData;
-    };
-
-    this.setTemplateTreeData = function(data) {
-        this.templateTreeData = data;
-    };
-
-    this.getTemplateTreeData = function() {
-        return this.templateTreeData;
-    };
+const GroupMode = Object.freeze({
+    TEMPLATE: 'TEMPLATE',
+    CATEGORY: 'CATEGORY',
 });
+
+function prettifyElementPath(elementPath, databaseName) {
+    console.log("databasename", databaseName)
+    const pathParts = elementPath.split('\\').filter(Boolean);
+    const databaseIndex = pathParts.indexOf(databaseName);
+
+    if (databaseIndex === -1) {
+        return pathParts.join(" > ");
+    }
+
+    return pathParts.slice(databaseIndex + 1).join(" > ");
+}
+
+class Cache {
+    constructor(projectKey, server, database) {
+        // TODO: include preset in db name
+        this.dbName = [projectKey, server, database].join("::")
+        this.dbVersion = 1
+        this.attributesStoreName = "attributes"
+        this.elementTreeStoreName = "elementTree"
+        this.templateTreeStoreName = "templateTree"
+        this.elementsByTemplateStoreName = "elementsByTemplate"
+        this.stores = [this.attributesStoreName, this.elementTreeStoreName, this.templateTreeStoreName, this.elementsByTemplateStoreName]
+
+        this.elementTreeRecordId = "elementTree"
+        this.templateTreeRecordId = "templateTree"
+        this.elementsByTemplateRecordId = "elementsByTemplate"
+    }
+
+    async init() {
+        return new Promise((resolve, reject) => {
+            const request = indexedDB.open(this.dbName, this.dbVersion);
+
+            request.onupgradeneeded = () => {
+                this.db = request.result;
+                this.stores.forEach(storeName => {
+                    if (!this.db.objectStoreNames.contains(storeName)) {
+                        this.db.createObjectStore(storeName, { keyPath: "id" });
+                    }
+                })
+            };
+
+            request.onsuccess = () => {
+                this.db = request.result;
+                resolve();
+            };
+
+            request.onerror = () => {
+                reject(request.error);
+            };
+        });
+    }
+
+    async getAttribute(attrId) {
+        return this.getObject(this.attributesStoreName, attrId);
+    }
+
+    async getElementTree() {
+        return this.getObject(this.elementTreeStoreName, this.elementTreeRecordId).then((data) => data?.nodes);
+    }
+
+    async getTemplateTree() {
+        return this.getObject(this.templateTreeStoreName, this.templateTreeRecordId).then((data) => data?.nodes);
+    }
+
+    async getElementsByTemplate() {
+        return this.getObject(this.elementsByTemplateStoreName, this.elementsByTemplateRecordId).then((data) => data?.nodes);
+    }
+
+    async getObject(objectStoreName, objectId) {
+        return new Promise((resolve, reject) => {
+            const transaction = this.db.transaction([objectStoreName]);
+            const objectStore = transaction.objectStore(objectStoreName);
+            const request = objectStore.get(objectId);
+            request.onerror = (event) => {
+                console.error("Could not get object " + objectId + " from cache")
+                reject(request.error);
+            };
+            request.onsuccess = (event) => {
+                resolve(request.result);
+            };
+        })
+    }
+
+    async addOrUpdateAttribute(attribute) {
+        return this.addOrUpdate(attribute, this.attributesStoreName);
+    }
+
+    async addOrUpdateElementTree(elementTree) {
+        return this.addOrUpdate({
+                id: this.elementTreeRecordId,
+                nodes: elementTree
+        }, this.elementTreeStoreName);
+    }
+
+    async addOrUpdateTemplateTree(templateTree) {
+        return this.addOrUpdate({
+                id: this.templateTreeRecordId,
+                nodes: templateTree
+        }, this.templateTreeStoreName);
+    }
+
+    async addOrUpdateElementsByTemplate(elementsByTemplate) {
+        return this.addOrUpdate({
+                id: this.elementsByTemplateRecordId,
+                nodes: elementsByTemplate
+        }, this.elementsByTemplateStoreName);
+    }
+
+    async addOrUpdate(object, objectStoreName) {
+        return new Promise((resolve, reject) => {
+            const transaction = this.db.transaction([objectStoreName], "readwrite");
+            transaction.onerror = (event) => {
+                reject(transaction.error)
+            };
+
+            const objectStore = transaction.objectStore(objectStoreName);
+            const request = objectStore.put(object);
+            request.onsuccess = (event) => {
+                resolve(object)
+            };
+            request.onerror = (event) => {
+                reject(request.error)
+            };
+        });
+    }
+
+    async clear() {
+        return new Promise((resolve, reject) => {
+            const transaction = this.db.transaction(this.stores, "readwrite");
+            transaction.oncomplete = () => {
+                resolve();
+            };
+            transaction.onerror = () => {
+                reject(transaction.error);
+            };
+
+            this.stores.forEach(storeName => {
+                const objectStore = transaction.objectStore(storeName);
+                objectStore.clear();
+            })
+        });
+    }
+}
 
 app.controller('AfExplorerFormCtrl', [
     '$scope',
     '$stateParams',
     '$q',
-    'TreeDataService',
     'CreateModalFromTemplate',
-    function($scope, $stateParams, $q, TreeDataService, CreateModalFromTemplate) {
+    function($scope, $stateParams, $q, CreateModalFromTemplate) {
 
         $scope.paramDesc = {
             'parameterSetId': 'basic-auth',
             'mandatory': true
         };
 
-        $scope.config.attributeList = $scope.config.attributeList || []; // la liste des attributs qui sont affichés sur le main panel à droite
-        $scope.config.outputSelectedAttributes = $scope.config.outputSelectedAttributes || []; // la liste des attributs qui sont séléctionnés pour être dans l'output dataset
-        $scope.config.searchMatchedElementPaths = $scope.config.searchMatchedElementPaths || []; // la liste pour highlighter les elements de la recherche
-        $scope.config.selectedTemplateNames = $scope.config.selectedTemplateNames || []; // la liste des templates sélectionnés (checkbox cochée) parmi ceux affichés
-        $scope.config.attributeSearch =  $scope.config.attributeSearch || "";
-        $scope.config.displayPath = $scope.config.displayPath || false;
-        $scope.config.onlyDisplayCommon = $scope.config.onlyDisplayCommon || false;
-        $scope.config.elementsByTemplate = $scope.config.elementsByTemplate || {};
-        $scope.config.searchInProgress = $scope.config.searchInProgress || false;
-        $scope.config.loadedAttributes = $scope.config.loadedAttributes || {}
+        $scope.attributeList = []; // The list of attributes that are currently displayed in the main panel
+        $scope.config.outputSelectedAttributes = $scope.config.outputSelectedAttributes || []; // The list of attributes selected by the user
+        $scope.elementsByTemplate = {};
+
+        // $scope.config.selectedTemplateNames =  []; // la liste des templates sélectionnés utilisées pour filtrer le search. Stale
+
+        $scope.ui = {
+            clickedNodes: [],
+            searchMatchedElementPaths: [], // la liste pour highlighter les elements de la recherche
+            attributeSearch: "",
+            displayPath: false,
+            onlyDisplayCommon: false,
+            searchInProgress: false
+        };
+
+        $scope.authSectionVisible = true;
+        $scope.showTreeData = false;
+        $scope.errorBannerVisible = false;
+        $scope.errorBannerMessage = '';
 
         // TODO: get categories from backend for attributes
         // $scope.config.attributeCategoryFilter = $scope.config.attributeCategoryFilter || ""
 
         $scope.aggregateDataTypeFields = aggregateDataTypeFields;
-        $scope.attributeGroupSections = [
-            {
-                type: 'element',
-                key: 'attributesWithoutTemplate',
-                title: 'Elements',
-                emptyMessage: 'No attributes without template matched your selection',
-                shouldDisplay: () => $scope.config.activeTab === "element"
-            },
-            {
-                type: 'template',
-                key: 'attributesGroupedByTemplate',
-                title: 'Templates',
-                emptyMessage: 'No templated attributes matched your selection',
-                shouldDisplay: () => true
-            }
-        ];
+        $scope.prettifyElementPath = prettifyElementPath;
 
         $scope.elementSearchNoMatch = false;
 
-        function formatPreviewValue(value) {
-            if (Array.isArray(value)) {
-                return value.join(', ');
-            }
-            return value;
-        }
+        $scope.selectedElementPaths = buildSelectedElementPaths()
 
-        function buildSelectedAttributesTable() {
-            return ($scope.config.outputSelectedAttributes || [])
-                .filter(attribute => attribute.checked !== false)
-                .map(attribute => ({
-                    title: attribute.title || '',
-                    template_name: attribute.template_name || '',
-                    path: attribute.path || '',
-                    data_type: attribute.data_type || '',
-                    summary_type: formatPreviewValue(attribute.summary_type || []),
-                    boundary_type: attribute.boundary_type || '',
-                    record_boundary_type: attribute.record_boundary_type || '',
-                    summary_duration: attribute.summary_duration || '',
-                    interval: attribute.interval || '',
-                    sync_time: attribute.sync_time || '',
-                }));
+        function buildSelectedElementPaths() {
+            return $scope.config.outputSelectedAttributes.flatMap(attribute => attribute.paths).map(getElementPathFromAttributePath);
         }
 
         $scope.showDatasetPreviewModal = function() {
             const modalScope = $scope.$new();
+            modalScope.ui = {
+                previewAttributeSearch: ""
+            };
 
-            modalScope.previewColumns = [
-                { key: 'title', label: 'Title' },
-                { key: 'template_name', label: 'Template' },
-                { key: 'path', label: 'Path' },
-                { key: 'data_type', label: 'Data type' },
-                { key: 'summary_type', label: 'Summary type' },
-                { key: 'boundary_type', label: 'Boundary type' },
-                { key: 'record_boundary_type', label: 'Record boundary type' },
-                { key: 'summary_duration', label: 'Summary duration' },
-                { key: 'interval', label: 'Interval' },
-                { key: 'sync_time', label: 'Sync time' },
-            ];
+            function rebuildGroupedSelectedAttributes() {
+                modalScope.groupedSelectedAttributes = buildGroupedAttributesResult(
+                    $scope.config.outputSelectedAttributes,
+                    "parent_element_path",
+                    "parent_element",
+                    modalScope.ui.previewAttributeSearch
+                );
+            }
 
-            modalScope.previewRows = buildSelectedAttributesTable();
-            modalScope.$watch('config.outputSelectedAttributes', function() {
-                modalScope.previewRows = buildSelectedAttributesTable();
-            }, true);
+            rebuildGroupedSelectedAttributes();
+
+            modalScope.$watchCollection(
+                function() {
+                    return $scope.config.outputSelectedAttributes;
+                },
+                rebuildGroupedSelectedAttributes
+            );
+
+            modalScope.$watch(
+                function() {
+                    return modalScope.ui.previewAttributeSearch;
+                },
+                rebuildGroupedSelectedAttributes
+            );
 
             CreateModalFromTemplate('/plugins/pi-system/resource/pi-system_preview-dataset-modal.html', modalScope);
         };
-
-        $scope.clearOutputSelection = function() {
-            $scope.config.outputSelectedAttributes = [];
-            $scope.buildGroupedAttributes();
-            // Just need to uncheck the current attribute list as it is
-            // built with the correct checked state when adding any new elements
-            Object.values($scope.config.loadedAttributes).forEach(attribute => {
-                attribute.checked = false;
-            });
-            $scope.refreshAttributeSection();
-        }
 
         $scope.isAtLeastPartiallySelected = function(node) {
             return node.checked === CheckboxStatus.CHECKED || node.checked === CheckboxStatus.PARTIAL_CHECK;
         };
 
         $scope.onAdvancedToggle = function() {
+            // TODO: cleanup the max count things
             if (!$scope.config.show_advanced_parameters) {
                 $scope.config.is_ssl_check_disabled = false;
-                $scope.config.elements_max_count = null;
-                $scope.config.attributes_max_count = null;
-            } else {
-                if ($scope.config.elements_max_count === null || $scope.config.elements_max_count === undefined || $scope.config.elements_max_count === "") {
-                    $scope.config.elements_max_count = 100;
-                }
-                if ($scope.config.attributes_max_count === null || $scope.config.attributes_max_count === undefined || $scope.config.attributes_max_count === "") {
-                    $scope.config.attributes_max_count = 100;
-                }
             }
         };
 
         $scope.init = function() {
             $scope.config.show_advanced_parameters = $scope.config.show_advanced_parameters || false;
-            $scope.config.activeTab = $scope.config.activeTab || 'element';
+            $scope.activeTab = $scope.activeTab || 'element';
+            $scope.templateTree = $scope.templateTree || [];
+            $scope.groupMode = $scope.groupMode || GroupMode.TEMPLATE;
             DataikuAPI.plugins.listAccessiblePresets('pi-system', $stateParams.projectKey, 'basic-auth').success(function(data) {
                 $scope.inlineParams = data.inlineParams;
                 $scope.inlinePluginParams = data.inlinePluginParams;
@@ -275,13 +369,20 @@ app.controller('AfExplorerFormCtrl', [
                 });
             }).error(setErrorInScope.bind($scope.errorScope));
             if ($scope.authConfigured() === true) {
-                const hasTreeData = Array.isArray($scope.config.treeData) && $scope.config.treeData.length > 0;
-                $scope.authSectionVisible = !hasTreeData;
-                $scope.showTreeData = hasTreeData;
+                // We try getting the elementTree from cache. If we can't we open the authSection
+                // And we will load the elementTree from db once the user has logged in
+                // This is brittle and should probably changed in the future
+                initData().then(() => {
+                    $scope.authSectionVisible = false;
+                    $scope.showTreeData = true;
+                }).catch(() => {
+                    $scope.errorBannerMessage = 'There was a problem fetching data';
+                    $scope.errorBannerVisible = true;
+                }).then(() => {
+                    $scope.$applyAsync()
+                })
             }
-            $scope.config.template = $scope.config.template || "-- Any --";
             $scope.onAdvancedToggle();
-            $scope.refreshAttributeSection();
         };
 
         $scope.getServers = function() {
@@ -294,10 +395,17 @@ app.controller('AfExplorerFormCtrl', [
             $scope.callPythonDo({ parameterName: "database_name" }).then(function(data) {
                 console.log("database_name", data);
                 $scope.database_name = data.choices;
+                $scope.config.database_title = getDatabaseTitle($scope.config.database_name);
             });
         };
 
-        $scope.authSectionVisible = $scope.authSectionVisible || true;
+        function getDatabaseTitle(databaseName) {
+            const matchingDatabase = ($scope.database_name || []).find(function(database) {
+                return database.value === databaseName;
+            });
+
+            return matchingDatabase?.label || null;
+        }
 
         $scope.toggleAuthSection = function() {
             $scope.authSectionVisible = !$scope.authSectionVisible;
@@ -306,7 +414,78 @@ app.controller('AfExplorerFormCtrl', [
         $scope.authConfigured = function() {
             return $scope.hasPreset() && !!$scope.config.database_name && !!$scope.config.server_name;
         }
-        $scope.explore = function() {
+
+        function loadObject(cacheGetter, dbGetter, cacheSetter, scopeKey) {
+            let fromDb = false;
+            return cacheGetter()
+                .catch(() => {
+                    fromDb = true;
+                    return dbGetter()
+                })
+                .then(object => {
+                    if (object === undefined || object.length === 0) {
+                        fromDb = true;
+                        return dbGetter();
+                    }
+                    return object;
+                })
+                .catch(error => {
+                    throw new Error(`Could not load ${scopeKey} from cache and then DB: ${error}`);
+                })
+                .then(object => {
+                    if (!object || object.length === 0) {
+                        throw new Error(`Could not load ${scopeKey} from DB`);
+                    }
+                    $scope[scopeKey] = object;
+                    if (fromDb) {
+                        cacheSetter(object);
+                    }
+                });
+        }
+
+        function loadElementTree() {
+            return loadObject(
+                () => $scope.cache.getElementTree(),
+                () => $scope.getElementTreeFromDB(),
+                 () => $scope.cache.addOrUpdateElementTree(),
+                'elementTree',
+            );
+        }
+
+        function loadTemplateTree() {
+            return loadObject(
+                () => $scope.cache.getTemplateTree(),
+                () => $scope.getTemplatesFromDB(),
+                () => $scope.cache.addOrUpdateTemplateTree(),
+                'templateTree',
+            );
+        }
+
+        function loadElementsByTemplate() {
+            return $scope.cache.getElementsByTemplate().then(elementsByTemplate => {
+                $scope.elementsByTemplate =  elementsByTemplate || {}
+            });
+        }
+
+        // Fetching data - only once auth has been verified
+       function initData() {
+            return initCache().catch((error) => {
+                // TODO: figure out what we want in that case
+                throw new Error(`There was an error initializing cache: ${error}`);
+            }).then(() => {
+                return $q.all([
+                    loadElementTree(),
+                    loadTemplateTree(),
+                    loadElementsByTemplate()
+                ])
+            }).catch((error) => {
+                throw new Error(`There was an error initializing data: ${error}`);
+            }).then(() => {
+                $scope.$applyAsync();
+            })
+        }
+
+        $scope.login = function() {
             const hasPreset = $scope.hasPreset();
             const hasServer = !!$scope.config.server_name;
             const hasDatabase = !!$scope.config.database_name;
@@ -321,25 +500,19 @@ app.controller('AfExplorerFormCtrl', [
                 return;
             }
 
-            console.info("[LOGIN][UI] dispatching login API calls", {
-                server_name: $scope.config.server_name,
-                database_name: $scope.config.database_name
-            });
-            $scope.updateDatas().then(
-                function() {
-                    $scope.showTreeData = true;
-                    $scope.authSectionVisible = false;
-                    console.info("[LOGIN][UI] success", {
-                        tree_count: Array.isArray($scope.config.treeData) ? $scope.config.treeData.length : 0,
-                        template_tree_count: Array.isArray($scope.config.templateTreeData) ? $scope.config.templateTreeData.length : 0
-                    });
-                },
-                function(error) {
-                    $scope.showTreeData = false;
-                    $scope.authSectionVisible = true;
-                    console.error("[LOGIN][UI] failed", error);
-                }
-            );
+            initData().then(() => {
+                $scope.authSectionVisible = false;
+                $scope.showTreeData = true;
+            }).catch(() => {
+                $scope.authSectionVisible = true;
+                $scope.showTreeData = false;
+                $scope.errorBannerMessage = 'There was a problem fetching data';
+                $scope.errorBannerVisible = true;
+            }).then(() => {
+                console.log("treedata", $scope.showTreeData);
+                console.log("treedata", $scope.elementTree);
+                $scope.$applyAsync()
+            })
         };
 
         $scope.hasPreset = function() {
@@ -347,13 +520,15 @@ app.controller('AfExplorerFormCtrl', [
         }
 
         $scope.cleanTree = function() { // utile quand on change de serveur ou de db dans la config
-            $scope.config.treeData = [];
-            $scope.config.clickedNodes = [];
-            $scope.config.attributeList = [];
+            $scope.elementTree = [];
+            $scope.ui.clickedNodes = [];
+            $scope.attributeList = [];
             $scope.config.outputSelectedAttributes = [];
-            $scope.config.searchMatchedElementPaths = [];
-            $scope.config.selectedTemplateNames = [];
-            $scope.config.loadedAttributes = {};
+            $scope.selectedElementPaths = []
+            $scope.ui.searchMatchedElementPaths = [];
+            $scope.elementsByTemplate = {};
+            // $scope.config.selectedTemplateNames = [];
+            // TODO: switch to cleanup cache
             $scope.elementSearchNoMatch = false;
             $scope.refreshAttributeSection();
         }
@@ -363,21 +538,20 @@ app.controller('AfExplorerFormCtrl', [
             $scope.database_name = [];
             $scope.config.server_name = null;
             $scope.config.database_name = null;
-            $scope.config.templateTreeData = [];
-            $scope.config.attribute_categories = [];
-            $scope.config.element_categories = [];
+            $scope.config.database_title = null;
+            $scope.templateTree = [];
             $scope.config.loadedDatabaseName = null;
-            $scope.config.attributeList = [];
+            $scope.attributeList = [];
             $scope.config.outputSelectedAttributes = [];
+            $scope.selectedElementPaths = []
             $scope.showTreeData = false;
             $scope.cleanTree();
         };
 
         $scope.onServerChanged = function() {
             $scope.config.database_name = null;
-            $scope.config.templateTreeData = [];
-            $scope.config.attribute_categories = [];
-            $scope.config.element_categories = [];
+            $scope.config.database_title = null;
+            $scope.templateTree = [];
             $scope.config.loadedDatabaseName = null;
             $scope.showTreeData = false;
             $scope.cleanTree();
@@ -385,26 +559,35 @@ app.controller('AfExplorerFormCtrl', [
         };
 
         $scope.onDatabaseChanged = function() {
-            $scope.config.templateTreeData = [];
-            $scope.config.attribute_categories = [];
-            $scope.config.element_categories = [];
+            $scope.config.database_title = getDatabaseTitle($scope.config.database_name);
+            $scope.templateTree = [];
             $scope.config.loadedDatabaseName = null;
             $scope.showTreeData = false;
             $scope.cleanTree();
         };
 
         $scope.refreshCachedTree = function() {
-            $scope.config.treeData = [];
-            $scope.config.clickedNodes = [];
-            $scope.config.attributeList = [];
-            $scope.config.searchMatchedElementPaths = [];
-            $scope.config.selectedTemplateNames = [];
-            $scope.config.loadedAttributes = {};
-            $scope.elementSearchNoMatch = false;
-            $scope.refreshAttributeSection();
-            $scope.initializeTree();
-            $scope.getTemplatesFromDB();
-            $scope.getCategoriesFromDB();
+            $scope.cache.clear().then(function() {
+                $scope.elementTree = [];
+                $scope.ui.clickedNodes = [];
+                $scope.attributeList = [];
+                $scope.ui.searchMatchedElementPaths = [];
+                // $scope.config.selectedTemplateNames = [];
+                $scope.elementsByTemplate = {};
+                $scope.elementSearchNoMatch = false;
+                $scope.refreshAttributeSection();
+                // TODO: need to assign those
+                return $q.all([
+                    $scope.getElementTreeFromDB(),
+                    $scope.getTemplatesFromDB(),
+                ]);
+            }).then(([elementTree, templateTree]) => {
+                $scope.elementTree = elementTree;
+                $scope.templateTree = templateTree;
+                cacheElementTree();
+                cacheTemplateTree();
+                $scope.$applyAsync();
+            })
         }
 
         let presetWatchInitialized = false;
@@ -441,27 +624,66 @@ app.controller('AfExplorerFormCtrl', [
             }
         );
 
-        $scope.initializeTree = function() {
-            if (!$scope.config.treeData || $scope.config.treeData.length === 0) {
-                return $scope.callPythonDo({ method: "get_children_from_db", parent: $scope.config.database_name }).then(function(data) {
-                    console.log("get_children_from_db", data);
-                    TreeDataService.setTreeData(data.choices);
-                    $scope.config.treeData = TreeDataService.getTreeData();
-                    return data;
-                });
-            }
-            return $q.when({ choices: $scope.config.treeData || [] });
+        function initCache() {
+            $scope.cache = new Cache(
+                $stateParams.projectKey,
+                $scope.config.server_name,
+                $scope.config.database_name
+            );
+            return $scope.cache.init();
+        }
+
+        function buildPersistedTreeSnapshot(nodes) {
+            return nodes.map(node => {
+                const persistedNode = {};
+
+                Object.keys(node).forEach(key => {
+                   if (key === "searchHighlighted") {
+                       return;
+                   }
+                   if (key === "children" && Array.isArray(node.children)) {
+                       persistedNode.children = buildPersistedTreeSnapshot(node.children);
+                       return;
+                   }
+                   persistedNode[key] = node[key];
+               });
+                return persistedNode;
+            });
+        }
+
+        function cacheElementTree() {
+            const snapshot = buildPersistedTreeSnapshot($scope.elementTree);
+            return $scope.cache.addOrUpdateElementTree(snapshot);
+        }
+
+        function cacheTemplateTree() {
+            const snapshot = buildPersistedTreeSnapshot($scope.templateTree);
+            return $scope.cache.addOrUpdateTemplateTree(snapshot);
+        }
+
+        function cacheElementsByTemplate() {
+            $scope.cache.addOrUpdateElementsByTemplate($scope.elementsByTemplate);
+        }
+
+        $scope.getElementTreeFromDB = function() {
+            return $scope.callPythonDo({ method: "get_children_from_db", parent: $scope.config.database_name }).then(function(data) {
+                console.log("get_children_from_db", data);
+                return data.choices;
+            });
         };
 
-        $scope.updateDatas = function() {
+        $scope.getFromCacheOrFetchBaselineObjects = function() {
             $scope.cleanTree();
             return $q.all([
-                $scope.initializeTree(),
+                $scope.getElementTreeFromDB(),
                 $scope.getTemplatesFromDB(),
-                $scope.getCategoriesFromDB()
-            ]).then(function(results) {
+            ]).then(function([elementTree, templateTree]) {
+                $scope.elementTree = elementTree;
+                $scope.templateTree = templateTree;
+                cacheElementTree();
+                cacheTemplateTree();
                 $scope.config.loadedDatabaseName = $scope.config.database_name || null;
-                return results;
+                return [elementTree, templateTree];
             });
         }
 
@@ -469,24 +691,38 @@ app.controller('AfExplorerFormCtrl', [
             if (item.type === "template") {
                 return getAttributesForTemplate(item);
             }
-            console.log("ALX:gcfd:" + JSON.stringify(item));
             return $scope.callPythonDo({ method: "get_children_from_db", parent: item })
                 .then(function(data) {
                     console.log("get_children_from_db", data);
-                    console.log("ALX:data1=" + JSON.stringify(data));
+                    const attributeLoadPromises = [];
                     item.attribute_children = [];
-                    data.choices.filter(node => node.type === 'attribute').map(attribute => {
-                            addAttributeToLoadedAttributes(attribute, {expanded: false});
-                            item.attribute_children.push(attribute.id);
-                         }
-                    )
+                    const loadedAttributes = data.choices.filter(node => node.type === 'attribute').map(attribute =>
+                        {
+                            return { ...attribute,
+                                expanded: false,
+                                parent_element: item.title,
+                                parent_element_path: item.path
+                            };
+                        }
+                    );
+                    loadedAttributes.forEach(attribute => {
+                        attributeLoadPromises.push(
+                            addAttributeToLoadedAttributes(attribute)
+                        );
+                        item.attribute_children.push(attribute.id);
+                    });
                     item.children = data.choices.filter(node => node.type === item.type);
                     item.children.forEach(child => {
                         child.expanded = false;
                     });
-                    markSearchResults(item.children, $scope.config.searchMatchedElementPaths || []);
-                    console.log(item);
-                    return item;
+                    markSearchResults(item.children, $scope.ui.searchMatchedElementPaths || []);
+                    cacheElementTree();
+                    return Promise.all(attributeLoadPromises).then(() => {
+                        return {
+                            updatedNode: item,
+                            loadedAttributes: loadedAttributes
+                        }
+                    });
                 });
         }
 
@@ -494,66 +730,62 @@ app.controller('AfExplorerFormCtrl', [
         $scope.getTemplatesFromDB = function() {
             return $scope.callPythonDo({ method: "get_templates_from_db" }).then(function(data) {
                 console.log("get_templates_from_db", data)
-                const templates = data.choices.filter(template => template.title !== "-- Any --")
-                TreeDataService.setTemplateTreeData(templates);
-                $scope.config.templateTreeData = TreeDataService.getTemplateTreeData();
+                return data.choices.filter(template => template.title !== "-- Any --")
             });
         }
 
         function resetRightPanelForCurrentTabContext() {
-            $scope.config.clickedNodes = [];
-            $scope.config.attributeList = [];
-            $scope.config.searchMatchedElementPaths = [];
-            $scope.config.selectedTemplateNames = [];
-            $scope.config.attributeSearch = "";
+            $scope.ui.clickedNodes = [];
+            $scope.attributeList = [];
+            $scope.ui.searchMatchedElementPaths = [];
+            // $scope.config.selectedTemplateNames = [];
+            $scope.ui.attributeSearch = "";
             $scope.elementSearchNoMatch = false;
-            if ($scope.config.activeTab === "element") {
-                $scope.config.template = "-- Any --";
-            } else if ($scope.config.activeTab === "template") {
+            if ($scope.activeTab === "template") {
                 $scope.config.element_name = "";
             }
             $scope.refreshAttributeSection();
         }
 
         $scope.setTab = function(tab) {
-            const previousTab = $scope.config.activeTab;
+            const previousTab = $scope.activeTab;
             if (tab !== previousTab) {
                 resetRightPanelForCurrentTabContext();
             }
-            $scope.config.activeTab = tab;
+            $scope.activeTab = tab;
         };
 
-        $scope.getCategoriesFromDB = function() {
-            $scope.config.attribute_categories = [];
-            $scope.config.element_categories = [];
-            const attributeCategoriesPromise = $scope.callPythonDo({ method: "get_attribute_categories_from_db" }).then(function(data) {
-                console.log("get_attribute_categories_from_db", data);
-                $scope.config.attribute_categories = data.choices;
-                return data;
-            });
-            const elementCategoriesPromise = $scope.callPythonDo({ method: "get_element_categories_from_db" }).then(function(data) {
-                console.log("get_element_categories_from_db", data);
-                $scope.config.element_categories = data.choices;
-                return data;
-            });
-            return $q.all([attributeCategoriesPromise, elementCategoriesPromise]);
-        }
+        // $scope.getCategoriesFromDB = function() {
+        //     $scope.config.attribute_categories = [];
+        //     $scope.config.element_categories = [];
+        //     const attributeCategoriesPromise = $scope.callPythonDo({ method: "get_attribute_categories_from_db" }).then(function(data) {
+        //         console.log("get_attribute_categories_from_db", data);
+        //         $scope.config.attribute_categories = data.choices;
+        //         return data;
+        //     });
+        //     const elementCategoriesPromise = $scope.callPythonDo({ method: "get_element_categories_from_db" }).then(function(data) {
+        //         console.log("get_element_categories_from_db", data);
+        //         $scope.config.element_categories = data.choices;
+        //         return data;
+        //     });
+        //     return $q.all([attributeCategoriesPromise, elementCategoriesPromise]);
+        // }
 
         $scope.doSearch = function(element_name) {
-            $scope.config.searchInProgress = true;
-            $scope.config.searchMatchedElementPaths = [];
-            $scope.callPythonDo({ method: "do_search", element_name: element_name, root_tree: $scope.config.treeData }).then(
+            $scope.ui.searchInProgress = true;
+            $scope.ui.searchMatchedElementPaths = [];
+            $scope.callPythonDo({ method: "do_search", element_name: element_name, elementTree: $scope.elementTree }).then(
                 function(data) {
                     console.log("do_search", data);
-                    TreeDataService.setTreeData(data.choices);
-                    $scope.config.treeData = TreeDataService.getTreeData();
+                    $scope.elementTree = data.choices;
                     const matchedAttributes = data.attributes || [];
                     const matchedElementPaths = getMatchedElementPaths(matchedAttributes);
                     if (matchedElementPaths.length === 0) {
                         $scope.elementSearchNoMatch = true;
                     }
-                    $scope.config.searchMatchedElementPaths = matchedElementPaths;
-                    markSearchResults($scope.config.treeData, matchedElementPaths);
+                    $scope.ui.searchMatchedElementPaths = matchedElementPaths;
+                    markSearchResults($scope.elementTree, matchedElementPaths);
+                    cacheElementTree();
                 }
             );
         };
@@ -572,6 +804,7 @@ app.controller('AfExplorerFormCtrl', [
             return splitPath?.[splitPath.length - 1];
         }
 
+        // TODO: check there cannot be pipes in names
         function getElementPathFromAttributePath(attributePath) {
             return attributePath.split('|')?.[0];
         }
@@ -581,31 +814,39 @@ app.controller('AfExplorerFormCtrl', [
                 function(data) {
                     console.log("get_attribute_for_template", data);
                     node.attribute_children = [];
-                    data.attributes.map(attribute => {
-                            const elementPath = getElementPathFromAttributePath(attribute.path);
-                            // TODO: find out why this is needed
-                            addAttributeToLoadedAttributes(attribute, {
-                                expanded: false,
-                                parent_element: getElementNameFromPath(elementPath),
-                                parent_element_path: elementPath
-                            })
+                    const loadedAttributes = data.attributes.map(attribute => {
+                        const elementPath = getElementPathFromAttributePath(attribute.path);
+                        return {
+                            ...attribute,
+                            expanded: false,
+                            parent_element: getElementNameFromPath(elementPath),
+                            parent_element_path: elementPath
+                        };
+                    })
+                    loadedAttributes.forEach(attribute => {
+                            addAttributeToLoadedAttributes(attribute);
                             node.attribute_children.push(attribute.id);
                         }
-                    )
-                    return node;
+                    );
+                    cacheTemplateTree();
+                    return {
+                        updatedNode: node,
+                        loadedAttributes: loadedAttributes
+                    };
                 }
             );
         }
 
         $scope.isTemplateAssociatedElementSelected = function(element) {
-            return $scope.config.clickedNodes.includes(element.url);
+            return $scope.ui.clickedNodes.includes(element.url);
         }
 
         $scope.getElementsForTemplate = function (templateName) {
             return $scope.callPythonDo({ method: "get_elements_for_template", template_name: templateName}).then(
                 function(data) {
                     console.log("get_elements_for_template", data);
-                    $scope.config.elementsByTemplate[templateName] = data.elements;
+                    $scope.elementsByTemplate[templateName] = data.elements;
+                    cacheElementsByTemplate();
                 }
             );
         }
@@ -613,39 +854,45 @@ app.controller('AfExplorerFormCtrl', [
         $scope.templateModeExcludedAttributes = {};
 
         $scope.initElementsDropdown = async function(templateName) {
-            const existingElements = $scope.config.elementsByTemplate[templateName];
+            const existingElements = $scope.elementsByTemplate[templateName];
+            console.log("elementsbytemplate", $scope.elementsByTemplate)
+            console.log("existingElements", existingElements)
             if (Array.isArray(existingElements)) {
+                console.log("here")
                 return existingElements.map(element => element.url);
             }
-
+            console.log("fetching")
             await $scope.getElementsForTemplate(templateName);
-            return $scope.config.elementsByTemplate[templateName].map(element => element.url);
+            return $scope.elementsByTemplate[templateName].map(element => element.url);
         }
 
-        $scope.applyClickElementsDropdown = function(templateName, element, selected) {
+        // FIXME: the parent_element_path is not properly present !!! probably because loaded from cache
+        // should be properly populated f we want the condition l835 to populate
+        // TODO: check if fixme is up to date
+        $scope.applyClickElementsDropdown = function(templateName, element, wasUnselected) {
             $scope.$applyAsync(() => {
                 // TODO: redo everything by templateID
-
-                if ($scope.config.activeTab === 'element') {
+                console.log("$scope.templateModeExcludedAttributes", $scope.templateModeExcludedAttributes)
+                console.log("in apply click")
+                if ($scope.activeTab === 'element') {
                     $scope.toggleNodeVisualization(element);
-                } else if ($scope.config.activeTab === 'template') {
-                    if (!selected) {
+                } else if ($scope.activeTab === 'template') {
+                    if (!wasUnselected) {
+                        console.log("not unselected (apply click) - removing from attributelist ")
                         if (!$scope.templateModeExcludedAttributes[templateName]) {
                             $scope.templateModeExcludedAttributes[templateName] = {}
                         }
-                        $scope.templateModeExcludedAttributes[templateName][element.path] = $scope.config.attributeList.filter(attrId => {
-                            const attribute = getAttributeFromId(attrId);
+                        $scope.templateModeExcludedAttributes[templateName][element.path] = $scope.attributeList.filter(attribute => {
                             return attribute.template_name === templateName && attribute.parent_element_path === element.path;
                         });
-                        $scope.config.attributeList = $scope.config.attributeList.filter(attrId => {
-                            const attribute = getAttributeFromId(attrId);
+                        $scope.attributeList = $scope.attributeList.filter(attribute => {
                             return attribute.template_name !== templateName || attribute.parent_element_path !==
                                 element.path;
                         });
                         $scope.refreshAttributeSection();
-                    } else if (selected) {
+                    } else if (wasUnselected) {
                         const attributesToAdd = $scope.templateModeExcludedAttributes[templateName]?.[element.path] || [];
-                        $scope.config.attributeList.push(...attributesToAdd)
+                        $scope.attributeList.push(...attributesToAdd)
                         $scope.refreshAttributeSection();
                     }
                 }
@@ -666,37 +913,31 @@ app.controller('AfExplorerFormCtrl', [
         }
 
         $scope.clearAllVisualizedNodes = function() {
-            $scope.config.attributeList = []
-            $scope.config.clickedNodes = []
+            $scope.attributeList = []
+            $scope.ui.clickedNodes = []
             $scope.refreshAttributeSection();
         }
 
         $scope.toggleNodeVisualization = function(node) {
             console.log("clicked on ", node)
 
-            // Keep right-side attribute search when active so multi-node clicks can
-            // enrich results with the same filter (ex: "Load" on California + Fresno).
-            // TODO: understand why we need a reset if the attribute search is empty
-            if (node?.type === "element") {
-                // TODO: factorize this reset
-                $scope.config.template = "-- Any --";
-            }
-
-            const indexClickedNode = $scope.config.clickedNodes.indexOf(node.url);
+            const indexClickedNode = $scope.ui.clickedNodes.indexOf(node.url);
             const nodeAlreadySelected = indexClickedNode > -1;
             // If the node is already clicked, remove it from clicked nodes - else add it
             if (nodeAlreadySelected) {
-                $scope.config.clickedNodes.splice(indexClickedNode, 1);
+                $scope.ui.clickedNodes.splice(indexClickedNode, 1);
             } else {
-                $scope.config.clickedNodes.push(node.url);
+                $scope.ui.clickedNodes.push(node.url);
             }
 
             $scope.toggleDisplayAttributes(node, !nodeAlreadySelected).then(() => {
                 $scope.refreshAttributeSection();
+                // Necessary because no digest cycle triggered for awaited cache reads
+                $scope.$applyAsync();
             });
 
             // In element node, the visualized nodes are reflected on the elements dropdown
-            console.log("clickedNodes: " + JSON.stringify($scope.config.clickedNodes));
+            console.log("clickedNodes: " + JSON.stringify($scope.ui.clickedNodes));
         };
 
         function markSearchResults(nodes, matchedElementPaths) {
@@ -737,11 +978,11 @@ app.controller('AfExplorerFormCtrl', [
         };
 
         $scope.clearSearch = function() {
-            $scope.config.searchInProgress = false;
+            $scope.ui.searchInProgress = false;
             $scope.config.element_name = "";
-            $scope.config.searchMatchedElementPaths = [];
+            $scope.ui.searchMatchedElementPaths = [];
             $scope.elementSearchNoMatch = false;
-            clearSearchHighlights($scope.config.treeData);
+            clearSearchHighlights($scope.elementTree);
         };
 
         $scope.toggleSelectAllGroupedAttributes = function(groupedAttributes) {
@@ -803,21 +1044,53 @@ app.controller('AfExplorerFormCtrl', [
 
         }
 
-        function getChildren(node) {
+        function getChildrenIfMissing(node) {
             if (hasAttributeChildren(node)) {
                 return Promise.resolve(node);
             }
-            return $scope.getChildrenFromDB(node);
+            return $scope.getChildrenFromDB(node).then(data => {
+                return data.updatedNode;
+            });
         }
 
         function stopDisplayingAttributes(node) {
             // It is for now possible to stop displaying an element that was not loaded because of weak links
             // patching it by loading the element before stopping to display it
             // TODO: replace by weak link single loading logic
-            return getChildren(node).then(node => {
-                $scope.config.attributeList = $scope.config.attributeList.filter(
-                    attrId => !node.attribute_children.includes(attrId)
+            return getChildrenIfMissing(node).then(node => {
+                $scope.attributeList = $scope.attributeList.filter(
+                    attribute => !node.attribute_children.includes(attribute.id)
                 );
+            });
+        }
+
+        // Put node children in the displayed attribute list
+        // Enrich them with data from the selected list + their parent
+        function addChildrenToAttributeList(node, loadedAttributes) {
+            console.log("enriching children and adding them to the attributeList")
+            const parentTemplateName = node?.template_name;
+
+            loadedAttributes.forEach(attribute => {
+                if (!attribute?.parent_template_name && parentTemplateName) {
+                    attribute.parent_template_name = parentTemplateName;
+                }
+                const isAlreadyPresent = $scope.attributeList.find(attr => attr.id === attribute.id);
+                if (!isAlreadyPresent) {
+                    enrichAttribute(attribute, node);
+                    $scope.attributeList.push(attribute);
+                    // $scope.$applyAsync();
+                }
+            });
+
+            return loadedAttributes
+        }
+
+        function loadAndAddChildrenAttributes(node) {
+            console.log("loading children from db and adding them to the list")
+            return $scope.getChildrenFromDB(node).then(data => {
+                console.log("node", data.node)
+                console.log("loadedAttributes", data.loadedAttributes)
+                return addChildrenToAttributeList(data.updatedNode, data.loadedAttributes);
             });
         }
 
@@ -826,23 +1099,36 @@ app.controller('AfExplorerFormCtrl', [
                return stopDisplayingAttributes(node);
             }
             if (!hasAttributeChildren(node)) {
-                return $scope.getChildrenFromDB(node).then(newNode => {
-                    addChildrenToAttributeList(newNode);
-                });
+                console.log("loading children from the first time")
+                return loadAndAddChildrenAttributes(node);
             }
-            addChildrenToAttributeList(node);
-            return Promise.resolve();
+            return Promise.all(
+                node.attribute_children.map(attributeId => {
+                    return $scope.cache.getAttribute(attributeId).then(loadedAttribute => {
+                        if (!loadedAttribute) {
+                            throw new Error("Could not load attribute " + attributeId + " from the cache");
+                        }
+                        return loadedAttribute;
+                    });
+                })
+            ).then((loadedAttributes) => {
+                // When all the attributes are properly fetched from the cache, they can be added to the attribute list
+                console.log("loaded the attributes from the cache and adding them")
+                return addChildrenToAttributeList(node, loadedAttributes);
+            }).catch(() => {
+                console.log("could not load attributes from the cache, refetching")
+                // if they are not in the cache, we refetch them all from db and update the cache
+                return loadAndAddChildrenAttributes(node);
+            })
         }
 
         // Merge frontend data and saved output with loaded attributes
         function enrichAttribute(attribute, parentNode) {
-            // TODO: check this makes sense, since selectedOutput is persisted and so newly loaded attributes should not be found in it
+            // NOTE: not cached
             const selectedAttribute = $scope.config.outputSelectedAttributes.find(attr => attr.path === attribute.path);
             attribute.checked = !!(selectedAttribute);
             if (parentNode.type === "element") {
                 attribute.parent_element = parentNode?.title;
-            } else if (parentNode.type === "template") {
-                attribute.template_name = parentNode?.title;
             }
             attribute.data_type = selectedAttribute?.data_type ? selectedAttribute.data_type : $scope.aggregateDataTypeFields.data_type.defaultValue;
             Object.entries($scope.aggregateDataTypeFields.aggregates).forEach(([aggregateName, aggregate]) => {
@@ -855,23 +1141,6 @@ app.controller('AfExplorerFormCtrl', [
                 }
             });
             return attribute;
-        }
-
-        // Put node children in the displayed attribute list
-        function addChildrenToAttributeList(node) {
-            const parentTemplateName = node?.template_name;
-
-            node.attribute_children.forEach(attrId => {
-                const attribute = getAttributeFromId(attrId);
-                if (!attribute?.parent_template_name && parentTemplateName) {
-                    attribute.parent_template_name = parentTemplateName;
-                }
-                const isAlreadyPresent = $scope.config.attributeList.includes(attrId);
-                if (!isAlreadyPresent) {
-                    enrichAttribute(attribute, node)
-                    $scope.config.attributeList.push(attrId);
-                }
-            });
         }
 
         function getAggregateNames() {
@@ -929,88 +1198,138 @@ app.controller('AfExplorerFormCtrl', [
             $scope.refreshAttributeSection();
         };
 
-        function attributeMatchesSearch(attribute_name, template_name, attribute_description="") {
-            if ($scope.config.attributeSearch === "") {
+        function attributeMatchesSearch(searchText, attribute_name, group_name, attribute_description="") {
+            if (!searchText) {
                 return true;
             }
-            const lowercasedSearch = $scope.config.attributeSearch.toLowerCase();
-            const templateNameMatches = template_name.toLowerCase().includes(lowercasedSearch);
+            const lowercasedSearch = searchText.toLowerCase();
+            const groupNameMatches = group_name.toLowerCase().includes(lowercasedSearch);
             const attributeNameMatches = attribute_name.toLowerCase().includes(lowercasedSearch);
             let attributeDescriptionMatches = false;
             if (attribute_description) {
                 attributeDescriptionMatches = attribute_description.toLowerCase().includes(lowercasedSearch);
             }
-            return (templateNameMatches || attributeNameMatches || attributeDescriptionMatches)
+            return (groupNameMatches || attributeNameMatches || attributeDescriptionMatches)
+        }
+
+        function arraysEqual(a, b) {
+            if (!a && !b) {
+                return true;
+            }
+            if (!a || !b) {
+                return false;
+            }
+            return a.length === b.length && a.every((v, i) => v === b[i]);
         }
 
         // Attributes are shared between templates
         // Meaning all elements with the same template will share the attributes in this template
         // If multiple elements with the same template are selected, we only show the attribute once
-        function conflateAttributes(groupKey) {
-            return (acc, attr) => {
-                // TODO: switch to id
-                const key = attr[groupKey] + "::" + attr.title;
-
-                if (!acc[key]) {
-                    acc[key] = {
-                        title: attr.title,
-                        description: attr.description,
-                        groupKey: groupKey,
-                        group: attr[groupKey],
-                        template_names: [],
-                        parent_elements: [],
-                        checked: null, // Used to determine UI checkbox state
-                        allChecked: attr.checked,
-                        attributes: [],
-                        checkStates: [],
-                        paths: [],
-                        data_type: attr.data_type,
-                        data_types: [],
-                        isDisplayed: attributeMatchesSearch(attr.title, attr[groupKey], attr.description),
+        function getGroups(attr, groupingKey, titleKey) {
+            const groupingPropertyValues = attr[groupingKey];
+            const groupTitles = attr[titleKey];
+            if (Array.isArray(groupingPropertyValues)) {
+                // Not working with different grouping and title key if array of values
+                return groupingPropertyValues.map(( value, index ) => {
+                    return {
+                        key: value + "::" + attr.title,
+                        sectionKey: value,
+                        value: value
                     };
-
-                    getAggregateNames().forEach(aggregateName => {
-                        acc[key][aggregateName] = attr[aggregateName];
-                        acc[key][getAggregateValuesKey(aggregateName)] = [];
-                    });
-                }
-
-                acc[key].checkStates.push(attr.checked)
-                acc[key].template_names.push(attr.template_name)
-                acc[key].paths.push(attr.path)
-                acc[key].parent_elements.push(attr.parent_element);
-                acc[key].checked = getCheckboxStatus(acc[key].checkStates); // TODO maybe move out
-                acc[key].allChecked = acc[key].allChecked && attr.checked
-                acc[key].attributes.push(attr);
-                acc[key].data_types.push(attr.data_type);
-
-                if (acc[key].data_type !== attr.data_type) {
-                    acc[key].data_type = null;
-                }
-
-                getAggregateNames().forEach(aggregateName => {
-                    acc[key][getAggregateValuesKey(aggregateName)].push(attr[aggregateName]);
-                    if ($scope.aggregateDataTypeFields.aggregates[aggregateName].type === 'multiselect') {
-                        if (!stringArraysEqual(acc[key][aggregateName], attr[aggregateName])) {
-                            acc[key][aggregateName] = [];
-                        }
-                        return;
-                    }
-                    if (acc[key][aggregateName] !== attr[aggregateName]) {
-                        acc[key][aggregateName] = null;
-                    }
                 });
+            }
+            return [ {
+                key: groupingPropertyValues + "::" + attr.title,
+                sectionKey: groupingPropertyValues,
+                value: groupTitles,
+                path: groupingPropertyValues
+            } ];
+        }
 
+        function initConflatedAttribute(attr, group, searchText) {
+            const conflatedAttribute = {
+                title: attr.title,
+                description: attr.description,
+                group: group.value,
+                group_key: group.key,
+                section_key: group.sectionKey,
+                group_path: group.path,
+                template_name: attr.template_name,
+                parent_elements: [],
+                checked: null, // Used to determine UI checkbox state
+                allChecked: attr.checked,
+                attributes: [],
+                checkStates: [],
+                paths: [],
+                data_type: attr.data_type,
+                data_types: [],
+                isDisplayed: attributeMatchesSearch(searchText, attr.title, group.value, attr.description),
+                category_names: attr.category_names,
+                conflicting_categories: false
+            };
+
+            getAggregateNames().forEach(aggregateName => {
+                conflatedAttribute[aggregateName] = attr[aggregateName];
+                conflatedAttribute[getAggregateValuesKey(aggregateName)] = [];
+            });
+
+            return conflatedAttribute;
+        }
+
+        function updateConflatedAttribute(conflatedAttribute, attr) {
+            conflatedAttribute.checkStates.push(attr.checked);
+            conflatedAttribute.paths.push(attr.path);
+            conflatedAttribute.parent_elements.push(attr.parent_element);
+            conflatedAttribute.checked = getCheckboxStatus(conflatedAttribute.checkStates); // TODO maybe move out
+            conflatedAttribute.allChecked = conflatedAttribute.allChecked && attr.checked;
+            conflatedAttribute.attributes.push(attr);
+            conflatedAttribute.data_types.push(attr.data_type);
+
+            if (conflatedAttribute.data_type !== attr.data_type) {
+                conflatedAttribute.data_type = null;
+            }
+
+            getAggregateNames().forEach(aggregateName => {
+                conflatedAttribute[getAggregateValuesKey(aggregateName)].push(attr[aggregateName]);
+                if ($scope.aggregateDataTypeFields.aggregates[aggregateName].type === 'multiselect') {
+                    if (!stringArraysEqual(conflatedAttribute[aggregateName], attr[aggregateName])) {
+                        conflatedAttribute[aggregateName] = [];
+                    }
+                    return;
+                }
+                if (conflatedAttribute[aggregateName] !== attr[aggregateName]) {
+                    conflatedAttribute[aggregateName] = null;
+                }
+            });
+
+            // Check categories are identical
+            if (conflatedAttribute.conflicting_categories || !arraysEqual(conflatedAttribute.category_names, attr.category_names)) {
+                conflatedAttribute.category_names = [];
+                conflatedAttribute.conflicting_categories = true;
+            }
+        }
+
+        function conflateAttributes(groupingKey, titleKey, searchText) {
+            return (acc, attr) => {
+                const groups = getGroups(attr, groupingKey, titleKey);
+                for (const group of groups) {
+                    if (!acc[group.key]) {
+                        acc[group.key] = initConflatedAttribute(attr, group, searchText);
+                    }
+                    updateConflatedAttribute(acc[group.key], attr);
+                }
                 return acc
             }
         }
 
         function groupAttributesIntoSections() {
             return (acc, attr) => {
-                const key = attr.group;
+                const key = attr.section_key;
                 if (!acc[key]) {
                     acc[key] = {
                         group_name: attr.group,
+                        group_key: key,
+                        group_path: attr.group_path,
                         allChecked: attr.checked,
                         checked: CheckboxStatus.UNCHECKED, // Used to determine UI checkbox state
                         attributes: [],
@@ -1032,9 +1351,9 @@ app.controller('AfExplorerFormCtrl', [
             }
         }
 
-        function buildAggregatedAttributes(attributes, groupKey) {
-            let deduplicatedAttributes = Object.values(attributes.reduce(conflateAttributes(groupKey), {})).map(conflatedAttribute => {
-                if ($scope.config.onlyDisplayCommon && conflatedAttribute.parent_elements.length < $scope.config.clickedNodes.length) {
+        function buildAggregatedAttributes(attributes, groupingKey, titleKey, searchText) {
+            let deduplicatedAttributes = Object.values(attributes.reduce(conflateAttributes(groupingKey, titleKey, searchText), {})).map(conflatedAttribute => {
+                if ($scope.ui.onlyDisplayCommon && conflatedAttribute.parent_elements.length < $scope.ui.clickedNodes.length) {
                     conflatedAttribute.isDisplayed = false;
                 }
                 return conflatedAttribute;
@@ -1042,16 +1361,23 @@ app.controller('AfExplorerFormCtrl', [
             return Object.values(deduplicatedAttributes.reduce(groupAttributesIntoSections(), {}));
         }
 
-        function splitAttributesByTemplatePresence() {
-            const attributes = getAttributeList();
+        function splitAttributesOnProperty(splitProperty) {
+            const attributes = $scope.attributeList;
+            function hasGroupingValue(attribute) {
+                const value = attribute?.[splitProperty];
+                if (Array.isArray(value)) {
+                    return value.length > 0;
+                }
+                return !!value;
+            }
             return {
-                attributesWithoutTemplate: attributes.filter((attribute) => !attribute?.template_name),
-                attributesWithTemplate: attributes.filter((attribute) => attribute?.template_name)
+                attributesWithProperty: attributes.filter(hasGroupingValue),
+                attributesWithoutProperty: attributes.filter((attribute) => !hasGroupingValue(attribute))
             };
         }
 
-        function buildGroupedAttributesResult(attributes, groupKey) {
-            const groups = buildAggregatedAttributes(attributes, groupKey);
+        function buildGroupedAttributesResult(attributes, groupingKey, titleKey, searchText) {
+            const groups = buildAggregatedAttributes(attributes, groupingKey, titleKey, searchText);
             const displayedGroups = groups.filter(group => !group.isDisplayed);
             // TODO: probably turn this into a reduce
             return {
@@ -1063,18 +1389,45 @@ app.controller('AfExplorerFormCtrl', [
             }
         }
 
-        $scope.buildGroupedAttributes = function() {
-            const splitAttributes = splitAttributesByTemplatePresence();
+        $scope.buildGroupedAttributes = function(grouping) {
+            const splitAttributes = splitAttributesOnProperty(grouping.group.groupingKey);
             return {
-                attributesWithoutTemplate: buildGroupedAttributesResult(
-                    splitAttributes.attributesWithoutTemplate,
-                    'parent_element'
+                attributesWithProperty: buildGroupedAttributesResult(
+                    splitAttributes.attributesWithProperty,
+                    grouping.group.groupingKey,
+                    grouping.group.titleKey,
+                    $scope.ui.attributeSearch
                 ),
-                attributesGroupedByTemplate: buildGroupedAttributesResult(
-                    splitAttributes.attributesWithTemplate,
-                    'template_name'
+                attributesWithoutProperty: buildGroupedAttributesResult(
+                    splitAttributes.attributesWithoutProperty,
+                    grouping.fallbackGroup.groupingKey,
+                    grouping.fallbackGroup.titleKey,
+                    $scope.ui.attributeSearch
                 )
             };
+        }
+
+        function getGrouping() {
+            return {
+                group: {
+                    groupingKey: $scope.groupMode === GroupMode.CATEGORY ? 'category_names' : 'template_name',
+                    titleKey: $scope.groupMode === GroupMode.CATEGORY ? 'category_names' : 'template_name'
+                },
+                fallbackGroup: {
+                    groupingKey: 'parent_element_path', // Elements can have duplicated names
+                    titleKey: 'parent_element'
+                },
+            }
+        }
+
+        $scope.getAttributeTableTitle = function(fallback=false) {
+            if (fallback) {
+                return "Elements";
+            }
+            if ($scope.groupMode === GroupMode.CATEGORY) {
+                return "Categories";
+            }
+            return "Templates";
         }
 
         function getCheckboxStatus(checkboxStatuses) {
@@ -1089,9 +1442,14 @@ app.controller('AfExplorerFormCtrl', [
             return CheckboxStatus.UNCHECKED;
         }
 
-
         $scope.refreshAttributeSection = function() {
-            $scope.groupedAttributes = $scope.buildGroupedAttributes();
+            const grouping = getGrouping();
+            const groupedAttributes = $scope.buildGroupedAttributes(grouping)
+            $scope.groupedAttributes = groupedAttributes.attributesWithProperty;
+            $scope.groupedAttributesFallbackGrouping = groupedAttributes.attributesWithoutProperty;
+            console.log("Attribute List", $scope.attributeList)
+            console.log("Grouped attributes", $scope.groupedAttributes)
+            console.log("Grouped fallback attributes", $scope.groupedAttributesFallbackGrouping)
         }
 
         $scope.addAttributeToSelection = function(attribute) {
@@ -1102,6 +1460,7 @@ app.controller('AfExplorerFormCtrl', [
             }
             attribute.checked = true;
             $scope.config.outputSelectedAttributes.push(attribute);
+            $scope.selectedElementPaths = buildSelectedElementPaths();
             console.log("Removed attribute from selection", attribute);
         }
 
@@ -1113,6 +1472,8 @@ app.controller('AfExplorerFormCtrl', [
             }
             attribute.checked = false;
             $scope.config.outputSelectedAttributes.splice(index, 1);
+            $scope.selectedElementPaths = buildSelectedElementPaths();
+            $scope.refreshAttributeSection();
             console.log("Removed attribute from selection", attribute);
         }
 
@@ -1123,22 +1484,20 @@ app.controller('AfExplorerFormCtrl', [
                 return;
             }
             $scope.config.outputSelectedAttributes[index] = attribute;
+            $scope.selectedElementPaths = buildSelectedElementPaths();
         }
 
-        function getAttributeList() {
-            return $scope.config.attributeList.map(getAttributeFromId).filter(Boolean);
+        async function addAttributeToLoadedAttributes(attribute) {
+            return $scope.cache.addOrUpdateAttribute(attribute);
         }
 
-        function addAttributeToLoadedAttributes(attribute, additionalProperties) {
-            if ($scope.config.loadedAttributes[attribute.id]) {
-                $scope.config.loadedAttributes[attribute.id] = {...$scope.config.loadedAttributes[attribute.id], ...additionalProperties}
-                return;
+        $scope.changeGroupingMode = function(mode) {
+            if (mode === 'TEMPLATE') {
+                $scope.groupMode = GroupMode.TEMPLATE;
+            } else {
+                $scope.groupMode = GroupMode.CATEGORY;
             }
-            $scope.config.loadedAttributes[attribute.id] = { ...attribute, ...additionalProperties };
-        }
-
-        function getAttributeFromId(attrId) {
-            return $scope.config.loadedAttributes[attrId];
+            $scope.refreshAttributeSection();
         }
 
     }]);
@@ -1149,8 +1508,10 @@ app.component('treeNode', {
         node: '=',
         getChildrenFromDb: '<',
         toggleDisplayAttributes: '<',
+        clickedNodes: '<',
         config: '<',
         toggleNodeVisualization: '&',
+        selectedElementPaths: '<'
     },
 
     controllerAs: 'ctrl',
@@ -1159,25 +1520,16 @@ app.component('treeNode', {
         const ctrl = this;
 
         ctrl.showBreadcrumb = function(node) {
-            if (!node?.children || node.children.length === 0) {
+            if (ctrl.showPaperclip(node)) {
                 return false;
             }
-            return node.children.some(
-                child => {
-                    return ctrl.showPaperclip(child) ||  ctrl.showBreadcrumb(child);
-                }
-            )
+            return node?.paths?.some(path => {
+                return ctrl.selectedElementPaths.some(selectedPath => selectedPath.startsWith(path))
+            });
         };
 
-        function isAttributeSelected(attrId) {
-            return ctrl.config.outputSelectedAttributes.find(attribute => attribute.id === attrId);
-        }
-
         ctrl.showPaperclip = function(node) {
-            if (!node?.attribute_children) {
-                return false;
-            }
-            return node?.attribute_children.some(attributeId => isAttributeSelected(attributeId));
+            return node?.paths?.some(path => ctrl.selectedElementPaths.includes(path));
         };
 
         ctrl.hasRenderableChildren = function(node) {
@@ -1203,7 +1555,7 @@ app.component('treeNode', {
 
         ctrl.isNodeClicked = function(node) {
             // the click is entirely based on node.url
-            return ctrl.config.clickedNodes.includes(node.url);
+            return ctrl.clickedNodes.includes(node.url);
         };
 
         ctrl.isSearchResult = function(node) {
@@ -1214,17 +1566,25 @@ app.component('treeNode', {
 });
 
 app.directive('attributeTableBlock', function() {
-    return {
-        restrict: 'A',
-        scope: {
-            section: '=',
-            groupedAttributes: '=',
-            config: '=',
-            aggregateDataTypeFields: '<',
-            onToggleSelectAllGroupedAttributes: '&',
-            onToggleGroupedAttributes: '&',
-            onIsAtLeastPartiallySelected: '&',
-            onInitElementsDropdown: '&',
+        return {
+            restrict: 'A',
+            scope: {
+                title: '<',
+                activeTab: '<',
+                databaseName: '<?',
+                displayGroupPath: '<?',
+                displayElementDropdown: '<',
+                displayPath: '<',
+                excludedColumns: '<',
+                groupMode: '<',
+                elementsByTemplate: '<',
+                groupedAttributes: '=',
+                config: '=',
+                aggregateDataTypeFields: '<',
+                onToggleSelectAllGroupedAttributes: '&',
+                onToggleGroupedAttributes: '&',
+                onIsAtLeastPartiallySelected: '&',
+                onInitElementsDropdown: '&',
             onIsTemplateAssociatedElementSelected: '&',
             onApplyClickElementsDropdown: '&',
             onCheckAttribute: '&',
@@ -1232,7 +1592,27 @@ app.directive('attributeTableBlock', function() {
             onUpdateAggregate: '&'
         },
         bindToController: true,
-        controller: function() {},
+        controller: function() {
+            const ctrl = this;
+
+            ctrl.prettifyElementPath = prettifyElementPath;
+
+            ctrl.getVisibleAttributeColumnCount = function(includeCheckbox) {
+                let count = includeCheckbox ? 5 : 4;
+
+                if (ctrl.displayPath) {
+                    count += 1;
+                }
+                if (ctrl.groupMode !== 'CATEGORY') {
+                    count += 1;
+                }
+                if (ctrl.groupMode !== 'TEMPLATE') {
+                    count += 1;
+                }
+
+                return count;
+            };
+        },
         controllerAs: 'ctrl',
         templateUrl: "/plugins/pi-system/resource/attribute-table-block.html"
     };
@@ -1243,6 +1623,7 @@ app.directive('attributeTableRow', function() {
     return {
         restrict: 'A',
         scope: {
+            groupMode: '<',
             mergedAttribute: '=',
             displayPath: '<',
             aggregateDataTypeFields: '<',
@@ -1298,6 +1679,7 @@ app.component('dropdownElements', {
     bindings: {
         elements: '<',
         groupName: '<',
+        databaseName: '<',
         initElementsDropdown: '&',
         isTemplateAssociatedElementSelected: '&',
         applyClickElementsDropdown: '&',
@@ -1307,6 +1689,7 @@ app.component('dropdownElements', {
     controller: function() {
         const ctrl = this;
         ctrl.templatedModeUnselectedElements = [];
+        ctrl.prettifyElementPath = prettifyElementPath;
 
         ctrl.$onInit = function() {
 
@@ -1321,21 +1704,26 @@ app.component('dropdownElements', {
             ctrl.onClickElement = function(element, $event) {
                 $event.stopPropagation();
 
-                let wasSelected;
+                let wasUnselected;
                 if (ctrl.activeTab === 'template') {
-                    wasSelected = ctrl.templatedModeUnselectedElements.includes(element.url);
-                    if (wasSelected) {
+                    wasUnselected = ctrl.templatedModeUnselectedElements.includes(element.url);
+                    if (wasUnselected) {
                         ctrl.templatedModeUnselectedElements = ctrl.templatedModeUnselectedElements.filter(url => url !== element.url);
                     } else {
                         ctrl.templatedModeUnselectedElements.push(element.url)
+                        console.log("ctrl.templatedModeUnselectedElements", ctrl.templatedModeUnselectedElements)
+                        console.log("ctrl.elements", ctrl.elements)
+                        if (ctrl.templatedModeUnselectedElements.length === ctrl.elements.length) {
+                            console.log("empty dropdown")
+                        }
                     }
                 } else {
-                    wasSelected = ctrl.isTemplateAssociatedElementSelected({ element: element });
+                    wasUnselected = ctrl.isTemplateAssociatedElementSelected({ element: element });
                 }
                 ctrl.applyClickElementsDropdown({
                     templateName: ctrl.groupName,
                     element: element,
-                    selected: wasSelected
+                    wasUnselected: wasUnselected
                 })
             }
 
@@ -1349,6 +1737,14 @@ app.component('dropdownElements', {
 
             ctrl.getSelectedElementsCount = function() {
                 return ctrl.elements.filter(element => ctrl.isElementSelected(element)).length;
+            }
+
+            ctrl.visualized = function(element) {
+                return ctrl.isElementSelected(element);
+            }
+
+            ctrl.notVisualized = function(element) {
+                return !ctrl.isElementSelected(element);
             }
         }
     },

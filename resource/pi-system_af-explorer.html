@@ -4,14 +4,14 @@
         <div ng-if="config.database_name" class="pi-system-explorer__tree-view">
             <div class="tree-view__header">
                 <div class="tree-view__tabs">
-                    <div class="tree-view__tab" ng-click="setTab('element')" ng-class="{active: config.activeTab === 'element'}">
+                    <div class="tree-view__tab" ng-click="setTab('element')" ng-class="{active: activeTab === 'element'}">
                         <div class="tree-view__tab-content">Elements</div>
                     </div>
-                    <div class="tree-view__tab" ng-click="setTab('template')" ng-class="{active: config.activeTab === 'template'}">
+                    <div class="tree-view__tab" ng-click="setTab('template')" ng-class="{active: activeTab === 'template'}">
                         <div class="tree-view__tab-content">Templates</div>
                     </div>
                 </div>
-                <div class="tree-view__search-panel" ng-if="config.activeTab === 'element'">
+                <div class="tree-view__search-panel" ng-if="activeTab === 'element'">
                     <div class="tree-view__search-row">
                         <basic-search-box
                                 ng-model="config.element_name"
@@ -24,7 +24,7 @@
                                 id="get-query-dim-prop" ng-disabled="!config.element_name">Search
                         </button>
                     </div>
-                    <div class="tree-view__search-actions" ng-if="config.searchInProgress">
+                    <div class="tree-view__search-actions" ng-if="ui.searchInProgress">
                         <button ng-click="clearSearch()" class="btn btn--secondary link-like">
                             Clear search
                         </button>
@@ -33,6 +33,13 @@
                         No matching element found
                     </div>
                 </div>
+                <button
+                        class="btn btn--outline btn--secondary btn--dku-icon"
+                        ng-click="clearAllVisualizedNodes()"
+                        ng-if="ui.clickedNodes.length > 0">
+                    <i class="dku-icon-dismiss-16"></i>
+                    Clear all
+                </button>
             </div>
             <div class="tree-view__content">
 <!--                <div>-->
@@ -40,31 +47,29 @@
 <!--                                              ng-options="dbn.title as dbn.title for dbn in config.element_categories" ng-init="getCategoriesFromDB()"-->
 <!--                                              ng-change="doSearch(config.element_name, config.attribute_name)"/>-->
 <!--                </div>-->
-                <button
-                        class="btn btn--outline btn--secondary btn--dku-icon"
-                        ng-click="clearAllVisualizedNodes()"
-                        ng-if="config.clickedNodes.length > 0">
-                    <i class="dku-icon-dismiss-16"></i>
-                    Clear all
-                </button>
-                <ul ng-if="config.activeTab === 'element' && config.treeData && config.treeData.length">
-                    <li ng-repeat="node in config.treeData track by node.id">
+                <ul ng-if="activeTab === 'element' && elementTree && elementTree.length">
+                    <li ng-repeat="node in elementTree track by node.id">
                         <tree-node node="node" get-children-from-db="getChildrenFromDB" toggle-display-attributes="toggleDisplayAttributes"
-                                   config="config" clicked-nodes="config.clickedNodes" toggle-node-visualization="toggleNodeVisualization(node)">
-                        </tree-node>
+                                   config="config" clicked-nodes="ui.clickedNodes" toggle-node-visualization="toggleNodeVisualization(node)"
+                                   selected-element-paths="selectedElementPaths"
+                        ></tree-node>
                     </li>
                 </ul>
-                <ul ng-if="config.activeTab === 'template' && config.templateTreeData && config.templateTreeData.length">
-                    <li ng-repeat="node in config.templateTreeData track by node.id">
+                <ul ng-if="activeTab === 'template' && templateTree && templateTree.length">
+                    <li ng-repeat="node in templateTree track by node.id">
                         <tree-node node="node" get-children-from-db="getChildrenFromDB" toggle-display-attributes="toggleDisplayAttributes"
-                                   config="config" clicked-nodes="config.clickedNodes" toggle-node-visualization="toggleNodeVisualization(node)">
-                        </tree-node>
+                                   config="config" clicked-nodes="ui.clickedNodes" toggle-node-visualization="toggleNodeVisualization(node)"
+                                   selected-element-paths="selectedElementPaths"
+                        ></tree-node>
                     </li>
                 </ul>
             </div>
         </div>
     </div>
     <div class="pi-system-explorer__main">
+        <div ng-if="errorBannerVisible" class="alert alert-warning pi-system-explorer__error-banner">
+            {{errorBannerMessage}}
+        </div>
         <div class="pi-system-explorer__header">
             <div>
                 Welcome to Pi System Plugin
@@ -79,14 +84,6 @@
         </div>
         <div class="pi-system-explorer__content">
             <pi-system-auth-banner></pi-system-auth-banner>
-            <div class="control-group removed-if-manual-query" ng-show="false" ng-if="config.database_name">
-                <label class="control-label">Tree</label>
-                <div class="controls">
-                    <select dku-bs-select ng-model="config.treeData"
-                            ng-options="dbn.value as dbn.label for dbn in [config.treeData]">
-                    </select>
-                </div>
-            </div>
             <!-- TODO: move the table to a separate component-->
             <!-- Attributes Section -->
             <div class="attribute-tab pi-system-explorer__center-view" ng-if="showTreeData">
@@ -94,23 +91,31 @@
                     <div><strong>Attributes and templates</strong></div>
                     <div>
                         <basic-search-box
-                                ng-model="config.attributeSearch"
+                                ng-model="ui.attributeSearch"
                                 placeholder="Search attribute or template name"
                                 ng-change="refreshAttributeSection()"
                         >
                         </basic-search-box>
                     </div>
+                    <div class="attribute-section__grouping-toggle">
+                        <div class="attribute-section__grouping-toggle--element" ng-click="changeGroupingMode('TEMPLATE')" ng-class="{active: groupMode === 'TEMPLATE'}">
+                            <div class="attribute-section__grouping-toggle-content">Templates</div>
+                        </div>
+                        <div class="attribute-section__grouping-toggle--element" ng-click="changeGroupingMode('CATEGORY')" ng-class="{active: groupMode === 'CATEGORY'}">
+                            <div class="attribute-section__grouping-toggle-content">Categories</div>
+                        </div>
+                    </div>
                     <div class="attribute-section__filters-row">
                         <label class="attribute-section__filters-toggle">
                             <span class="dku-toggle dku-toggle-no-content">
-                                <input type="checkbox" ng-model="config.displayPath">
+                                <input type="checkbox" ng-model="ui.displayPath">
                                 <span></span>
                             </span>
                             <span>Display attribute paths</span>
                         </label>
                         <label class="attribute-section__filters-toggle">
                             <span class="dku-toggle dku-toggle-no-content">
-                                <input type="checkbox" ng-model="config.onlyDisplayCommon" ng-change="refreshAttributeSection()">
+                                <input type="checkbox" ng-model="ui.onlyDisplayCommon" ng-change="refreshAttributeSection()">
                                 <span></span>
                             </span>
                             <span>Only common attributes</span>
@@ -126,11 +131,36 @@
                 </div>
                 <div
                         attribute-table-block
-                        ng-repeat="section in attributeGroupSections track by section.key"
-                        ng-if="section.shouldDisplay()"
-                        section="section"
+                        ng-if="groupedAttributesFallbackGrouping && !groupedAttributesFallbackGrouping.empty"
+                        grouped-attributes="groupedAttributesFallbackGrouping"
+                        config="config"
+                        display-path="ui.displayPath"
+                        elements-by-template="elementsByTemplate"
+                        title="getAttributeTableTitle(true)"
+                        group-mode="groupMode"
+                        display-element-dropdown="false"
+                        active-tab="activeTab"
+                        aggregate-data-type-fields="aggregateDataTypeFields"
+                        on-toggle-select-all-grouped-attributes="toggleSelectAllGroupedAttributes(groupedAttributeGroup)"
+                        on-toggle-grouped-attributes="toggleGroupedAttributes(group)"
+                        on-is-at-least-partially-selected="isAtLeastPartiallySelected(item)"
+                        on-init-elements-dropdown="initElementsDropdown(templateName)"
+                        on-is-template-associated-element-selected="isTemplateAssociatedElementSelected(element)"
+                        on-apply-click-elements-dropdown="applyClickElementsDropdown(templateName, element, selected)"
+                        on-check-attribute="checkAttribute(mergedAttribute)"
+                        on-update-data-type="updateMergedAttributeDataType(mergedAttribute)"
+                        on-update-aggregate="updateMergedAttributeAggregate(mergedAttribute)">
+                </div>
+                <div
+                        attribute-table-block
                         grouped-attributes="groupedAttributes"
                         config="config"
+                        display-path="ui.displayPath"
+                        elements-by-template="elementsByTemplate"
+                        title="getAttributeTableTitle()"
+                        group-mode="groupMode"
+                        display-element-dropdown="true"
+                        active-tab="activeTab"
                         aggregate-data-type-fields="aggregateDataTypeFields"
                         on-toggle-select-all-grouped-attributes="toggleSelectAllGroupedAttributes(groupedAttributeGroup)"
                         on-toggle-grouped-attributes="toggleGroupedAttributes(group)"
