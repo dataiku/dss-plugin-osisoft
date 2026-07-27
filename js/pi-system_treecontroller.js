@@ -1433,7 +1433,7 @@ app.controller('AfExplorerFormCtrl', [
                 allChecked: displayedGroups.length > 0 && displayedGroups.every(group => group.allChecked),
                 checked: getCheckboxStatus(groups.reduce((acc, group) => acc.concat(group.checkStates), [])),
                 // a table can be empty because all it's attributes have been filtered out OR there are no elements to show
-                empty: groups.length === 0 || groups.every(group => group.isDisplayed),
+                empty: groups.every(group => group.isDisplayed),
                 groups: groups
             }
         }
