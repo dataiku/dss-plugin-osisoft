@@ -18,10 +18,10 @@
             <th ng-if="ctrl.groupMode !== 'TEMPLATE'">Template</th>
         </tr>
         </thead>
-        <tbody ng-if="ctrl.groupedAttributes.empty">
-        <tr class="custom-table__empty-row">
-            <td colspan="{{ctrl.getVisibleAttributeColumnCount(true)}}">No attributes matched your selection</td>
-        </tr>
+        <tbody ng-if="!ctrl.groupedAttributes || ctrl.groupedAttributes.empty">
+            <tr class="custom-table__empty-row">
+                <td colspan="{{ctrl.getVisibleAttributeColumnCount(true)}}">No attributes matched your selection</td>
+            </tr>
         </tbody>
         <tbody
                 ng-repeat="group in ctrl.groupedAttributes.groups track by group.group_key"
