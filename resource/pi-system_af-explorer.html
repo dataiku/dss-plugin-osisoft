@@ -112,11 +112,18 @@
                     <div><strong>Attributes and templates</strong></div>
                     <div>
                         <basic-search-box
-                                ng-model="ui.attributeSearch"
+                                ng-model="ui.attributeFiltering.attributeSearch"
                                 placeholder="Search attribute or template name"
                                 ng-change="refreshAttributeSection()"
                         >
                         </basic-search-box>
+                    </div>
+                    <div>
+                        <select dku-bs-select multiple
+                                ng-model="ui.attributeFiltering.attributeCategoryFilterList"
+                                ng-change="refreshAttributeSection()"
+                                ng-options="category.value as category.label for category in categoryFilterOptions">
+                        </select>
                     </div>
                     <div class="attribute-section__grouping-toggle">
                         <div class="attribute-section__grouping-toggle--element" ng-click="changeGroupingMode('TEMPLATE')" ng-class="{active: groupMode === 'TEMPLATE'}">
