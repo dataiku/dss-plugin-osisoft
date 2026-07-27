@@ -139,16 +139,27 @@ class Cache {
     constructor(projectKey, server, database) {
         // TODO: include preset in db name
         this.dbName = [projectKey, server, database].join("::")
-        this.dbVersion = 1
+        this.dbVersion = 2
         this.attributesStoreName = "attributes"
         this.elementTreeStoreName = "elementTree"
         this.templateTreeStoreName = "templateTree"
         this.elementsByTemplateStoreName = "elementsByTemplate"
-        this.stores = [this.attributesStoreName, this.elementTreeStoreName, this.templateTreeStoreName, this.elementsByTemplateStoreName]
+        this.elementCategoriesStoreName = "elementCategories"
+        this.attributeCategoriesStoreName = "attributeCategories"
+        this.stores = [
+            this.attributesStoreName,
+            this.elementTreeStoreName,
+            this.templateTreeStoreName,
+            this.elementsByTemplateStoreName,
+            this.elementCategoriesStoreName,
+            this.attributeCategoriesStoreName
+        ]
 
         this.elementTreeRecordId = "elementTree"
         this.templateTreeRecordId = "templateTree"
         this.elementsByTemplateRecordId = "elementsByTemplate"
+        this.elementCategoriesRecordId = "elementCategories"
+        this.attributeCategoriesRecordId = "attributeCategories"
     }
 
     async init() {
@@ -191,6 +202,14 @@ class Cache {
         return this.getObject(this.elementsByTemplateStoreName, this.elementsByTemplateRecordId).then((data) => data?.nodes);
     }
 
+    async getElementCategories() {
+        return this.getObject(this.elementCategoriesStoreName, this.elementCategoriesRecordId).then((data) => data?.nodes);
+    }
+
+    async getAttributeCategories() {
+        return this.getObject(this.attributeCategoriesStoreName, this.attributeCategoriesRecordId).then((data) => data?.nodes);
+    }
+
     async getObject(objectStoreName, objectId) {
         return new Promise((resolve, reject) => {
             const transaction = this.db.transaction([objectStoreName]);
@@ -229,6 +248,20 @@ class Cache {
                 id: this.elementsByTemplateRecordId,
                 nodes: elementsByTemplate
         }, this.elementsByTemplateStoreName);
+    }
+
+    async addOrUpdateElementCategories(elementCategories) {
+        return this.addOrUpdate({
+                id: this.elementCategoriesRecordId,
+                nodes: elementCategories
+        }, this.elementCategoriesStoreName);
+    }
+
+    async addOrUpdateAttributeCategories(attributeCategories) {
+        return this.addOrUpdate({
+                id: this.attributeCategoriesRecordId,
+                nodes: attributeCategories
+        }, this.attributeCategoriesStoreName);
     }
 
     async addOrUpdate(object, objectStoreName) {
@@ -364,6 +397,8 @@ app.controller('AfExplorerFormCtrl', [
             $scope.config.show_advanced_parameters = $scope.config.show_advanced_parameters || false;
             $scope.activeTab = $scope.activeTab || 'element';
             $scope.templateTree = $scope.templateTree || [];
+            $scope.attributeCategories = $scope.attributeCategories || [];
+            $scope.elementCategories = $scope.elementCategories || [];
             $scope.groupMode = $scope.groupMode || GroupMode.TEMPLATE;
             DataikuAPI.plugins.listAccessiblePresets('pi-system', $stateParams.projectKey, 'basic-auth').success(function(data) {
                 $scope.inlineParams = data.inlineParams;
@@ -449,7 +484,7 @@ app.controller('AfExplorerFormCtrl', [
                     throw new Error(`Could not load ${scopeKey} from cache and then DB: ${error}`);
                 })
                 .then(object => {
-                    if (!object || object.length === 0) {
+                    if (!object) {
                         throw new Error(`Could not load ${scopeKey} from DB`);
                     }
                     $scope[scopeKey] = object;
@@ -457,6 +492,28 @@ app.controller('AfExplorerFormCtrl', [
                         cacheSetter(object);
                     }
                 });
+        }
+
+        function loadAttributeCategories() {
+            return loadObject(
+                () => $scope.cache.getAttributeCategories(),
+                () => $scope.getAttributeCategoriesFromDB(),
+                (categories) => $scope.cache.addOrUpdateAttributeCategories(categories),
+                'attributeCategories',
+            ).catch((error) => {
+                console.error("Could not load attribute categories", error);
+            });
+        }
+
+        function loadElementCategories() {
+            return loadObject(
+                () => $scope.cache.getElementCategories(),
+                () => $scope.getElementCategoriesFromDB(),
+                (categories) => $scope.cache.addOrUpdateElementCategories(categories),
+                'elementCategories',
+            ).catch((error) => {
+                console.error("Could not load element categories", error);
+            });
         }
 
         function loadElementTree() {
@@ -492,7 +549,9 @@ app.controller('AfExplorerFormCtrl', [
                 return $q.all([
                     loadElementTree(),
                     loadTemplateTree(),
-                    loadElementsByTemplate()
+                    loadElementsByTemplate(),
+                    loadElementCategories(),
+                    loadAttributeCategories()
                 ])
             }).catch((error) => {
                 throw new Error(`There was an error initializing data: ${error}`);
@@ -556,6 +615,8 @@ app.controller('AfExplorerFormCtrl', [
             $scope.config.database_name = null;
             $scope.config.database_title = null;
             $scope.templateTree = [];
+            $scope.attributeCategories = [];
+            $scope.elementCategories = [];
             $scope.config.loadedDatabaseName = null;
             $scope.attributeList = [];
             $scope.config.outputSelectedAttributes = [];
@@ -568,6 +629,8 @@ app.controller('AfExplorerFormCtrl', [
             $scope.config.database_name = null;
             $scope.config.database_title = null;
             $scope.templateTree = [];
+            $scope.attributeCategories = [];
+            $scope.elementCategories = [];
             $scope.config.loadedDatabaseName = null;
             $scope.showTreeData = false;
             $scope.cleanTree();
@@ -577,6 +640,8 @@ app.controller('AfExplorerFormCtrl', [
         $scope.onDatabaseChanged = function() {
             $scope.config.database_title = getDatabaseTitle($scope.config.database_name);
             $scope.templateTree = [];
+            $scope.attributeCategories = [];
+            $scope.elementCategories = [];
             $scope.config.loadedDatabaseName = null;
             $scope.showTreeData = false;
             $scope.cleanTree();
@@ -596,12 +661,18 @@ app.controller('AfExplorerFormCtrl', [
                 return $q.all([
                     $scope.getElementTreeFromDB(),
                     $scope.getTemplatesFromDB(),
+                    $scope.getAttributeCategoriesFromDB(),
+                    $scope.getElementCategoriesFromDB()
                 ]);
-            }).then(([elementTree, templateTree]) => {
+            }).then(([elementTree, templateTree, attributeCategories, elementCategories]) => {
                 $scope.elementTree = elementTree;
                 $scope.templateTree = templateTree;
+                $scope.attributeCategories = attributeCategories;
+                $scope.elementCategories = elementCategories;
                 cacheElementTree();
                 cacheTemplateTree();
+                $scope.cache.addOrUpdateElementCategories(elementCategories);
+                $scope.cache.addOrUpdateAttributeCategories(attributeCategories);
                 $scope.$applyAsync();
             })
         }
@@ -750,11 +821,24 @@ app.controller('AfExplorerFormCtrl', [
             });
         }
 
+        $scope.getAttributeCategoriesFromDB = function() {
+            return $scope.callPythonDo({ method: "get_attribute_categories_from_db" }).then(function(data) {
+                console.log("get_attribute_categories_from_db", data);
+                return data.choices;
+            });
+        }
+
+        $scope.getElementCategoriesFromDB = function() {
+            return $scope.callPythonDo({ method: "get_element_categories_from_db" }).then(function(data) {
+                console.log("get_element_categories_from_db", data);
+                return data.choices;
+            });
+        }
+
         function resetRightPanelForCurrentTabContext() {
             $scope.ui.clickedNodes = [];
             $scope.attributeList = [];
             $scope.ui.searchMatchedElementPaths = [];
-            // $scope.config.selectedTemplateNames = [];
             $scope.ui.attributeSearch = "";
             $scope.ui.templateSearch = "";
             $scope.elementSearchNoMatch = false;
@@ -771,22 +855,6 @@ app.controller('AfExplorerFormCtrl', [
             }
             $scope.activeTab = tab;
         };
-
-        // $scope.getCategoriesFromDB = function() {
-        //     $scope.config.attribute_categories = [];
-        //     $scope.config.element_categories = [];
-        //     const attributeCategoriesPromise = $scope.callPythonDo({ method: "get_attribute_categories_from_db" }).then(function(data) {
-        //         console.log("get_attribute_categories_from_db", data);
-        //         $scope.config.attribute_categories = data.choices;
-        //         return data;
-        //     });
-        //     const elementCategoriesPromise = $scope.callPythonDo({ method: "get_element_categories_from_db" }).then(function(data) {
-        //         console.log("get_element_categories_from_db", data);
-        //         $scope.config.element_categories = data.choices;
-        //         return data;
-        //     });
-        //     return $q.all([attributeCategoriesPromise, elementCategoriesPromise]);
-        // }
 
         $scope.doSearch = function(element_name) {
             $scope.ui.searchInProgress = true;
