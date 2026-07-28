@@ -329,6 +329,22 @@ pi-system-auth-banner {
     align-self: stretch;
 }
 
+.attribute-section__filters {
+    display: flex;
+    gap: 16px;
+}
+
+.attribute-section__filter-column {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 0;
+}
+
+.attribute-section__filter-label {
+    font-weight: 600;
+}
+
 .attribute-section__filters-row {
     display: flex;
     align-items: center;

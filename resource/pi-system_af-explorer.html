@@ -118,17 +118,23 @@
                         >
                         </basic-search-box>
                     </div>
-                    <div>
-                        <select dku-bs-select multiple
-                                ng-model="ui.attributeFiltering.attributeCategoryFilterList"
-                                ng-change="refreshAttributeSection()"
-                                ng-options="category.value as category.label for category in attributeCategoryFilterOptions">
-                        </select>
-                        <select dku-bs-select
-                                ng-model="ui.attributeFiltering.attributeValueTypeFilter"
-                                ng-change="refreshAttributeSection()"
-                                ng-options="valueType.value as valueType.label for valueType in attributeValueTypeFilterOptions">
-                        </select>
+                    <div class="attribute-section__filters">
+                        <div class="attribute-section__filter-column">
+                            <div class="attribute-section__filter-label">Category</div>
+                            <select dku-bs-select multiple
+                                    ng-model="ui.attributeFiltering.attributeCategoryFilterList"
+                                    ng-change="refreshAttributeSection()"
+                                    ng-options="category.value as category.label for category in attributeCategoryFilterOptions">
+                            </select>
+                        </div>
+                        <div class="attribute-section__filter-column">
+                            <div class="attribute-section__filter-label">Value type</div>
+                            <select dku-bs-select
+                                    ng-model="ui.attributeFiltering.attributeValueTypeFilter"
+                                    ng-change="refreshAttributeSection()"
+                                    ng-options="valueType.value as valueType.label for valueType in attributeValueTypeFilterOptions">
+                            </select>
+                        </div>
                     </div>
                     <div class="attribute-section__grouping-toggle">
                         <div class="attribute-section__grouping-toggle--element" ng-click="changeGroupingMode('TEMPLATE')" ng-class="{active: groupMode === 'TEMPLATE'}">
