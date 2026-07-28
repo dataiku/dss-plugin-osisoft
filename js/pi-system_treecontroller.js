@@ -323,7 +323,8 @@ app.controller('AfExplorerFormCtrl', [
             searchMatchedElementPaths: [], // la liste pour highlighter les elements de la recherche
             attributeFiltering: {
                 attributeSearch: "",
-                attributeCategoryFilterList: []
+                attributeCategoryFilterList: [],
+                attributeValueTypeFilter: ""
             },
             templateSearch: "",
             templateSearchResults: [],
@@ -331,7 +332,8 @@ app.controller('AfExplorerFormCtrl', [
             onlyDisplayCommon: false,
             searchInProgress: false
         };
-        $scope.categoryFilterOptions = [];
+        $scope.attributeCategoryFilterOptions = [];
+        $scope.attributeValueTypeFilterOptions = [];
 
         $scope.authSectionVisible = true;
         $scope.showTreeData = false;
@@ -363,6 +365,7 @@ app.controller('AfExplorerFormCtrl', [
                     {
                         attributeSearch: modalScope.ui.previewAttributeSearch,
                         attributeCategoryFilterList: [],
+                        attributeValueTypeFilter: "",
                     },
                 );
             }
@@ -1324,10 +1327,13 @@ app.controller('AfExplorerFormCtrl', [
                 attribute.category_names,
                 searchFilters.attributeCategoryFilterList
             );
+            const matchesValueTypeFilter =
+                !searchFilters?.attributeValueTypeFilter ||
+                attribute?.value_type === searchFilters.attributeValueTypeFilter;
             const matchesTextSearch = attributeMatchesSearch(
                 searchFilters.attributeSearch, attribute.title, group_name, attribute.description
             );
-            return matchesCategoryFilters && matchesTextSearch;
+            return matchesValueTypeFilter && matchesCategoryFilters && matchesTextSearch;
         }
 
         function attributeMatchesSearch(searchText, attribute_name, group_name, attribute_description="") {
@@ -1409,7 +1415,8 @@ app.controller('AfExplorerFormCtrl', [
                 data_types: [],
                 isDisplayed: attributeMatchesFiltering(searchFilters, attr, group.value),
                 category_names: attr.category_names,
-                conflicting_categories: false
+                conflicting_categories: false,
+                value_type: attr.value_type,
             };
 
             getAggregateNames().forEach(aggregateName => {
@@ -1586,8 +1593,8 @@ app.controller('AfExplorerFormCtrl', [
             return CheckboxStatus.UNCHECKED;
         }
 
-        function buildCategoryFilterOptions() {
-            $scope.categoryFilterOptions = $scope.attributeCategories?.filter((category) => category.title !== "-- Any --").map((category) => {
+        function buildAttributeCategoryFilterOptions() {
+            $scope.attributeCategoryFilterOptions = $scope.attributeCategories?.filter((category) => category.title !== "-- Any --").map((category) => {
                 const categoryName = category.title;
                 const occurrencesCount = $scope.attributeList?.filter((attribute) => {
                     return Array.isArray(attribute.category_names) && attribute.category_names.includes(categoryName) ;
@@ -1601,8 +1608,31 @@ app.controller('AfExplorerFormCtrl', [
             });
         }
 
+        function buildValueTypeFilterOptions() {
+            $scope.attributeValueTypeFilterOptions = ["", ...new Set($scope.attributeList.map(attribute => attribute.value_type))].map((valueType) => {
+                const occurrencesCount = $scope.attributeList?.filter((attribute) => {
+                    return attribute.value_type === valueType ;
+                }).length;
+
+                if (valueType === "") {
+                    return {
+                        value: "",
+                        // label: valueType + ' (' + occurrencesCount + ')'
+                        label: "Any"
+                    };
+                }
+
+                return {
+                    value: valueType,
+                    // label: valueType + ' (' + occurrencesCount + ')'
+                    label: valueType
+                };
+            });
+        }
+
         $scope.refreshAttributeSection = function() {
-            buildCategoryFilterOptions();
+            buildAttributeCategoryFilterOptions();
+            buildValueTypeFilterOptions();
             const grouping = getGrouping();
             const groupedAttributes = $scope.buildGroupedAttributes(grouping)
             $scope.groupedAttributes = groupedAttributes.attributesWithProperty;

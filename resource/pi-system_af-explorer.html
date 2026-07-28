@@ -113,7 +113,7 @@
                     <div>
                         <basic-search-box
                                 ng-model="ui.attributeFiltering.attributeSearch"
-                                placeholder="Search attribute or template name"
+                                placeholder="Filter by attribute or template name"
                                 ng-change="refreshAttributeSection()"
                         >
                         </basic-search-box>
@@ -122,7 +122,12 @@
                         <select dku-bs-select multiple
                                 ng-model="ui.attributeFiltering.attributeCategoryFilterList"
                                 ng-change="refreshAttributeSection()"
-                                ng-options="category.value as category.label for category in categoryFilterOptions">
+                                ng-options="category.value as category.label for category in attributeCategoryFilterOptions">
+                        </select>
+                        <select dku-bs-select
+                                ng-model="ui.attributeFiltering.attributeValueTypeFilter"
+                                ng-change="refreshAttributeSection()"
+                                ng-options="valueType.value as valueType.label for valueType in attributeValueTypeFilterOptions">
                         </select>
                     </div>
                     <div class="attribute-section__grouping-toggle">
