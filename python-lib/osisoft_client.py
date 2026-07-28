@@ -251,7 +251,9 @@ class OSIsoftClient(object):
         web_ids = []
         event_start_times = []
         event_end_times = []
+        initial_indexs = []
         for input_row in input_rows:
+            initial_index = input_row.get("initial_index", None)
             max_time_to_retrieve_per_batch = input_row.get("maximum_points_returned") / input_row.get("estimated_density")
             batch_time = BatchTimeCounter(max_time_to_retrieve_per_batch)
             endpoint_type = input_row.get("endpoint_type", "event_frames")
@@ -271,12 +273,12 @@ class OSIsoftClient(object):
             end_date = input_row.get("end_date")
             interval = input_row.get("interval")
             requests_kwargs = self.generic_get_kwargs(**input_row)
-            print("ALX:requests_kwargs={}".format(requests_kwargs))
             batch_time.add(start_date, end_date, interval)
             requests_kwargs['url'] = build_query_string(url, requests_kwargs.get("params"))
             web_ids.append(webid)
             event_start_times.append(event_start_time)
             event_end_times.append(event_end_time)
+            initial_indexs.append(initial_index)
             batch_requests_parameters.append(requests_kwargs)
             number_processed_webids += 1
             if (len(batch_requests_parameters) >= batch_size) or (number_processed_webids == number_of_webids_to_process) or batch_time.is_batch_full():
@@ -293,13 +295,22 @@ class OSIsoftClient(object):
                             response_content['event_frame_webid'] = "{}".format(webid)
                         yield response_content
                     items = response_content.get(OSIsoftConstants.API_ITEM_KEY, [])
+                    if len(items)==0:
+                        item = {}
+                        if event_start_time:
+                            item['StartTime'] = event_start_time
+                        if event_end_time:
+                            item['EndTime'] = event_end_time
+                        if initial_index is not None:
+                            item['initial_index'] = initial_indexs[response_index]
+                        yield item
                     for item in items:
                         if event_start_time:
                             item['StartTime'] = event_start_time
                         if event_end_time:
                             item['EndTime'] = event_end_time
-                        if endpoint_type == "event_frames":
-                            item['event_frame_webid'] = "{}".format(webid)
+                        if initial_index is not None:
+                            item['initial_index'] = initial_indexs[response_index]
                         yield item
                     response_index += 1
                 web_ids = []

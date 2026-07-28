@@ -1,13 +1,14 @@
 # -*- coding: utf-8 -*-
 import dataiku
 import json
+import copy
 from dataiku.customrecipe import get_input_names_for_role, get_recipe_config, get_output_names_for_role
 import pandas as pd
 from safe_logger import SafeLogger
 from osisoft_plugin_common import (
-    get_credentials, get_combined_description, get_base_for_data_type, check_debug_mode,
+    get_credentials, get_base_for_data_type, check_debug_mode,
     PerformanceTimer, get_max_count, check_must_convert_object_to_string,
-    convert_schema_objects_to_string, get_advanced_parameters,
+    get_advanced_parameters,
     get_batch_parameters
 )
 from osisoft_client import OSIsoftClient
@@ -82,6 +83,83 @@ def format_results(results, output_schema_data_type):
         formated_results.append(formated_result)
     return formated_results
 
+def dataframe_schema(dataframe):
+    from pandas.api import types as ptypes
+    """Return a simplified schema for a pandas DataFrame."""
+    schema = []
+
+    for column_name, dtype in dataframe.dtypes.items():
+        if ptypes.is_string_dtype(dtype):
+            column_type = "string"
+        elif ptypes.is_datetime64_any_dtype(dtype):
+            column_type = "date"
+        elif ptypes.is_bool_dtype(dtype):
+            column_type = "boolean"
+        elif ptypes.is_float_dtype(dtype):
+            column_type = "float"
+        elif ptypes.is_integer_dtype(dtype):
+            column_type = "int"
+        else:
+            column_type = "object"
+        schema.append({"name": column_name, "type": column_type})
+    return schema
+
+
+def combine_schemas(input_schema, pi_response_schema):
+    """Combine two schemas and return the combined schema plus input renames."""
+    combined_schema = [dict(column) for column in pi_response_schema]
+    used_names = {column["name"] for column in combined_schema}
+    renamed_columns: dict[str, str] = {}
+
+    for column in input_schema:
+        merged_column = dict(column)
+        original_name = merged_column["name"]
+        candidate_name = original_name
+        suffix = 1
+
+        while candidate_name in used_names:
+            candidate_name = "{}_{}".format(original_name, suffix)
+            suffix += 1
+
+        merged_column["name"] = candidate_name
+        if candidate_name != original_name:
+            renamed_columns[original_name] = candidate_name
+        combined_schema.append(merged_column)
+        used_names.add(candidate_name)
+
+    return combined_schema, renamed_columns
+
+
+def schema_from_sample_data(input_schema, pi_response_schema, sample_data):
+    """Build a schema from sample-data column names using schema type lookups."""
+    input_types = {column["name"]: column["type"] for column in input_schema}
+    pi_response_types = {column["name"]: column["type"] for column in pi_response_schema}
+    output_schema = []
+    added_names = set()
+
+    if isinstance(sample_data, dict):
+        rows = [sample_data]
+    else:
+        rows = sample_data
+
+    for row in rows:
+        if not isinstance(row, dict):
+            continue
+        for column_name in row:
+            if column_name in added_names:
+                continue
+
+            if column_name in pi_response_types:
+                output_schema.append(
+                    {"name": column_name, "type": pi_response_types[column_name]}
+                )
+                added_names.add(column_name)
+            elif column_name in input_types:
+                output_schema.append({"name": column_name, "type": input_types[column_name]})
+                added_names.add(column_name)
+
+    return output_schema
+
 
 input_dataset = get_input_names_for_role('input_dataset')
 output_names_stats = get_output_names_for_role('api_output')
@@ -104,6 +182,8 @@ input_parameters_dataset = dataiku.Dataset(input_dataset[0])
 input_parameters_dataframe = input_parameters_dataset.get_dataframe()
 do_duplicate_input_row = config.get("do_duplicate_input_row", False)
 input_columns = list(input_parameters_dataframe.columns)
+input_columns_types = list(input_parameters_dataframe.dtypes)
+input_schema = dataframe_schema(input_parameters_dataframe)
 
 self_contained_mode = False
 if not path_column:
@@ -122,7 +202,8 @@ start_time_column = config.get("start_time_column")
 use_end_time_column = config.get("use_end_time_column", False)
 end_time_column = config.get("end_time_column")
 server_url_column = config.get("server_url_column")
-use_batch_mode, batch_size = get_advanced_parameters(config)
+_, batch_size = get_advanced_parameters(config)
+download_strategy = config.get("download_strategy", "recursive")
 
 max_request_size, estimated_density, maximum_points_returned = get_batch_parameters(config)
 max_time_to_retrieve_per_batch = estimated_density / maximum_points_returned  # density per hour <- max time is in hour
@@ -179,9 +260,10 @@ with output_dataset.get_writer() as writer:
 
         step_value = None
 
-        if use_batch_mode:
+        if download_strategy=="batch":
             buffer.append(
                 {
+                    "initial_index": int(absolute_index - 1),
                     "WebId": object_id, "data_type": data_type,
                     "max_count": max_count,
                     "start_date": start_time,
@@ -226,8 +308,6 @@ with output_dataset.get_writer() as writer:
                 summary_duration=summary_duration
             )
         for row in rows:
-            row["Name"] = row_name
-            row[path_column] = object_id
             if isinstance(row, list):
                 for line in row:
                     base = get_base_for_data_type(data_type, object_id, Step=step_value)
@@ -235,22 +315,19 @@ with output_dataset.get_writer() as writer:
                     extention = client.unnest_row(base)
                     results.extend(extention)
             else:
-                base = get_base_for_data_type(data_type, object_id, Step=step_value)
-                if duplicate_initial_row:
-                    base.update(duplicate_initial_row)
+                if row.get("initial_index") is not None:
+                    base = json.loads(copy.deepcopy(input_parameters_dataframe.loc[row.get("initial_index")].to_json()))
+                else:
+                    base = json.loads(copy.deepcopy(input_parameters_dataframe.loc[absolute_index-1].to_json()))
                 base.update(row)
                 extention = client.unnest_row(base)
                 results.extend(extention)
 
-        if output_schema_data_type == "All":
-            results = format_results(results, output_schema_data_type)
         unnested_items_rows = pd.DataFrame(results)
         if first_dataframe:
-            default_columns = OSIsoftConstants.RECIPE_SCHEMA_PER_DATA_TYPE.get(output_schema_data_type)
-            if must_convert_object_to_string:
-                default_columns = convert_schema_objects_to_string(default_columns)
-            combined_columns_description = get_combined_description(default_columns, unnested_items_rows)
-            output_dataset.write_schema(combined_columns_description)
+            pi_response_schema = dataframe_schema(unnested_items_rows)
+            final_schema = schema_from_sample_data(input_schema, pi_response_schema, results[0])
+            output_dataset.write_schema(final_schema)
             first_dataframe = False
         if not unnested_items_rows.empty:
             writer.write_dataframe(unnested_items_rows)
