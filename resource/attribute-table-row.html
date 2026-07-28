@@ -30,7 +30,8 @@
     </select>
 </td>
 <td>
-    <div ng-repeat="(aggregateName, aggregate) in ctrl.aggregateDataTypeFields.aggregates"
+    <div class="custom-table__aggregate-field"
+         ng-repeat="(aggregateName, aggregate) in ctrl.aggregateDataTypeFields.aggregates"
          ng-show="aggregate.isVisible(ctrl.mergedAttribute)">
         {{aggregate.label}}
         <select dku-bs-select ng-model="ctrl.mergedAttribute[aggregateName]"
