@@ -70,7 +70,7 @@
 }
 
 .tree-node__row--visualized.tree-node__row--search-result {
-    background: #F3F6E3;
+    background: #FFF8C6;
 }
 
 .tree-node__row--search-result:not(.tree-node__row--visualized) {
@@ -329,6 +329,22 @@ pi-system-auth-banner {
     align-self: stretch;
 }
 
+.attribute-section__filters {
+    display: flex;
+    gap: 16px;
+}
+
+.attribute-section__filter-column {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 0;
+}
+
+.attribute-section__filter-label {
+    font-weight: 600;
+}
+
 .attribute-section__filters-row {
     display: flex;
     align-items: center;
@@ -400,6 +416,17 @@ pi-system-auth-banner {
     flex-direction: row;
     align-items: center;
     gap: 4px;
+}
+
+.custom-table__aggregate-field {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+}
+
+.custom-table__aggregate-field + .custom-table__aggregate-field {
+    margin-top: 8px;
 }
 
 .attribute-table-block {
@@ -511,8 +538,8 @@ pi-system-auth-banner {
 .tree-view__search-panel {
     display: flex;
     flex-direction: column;
-    gap: 8px;
     align-self: stretch;
+    margin: 2px 4px;
 }
 
 .tree-view__search-row {
@@ -543,6 +570,11 @@ pi-system-auth-banner {
     flex-direction: column;
     gap: 8px;
     overflow: auto;
+}
+
+.tree-view__separator {
+    align-self: stretch;
+    border-top: 1px solid #BBB;
 }
 
 .tab-container {

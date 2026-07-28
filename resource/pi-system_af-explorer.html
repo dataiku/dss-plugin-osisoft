@@ -33,6 +33,26 @@
                         No matching element found
                     </div>
                 </div>
+                <div class="tree-view__search-panel" ng-if="activeTab === 'template'">
+                    <div class="tree-view__search-row">
+                        <basic-search-box
+                                ng-model="ui.templateSearch"
+                                placeholder="Search template"
+                                ng-change="applyTemplateSearch()"
+                        >
+                        </basic-search-box>
+                    </div>
+                    <div class="tree-view__search-results">
+                        <ul ng-if="ui.templateSearchResults">
+                            <li ng-repeat="node in ui.templateSearchResults track by node.id">
+                                <tree-node node="node" get-children-from-db="" toggle-display-attributes="toggleDisplayAttributes"
+                                           config="config" clicked-nodes="ui.clickedNodes" toggle-node-visualization="toggleNodeVisualization(node)"
+                                           selected-element-paths="selectedElementPaths" hide-children="true"
+                                ></tree-node>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
                 <button
                         class="btn btn--outline btn--secondary btn--dku-icon"
                         ng-click="clearAllVisualizedNodes()"
@@ -41,6 +61,7 @@
                     Clear all
                 </button>
             </div>
+            <div class="tree-view__separator" ng-if="activeTab === 'template'"></div>
             <div class="tree-view__content">
 <!--                <div>-->
 <!--                    Filter by category<select dku-bs-select ng-model="config.element_category"-->
@@ -91,11 +112,29 @@
                     <div><strong>Attributes and templates</strong></div>
                     <div>
                         <basic-search-box
-                                ng-model="ui.attributeSearch"
-                                placeholder="Search attribute or template name"
+                                ng-model="ui.attributeFiltering.attributeSearch"
+                                placeholder="Filter by attribute or template name"
                                 ng-change="refreshAttributeSection()"
                         >
                         </basic-search-box>
+                    </div>
+                    <div class="attribute-section__filters">
+                        <div class="attribute-section__filter-column">
+                            <div class="attribute-section__filter-label">Category</div>
+                            <select dku-bs-select multiple
+                                    ng-model="ui.attributeFiltering.attributeCategoryFilterList"
+                                    ng-change="refreshAttributeSection()"
+                                    ng-options="category.value as category.label for category in attributeCategoryFilterOptions">
+                            </select>
+                        </div>
+                        <div class="attribute-section__filter-column">
+                            <div class="attribute-section__filter-label">Value type</div>
+                            <select dku-bs-select
+                                    ng-model="ui.attributeFiltering.attributeValueTypeFilter"
+                                    ng-change="refreshAttributeSection()"
+                                    ng-options="valueType.value as valueType.label for valueType in attributeValueTypeFilterOptions">
+                            </select>
+                        </div>
                     </div>
                     <div class="attribute-section__grouping-toggle">
                         <div class="attribute-section__grouping-toggle--element" ng-click="changeGroupingMode('TEMPLATE')" ng-class="{active: groupMode === 'TEMPLATE'}">
@@ -121,13 +160,6 @@
                             <span>Only common attributes</span>
                         </label>
                     </div>
-                    <!--                <div>-->
-                    <!--                    Filter by category-->
-                    <!--                    <select dku-bs-select ng-model="config.attribute_category"-->
-                    <!--                            ng-options="dbn.title as dbn.title for dbn in config.attribute_categories"-->
-                    <!--                            ng-init="getCategoriesFromDB()"-->
-                    <!--                            ng-change="refreshAttributeSection()"></select>-->
-                    <!--                </div>-->
                 </div>
                 <div
                         attribute-table-block
