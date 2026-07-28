@@ -80,14 +80,6 @@
             "defaultValue": false
         },
         {
-            "name": "use_batch_mode",
-            "label": "Use batch mode",
-            "type": "BOOLEAN",
-            "description": "Use to quickly retrieve small samples from multiple paths. ⚠️Not for large time ranges",
-            "visibilityCondition": "model.show_advanced_parameters==true",
-            "defaultValue": false
-        },
-        {
             "name": "batch_size",
             "label": "Batch size",
             "type": "INT",
@@ -115,6 +107,16 @@
             "description": "(those with matching names will be overwritten by PI system data)",
             "type": "BOOLEAN",
             "visibilityCondition": false
+        },
+        {
+            "name": "download_strategy",
+            "label": "Download strategy",
+            "type": "SELECT",
+            "selectChoices":[
+                {"value": "recursive", "label": "Recursive (large time periods)"},
+                {"value": "batch", "label": "Batch (many attributes, few points each)"}
+            ],
+            "defaultValue": "recursive"
         },
         {
             "type": "SEPARATOR",
