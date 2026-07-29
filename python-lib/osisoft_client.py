@@ -113,7 +113,7 @@ class OSIsoftClient(object):
     def recursive_get_rows_from_item(self, item, data_type, start_date=None, end_date=None,
                                      interval=None, sync_time=None, boundary_type=None, record_boundary_type=None,
                                      can_raise=True, object_id=None, endpoint_type="event_frames", search_full_hierarchy=None,
-                                     max_count=None, summary_type=None, summary_duration=None):
+                                     max_count=None, summary_type=None, summary_duration=None, calculation_basis=None):
         # item can be an pi tag, a path to an element or event frame
         # Split the time range until no more HTTP 400
         done = False
@@ -124,7 +124,7 @@ class OSIsoftClient(object):
                                            sync_time=sync_time, boundary_type=boundary_type, record_boundary_type=record_boundary_type,
                                            can_raise=True, object_id=object_id,
                                            search_full_hierarchy=search_full_hierarchy, max_count=max_count,
-                                           summary_type=summary_type, summary_duration=summary_duration)
+                                           summary_type=summary_type, summary_duration=summary_duration, calculation_basis=calculation_basis)
             counter = 0
             try:
                 row = next(rows)
@@ -146,7 +146,8 @@ class OSIsoftClient(object):
                         item, data_type, start_date=start_timestamp, end_date=half_time_iso,
                         interval=interval, sync_time=sync_time, boundary_type=boundary_type,
                         record_boundary_type=record_boundary_type, can_raise=True, object_id=object_id,
-                        search_full_hierarchy=search_full_hierarchy, max_count=max_count, summary_type=summary_type, summary_duration=summary_duration
+                        search_full_hierarchy=search_full_hierarchy, max_count=max_count, summary_type=summary_type, summary_duration=summary_duration,
+                        calculation_basis=calculation_basis
                     )
                     for row in first_half_rows:
                         yield row
@@ -155,7 +156,8 @@ class OSIsoftClient(object):
                         item, data_type, start_date=half_time_iso, end_date=end_timestamp,
                         interval=interval, sync_time=sync_time, boundary_type=boundary_type,
                         record_boundary_type=record_boundary_type, can_raise=True, object_id=object_id,
-                        search_full_hierarchy=search_full_hierarchy, max_count=max_count, summary_type=summary_type, summary_duration=summary_duration
+                        search_full_hierarchy=search_full_hierarchy, max_count=max_count, summary_type=summary_type, summary_duration=summary_duration,
+                        calculation_basis=calculation_basis
                     )
                     for row in second_half_rows:
                         yield row

@@ -201,6 +201,7 @@ class OSIsoftConstants(object):
         {'name': 'boundary_type', 'type': 'string'},
         {'name': 'record_boundary_type', 'type': 'string'},
         {'name': 'summary_duration', 'type': 'string'},
+        {'name': 'calculation_basis', 'type': 'string'},
         {'name': 'max_count', 'type': 'string'},
         {'name': 'Errors', 'type': 'object'}
     ]

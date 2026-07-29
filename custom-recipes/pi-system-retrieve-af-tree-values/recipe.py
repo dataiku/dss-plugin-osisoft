@@ -64,7 +64,9 @@ def extract_params_from_row(row):
         summary_type = None
     summary_duration = normalize_value(row.get("summary_duration"))
     object_id = normalize_value(row.get("id"))
-    return object_id, data_type, boundary_type, record_boundary_type, interval, sync_time, summary_type, summary_duration
+    object_id = normalize_value(row.get("id"))
+    calculation_basis = normalize_value(row.get("calculation_basis"))
+    return object_id, data_type, boundary_type, record_boundary_type, interval, sync_time, summary_type, summary_duration, calculation_basis
 
 
 def format_results(results, output_schema_data_type):
@@ -233,7 +235,7 @@ with output_dataset.get_writer() as writer:
         row_name = input_parameters_row.get("Name")
 
         # if self_contained_mode:
-        object_id, data_type, boundary_type, record_boundary_type, interval, sync_time, summary_type, summary_duration = extract_params_from_row(
+        object_id, data_type, boundary_type, record_boundary_type, interval, sync_time, summary_type, summary_duration, calculation_basis = extract_params_from_row(
             input_parameters_row
         )
         path_column = "id"
@@ -277,6 +279,7 @@ with output_dataset.get_writer() as writer:
                     "object_id": object_id,
                     "summary_type": summary_type,
                     "summary_duration": summary_duration,
+                    "calculation_basis": calculation_basis,
                     "endpoint_type": "AF",
                     "estimated_density": estimated_density,
                     "maximum_points_returned": maximum_points_returned
@@ -305,7 +308,8 @@ with output_dataset.get_writer() as writer:
                 can_raise=False,
                 endpoint_type="AF",
                 summary_type=summary_type,
-                summary_duration=summary_duration
+                summary_duration=summary_duration,
+                calculation_basis=calculation_basis
             )
         for row in rows:
             if isinstance(row, list):
