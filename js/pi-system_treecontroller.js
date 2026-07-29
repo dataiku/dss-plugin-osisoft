@@ -331,7 +331,8 @@ app.controller('AfExplorerFormCtrl', [
             templateSearchResults: [],
             displayPath: false,
             onlyDisplayCommon: false,
-            searchInProgress: false
+            uiFrozen: false,
+            // loadingModal: false
         };
         $scope.attributeCategoryFilterOptions = [];
         $scope.attributeValueTypeFilterOptions = [];
@@ -1689,6 +1690,24 @@ app.controller('AfExplorerFormCtrl', [
                 $scope.groupMode = GroupMode.CATEGORY;
             }
             $scope.refreshAttributeSection();
+        }
+
+        function startLoadingModal() {
+        }
+
+        function startLoadingState(timeoutModalSeconds) {
+            $scope.ui.uiFrozen = true;
+            if (timeoutModalSeconds) {
+                setTimeout(() => {
+                    startLoadingModal();
+                }, timeoutModalSeconds * 1000);
+            } else {
+                startLoadingModal();
+            }
+        }
+
+        function stopLoadingState() {
+            $scope.ui.uiFrozen = false;
         }
 
     }]);

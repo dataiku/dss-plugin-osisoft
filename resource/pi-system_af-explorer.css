@@ -160,6 +160,7 @@
     width: 100%;
 }
 .generic-class {
+    position: relative;
     display: flex;
     align-items: flex-start;
     flex: 1 0 0;
@@ -170,6 +171,21 @@
     height: calc(100vh - 90px);
     width: calc(100vw - 42px);
 }
+
+.pi-system-explorer--frozen .pi-system-explorer__tree-view-container,
+.pi-system-explorer--frozen .pi-system-explorer__main {
+    filter: grayscale(1);
+    opacity: 0.55;
+}
+
+.pi-system-explorer__freeze-overlay {
+    position: absolute;
+    inset: 0;
+    z-index: 10;
+    background: rgba(255, 255, 255, 0.2);
+    cursor: not-allowed;
+}
+
 .pi-system-explorer__main {
     display: flex;
     flex-direction: column;

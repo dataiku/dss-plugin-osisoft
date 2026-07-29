@@ -1,5 +1,9 @@
 <link rel="stylesheet" href="/plugins/pi-system/resource/pi-system_af-explorer.css">
-<div class="generic-class" ng-controller="AfExplorerFormCtrl" ng-init="init()">
+<div class="generic-class"
+     ng-controller="AfExplorerFormCtrl"
+     ng-init="init()"
+     ng-class="{'pi-system-explorer--frozen': ui.uiFrozen}"
+     ng-attr-aria-disabled="{{ ui.uiFrozen ? 'true' : undefined }}">
     <div class="pi-system-explorer__tree-view-container" ng-if="showTreeData">
         <div ng-if="config.database_name" class="pi-system-explorer__tree-view">
             <div class="tree-view__header">
@@ -208,4 +212,5 @@
         </div>
     </div>
 
+    <div class="pi-system-explorer__freeze-overlay" ng-if="ui.uiFrozen" aria-hidden="true"></div>
 </div>
