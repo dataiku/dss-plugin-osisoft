@@ -97,11 +97,12 @@ const aggregateDataTypeFields = Object.freeze({
         calculation_basis: {
             label: 'Calculation Basis',
             type: 'select',
-            defaultValue: [],
+            defaultValue: '',
             isVisible: function(attribute) {
                 return attribute.data_type === 'SummaryData';
             },
             options: [
+                { value: '', label: 'None' },
                 { value: 'TimeWeighted', label: 'Time-weighted' },
                 { value: 'EventWeighted', label: 'Event-weighted' },
                 { value: 'TimeWeightedContinuous', label: 'Time-weighted continuous' },
