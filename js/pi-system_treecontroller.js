@@ -949,13 +949,9 @@ app.controller('AfExplorerFormCtrl', [
 
         $scope.initElementsDropdown = async function(templateName) {
             const existingElements = $scope.elementsByTemplate[templateName];
-            console.log("elementsbytemplate", $scope.elementsByTemplate)
-            console.log("existingElements", existingElements)
             if (Array.isArray(existingElements)) {
-                console.log("here")
                 return existingElements.map(element => element.url);
             }
-            console.log("fetching")
             await $scope.getElementsForTemplate(templateName);
             return $scope.elementsByTemplate[templateName].map(element => element.url);
         }
@@ -966,13 +962,10 @@ app.controller('AfExplorerFormCtrl', [
         $scope.applyClickElementsDropdown = function(templateName, element, wasUnselected) {
             $scope.$applyAsync(() => {
                 // TODO: redo everything by templateID
-                console.log("$scope.templateModeExcludedAttributes", $scope.templateModeExcludedAttributes)
-                console.log("in apply click")
                 if ($scope.activeTab === 'element') {
                     $scope.toggleNodeVisualization(element);
                 } else if ($scope.activeTab === 'template') {
                     if (!wasUnselected) {
-                        console.log("not unselected (apply click) - removing from attributelist ")
                         if (!$scope.templateModeExcludedAttributes[templateName]) {
                             $scope.templateModeExcludedAttributes[templateName] = {}
                         }
