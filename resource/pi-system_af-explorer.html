@@ -213,4 +213,9 @@
     </div>
 
     <div class="pi-system-explorer__freeze-overlay" ng-if="ui.uiFrozen" aria-hidden="true"></div>
+    <loading-overlay
+            ng-if="ui.loadingOverlay.displayed"
+            header="ui.loadingOverlay.header"
+            text="ui.loadingOverlay.text">
+    </loading-overlay>
 </div>

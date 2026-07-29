@@ -186,6 +186,47 @@
     cursor: not-allowed;
 }
 
+.pi-system-explorer__loading-modal {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 33%;
+    height: 20%;
+    min-width: 320px;
+    min-height: 160px;
+    transform: translate(-50%, -50%);
+    z-index: 11;
+    background: #FFF;
+    border: 1px solid #CCC;
+    border-radius: 4px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    justify-content: flex-start;
+    gap: 12px;
+    padding: 20px 24px;
+}
+
+.pi-system-explorer__loading-modal-icon {
+    align-self: center;
+    color: #666;
+    padding: 16px;
+}
+
+.pi-system-explorer__loading-modal-header {
+    color: #222;
+    font-size: 16px;
+    font-weight: 400;
+    text-align: center;
+}
+
+.pi-system-explorer__loading-modal-text {
+    color: #666;
+    font-size: 14px;
+    text-align: justify;
+}
+
 .pi-system-explorer__main {
     display: flex;
     flex-direction: column;

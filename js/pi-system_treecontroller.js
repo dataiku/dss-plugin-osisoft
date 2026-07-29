@@ -8,6 +8,17 @@ app.directive('piSystemAuthBanner', function() {
     };
 });
 
+app.directive('loadingOverlay', function() {
+    return {
+        restrict: 'E',
+        scope: {
+            header: '<',
+            text: '<'
+        },
+        templateUrl: '/plugins/pi-system/resource/loading-overlay.html'
+    };
+});
+
 const aggregateDataTypeFields = Object.freeze({
     data_type: {
         label: 'Data type',
@@ -332,8 +343,13 @@ app.controller('AfExplorerFormCtrl', [
             displayPath: false,
             onlyDisplayCommon: false,
             uiFrozen: false,
-            // loadingModal: false
+            loadingOverlay: {
+                displayed: false,
+                text: "",
+                header: ""
+            }
         };
+        let loadingOverlayTimeout = null;
         $scope.attributeCategoryFilterOptions = [];
         $scope.attributeValueTypeFilterOptions = [];
 
@@ -904,6 +920,7 @@ app.controller('AfExplorerFormCtrl', [
         }
 
         function getAttributesForTemplate(node) {
+            startLoadingState("Fetching attributes", "Fetching attributes from the server can take a little bit of time");
             return $scope.callPythonDo({ method: "get_attribute_for_template", template_name: node.title}).then(
                 function(data) {
                     console.log("get_attribute_for_template", data);
@@ -928,7 +945,7 @@ app.controller('AfExplorerFormCtrl', [
                         loadedAttributes: loadedAttributes
                     };
                 }
-            );
+            ).finally(stopLoadingState);
         }
 
         $scope.isTemplateAssociatedElementSelected = function(element) {
@@ -1685,22 +1702,36 @@ app.controller('AfExplorerFormCtrl', [
             $scope.refreshAttributeSection();
         }
 
-        function startLoadingModal() {
-        }
-
-        function startLoadingState(timeoutModalSeconds) {
+        function startLoadingState(headerLoadingOverlay, textLoadingOverlay, timeoutModalSeconds=0.001) {
+            console.log("freezing ui")
             $scope.ui.uiFrozen = true;
+            $scope.ui.loadingOverlay.displayed = false;
+            $scope.ui.loadingOverlay.text = textLoadingOverlay;
+            $scope.ui.loadingOverlay.header = headerLoadingOverlay;
+            if (loadingOverlayTimeout) {
+                clearTimeout(loadingOverlayTimeout);
+                loadingOverlayTimeout = null;
+            }
             if (timeoutModalSeconds) {
-                setTimeout(() => {
-                    startLoadingModal();
+                loadingOverlayTimeout = setTimeout(() => {
+                    $scope.ui.loadingOverlay.displayed = true;
+                    loadingOverlayTimeout = null;
                 }, timeoutModalSeconds * 1000);
             } else {
-                startLoadingModal();
+                $scope.ui.loadingOverlay.displayed = true;
             }
         }
 
         function stopLoadingState() {
+            if (loadingOverlayTimeout) {
+                clearTimeout(loadingOverlayTimeout);
+                loadingOverlayTimeout = null;
+            }
             $scope.ui.uiFrozen = false;
+            $scope.ui.loadingOverlay.displayed = false;
+            $scope.ui.loadingOverlay.text = "";
+            $scope.ui.loadingOverlay.header = "";
+            console.log("unfreezing ui")
         }
 
     }]);
