@@ -3,6 +3,8 @@ from osisoft_client import OSIsoftClient
 from safe_logger import SafeLogger
 from osisoft_plugin_common import get_credentials, build_select_choices, check_debug_mode
 from osisoft_plugin_common import get_item_details, Tree, recursive_tree_rebuild, PerformanceTimer
+from osisoft_build_tree import build_af_element_tree
+
 
 logger = SafeLogger("PI System plugin", ["user", "password"])
 
@@ -62,6 +64,8 @@ def do(payload, config, plugin_config, inputs):
         return get_attribute_for_template(client, payload, config)
     if method == "get_attributes":
         return get_attributes(client, payload, config)
+    if method == "build_af_tree":
+        return build_af_tree(client, payload, config)
     if method == "do_search":
         return do_search(client, payload, config, network_timer)
 
@@ -225,6 +229,25 @@ def get_attributes(client, payload, config):
     logger.info(
         "End call [get_attributes] database_name={}, element_name={}, attribute_name={}".format(
             database_name, element_name, attribute_name
+        )
+    )
+    return result
+
+
+def build_af_tree(client, payload, config):
+    database_url = config.get("database_name")
+    if not database_url:
+        return {}
+    logger.info(
+        "Start call [build_af_element_tree] database_url={}".format(
+            database_url
+        )
+    )
+    tree = build_af_element_tree(client, database_url)
+    result = {"choices": [], "tree": tree}
+    logger.info(
+        "End call [build_af_element_tree] database_url={}".format(
+            database_url
         )
     )
     return result
