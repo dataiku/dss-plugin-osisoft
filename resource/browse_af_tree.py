@@ -60,6 +60,8 @@ def do(payload, config, plugin_config, inputs):
         return get_elements_for_template(client, payload, config)
     if method == "get_attribute_for_template":
         return get_attribute_for_template(client, payload, config)
+    if method == "get_attributes":
+        return get_attributes(client, payload, config)
     if method == "do_search":
         return do_search(client, payload, config, network_timer)
 
@@ -199,6 +201,30 @@ def get_elements_for_template(client, payload, config):
     logger.info(
         "End call [get_elements_for_template] database_name={}, template_name={}".format(
             database_name, template_name
+        )
+    )
+    return result
+
+
+def get_attributes(client, payload, config):
+    database_url = config.get("database_name")
+    database_name = database_url.split("/")[-1]
+    element_name = payload.get("element_name", None)
+    if not element_name:
+        element_name = "*"
+    attribute_name = payload.get("attribute_name", None)
+    logger.info(
+        "Start call [get_attributes] database_name={}, element_name={}, attribute_name={}".format(
+            database_name, element_name, attribute_name
+        )
+    )
+    attributes = []
+    for attribute in client.search_attributes(database_name, attribute_name=attribute_name, element_name=element_name, full_search=True):
+        attributes.append(get_item_details(attribute))
+    result = {"choices": [], "attributes": attributes}
+    logger.info(
+        "End call [get_attributes] database_name={}, element_name={}, attribute_name={}".format(
+            database_name, element_name, attribute_name
         )
     )
     return result
