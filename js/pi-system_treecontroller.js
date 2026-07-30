@@ -778,10 +778,12 @@ app.controller('AfExplorerFormCtrl', [
         }
 
         $scope.getElementTreeFromDB = function() {
+            // TODO: put element tree fetching there ?
+            startLoadingState("Getting everything ready", "The first load can take several minutes. It's a one-time process to optimize performance. Keep this tab open and come back later if you'd like.")
             return $scope.callPythonDo({ method: "get_children_from_db", parent: $scope.config.database_name }).then(function(data) {
                 console.log("get_children_from_db", data);
                 return data.choices;
-            });
+            }).finally(stopLoadingState);
         };
 
         $scope.getFromCacheOrFetchBaselineObjects = function() {
@@ -803,6 +805,10 @@ app.controller('AfExplorerFormCtrl', [
             if (item.type === "template") {
                 return getAttributesForTemplate(item);
             }
+            startLoadingState(
+                "Fetching element attributes",
+                "Fetching attributes for this element from the server can take a little bit of time"
+            );
             return $scope.callPythonDo({ method: "get_children_from_db", parent: item })
                 .then(function(data) {
                     console.log("get_children_from_db", data);
@@ -835,7 +841,8 @@ app.controller('AfExplorerFormCtrl', [
                             loadedAttributes: loadedAttributes
                         }
                     });
-                });
+                })
+                .finally(stopLoadingState);
         }
 
 
@@ -1703,7 +1710,6 @@ app.controller('AfExplorerFormCtrl', [
         }
 
         function startLoadingState(headerLoadingOverlay, textLoadingOverlay, timeoutModalSeconds=0.001) {
-            console.log("freezing ui")
             $scope.ui.uiFrozen = true;
             $scope.ui.loadingOverlay.displayed = false;
             $scope.ui.loadingOverlay.text = textLoadingOverlay;
@@ -1731,7 +1737,6 @@ app.controller('AfExplorerFormCtrl', [
             $scope.ui.loadingOverlay.displayed = false;
             $scope.ui.loadingOverlay.text = "";
             $scope.ui.loadingOverlay.header = "";
-            console.log("unfreezing ui")
         }
 
     }]);

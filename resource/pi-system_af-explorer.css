@@ -182,14 +182,14 @@
     position: absolute;
     inset: 0;
     z-index: 10;
-    background: rgba(255, 255, 255, 0.2);
+    background: rgba(0, 0, 0, 0.2);
     cursor: not-allowed;
 }
 
 .pi-system-explorer__loading-modal {
     position: absolute;
     top: 50%;
-    left: 50%;
+    left: 51%;
     width: 33%;
     height: 20%;
     min-width: 320px;
@@ -198,8 +198,7 @@
     z-index: 11;
     background: #FFF;
     border: 1px solid #CCC;
-    border-radius: 4px;
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+    border-radius: 16px;
     display: flex;
     flex-direction: column;
     align-items: stretch;
@@ -209,15 +208,14 @@
 }
 
 .pi-system-explorer__loading-modal-icon {
-    align-self: center;
-    color: #666;
+    height: 48px;
     padding: 16px;
 }
 
 .pi-system-explorer__loading-modal-header {
     color: #222;
     font-size: 16px;
-    font-weight: 400;
+    font-weight: 600;
     text-align: center;
 }
 
