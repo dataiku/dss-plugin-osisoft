@@ -8,6 +8,17 @@ app.directive('piSystemAuthBanner', function() {
     };
 });
 
+app.directive('loadingOverlay', function() {
+    return {
+        restrict: 'E',
+        scope: {
+            header: '<',
+            text: '<'
+        },
+        templateUrl: '/plugins/pi-system/resource/loading-overlay.html'
+    };
+});
+
 const aggregateDataTypeFields = Object.freeze({
     data_type: {
         label: 'Data type',
@@ -97,11 +108,12 @@ const aggregateDataTypeFields = Object.freeze({
         calculation_basis: {
             label: 'Calculation Basis',
             type: 'select',
-            defaultValue: [],
+            defaultValue: '',
             isVisible: function(attribute) {
                 return attribute.data_type === 'SummaryData';
             },
             options: [
+                { value: '', label: 'None' },
                 { value: 'TimeWeighted', label: 'Time-weighted' },
                 { value: 'EventWeighted', label: 'Event-weighted' },
                 { value: 'TimeWeightedContinuous', label: 'Time-weighted continuous' },
@@ -330,8 +342,14 @@ app.controller('AfExplorerFormCtrl', [
             templateSearchResults: [],
             displayPath: false,
             onlyDisplayCommon: false,
-            searchInProgress: false
+            uiFrozen: false,
+            loadingOverlay: {
+                displayed: false,
+                text: "",
+                header: ""
+            }
         };
+        let loadingOverlayTimeout = null;
         $scope.attributeCategoryFilterOptions = [];
         $scope.attributeValueTypeFilterOptions = [];
 
@@ -760,10 +778,12 @@ app.controller('AfExplorerFormCtrl', [
         }
 
         $scope.getElementTreeFromDB = function() {
+            // TODO: put element tree fetching there ?
+            startLoadingState("Getting everything ready", "The first load can take several minutes. It's a one-time process to optimize performance. Keep this tab open and come back later if you'd like.")
             return $scope.callPythonDo({ method: "get_children_from_db", parent: $scope.config.database_name }).then(function(data) {
                 console.log("get_children_from_db", data);
                 return data.choices;
-            });
+            }).finally(stopLoadingState);
         };
 
         $scope.getFromCacheOrFetchBaselineObjects = function() {
@@ -785,6 +805,10 @@ app.controller('AfExplorerFormCtrl', [
             if (item.type === "template") {
                 return getAttributesForTemplate(item);
             }
+            startLoadingState(
+                "Fetching element attributes",
+                "Fetching attributes for this element from the server can take a little bit of time"
+            );
             return $scope.callPythonDo({ method: "get_children_from_db", parent: item })
                 .then(function(data) {
                     console.log("get_children_from_db", data);
@@ -817,7 +841,8 @@ app.controller('AfExplorerFormCtrl', [
                             loadedAttributes: loadedAttributes
                         }
                     });
-                });
+                })
+                .finally(stopLoadingState);
         }
 
 
@@ -902,6 +927,7 @@ app.controller('AfExplorerFormCtrl', [
         }
 
         function getAttributesForTemplate(node) {
+            startLoadingState("Fetching attributes", "Fetching attributes from the server can take a little bit of time");
             return $scope.callPythonDo({ method: "get_attribute_for_template", template_name: node.title}).then(
                 function(data) {
                     console.log("get_attribute_for_template", data);
@@ -926,7 +952,7 @@ app.controller('AfExplorerFormCtrl', [
                         loadedAttributes: loadedAttributes
                     };
                 }
-            );
+            ).finally(stopLoadingState);
         }
 
         $scope.isTemplateAssociatedElementSelected = function(element) {
@@ -947,13 +973,9 @@ app.controller('AfExplorerFormCtrl', [
 
         $scope.initElementsDropdown = async function(templateName) {
             const existingElements = $scope.elementsByTemplate[templateName];
-            console.log("elementsbytemplate", $scope.elementsByTemplate)
-            console.log("existingElements", existingElements)
             if (Array.isArray(existingElements)) {
-                console.log("here")
                 return existingElements.map(element => element.url);
             }
-            console.log("fetching")
             await $scope.getElementsForTemplate(templateName);
             return $scope.elementsByTemplate[templateName].map(element => element.url);
         }
@@ -964,13 +986,10 @@ app.controller('AfExplorerFormCtrl', [
         $scope.applyClickElementsDropdown = function(templateName, element, wasUnselected) {
             $scope.$applyAsync(() => {
                 // TODO: redo everything by templateID
-                console.log("$scope.templateModeExcludedAttributes", $scope.templateModeExcludedAttributes)
-                console.log("in apply click")
                 if ($scope.activeTab === 'element') {
                     $scope.toggleNodeVisualization(element);
                 } else if ($scope.activeTab === 'template') {
                     if (!wasUnselected) {
-                        console.log("not unselected (apply click) - removing from attributelist ")
                         if (!$scope.templateModeExcludedAttributes[templateName]) {
                             $scope.templateModeExcludedAttributes[templateName] = {}
                         }
@@ -1688,6 +1707,36 @@ app.controller('AfExplorerFormCtrl', [
                 $scope.groupMode = GroupMode.CATEGORY;
             }
             $scope.refreshAttributeSection();
+        }
+
+        function startLoadingState(headerLoadingOverlay, textLoadingOverlay, timeoutModalSeconds=0.001) {
+            $scope.ui.uiFrozen = true;
+            $scope.ui.loadingOverlay.displayed = false;
+            $scope.ui.loadingOverlay.text = textLoadingOverlay;
+            $scope.ui.loadingOverlay.header = headerLoadingOverlay;
+            if (loadingOverlayTimeout) {
+                clearTimeout(loadingOverlayTimeout);
+                loadingOverlayTimeout = null;
+            }
+            if (timeoutModalSeconds) {
+                loadingOverlayTimeout = setTimeout(() => {
+                    $scope.ui.loadingOverlay.displayed = true;
+                    loadingOverlayTimeout = null;
+                }, timeoutModalSeconds * 1000);
+            } else {
+                $scope.ui.loadingOverlay.displayed = true;
+            }
+        }
+
+        function stopLoadingState() {
+            if (loadingOverlayTimeout) {
+                clearTimeout(loadingOverlayTimeout);
+                loadingOverlayTimeout = null;
+            }
+            $scope.ui.uiFrozen = false;
+            $scope.ui.loadingOverlay.displayed = false;
+            $scope.ui.loadingOverlay.text = "";
+            $scope.ui.loadingOverlay.header = "";
         }
 
     }]);

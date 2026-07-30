@@ -160,6 +160,7 @@
     width: 100%;
 }
 .generic-class {
+    position: relative;
     display: flex;
     align-items: flex-start;
     flex: 1 0 0;
@@ -170,6 +171,60 @@
     height: calc(100vh - 90px);
     width: calc(100vw - 42px);
 }
+
+.pi-system-explorer--frozen .pi-system-explorer__tree-view-container,
+.pi-system-explorer--frozen .pi-system-explorer__main {
+    filter: grayscale(1);
+    opacity: 0.55;
+}
+
+.pi-system-explorer__freeze-overlay {
+    position: absolute;
+    inset: 0;
+    z-index: 10;
+    background: rgba(0, 0, 0, 0.2);
+    cursor: not-allowed;
+}
+
+.pi-system-explorer__loading-modal {
+    position: absolute;
+    top: 50%;
+    left: 51%;
+    width: 33%;
+    height: 20%;
+    min-width: 320px;
+    min-height: 160px;
+    transform: translate(-50%, -50%);
+    z-index: 11;
+    background: #FFF;
+    border: 1px solid #CCC;
+    border-radius: 16px;
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    justify-content: flex-start;
+    gap: 12px;
+    padding: 20px 24px;
+}
+
+.pi-system-explorer__loading-modal-icon {
+    height: 48px;
+    padding: 16px;
+}
+
+.pi-system-explorer__loading-modal-header {
+    color: #222;
+    font-size: 16px;
+    font-weight: 600;
+    text-align: center;
+}
+
+.pi-system-explorer__loading-modal-text {
+    color: #666;
+    font-size: 14px;
+    text-align: center;
+}
+
 .pi-system-explorer__main {
     display: flex;
     flex-direction: column;
