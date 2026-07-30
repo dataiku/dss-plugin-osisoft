@@ -201,6 +201,8 @@ class OSIsoftConstants(object):
         {'name': 'Errors', 'type': 'object'}
     ]
     DEFAULT_MAXCOUNT = 1000
+    AF_TREE_ELEMENTS_MAX_COUNT = 100
+    AF_TREE_ATTRIBUTES_MAX_COUNT = 100
     DEFAULT_SCHEME = "https"
     DEFAULT_WAIT_BEFORE_RETRY = 60
     DKU_ERROR_KEY = "Errors"
@@ -405,7 +407,7 @@ class OSIsoftConstants(object):
         "Security": "{base_url}/eventframes/{webid}/security",
         "SecurityEntries": "{base_url}/eventframes/{webid}/securityentries"
     }
-    PLUGIN_VERSION = "1.4.2"
+    PLUGIN_VERSION = "2.0.0-alpha.1"
     VALUE_COLUMN_SUFFIX = "_val"
     WEB_API_PATH = "piwebapi"
     WRITE_HEADERS = {'X-Requested-With': 'XmlHttpRequest'}

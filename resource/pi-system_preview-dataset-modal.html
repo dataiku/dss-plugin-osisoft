@@ -1,0 +1,50 @@
+<div class="modal modal3 pi-system-preview-dataset-modal"
+     auto-size="false">
+    <div dku-modal-header modal-title="Preview dataset" />
+    <div class="modal-body">
+        <div ng-if="!config.outputSelectedAttributes.length" class="alert alert-info">
+            No attributes selected yet.
+        </div>
+        <div ng-if="config.outputSelectedAttributes.length">
+            <div class="attribute-table-block">
+                <div class="attribute-table-block__title">
+                    <strong>{{config.outputSelectedAttributes.length}} selected attribute(s)</strong>
+                </div>
+                <div class="pi-system-preview-dataset-modal__search">
+                    <basic-search-box
+                            ng-model="ui.previewAttributeSearch"
+                            placeholder="Search attribute or element name">
+                    </basic-search-box>
+                </div>
+                <div class="scroll">
+                    <div
+                            attribute-table-block
+                            grouped-attributes="groupedSelectedAttributes"
+                            config="config"
+                            display-path="false"
+                            database-name="config.database_title"
+                            display-group-path="true"
+                            elements-by-template="{}"
+                            title="'Selected Attributes'"
+                            group-mode="None"
+                            display-element-dropdown="false"
+                            active-tab="None"
+                            aggregate-data-type-fields="aggregateDataTypeFields"
+                            on-toggle-select-all-grouped-attributes="toggleSelectAllGroupedAttributes(groupedAttributeGroup)"
+                            on-toggle-grouped-attributes="toggleGroupedAttributes(group)"
+                            on-is-at-least-partially-selected="isAtLeastPartiallySelected(item)"
+                            on-init-elements-dropdown="initElementsDropdown(templateName)"
+                            on-is-template-associated-element-selected="isTemplateAssociatedElementSelected(element)"
+                            on-apply-click-elements-dropdown="None"
+                            on-check-attribute="checkAttribute(mergedAttribute)"
+                            on-update-data-type="updateMergedAttributeDataType(mergedAttribute)"
+                            on-update-aggregate="updateMergedAttributeAggregate(mergedAttribute)">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="modal-footer modal-footer-std-buttons">
+        <button type="button" class="btn btn--text btn--primary" ng-click="dismiss()">Close</button>
+    </div>
+</div>

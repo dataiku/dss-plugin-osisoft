@@ -56,6 +56,21 @@ def get_credentials(config, can_raise=True):
         return auth_type, username, password, server_url, is_ssl_check_disabled, error_message
 
 
+def get_batch_parameters(config):
+    credentials = config.get("credentials", {})
+    max_request_size = credentials.get("max_request_size", 1000)
+    estimated_density = credentials.get("estimated_density", 6000)
+    maximum_points_returned = credentials.get("maximum_points_returned", 1000000)
+    return max_request_size, estimated_density, maximum_points_returned
+
+
+def compute_time_spent(start, end, bla):
+    # 2023-06-30T13:05:10.8692786Z->2024-06-30T13:05:10.9640942Z
+    start = iso_to_epoch(start)
+    end = iso_to_epoch(end)
+    return end - start
+
+
 def get_advanced_parameters(config):
     show_advanced_parameters = config.get('show_advanced_parameters', False)
     batch_size = 500
@@ -139,6 +154,7 @@ def build_requests_params(**kwargs):
         "boundary_type": "syncTimeBoundaryType",
         "name_filter": "nameFilter",
         "category_name": "categoryName",
+        "description": "descriptionFilter",
         "template_name": "templateName",
         "referenced_element_name_filter": "referencedElementNameFilter",
         "referenced_element_template": "referencedElementTemplate",
@@ -427,9 +443,9 @@ def epoch_to_iso(epoch):
 
 
 def iso_to_epoch(iso_timestamp):
-    logger.info("Converting iso timestamp '{}' to epoch".format(iso_timestamp))
+    # logger.info("Converting iso timestamp '{}' to epoch".format(iso_timestamp))
     if is_epoch(iso_timestamp):
-        logger.info("Timestamp is already epoch")
+        # logger.info("Timestamp is already epoch")
         return iso_timestamp
     epoch_timestamp = None
     try:
@@ -438,7 +454,7 @@ def iso_to_epoch(iso_timestamp):
     except Exception:
         logger.error("Error when converting iso timestamp '{}' to epoch".format(iso_timestamp))
         return None
-    logger.info("Timestamp is now '{}'".format(epoch_timestamp))
+    # logger.info("Timestamp is now '{}'".format(epoch_timestamp))
     return epoch_timestamp
 
 
@@ -481,7 +497,7 @@ def fields_selector(data_type):
 
 
 def get_next_page_url(json):
-    if not json:
+    if not isinstance(json, dict):
         return None
     next_page_url = json.get("Links", {}).get("Next", "").replace('&amp;', '&')
     if next_page_url:
@@ -600,3 +616,142 @@ class PerformanceTimer():
         for slowest_event, slowest_time in zip(self.slowest_events, self.slowest_times):
             worst_performers.append("{}: {}s".format(slowest_event, slowest_time))
         return worst_performers
+
+
+class BatchTimeCounter(object):
+    def __init__(self, max_time_to_retrieve_per_batch):
+        logger.info("BatchTimeCounter:max_time_to_retrieve_per_batch={}s".format(max_time_to_retrieve_per_batch * 60 * 60))
+        self.max_time_to_retrieve_per_batch = max_time_to_retrieve_per_batch * 60 * 60
+        self.total_batched_time = 0
+
+    def is_batch_full(self):
+        if self.max_time_to_retrieve_per_batch < 0:
+            return False
+        if self.total_batched_time > self.max_time_to_retrieve_per_batch:
+            logger.warning("batch contains {}s of request, needs to flush now".format(self.total_batched_time))
+            self.total_batched_time = 0
+            return True
+        return False
+
+    def add(self, start_time, end_time, interval):
+        self.total_batched_time += compute_time_spent(start_time, end_time, interval)
+
+
+def get_item_details(item):
+    KEYS_TO_CHECK = {
+        "Name": "title", "TemplateName": "template_name", "CategoryNames": "category_names", "Description": "description",
+        "HasChildren": "has_children", "Path": "path", "Paths": "paths", "WebId": "id", "checked": "checked", "BaseTemplate": "BaseTemplate",
+        "Type": "value_type",
+    }  # should we stick to python naming convention or keep pi's ones throughout ?
+    details = {}
+    for key_to_check in KEYS_TO_CHECK:
+        value = item.get(key_to_check)
+        if value:
+            details[KEYS_TO_CHECK.get(key_to_check)] = value
+    details["url"] = item.get("Links", {}).get("Self")
+    details["type"] = "attribute" if "|" in details.get("path", "") else "element"
+    return details
+
+
+class Tree():
+    # Each put
+    #   - stores the data in the index
+    #   - builds a tree based on the data's path, pointing at the right index
+    def __init__(self, root_tree=None):
+        self.tree = {}
+        self.index = []
+        if root_tree:
+            self._ingest(root_tree)
+
+    def _ingest(self, root_tree, parent_path=None):
+        parent_path = parent_path or []
+        if isinstance(root_tree, list):
+            for item in root_tree:
+                if not parent_path:
+                    path = item.get("path", "")
+                    parent_path = path.split("\\")[2:][0:2]
+                item_children = item.pop("children", [])
+                title = item.get("title")
+                self._ingest(item_children, parent_path=parent_path + [title])
+                path = item.get("path", "")
+                self.put(parent_path + [title], item)
+
+    def put(self, path, data):
+        if isinstance(path, list):
+            current_level = self.tree
+            for token in path:
+                if token not in current_level:
+                    current_level[token] = {}
+                current_level = current_level.get(token)
+            index_to_update = current_level.get("_v", None)
+            if index_to_update is not None:
+                self.index[index_to_update] = data
+            else:
+                last_index = len(self.index)
+                self.index.append(data)
+                current_level.update({"_v": last_index})
+
+    def get(self, path, default=None):
+        if isinstance(path, list):
+            current_level = self.tree
+            for token in path:
+                if token not in current_level:
+                    return default
+                else:
+                    current_level = current_level.get(token)
+            index = current_level.get("_v")
+            return self.get_record(index)
+
+    def get_tree(self):
+        return self.tree
+
+    def get_record(self, index):
+        if index < len(self.index):
+            return self.index[index]
+        return None
+
+    def get_records(self):
+        return self.index
+
+    def exists(self, path):
+        current = self.tree
+        if isinstance(path, list):
+            for token in path:
+                current = current.get(token, {})
+                if not current:
+                    return False
+            return True
+        return False
+
+    def print(self):
+        print("Tree {}".format(self.tree))
+        print("Tree content {}".format(self.index))
+
+
+def recursive_tree_rebuild(dictionary, records, counter=None):
+    counter = counter or -1
+    output = []
+
+    for key in dictionary:
+        if key == "_v":
+            continue
+        sub_dictionary = dictionary.get(key)
+        context = {}
+        if "_v" in sub_dictionary:
+            index_id = sub_dictionary.get("_v")
+            if isinstance(index_id, int):
+                context = records[index_id]
+        counter += 1
+        if sub_dictionary:
+            counter += 1
+            children = recursive_tree_rebuild(sub_dictionary, records, counter + 1)
+        else:
+            children = []
+        # context["id"] = str(counter)
+        context["title"] = key
+        # context["expanded"] = True
+        # context["checked"] = False
+        context["children"] = children
+        # logger.info("context post" + str(context))
+        output.append(context)
+    return output

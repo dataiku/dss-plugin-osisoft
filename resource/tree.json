@@ -1,0 +1,19 @@
+[
+  {
+    "id": 1,
+    "title": "Elements",
+    "expanded": false,
+    "checked": false,
+    "children": [
+        {
+            "id": "blabla",
+            "url": "xcvb",
+            "title": "Well",
+            "expanded": false,
+            "checked": false,
+            "children": [
+            ]
+        }
+    ]
+  }
+]

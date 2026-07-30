@@ -1,0 +1,75 @@
+<!--TODO: check if we display the section in the calling template-->
+<!--            TODO: remove section.key - can use all the attributes passed-->
+<div class="attribute-table-block">
+    <div class="attribute-table-block__title"><strong>{{ctrl.title}}</strong></div>
+    <table class="custom-table">
+        <thead>
+        <tr>
+            <th><input type="checkbox" ng-model="ctrl.groupedAttributes.allChecked"
+                       ng-change="ctrl.onToggleSelectAllGroupedAttributes({ groupedAttributeGroup: ctrl.groupedAttributes })"
+                       ng-disabled="!ctrl.groupedAttributes.groups.length"
+                       indeterminate="ctrl.groupedAttributes.checked"></th>
+            <th>Title</th>
+            <th>Description</th>
+            <th ng-if="ctrl.displayPath">Path</th>
+            <th>Data type</th>
+            <th>Aggregates</th>
+            <th ng-if="ctrl.groupMode !== 'CATEGORY'">Category</th>
+            <th ng-if="ctrl.groupMode !== 'TEMPLATE'">Template</th>
+        </tr>
+        </thead>
+        <tbody ng-if="!ctrl.groupedAttributes || ctrl.groupedAttributes.empty">
+            <tr class="custom-table__empty-row">
+                <td colspan="{{ctrl.getVisibleAttributeColumnCount(true)}}">No attributes matched your selection</td>
+            </tr>
+        </tbody>
+        <tbody
+                ng-repeat="group in ctrl.groupedAttributes.groups track by group.group_key"
+                ng-show="!group.isDisplayed">
+        <tr class="custom-table__group-row"
+            ng-class="{ 'custom-table__group-row--selected': ctrl.onIsAtLeastPartiallySelected({ item: group }) }">
+            <td>
+                <input type="checkbox" ng-model="group.allChecked"
+                       ng-change="ctrl.onToggleGroupedAttributes({ group: group })" indeterminate="group.checked">
+            </td>
+            <td colspan="{{ctrl.getVisibleAttributeColumnCount(false)}}">
+                <div class="custom-table__group-actions">
+                    <div class="custom-table__group-header">
+                        <span class="custom-table__group-name"><strong>{{group.group_name}}</strong></span>
+                        <span ng-if="group.nbSearchMatches !== group.attributes.length">
+                            - ({{group.nbSearchMatches}}/{{group.attributes.length}} attributes shown)
+                        </span>
+                    </div>
+                    <span class="custom-table__group-path"
+                          ng-if="ctrl.displayGroupPath && group.group_path">
+                        {{ctrl.prettifyElementPath(group.group_path, ctrl.databaseName)}}
+                    </span>
+                    <dropdown-elements
+                            elements="ctrl.elementsByTemplate[group.group_name]"
+                            group-name="group.group_name"
+                            database-name="ctrl.config.database_title"
+                            init-elements-dropdown="ctrl.onInitElementsDropdown({ templateName: templateName })"
+                            is-template-associated-element-selected="ctrl.onIsTemplateAssociatedElementSelected({ element: element })"
+                            apply-click-elements-dropdown="ctrl.onApplyClickElementsDropdown({ templateName: templateName, element: element, selected: selected })"
+                            active-tab="ctrl.activeTab"
+                            ng-if="ctrl.displayElementDropdown && ctrl.groupMode === 'TEMPLATE'">
+                    </dropdown-elements>
+                </div>
+            </td>
+        </tr>
+        <tr
+                ng-repeat="mergedAttribute in group.attributes track by mergedAttribute.title"
+                ng-show="mergedAttribute.isDisplayed"
+                attribute-table-row
+                group-mode="ctrl.groupMode"
+                merged-attribute="mergedAttribute"
+                display-path="ctrl.displayPath"
+                aggregate-data-type-fields="ctrl.aggregateDataTypeFields"
+                on-check-attribute="ctrl.onCheckAttribute({ mergedAttribute: mergedAttribute })"
+                on-update-data-type="ctrl.onUpdateDataType({ mergedAttribute: mergedAttribute })"
+                on-update-aggregate="ctrl.onUpdateAggregate({ mergedAttribute: mergedAttribute })"
+                ng-class="{ 'custom-table__attribute-row--selected': ctrl.onIsAtLeastPartiallySelected({ item: mergedAttribute }) }">
+        </tr>
+        </tbody>
+    </table>
+</div>

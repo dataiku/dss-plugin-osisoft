@@ -1,0 +1,44 @@
+<div class="dropdown elements-dropdown--container">
+    <button
+            class="dropdown-toggle elements-dropdown--button"
+            type="button"
+            data-toggle="dropdown"
+            aria-expanded="false"
+            aria-haspopup="true"
+            ng-click="ctrl.onClick()"
+            dropdown-position="fixed"
+    >
+        <span ng-if="!ctrl.elements || ctrl.elements.length === 0">Scope: Elements</span>
+        <span ng-if="ctrl.elements && ctrl.elements.length > 0">Scope: ({{ctrl.getSelectedElementsCount()}}/{{ctrl.elements.length}}) Elements</span>
+        <i class="dku-icon-caret-down-16"></i>
+    </button>
+    <ul class="dropdown-menu elements-dropdown--dropdown">
+        <li ng-repeat="element in ctrl.elements | filter:ctrl.visualized"
+            value="{{element.url}}"
+            ng-click="ctrl.onClickElement(element, $event)"
+            class="elements-dropdown--element"
+            ng-class="{'elements-dropdown--element-separator': $last}"
+        >
+            <span class="elements-dropdown--element-label">
+                <span class="elements-dropdown--element-name">{{element.title}}</span>
+                <span class="elements-dropdown--element-path">
+                    {{ctrl.prettifyElementPath(element.path, ctrl.databaseName)}}
+                </span>
+            </span>
+            <i class="dku-icon-eye-16" ng-show="ctrl.isElementSelected(element)"></i>
+        </li>
+        <li ng-repeat="element in ctrl.elements | filter:ctrl.notVisualized"
+            value="{{element.url}}"
+            ng-click="ctrl.onClickElement(element, $event)"
+            class="elements-dropdown--element"
+        >
+            <span class="elements-dropdown--element-label">
+                <span class="elements-dropdown--element-name">{{element.title}}</span>
+                <span class="elements-dropdown--element-path">
+                    {{ctrl.prettifyElementPath(element.path, ctrl.databaseName)}}
+                </span>
+            </span>
+            <i class="dku-icon-eye-16" ng-show="ctrl.isElementSelected(element)"></i>
+        </li>
+    </ul>
+</div>

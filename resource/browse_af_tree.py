@@ -1,0 +1,629 @@
+import copy
+from osisoft_client import OSIsoftClient
+from safe_logger import SafeLogger
+from osisoft_plugin_common import get_credentials, build_select_choices, check_debug_mode
+from osisoft_plugin_common import get_item_details, Tree, recursive_tree_rebuild, PerformanceTimer
+
+logger = SafeLogger("PI System plugin", ["user", "password"])
+
+
+def do(payload, config, plugin_config, inputs):
+    if "config" in config:
+        config = config.get("config")
+    if "credentials" not in config:
+        return {"choices": [{"label": "Requires DSS v10.0.4 or above. Please use the OSIsoft Search custom dataset instead"}]}
+    elif config.get("credentials") == {}:
+        return {"choices": [{"label": "Pick a credential"}]}
+
+    auth_type, username, password, server_url, is_ssl_check_disabled, credential_error = get_credentials(config, can_raise=False)
+    is_ssl_check_disabled = config.get("is_ssl_check_disabled", False)  # Because no advanced parameter switch
+
+    if credential_error:
+        return build_select_choices(credential_error)
+
+    if not (auth_type and username and password):
+        return build_select_choices("Pick a credential")
+
+    if not username or not password:
+        return build_select_choices(
+            "Incorrect credential. "
+            + "Go to you profile page > Credentials > Your preset, click the edit button and fill in you username and password details."
+        )
+
+    if not server_url:
+        return build_select_choices("Fill in the server address")
+
+    is_debug_mode = check_debug_mode(config)
+
+    network_timer = PerformanceTimer()
+
+    client = OSIsoftClient(
+        server_url, auth_type, username, password,
+        is_ssl_check_disabled=is_ssl_check_disabled, is_debug_mode=is_debug_mode,
+        network_timer=network_timer
+    )
+
+    method = payload.get("method")
+    parameter_name = payload.get("parameterName")
+    logger.info("Running do for method '{}' / parameter '{}'".format(method, parameter_name))
+    if method == "get_query_catalogs":
+        return get_query_catalogs(payload, config)
+    if method == "get_children_from_db":
+        return get_children_from_db(client, payload, config)
+    if method == "get_templates_from_db":
+        return get_templates_from_db(client, payload, config)
+    if method == "get_attribute_categories_from_db":
+        return get_attribute_categories_from_db(client, payload, config)
+    if method == "get_element_categories_from_db":
+        return get_element_categories_from_db(client, payload, config)
+    if method == "get_elements_for_template":
+        return get_elements_for_template(client, payload, config)
+    if method == "get_attribute_for_template":
+        return get_attribute_for_template(client, payload, config)
+    if method == "do_search":
+        return do_search(client, payload, config, network_timer)
+
+    if parameter_name == "server_name":
+        choices = []
+        servers = client.get_asset_servers(can_raise=False)
+        choices.extend(servers)
+        return build_select_choices(choices)
+
+    if parameter_name == "data_server_url":
+        choices = []
+        choices.extend(client.get_data_servers(can_raise=False))
+        return build_select_choices(choices)
+
+    if parameter_name == "database_name":
+        choices = []
+        next_url = config.get("server_name")
+        if next_url:
+            choices.extend(client.get_next_choices(next_url, "Self"))
+            return build_select_choices(choices)
+        else:
+            return build_select_choices()
+    return build_select_choices()
+
+
+def get_query_catalogs(payload, config):
+    logger.info("Start call [get_query_catalogs] payload_keys={}".format(sorted(payload.keys())))
+    user = config.get("credentials", {}).get("osisoft_basic", {}).get("user")
+    password = config.get("credentials", {}).get("osisoft_basic", {}).get("password")
+    result = {"choices": [user, password]}
+    logger.info("End call [get_query_catalogs] payload_keys={}".format(sorted(payload.keys())))
+    return result
+
+
+def get_children_from_db(client, payload, config):
+    database_name = config.get("database_name")
+    parent_node = payload.get("parent", {})
+    logger.info(
+        "Start call [get_children_from_db] database_name={}, parent_node={}".format(database_name, parent_node)
+    )
+    result = get_children_node(client, parent_node, database_name=database_name)
+    logger.info(
+        "End call [get_children_from_db] database_name={}, parent_node={}".format(database_name, parent_node)
+    )
+    return result
+
+
+def get_children_node(client, parent_node, database_name=None):
+    if isinstance(parent_node, dict):
+        url = parent_node.get("url", database_name)
+    else:
+        url = parent_node
+    this_node = next(client.get_next_item_from_url(url, params={"associations": "Paths"}))
+    links = this_node.get("Links", {})
+    attributes_url = links.get("Attributes")
+    elements_url = links.get("Elements")
+    children = []
+    if attributes_url:
+        attributes = client.get_next_item_from_url(attributes_url, params={"associations": "Paths"})
+        templates_urls = []
+        for attribute in attributes:
+            # templates_urls are processed in batch for speed
+            templates_urls.append(extract_attribute_template_url(attribute))
+            child = get_item_details(attribute)
+            # child["title"] = "🏷️{}".format(child.get("title"))
+            child["type"] = "attribute"
+            if child.get("has_children"):
+                child["children"] = []
+            children.append(child)
+        templates_names = client.get_attributes_templates_names(templates_urls)
+        # post processing the batch response
+        for child, template_name in zip(children, templates_names):
+            if template_name:
+                child["template_name"] = template_name
+    if elements_url:
+        elements = client.get_next_item_from_url(elements_url, params={"associations": "Paths"})
+        for element in elements:
+            child = get_item_details(element)
+            # child["title"] = "🧩{}".format(child.get("title"))
+            child["type"] = "element"
+            child["children"] = []
+            children.append(child)
+    return {"choices": children}
+
+
+def get_templates_from_db(client, payload, config):
+    database_name = config.get("database_name")
+    parent_node = payload.get("parent", {})
+    logger.info(
+        "Start call [get_templates_from_db] database_name={}, parent_node={}".format(database_name, parent_node)
+    )
+    result = get_template_hierarchy_from_db(client, parent_node, database_name=database_name)
+    logger.info(
+        "End call [get_templates_from_db] database_name={}, parent_node={}".format(database_name, parent_node)
+    )
+    return result
+
+
+def get_attribute_categories_from_db(client, payload, config):
+    database_name = config.get("database_name")
+    parent_node = payload.get("parent", {})
+    logger.info(
+        "Start call [get_attribute_categories_from_db] database_name={}, parent_node={}".format(database_name, parent_node)
+    )
+    result = get_items_from_db(client, parent_node, "AttributeCategories", database_name=database_name)
+    logger.info(
+        "End call [get_attribute_categories_from_db] database_name={}, parent_node={}".format(database_name, parent_node)
+    )
+    return result
+
+
+def get_element_categories_from_db(client, payload, config):
+    database_name = config.get("database_name")
+    parent_node = payload.get("parent", {})
+    logger.info(
+        "Start call [get_element_categories_from_db] database_name={}, parent_node={}".format(database_name, parent_node)
+    )
+    result = get_items_from_db(client, parent_node, "ElementCategories", database_name=database_name)
+    logger.info(
+        "End call [get_element_categories_from_db] database_name={}, parent_node={}".format(database_name, parent_node)
+    )
+    return result
+
+
+def get_elements_for_template(client, payload, config):
+    database_name = config.get("database_name")
+    template_name = payload.get("template_name", None)
+    logger.info(
+        "Start call [get_elements_for_template] database_name={}, template_name={}".format(
+            database_name, template_name
+        )
+    )
+    elements = []
+    for element in client.search_elements(database_name, name=None, description=None, category=None, template=template_name, full_search=True):
+        elements.append(get_item_details(element))
+    result = {"choices": [], "elements": elements}
+    logger.info(
+        "End call [get_elements_for_template] database_name={}, template_name={}".format(
+            database_name, template_name
+        )
+    )
+    return result
+
+
+def get_attribute_for_template(client, payload, config):
+    database_name = config.get("database_name")
+    template_name = payload.get("template_name", None)
+    logger.info(
+        "Start call [get_attribute_for_template] database_name={}, template_name={}".format(
+            database_name, template_name
+        )
+    )
+    if template_name is None:
+        result = {"choices": [], "attributes": []}
+        logger.info(
+            "End call [get_attribute_for_template] database_name={}, template_name={}".format(
+                database_name, template_name
+            )
+        )
+        return result
+    attributes = []
+    for attribute in client.search_element_attributes(
+        database_name, template=template_name, full_search=True,
+        selected_fields=[
+            "Links.Next", "Items.WebId", "Items.Name", "Items.Description",
+            "Items.Path", "Items.Paths", "Items.Type", "Items.CategoryNames", "Items.Links.Self"
+        ]
+    ):
+        attribute["TemplateName"] = template_name
+        attributes.append(get_item_details(attribute))
+    result = {"choices": [], "attributes": attributes}
+    logger.info(
+        "End call [get_attribute_for_template] database_name={}, template_name={}".format(
+            database_name, template_name
+        )
+    )
+    return result
+
+
+def do_search(client, payload, config, network_timer):
+    logger.info(
+        "Start call [do_search] database_name={}, active_tab={}, element_name={}, attribute_name={}, "
+        "element_category={}, attribute_category={}, clicked_nodes_count={}, selected_template_names_count={}".format(
+            config.get("database_name"),
+            config.get("activeTab"),
+            config.get("element_name"),
+            config.get("attribute_name"),
+            config.get("element_category", None),
+            config.get("attribute_category", None),
+            len(config.get("clickedNodes", [])) if isinstance(config.get("clickedNodes", []), list) else 0,
+            len(config.get("selectedTemplateNames", [])) if isinstance(config.get("selectedTemplateNames", []), list) else 0
+        )
+    )
+    category_name = config.get("element_category", None)
+    clicked_nodes = config.get("clickedNodes", [])
+    if not isinstance(clicked_nodes, list):
+        clicked_nodes = []
+    active_tab = config.get("activeTab")
+    selected_template_names = config.get("selectedTemplateNames", [])
+    template_name = None # Legacy variable, to be reused for template filtering
+    if not isinstance(selected_template_names, list):
+        selected_template_names = []
+    selected_template_names = [
+        template_name_item for template_name_item in selected_template_names
+        if isinstance(template_name_item, str) and template_name_item and template_name_item != "-- Any --"
+    ]
+    if category_name == "-- Any --":
+        category_name = None
+    element_category = config.get("element_category", None)
+    if element_category == "-- Any --":
+        element_category = None
+    attribute_category = config.get("attribute_category", None)
+    if attribute_category == "-- Any --":
+        attribute_category = None
+    database_name = config.get("database_name")
+    element_name = config.get("element_name")
+    # TODO: remove, stale
+    attribute_name = config.get("attribute_name")
+    if isinstance(element_name, str):
+        element_name = element_name.strip()
+        if element_name == "":
+            element_name = None
+    if isinstance(attribute_name, str):
+        attribute_name = attribute_name.strip()
+        if attribute_name == "":
+            attribute_name = None
+
+    has_attribute_filter = attribute_name is not None
+    # TODO: remove, never true anymore
+    is_template_tab = active_tab == "template"
+    has_clicked_element_nodes = len(clicked_nodes) > 0
+    # clicked_nodes scope is only for element-node URLs (batched_search restrict_to_elements).
+    # Template-node selections are scoped via selected_template_names.
+    use_clicked_element_nodes_scope = (
+        has_attribute_filter and
+        not is_template_tab and
+        has_clicked_element_nodes
+    )
+    if has_attribute_filter and not is_template_tab:
+        # Attribute search scope in element tab:
+        # - with selected nodes => restrict to selected nodes
+        # - without selected nodes => global search on the full tree
+        # In both cases, element text input is not a scope for attributes.
+        element_name = None
+    elif has_attribute_filter and is_template_tab:
+        # Attribute search scope in template tab:
+        # - with selected template nodes => restrict to selected templates
+        # - without selected template nodes => global search on the full tree
+        # Ignore stale element/template text filters for attribute-only searches.
+        element_name = None
+        if len(selected_template_names) == 0:
+            template_name = None
+
+    use_selected_template_names_scope = (
+        is_template_tab and len(selected_template_names) > 0
+    )
+
+    if not use_clicked_element_nodes_scope and not use_selected_template_names_scope:
+        clicked_nodes = []
+    root_tree = payload.get("elementTree", payload.get("root_tree", []))
+    root_tree_before_search = copy.deepcopy(root_tree)
+    # https://dku-qa-osi.francecentral.cloudapp.azure.com/piwebapi/assetdatabases/F1RD3VEt1yTvt0ip6-a5yeEVsgbMcrwu_Je0qg9btcZIvPswT1NJU09GVC1QSS1TRVJWXFdFTEw
+    database_webid = database_name.split("/")[-1]
+    attributes = []
+    if use_selected_template_names_scope:
+        # In template tab with selected template nodes, scope searches to all selected templates.
+        # We ignore element_name here to avoid stale "*" from single-template click behavior.
+        for selected_template_name in selected_template_names:
+            for result in client.batched_search(
+                database_name, None, attribute_name,
+                element_category, attribute_category, selected_template_name, []
+            ):
+                attributes.append(result)
+    else:
+        for result in client.batched_search(
+            database_name, element_name, attribute_name,
+            element_category, attribute_category, template_name, clicked_nodes
+        ):
+            # result["checked"] = True
+            attributes.append(result)
+    attributes = split_real_from_linked_paths(attributes)
+    items = []
+    for attribute in attributes:
+        item = get_item_details(attribute)
+        items.append(item)
+    items = expand_items_by_paths(items)
+    attributes_copy = [dict(item) for item in items]
+    rebuilt_tree = rebuild_tree(client, items.copy(), root_tree)
+    expand_nodes_for_matched_paths(client, rebuilt_tree, items, root_tree_before_search)
+    logger.info("Search network timer:{}".format(network_timer.get_report()))
+    result = {"choices": rebuilt_tree, "attributes": attributes_copy}
+    logger.info(
+        "End call [do_search] database_name={}, active_tab={}, element_name={}, attribute_name={}, "
+        "element_category={}, attribute_category={}, clicked_nodes_count={}, selected_template_names_count={}".format(
+            config.get("database_name"),
+            config.get("activeTab"),
+            config.get("element_name"),
+            config.get("attribute_name"),
+            config.get("element_category", None),
+            config.get("attribute_category", None),
+            len(config.get("clickedNodes", [])) if isinstance(config.get("clickedNodes", []), list) else 0,
+            len(config.get("selectedTemplateNames", [])) if isinstance(config.get("selectedTemplateNames", []), list) else 0
+        )
+    )
+    logger.info("End call [do_search] element_name={}, attribute_name={}, db={}:".format(element_name, attribute_name, database_name))
+    return result
+
+
+def get_items_from_db(client, parent_node, link_key, database_name=None):
+    default_choice = {"title": "-- Any --"}
+    if isinstance(parent_node, dict):
+        url = parent_node.get("url", database_name)
+    else:
+        url = parent_node
+    this_node = next(client.get_next_item_from_url(url))
+    links = this_node.get("Links", {})
+    items_url = links.get(link_key)
+    items = []
+    items.append(default_choice)
+    if items_url:
+        for item in client.get_next_item_from_url(items_url):
+            item = get_item_details(item)
+            item["type"] = link_key
+            items.append(item)
+    return {"choices": items}
+
+
+def extract_attribute_template_url(attribute):
+    return attribute.get("Links", {}).get("Template")
+
+
+def get_template_hierarchy_from_db(client, parent_node, database_name=None):
+    if isinstance(parent_node, dict):
+        url = parent_node.get("url", database_name)
+    else:
+        url = parent_node
+    default_choice = {"title": "-- Any --", "id:": ""}
+    this_node = next(client.get_next_item_from_url(url))
+    links = this_node.get("Links", {})
+    element_templates_url = links.get("ElementTemplates")
+    children = [default_choice]
+    rebuilt_tree = []
+    if element_templates_url:
+        element_templates = client.get_next_item_from_url(element_templates_url)
+        for element_template in element_templates:
+            if is_event_frame_template(element_template):
+                continue
+            child = get_item_details(element_template)
+            child["type"] = "template"
+            child["children"] = []
+            children.append(child)
+        rebuilt_tree = nest_children(children)
+    return {"choices": rebuilt_tree}
+
+
+def is_event_frame_template(element_template):
+    if not isinstance(element_template, dict):
+        return False
+    return element_template.get("InstanceType", "") == "EventFrame"
+
+
+def nest_children(items):
+    name_to_item = {item["title"]: item for item in items}
+    tree = []
+    for item in items:
+        parent_name = item.get("BaseTemplate")
+        if parent_name is None or parent_name not in name_to_item:
+            tree.append(item)
+        else:
+            parent = name_to_item[parent_name]
+            if "children" not in parent:
+                parent["children"] = []
+            parent["children"].append(item)
+            parent["has_children"] = True
+    return tree
+
+
+def rebuild_tree(client, items, root_tree=None):
+    # builds an active tree containing all the items and their parent up to the root
+    tree = Tree(root_tree=root_tree)
+    while items:
+        item = items.pop()
+        if item is None:
+            continue
+        find_missing_element_ancestors(client, item, tree)
+        if is_attribute_item(item):
+            continue
+        insert_missing_element(item, tree)
+    result = recursive_tree_rebuild(tree.get_tree(), tree.get_records())
+    result = drop_first_levels(result)
+    return result
+
+
+def expand_nodes_for_matched_paths(client, tree, items, root_tree):
+    if not isinstance(tree, list) or not isinstance(items, list):
+        return
+
+    for item in items:
+        item_path = item.get("path")
+        element_tokens, attribute_tokens = path_to_list(item_path)
+        if not element_tokens or not attribute_tokens:
+            continue
+        mark_expanded_path(client, tree, element_tokens[2:], root_tree)
+
+
+def mark_expanded_path(client, nodes, path_tokens, root_tree):
+    if not isinstance(nodes, list) or not path_tokens:
+        return
+
+    current_nodes = nodes
+    traversed_tokens = []
+    for token in path_tokens:
+        matching_node = None
+        for node in current_nodes:
+            if node.get("title") == token:
+                matching_node = node
+                break
+        if matching_node is None:
+            return
+        traversed_tokens.append(token)
+        was_expanded = bool(matching_node.get("expanded"))
+        matching_node["expanded"] = True
+        previous_node = find_node_by_path_tokens(root_tree, traversed_tokens)
+        if (
+            not was_expanded and
+            (
+                previous_node is None or
+                not isinstance(previous_node.get("children"), list) or
+                len(previous_node.get("children")) == 0
+            )
+        ):
+            matching_node["children"] = get_children_node(client, matching_node).get("choices", [])
+        current_nodes = matching_node.get("children", [])
+
+
+def find_node_by_path_tokens(nodes, path_tokens):
+    if not isinstance(nodes, list) or not path_tokens:
+        return None
+
+    current_nodes = nodes
+    current_node = None
+    for token in path_tokens:
+        current_node = None
+        for node in current_nodes:
+            if node.get("title") == token:
+                current_node = node
+                break
+        if current_node is None:
+            return None
+        current_nodes = current_node.get("children", [])
+    return current_node
+
+
+def drop_first_levels(result):
+    # recursively removes the 2 first levels of the returned tree
+    # (server and DB)
+    output_result = []
+    for item in result:
+        path = item.get("path", "")
+        path_length = len(path.split("\\"))
+        if path_length >= 5:
+            output_result.append(item)
+        else:
+            children = item.get("children", [])
+            output_result = drop_first_levels(children)
+    return output_result
+
+
+def find_missing_element_ancestors(client, item, tree):
+    # Find the missing element ancestors of an item without loading attributes.
+    elements_paths_tokens, attributes_paths_tokens = path_to_list(item.get("path"))
+    if not elements_paths_tokens:
+        return
+    client.traverse_and_cache(elements_paths_tokens, [], tree)
+
+
+def combine_trees(final_tree, all_item_s_ancestors):
+    # combine two trees with partial overlap and common root ancestor
+    return final_tree
+
+
+# elements, attributes
+def path_to_list(path):
+    if not path:
+        return [], []
+    return path.split('|')[0].split('\\')[2:], (path.split('|')[1:])
+
+
+def shorten_tree(tree):
+    if isinstance(tree, list):
+        for node in tree:
+            if "expanded" in node:
+                # node.pop("expanded", None)
+                node["expanded"] = False
+            if "children" in node:
+                shorten_tree(node.get("children", []))
+    return tree
+
+
+def split_real_from_linked_paths(attributes):
+    for attribute in attributes:
+        current_path = attribute.get("path", attribute.get("Path"))
+        paths = attribute.get("Paths")
+        if isinstance(paths, list):
+            attribute["Paths"] = [path for path in paths if path != current_path]
+    return attributes
+
+
+def expand_items_by_paths(items):
+    expanded_items = []
+    seen = set()
+    for item in items:
+        if not isinstance(item, dict):
+            continue
+        current_path = item.get("path")
+        linked_paths = item.get("paths", [])
+        candidate_paths = []
+        if current_path:
+            candidate_paths.append(current_path)
+        if isinstance(linked_paths, list):
+            for linked_path in linked_paths:
+                if linked_path and linked_path not in candidate_paths:
+                    candidate_paths.append(linked_path)
+        if not candidate_paths:
+            candidate_paths = [None]
+        for candidate_path in candidate_paths:
+            expanded_item = dict(item)
+            if candidate_path:
+                expanded_item["path"] = candidate_path
+            if isinstance(linked_paths, list):
+                expanded_item["paths"] = [path for path in candidate_paths if path and path != candidate_path]
+            dedupe_key = (expanded_item.get("id"), expanded_item.get("path"), expanded_item.get("title"))
+            if dedupe_key in seen:
+                continue
+            seen.add(dedupe_key)
+            expanded_items.append(expanded_item)
+    return expanded_items
+
+
+def set_as_selected(items):
+    for item in items:
+        item["checked"] = True
+    return items
+
+
+def is_attribute_item(item):
+    if not isinstance(item, dict):
+        return False
+    if item.get("type") == "attribute":
+        return True
+    return bool(item.get("path")) and "|" in item.get("path", "")
+
+
+def is_sub_attribute_item(item):
+    if not isinstance(item, dict):
+        return False
+    return len(item.get("Path").split("|")) > 2
+
+
+def insert_missing_element(item, tree):
+    elements_paths_tokens, attributes_paths_tokens = path_to_list(item.get("path"))
+    if not elements_paths_tokens or attributes_paths_tokens:
+        return
+    if tree.exists(elements_paths_tokens):
+        return
+    tree.put(elements_paths_tokens, item)
+

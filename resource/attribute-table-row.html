@@ -1,0 +1,63 @@
+<td>
+    <input type="checkbox" ng-model="ctrl.mergedAttribute.allChecked"
+           ng-change="ctrl.onCheckAttribute({ mergedAttribute: ctrl.mergedAttribute })"
+           indeterminate="ctrl.mergedAttribute.checked"
+           ng-if="!ctrl.showPartialCheckInfo()"
+    >
+    <input type="checkbox" ng-model="ctrl.mergedAttribute.allChecked"
+           ng-change="ctrl.onCheckAttribute({ mergedAttribute: ctrl.mergedAttribute })"
+           indeterminate="ctrl.mergedAttribute.checked"
+           ng-if="ctrl.showPartialCheckInfo()"
+           toggle="tooltip-bottom"
+           ng-attr-title="{{ ctrl.generatePartialStateInfo() }}"
+    >
+</td>
+<td>
+    <div class="custom-table__attribute-title-info">
+        {{ctrl.mergedAttribute.title}}
+    </div>
+</td>
+<td>{{ctrl.mergedAttribute.description}}</td>
+<td ng-if="ctrl.displayPath">
+    <span ng-repeat="path in ctrl.mergedAttribute.paths">
+        {{path}}<br/>
+    </span>
+</td>
+<td>
+    <select dku-bs-select ng-model="ctrl.mergedAttribute.data_type"
+            ng-options="option.value as option.label for option in ctrl.aggregateDataTypeFields.data_type.options"
+            ng-change="ctrl.onUpdateDataType({ mergedAttribute: ctrl.mergedAttribute })">
+    </select>
+</td>
+<td>
+    <div class="custom-table__aggregate-field"
+         ng-repeat="(aggregateName, aggregate) in ctrl.aggregateDataTypeFields.aggregates"
+         ng-show="aggregate.isVisible(ctrl.mergedAttribute)">
+        {{aggregate.label}}
+        <select dku-bs-select ng-model="ctrl.mergedAttribute[aggregateName]"
+                ng-options="option.value as option.label for option in aggregate.options"
+                ng-change="ctrl.onUpdateAggregate({ mergedAttribute: ctrl.mergedAttribute })"
+                ng-if="aggregate.type === 'select'">
+        </select>
+        <select dku-bs-select multiple ng-model="ctrl.mergedAttribute[aggregateName]"
+                ng-options="option.value as option.label for option in aggregate.options"
+                ng-change="ctrl.onUpdateAggregate({ mergedAttribute: ctrl.mergedAttribute })"
+                ng-if="aggregate.type === 'multiselect'">
+        </select>
+        <input type="text" ng-model="ctrl.mergedAttribute[aggregateName]"
+               ng-change="ctrl.onUpdateAggregate({ mergedAttribute: ctrl.mergedAttribute })"
+               ng-if="aggregate.type === 'text'">
+        <input type="number" ng-model="ctrl.mergedAttribute[aggregateName]"
+               ng-change="ctrl.onUpdateAggregate({ mergedAttribute: ctrl.mergedAttribute })"
+               ng-if="aggregate.type === 'number'">
+    </div>
+</td>
+<td ng-if="ctrl.groupMode !== 'CATEGORY'">
+    <span ng-if="ctrl.mergedAttribute.conflicting_categories" style="display: flex; align-items: center; gap: 4px" toggle="tooltip" title="These attributes belong to different categories">
+        <i class="dku-icon-warning-outline-16"></i>Conflict
+    </span>
+    <span ng-if="!ctrl.mergedAttribute.conflicting_categories">{{ctrl.mergedAttribute.category_names.join(", ")}}</span>
+</td>
+<td ng-if="ctrl.groupMode !== 'TEMPLATE'">
+    <span>{{ctrl.mergedAttribute.template_name}}</span>
+</td>

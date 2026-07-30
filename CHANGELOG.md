@@ -1,5 +1,9 @@
 # Changelog
 
+## [Version 2.0.0-alpha.1](https://github.com/dataiku/dss-plugin-pi-server/releases/tag/v2.0.0-alpha.1) - Feature release - 2026-06-03
+
+- Add a AF hierarchy downloader
+
 ## [Version 1.4.2](https://github.com/dataiku/dss-plugin-pi-server/releases/tag/v1.4.2) - Bugfix release - 2026-04-17
 
 - Fix issue with writing single value to static AF attributes
