@@ -766,3 +766,21 @@ pi-system-auth-banner {
     gap: 8px;
     border-radius: 8px;
 }
+.pi-system-explorer__search-mode__type-selector {
+    width: 150px !important;
+}
+
+.pi-system-explorer__search-mode__type-selector button {
+    height: 48px;
+    border-right: none !important;
+    border-radius: 4px 0px 0px 4px !important;
+}
+
+.pi-system-explorer__search-mode__search-box {
+    height: 48px;
+    width: 650px;
+}
+
+.pi-system-explorer__search-mode__search-box .basic-search-box__input {
+    height: 48px;
+}

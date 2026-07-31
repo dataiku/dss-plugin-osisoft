@@ -17,14 +17,14 @@
                 </div>
                 <div class="tree-view__search-panel">
                     <div style="display: flex; flex-direction: column; gap: 4px;">
-                        <div ng-class="{'pi-system-explorer__page-mode--active': searchMode}"
+                        <div ng-class="{'pi-system-explorer__page-mode--active': inSearchMode}"
                              class="pi-system-explorer__page-mode"
                              ng-click="toggleSearchMode()"
                         >
                             <i class="dku-icon-search-16"></i>
                             Search {{activeTab}}s or attributes
                         </div>
-                        <div ng-class="{'pi-system-explorer__page-mode--active': !searchMode}"
+                        <div ng-class="{'pi-system-explorer__page-mode--active': !inSearchMode}"
                              class="pi-system-explorer__page-mode"
                              ng-click="toggleSearchMode()"
                         >
@@ -99,11 +99,31 @@
                     Login
                 </button>
             </div>
-            <!-- Attributes Section -->
-            <div class="attribute-tab pi-system-explorer__center-view" ng-if="searchMode">
-                Searchmode
+            <!-- Search mode -->
+            <div class="attribute-tab pi-system-explorer__center-view" ng-if="inSearchMode">
+                <div style="display: flex;">
+                    <select dku-bs-select ng-model="search.searchMode" class="pi-system-explorer__search-mode__type-selector">
+                        <option value="element" ng-if="activeTab === 'element'">Elements</option>
+                        <option value="template" ng-if="activeTab === 'template'">Templates</option>
+                        <option value="attribute">Attributes</option>
+                    </select>
+                    <basic-search-box class="pi-system-explorer__search-mode__search-box"
+                            ng-model="search.searchString"
+                            placeholder="Search {{search.searchMode}}s by name"
+                            ng-change="applySearch()"
+                    >
+                    </basic-search-box>
+                </div>
+                <div ng-if="search.searchMode === 'attribute'">Use filters to find what you need faster and improve loading times</div>
+                <div>
+                    <div ng-repeat="result in search.searchResults track by result.id">
+                        <div>{{result.title}}</div>
+                        <div>{{result.path}}</div>
+                    </div>
+                </div>
             </div>
-            <div class="attribute-tab pi-system-explorer__center-view" ng-if="showTreeData && !searchMode">
+            <!-- Attributes view -->
+            <div class="attribute-tab pi-system-explorer__center-view" ng-if="showTreeData && !inSearchMode">
                 <div class="attribute-section__search">
                     <div><strong>Attributes and templates</strong></div>
                     <div>

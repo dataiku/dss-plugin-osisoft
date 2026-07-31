@@ -357,10 +357,15 @@ app.controller('AfExplorerFormCtrl', [
 
         $scope.selectedElementPaths = buildSelectedElementPaths()
 
-        $scope.searchMode = false;
+        $scope.inSearchMode = true; // TODO: change only for testing
+        $scope.search = {
+            searchMode: 'element',
+            searchString: '',
+            searchResults: []
+        };
 
         $scope.toggleSearchMode = function() {
-            $scope.searchMode = !$scope.searchMode;
+            $scope.inSearchMode = !$scope.inSearchMode;
         }
 
         function buildSelectedElementPaths() {
@@ -895,6 +900,7 @@ app.controller('AfExplorerFormCtrl', [
                 resetRightPanelForCurrentTabContext();
             }
             $scope.activeTab = tab;
+            $scope.search.searchMode = $scope.activeTab;
         };
 
         $scope.doSearch = function(element_name) {
@@ -1060,36 +1066,35 @@ app.controller('AfExplorerFormCtrl', [
             console.log("clickedNodes: " + JSON.stringify($scope.ui.clickedNodes));
         };
 
-        function templateMatchesSearch(searchText, templateName) {
+        function nodeMatchesSearch(searchText, name) {
             if (!searchText) {
                 return false;
             }
             const lowercasedSearch = searchText.toLowerCase();
-            const templateNameMatches = templateName.toLowerCase().includes(lowercasedSearch);
-            return templateNameMatches;
+            return name.toLowerCase().includes(lowercasedSearch);
         }
 
-        function highlightMatchingTemplates(templateList, parent) {
-            templateList.forEach((template) => {
-                if (templateMatchesSearch($scope.ui.templateSearch, template.title)) {
-                    template.searchHighlighted = true;
-                    $scope.ui.templateSearchResults.push(template);
-                    if (parent) {
-                        parent.expanded = true;
-                    }
-                } else {
-                    template.searchHighlighted = false;
+        function addMatchingObjectsToSearchResults(nodeList, resultSet) {
+            nodeList.forEach((node) => {
+                if (nodeMatchesSearch($scope.search.searchString, node.title) && !resultSet.has(node.id)) {
+                    $scope.search.searchResults.push(node);
+                    resultSet.add(node.id);
                 }
-                if (template.children.length > 0) {
-                    highlightMatchingTemplates(template.children, template);
+                if (node.children.length > 0) {
+                    addMatchingObjectsToSearchResults(node.children, resultSet);
                 }
             })
         }
 
-        $scope.applyTemplateSearch = function() {
-            console.log("$scope.templateTree", $scope.templateTree)
-            $scope.ui.templateSearchResults = [];
-            highlightMatchingTemplates($scope.templateTree);
+        $scope.applySearch = function() {
+            if ($scope.search.searchMode === 'attribute') {
+                return;
+            }
+            // console.log("$scope.templateTree", $scope.templateTree)
+            const searchTree = $scope.search.searchMode === 'element' ? $scope.elementTree : $scope.templateTree;
+            $scope.search.searchResults = [];
+            const resultSet = new Set(); // avoid weak link related duplication in search results
+            addMatchingObjectsToSearchResults(searchTree, resultSet);
         }
 
         function markSearchResults(nodes, matchedElementPaths) {
