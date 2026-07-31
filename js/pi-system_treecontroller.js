@@ -1,13 +1,5 @@
 const app = angular.module('piSystemTreeApp.module', []);
 
-app.directive('piSystemAuthBanner', function() {
-    return {
-        restrict: 'E',
-        scope: false,
-        templateUrl: '/plugins/pi-system/resource/pi-system_auth-banner.html'
-    };
-});
-
 app.directive('loadingOverlay', function() {
     return {
         restrict: 'E',
@@ -350,10 +342,10 @@ app.controller('AfExplorerFormCtrl', [
             }
         };
         let loadingOverlayTimeout = null;
+        let loginModalOpen = false;
         $scope.attributeCategoryFilterOptions = [];
         $scope.attributeValueTypeFilterOptions = [];
 
-        $scope.authSectionVisible = true;
         $scope.showTreeData = false;
         $scope.errorBannerVisible = false;
         $scope.errorBannerMessage = '';
@@ -407,6 +399,36 @@ app.controller('AfExplorerFormCtrl', [
             CreateModalFromTemplate('/plugins/pi-system/resource/pi-system_preview-dataset-modal.html', modalScope);
         };
 
+        $scope.openLoginModal = function() {
+            if (loginModalOpen) {
+                return;
+            }
+
+            loginModalOpen = true;
+            CreateModalFromTemplate('/plugins/pi-system/resource/pi-system_auth-banner.html', $scope, null, function(modalScope) {
+                modalScope.$on('$destroy', function() {
+                    loginModalOpen = false;
+                });
+
+                modalScope.login = function() {
+                    if (!$scope.authConfigured()) {
+                        return;
+                    }
+
+                    initData().then(() => {
+                        $scope.showTreeData = true;
+                        modalScope.dismiss();
+                    }).catch(() => {
+                        $scope.showTreeData = false;
+                        $scope.errorBannerMessage = 'There was a problem fetching data';
+                        $scope.errorBannerVisible = true;
+                    }).finally(() => {
+                        $scope.$applyAsync();
+                    });
+                };
+            });
+        };
+
         $scope.isAtLeastPartiallySelected = function(node) {
             return node.checked === CheckboxStatus.CHECKED || node.checked === CheckboxStatus.PARTIAL_CHECK;
         };
@@ -449,14 +471,16 @@ app.controller('AfExplorerFormCtrl', [
                 // And we will load the elementTree from db once the user has logged in
                 // This is brittle and should probably changed in the future
                 initData().then(() => {
-                    $scope.authSectionVisible = false;
                     $scope.showTreeData = true;
                 }).catch(() => {
                     $scope.errorBannerMessage = 'There was a problem fetching data';
                     $scope.errorBannerVisible = true;
+                    $scope.openLoginModal();
                 }).then(() => {
                     $scope.$applyAsync()
                 })
+            } else {
+                $scope.openLoginModal();
             }
             $scope.onAdvancedToggle();
         };
@@ -482,10 +506,6 @@ app.controller('AfExplorerFormCtrl', [
 
             return matchingDatabase?.label || null;
         }
-
-        $scope.toggleAuthSection = function() {
-            $scope.authSectionVisible = !$scope.authSectionVisible;
-        };
 
         $scope.authConfigured = function() {
             return $scope.hasPreset() && !!$scope.config.database_name && !!$scope.config.server_name;
@@ -584,36 +604,6 @@ app.controller('AfExplorerFormCtrl', [
                 $scope.$applyAsync();
             })
         }
-
-        $scope.login = function() {
-            const hasPreset = $scope.hasPreset();
-            const hasServer = !!$scope.config.server_name;
-            const hasDatabase = !!$scope.config.database_name;
-            console.info("[LOGIN][UI] click", {
-                hasPreset: hasPreset,
-                hasServer: hasServer,
-                hasDatabase: hasDatabase
-            });
-
-            if (!$scope.authConfigured()) {
-                console.warn("[LOGIN][UI] blocked: missing required fields");
-                return;
-            }
-
-            initData().then(() => {
-                $scope.authSectionVisible = false;
-                $scope.showTreeData = true;
-            }).catch(() => {
-                $scope.authSectionVisible = true;
-                $scope.showTreeData = false;
-                $scope.errorBannerMessage = 'There was a problem fetching data';
-                $scope.errorBannerVisible = true;
-            }).then(() => {
-                console.log("treedata", $scope.showTreeData);
-                console.log("treedata", $scope.elementTree);
-                $scope.$applyAsync()
-            })
-        };
 
         $scope.hasPreset = function() {
             return $scope.config.credentials?.mode && $scope.config.credentials.mode !== 'NONE' && $scope.config.credentials.name

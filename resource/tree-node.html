@@ -34,10 +34,10 @@
                       toggle="tooltip" title="Contains elements with attributes in the dataset"></span>
                 <i ng-show="ctrl.showPaperclip(ctrl.node)" class="dku-icon-attach-12 tree-node__content--marker" toggle="tooltip" title="Contains attributes added to the dataset"></i>
             </div>
+            <span class="tree-node__status" ng-if="ctrl.isNodeClicked(ctrl.node)">
+                <i class="dku-icon-eye-16"></i>
+            </span>
         </div>
-        <span class="tree-node__status" ng-if="ctrl.isNodeClicked(ctrl.node)">
-            <i class="dku-icon-eye-16"></i>
-        </span>
     </div>
 </div>
 

@@ -25,6 +25,10 @@
     height: 75vh;
 }
 
+.pi-system-auth-modal {
+    width: 45%;
+}
+
 .pi-system-preview-dataset-modal__search {
     margin-bottom: 12px;
 }
@@ -371,7 +375,7 @@ pi-system-auth-banner {
 
 .pi-system-config--mandatory {
     display: flex;
-    gap: 64px;
+    gap: 40px;
 }
 
 .attribute-section__search {
