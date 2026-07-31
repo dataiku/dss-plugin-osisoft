@@ -118,8 +118,11 @@
                 <div style="display: flex; flex-direction: column; gap: 4px; border: 1px solid #f0efec;">
                     <div ng-repeat="result in search.searchResults track by result.id" style="padding: 4px; display: flex; justify-content: space-between;">
                         <div style="display: flex; gap: 4px;">
-                            <div>
+                            <div ng-if="search.searchMode === 'element'">
                                 {{prettifyElementPath(result.path, config.database_title)}}
+                            </div>
+                                <div ng-if="search.searchMode === 'template'">
+                                {{result.title}}
                             </div>
                             <i class="dku-icon-target-16"></i>
                         </div>
