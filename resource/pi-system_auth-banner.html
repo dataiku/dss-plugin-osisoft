@@ -45,6 +45,7 @@
             </div>
             <button
                     ng-click="refreshCachedTree()"
+                    ng-disabled="!authConfigured() || !showTreeData"
                     class="btn btn--secondary"
                     title="This will clear your current workstate, like opened elements and current searches, but your selected attributes will remain">
                 Refresh local data

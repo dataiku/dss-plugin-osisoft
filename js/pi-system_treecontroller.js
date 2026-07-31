@@ -349,7 +349,6 @@ app.controller('AfExplorerFormCtrl', [
         $scope.showTreeData = false;
         $scope.errorBannerVisible = false;
         $scope.errorBannerMessage = '';
-        $scope.loginPromptVisible = false;
 
         $scope.aggregateDataTypeFields = aggregateDataTypeFields;
         $scope.prettifyElementPath = prettifyElementPath;
@@ -407,9 +406,9 @@ app.controller('AfExplorerFormCtrl', [
 
             loginModalOpen = true;
             CreateModalFromTemplate('/plugins/pi-system/resource/pi-system_auth-banner.html', $scope, null, function(modalScope) {
+
                 modalScope.$on('$destroy', function() {
                     loginModalOpen = false;
-                    $scope.loginPromptVisible = !$scope.authConfigured() || !$scope.showTreeData;
                 });
 
                 modalScope.login = function() {
@@ -417,9 +416,9 @@ app.controller('AfExplorerFormCtrl', [
                         return;
                     }
 
+                    modalScope.dismiss();
                     initData().then(() => {
                         $scope.showTreeData = true;
-                        modalScope.dismiss();
                     }).catch(() => {
                         $scope.showTreeData = false;
                         $scope.errorBannerMessage = 'There was a problem fetching data';
@@ -427,6 +426,15 @@ app.controller('AfExplorerFormCtrl', [
                     }).finally(() => {
                         $scope.$applyAsync();
                     });
+                };
+
+                modalScope.refreshCachedTree = function() {
+                    if (!$scope.authConfigured() || !$scope.showTreeData) {
+                        return;
+                    }
+
+                    modalScope.dismiss();
+                    $scope.refreshCachedTree();
                 };
             });
         };
@@ -589,6 +597,7 @@ app.controller('AfExplorerFormCtrl', [
 
         // Fetching data - only once auth has been verified
        function initData() {
+           startLoadingState("Getting everything ready", "The first load can take several minutes. It's a one-time process to optimize performance. Keep this tab open and come back later if you'd like.")
             return initCache().catch((error) => {
                 // TODO: figure out what we want in that case
                 throw new Error(`There was an error initializing cache: ${error}`);
@@ -604,7 +613,7 @@ app.controller('AfExplorerFormCtrl', [
                 throw new Error(`There was an error initializing data: ${error}`);
             }).then(() => {
                 $scope.$applyAsync();
-            })
+            }).finally(stopLoadingState);
         }
 
         $scope.hasPreset = function() {
@@ -665,6 +674,10 @@ app.controller('AfExplorerFormCtrl', [
         };
 
         $scope.refreshCachedTree = function() {
+            if (!$scope.authConfigured() || !$scope.showTreeData) {
+                return;
+            }
+            startLoadingState("Refreshing cache", "Refreshing the cache requires a full fetch from the database and can take several minutes. Keep this tab open and come back later if you'd like.")
             $scope.cache.clear().then(function() {
                 $scope.elementTree = [];
                 $scope.ui.clickedNodes = [];
@@ -691,7 +704,7 @@ app.controller('AfExplorerFormCtrl', [
                 $scope.cache.addOrUpdateElementCategories(elementCategories);
                 $scope.cache.addOrUpdateAttributeCategories(attributeCategories);
                 $scope.$applyAsync();
-            })
+            }).finally(stopLoadingState);
         }
 
         let presetWatchInitialized = false;
@@ -770,12 +783,10 @@ app.controller('AfExplorerFormCtrl', [
         }
 
         $scope.getElementTreeFromDB = function() {
-            // TODO: put element tree fetching there ?
-            startLoadingState("Getting everything ready", "The first load can take several minutes. It's a one-time process to optimize performance. Keep this tab open and come back later if you'd like.")
-            return $scope.callPythonDo({ method: "get_children_from_db", parent: $scope.config.database_name }).then(function(data) {
-                console.log("get_children_from_db", data);
-                return data.choices;
-            }).finally(stopLoadingState);
+            return $scope.callPythonDo({ method: "build_af_tree"}).then(function(data) {
+                console.log("af_tree", data);
+                return data.tree;
+            });
         };
 
         $scope.getFromCacheOrFetchBaselineObjects = function() {

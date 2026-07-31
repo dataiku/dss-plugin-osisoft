@@ -199,7 +199,6 @@
     min-width: 320px;
     min-height: 160px;
     transform: translate(-50%, -50%);
-    z-index: 11;
     background: #FFF;
     border: 1px solid #CCC;
     border-radius: 16px;
@@ -209,6 +208,7 @@
     justify-content: flex-start;
     gap: 12px;
     padding: 20px 24px;
+    z-index: 3004; /* above modal */
 }
 
 .pi-system-explorer__loading-modal-icon {
