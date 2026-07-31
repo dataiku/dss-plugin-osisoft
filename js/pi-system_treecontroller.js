@@ -127,18 +127,6 @@ const GroupMode = Object.freeze({
     CATEGORY: 'CATEGORY',
 });
 
-function prettifyElementPath(elementPath, databaseName) {
-    console.log("databasename", databaseName)
-    const pathParts = elementPath.split('\\').filter(Boolean);
-    const databaseIndex = pathParts.indexOf(databaseName);
-
-    if (databaseIndex === -1) {
-        return pathParts.join(" > ");
-    }
-
-    return pathParts.slice(databaseIndex + 1).join(" > ");
-}
-
 class Cache {
     constructor(projectKey, server, database) {
         // TODO: include preset in db name
@@ -351,8 +339,6 @@ app.controller('AfExplorerFormCtrl', [
         $scope.errorBannerMessage = '';
 
         $scope.aggregateDataTypeFields = aggregateDataTypeFields;
-        $scope.prettifyElementPath = prettifyElementPath;
-
         $scope.elementSearchNoMatch = false;
 
         $scope.selectedElementPaths = buildSelectedElementPaths()
@@ -1073,6 +1059,19 @@ app.controller('AfExplorerFormCtrl', [
             const lowercasedSearch = searchText.toLowerCase();
             return name.toLowerCase().includes(lowercasedSearch);
         }
+
+        $scope.prettifyElementPath = function(elementPath, databaseName) {
+            console.log("databasename", databaseName)
+            const pathParts = elementPath.split('\\').filter(Boolean);
+            const databaseIndex = pathParts.indexOf(databaseName);
+
+            if (databaseIndex === -1) {
+                return pathParts.join(" > ");
+            }
+
+            return pathParts.slice(databaseIndex + 1).join(" > ");
+        }
+
 
         function addMatchingObjectsToSearchResults(nodeList, resultSet) {
             nodeList.forEach((node) => {
@@ -1846,6 +1845,7 @@ app.directive('attributeTableBlock', function() {
                 groupedAttributes: '=',
                 config: '=',
                 aggregateDataTypeFields: '<',
+                prettifyElementPath: '<',
                 onToggleSelectAllGroupedAttributes: '&',
                 onToggleGroupedAttributes: '&',
                 onIsAtLeastPartiallySelected: '&',
@@ -1859,8 +1859,6 @@ app.directive('attributeTableBlock', function() {
         bindToController: true,
         controller: function() {
             const ctrl = this;
-
-            ctrl.prettifyElementPath = prettifyElementPath;
 
             ctrl.getVisibleAttributeColumnCount = function(includeCheckbox) {
                 let count = includeCheckbox ? 5 : 4;
@@ -1949,13 +1947,12 @@ app.component('dropdownElements', {
         isTemplateAssociatedElementSelected: '&',
         applyClickElementsDropdown: '&',
         activeTab: '<',
+        prettifyElementPath: '<',
     },
     controllerAs: 'ctrl',
     controller: function() {
         const ctrl = this;
         ctrl.templatedModeUnselectedElements = [];
-        ctrl.prettifyElementPath = prettifyElementPath;
-
         ctrl.$onInit = function() {
 
             ctrl.onClick = function() {

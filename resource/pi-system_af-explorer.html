@@ -115,10 +115,15 @@
                     </basic-search-box>
                 </div>
                 <div ng-if="search.searchMode === 'attribute'">Use filters to find what you need faster and improve loading times</div>
-                <div>
-                    <div ng-repeat="result in search.searchResults track by result.id">
-                        <div>{{result.title}}</div>
-                        <div>{{result.path}}</div>
+                <div style="display: flex; flex-direction: column; gap: 4px; border: 1px solid #f0efec;">
+                    <div ng-repeat="result in search.searchResults track by result.id" style="padding: 4px; display: flex; justify-content: space-between;">
+                        <div style="display: flex; gap: 4px;">
+                            <div>
+                                {{prettifyElementPath(result.path, config.database_title)}}
+                            </div>
+                            <i class="dku-icon-target-16"></i>
+                        </div>
+                        <i class="dku-icon-eye-16"></i>
                     </div>
                 </div>
             </div>
@@ -189,6 +194,7 @@
                         display-element-dropdown="false"
                         active-tab="activeTab"
                         aggregate-data-type-fields="aggregateDataTypeFields"
+                        prettify-element-path="prettifyElementPath"
                         on-toggle-select-all-grouped-attributes="toggleSelectAllGroupedAttributes(groupedAttributeGroup)"
                         on-toggle-grouped-attributes="toggleGroupedAttributes(group)"
                         on-is-at-least-partially-selected="isAtLeastPartiallySelected(item)"
@@ -210,6 +216,7 @@
                         display-element-dropdown="true"
                         active-tab="activeTab"
                         aggregate-data-type-fields="aggregateDataTypeFields"
+                        prettify-element-path="prettifyElementPath"
                         on-toggle-select-all-grouped-attributes="toggleSelectAllGroupedAttributes(groupedAttributeGroup)"
                         on-toggle-grouped-attributes="toggleGroupedAttributes(group)"
                         on-is-at-least-partially-selected="isAtLeastPartiallySelected(item)"
