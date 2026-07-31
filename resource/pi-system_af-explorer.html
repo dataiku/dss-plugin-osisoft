@@ -100,7 +100,7 @@
                 </button>
             </div>
             <!-- Search mode -->
-            <div class="attribute-tab pi-system-explorer__center-view" ng-if="inSearchMode">
+            <div class="attribute-tab pi-system-explorer__center-view" ng-if="inSearchMode" style="display: flex; flex-direction: column; gap: 16px;">
                 <div style="display: flex;">
                     <select dku-bs-select ng-model="search.searchMode" class="pi-system-explorer__search-mode__type-selector">
                         <option value="element" ng-if="activeTab === 'element'">Elements</option>
@@ -116,7 +116,8 @@
                 </div>
                 <div ng-if="search.searchMode === 'attribute'">Use filters to find what you need faster and improve loading times</div>
                 <div style="display: flex; flex-direction: column; gap: 4px; border: 1px solid #f0efec;">
-                    <div ng-repeat="result in search.searchResults track by result.id" style="padding: 4px; display: flex; justify-content: space-between;">
+                    <div class="pi-system-explorer__search-result"
+                         ng-repeat="result in search.searchResults track by result.id">
                         <div style="display: flex; gap: 4px;">
                             <div ng-if="search.searchMode === 'element'">
                                 {{prettifyElementPath(result.path, config.database_title)}}
@@ -124,9 +125,9 @@
                                 <div ng-if="search.searchMode === 'template'">
                                 {{result.title}}
                             </div>
-                            <i class="dku-icon-target-16"></i>
+                            <i class="dku-icon-target-16 pi-system-explorer__search-result-action"></i>
                         </div>
-                        <i class="dku-icon-eye-16"></i>
+                        <i class="dku-icon-eye-16 pi-system-explorer__search-result-action"></i>
                     </div>
                 </div>
             </div>

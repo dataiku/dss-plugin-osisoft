@@ -70,6 +70,10 @@
 }
 
 .tree-node__row--visualized {
+    background: #C4E0FE;
+}
+
+.tree-node__row:hover {
     background: #E7F3FF;
 }
 
@@ -778,9 +782,30 @@ pi-system-auth-banner {
 
 .pi-system-explorer__search-mode__search-box {
     height: 48px;
-    width: 650px;
+    flex: 1;
 }
 
 .pi-system-explorer__search-mode__search-box .basic-search-box__input {
     height: 48px;
+}
+.pi-system-explorer__search-result {
+    padding: 4px;
+    display: flex;
+    justify-content: space-between;
+}
+
+.pi-system-explorer__search-result-action {
+    visibility: hidden;
+}
+
+.pi-system-explorer__search-result:hover {
+    background-color: #e7f3ff;
+}
+
+.pi-system-explorer__search-result:hover .pi-system-explorer__search-result-action {
+    visibility: visible;
+}
+
+.pi-system-explorer__center-view {
+    width: 100%;
 }
