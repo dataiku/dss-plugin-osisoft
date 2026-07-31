@@ -1,6 +1,6 @@
 from dataiku.connector import Connector
 from osisoft_client import OSIsoftClient, OSIsoftWriter
-from safe_logger import SafeLogger
+from osisoft_safe_logger import SafeLogger
 from osisoft_plugin_common import (
     PISystemConnectorError, RecordsLimit, get_credentials, assert_time_format,
     get_schema_as_arrays, normalize_af_path, get_max_count, get_summary_parameters

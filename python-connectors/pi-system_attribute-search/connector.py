@@ -2,7 +2,7 @@ import json
 import datetime
 from dataiku.connector import Connector
 from osisoft_client import OSIsoftClient
-from safe_logger import SafeLogger
+from osisoft_safe_logger import SafeLogger
 from osisoft_plugin_common import (
     PISystemConnectorError, RecordsLimit, get_credentials, assert_time_format,
     remove_unwanted_columns, format_output, filter_columns_from_schema, is_child_attribute_path,

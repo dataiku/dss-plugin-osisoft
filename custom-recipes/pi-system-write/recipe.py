@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 import dataiku
 from dataiku.customrecipe import get_input_names_for_role, get_recipe_config, get_output_names_for_role
-from safe_logger import SafeLogger
+from osisoft_safe_logger import SafeLogger
 from osisoft_plugin_common import (
     get_credentials, normalize_af_path, check_debug_mode,
     PerformanceTimer, get_max_count,

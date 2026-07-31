@@ -2,7 +2,7 @@ import os
 import copy
 import time
 from osisoft_constants import OSIsoftConstants
-from safe_logger import SafeLogger
+from osisoft_safe_logger import SafeLogger
 from datetime import datetime, timezone
 import dateutil.parser as date_parser
 import re
