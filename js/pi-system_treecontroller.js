@@ -357,6 +357,12 @@ app.controller('AfExplorerFormCtrl', [
 
         $scope.selectedElementPaths = buildSelectedElementPaths()
 
+        $scope.searchMode = false;
+
+        $scope.toggleSearchMode = function() {
+            $scope.searchMode = !$scope.searchMode;
+        }
+
         function buildSelectedElementPaths() {
             return $scope.config.outputSelectedAttributes.flatMap(attribute => attribute.paths).map(getElementPathFromAttributePath);
         }

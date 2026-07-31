@@ -754,3 +754,15 @@ pi-system-auth-banner {
 .elements-dropdown--element i {
     color: #196BFA;
 }
+
+.pi-system-explorer__page-mode--active {
+    background: #E5EBF5;
+}
+
+.pi-system-explorer__page-mode {
+    cursor: pointer;
+    display: flex;
+    padding: 4px 8px;
+    gap: 8px;
+    border-radius: 8px;
+}

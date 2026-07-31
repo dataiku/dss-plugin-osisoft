@@ -15,63 +15,32 @@
                         <div class="tree-view__tab-content">Templates</div>
                     </div>
                 </div>
-                <div class="tree-view__search-panel" ng-if="activeTab === 'element'">
-                    <div class="tree-view__search-row">
-                        <basic-search-box
-                                ng-model="config.element_name"
-                                placeholder="Search element"
-                                click-clear="clearSearch()"
-                                ng-keydown="onSearchInputKeydown($event)"
+                <div class="tree-view__search-panel">
+                    <div style="display: flex; flex-direction: column; gap: 4px;">
+                        <div ng-class="{'pi-system-explorer__page-mode--active': searchMode}"
+                             class="pi-system-explorer__page-mode"
+                             ng-click="toggleSearchMode()"
                         >
-                        </basic-search-box>
-                        <button ng-click="searchFromElement()" class="btn btn--secondary link-like"
-                                id="get-query-dim-prop" ng-disabled="!config.element_name">Search
-                        </button>
-                    </div>
-                    <div class="tree-view__search-actions" ng-if="ui.searchInProgress">
-                        <button ng-click="clearSearch()" class="btn btn--secondary link-like">
-                            Clear search
-                        </button>
-                    </div>
-                    <div ng-if="elementSearchNoMatch" class="alert alert-warning">
-                        No matching element found
+                            <i class="dku-icon-search-16"></i>
+                            Search {{activeTab}}s or attributes
+                        </div>
+                        <div ng-class="{'pi-system-explorer__page-mode--active': !searchMode}"
+                             class="pi-system-explorer__page-mode"
+                             ng-click="toggleSearchMode()"
+                        >
+                            <i class="dku-icon-eye-16"></i>
+                            Attributes view
+                            <span
+                                    ng-click="clearAllVisualizedNodes()"
+                                    ng-if="ui.clickedNodes.length > 0">
+                                Clear all
+                            </span>
+                        </div>
                     </div>
                 </div>
-                <div class="tree-view__search-panel" ng-if="activeTab === 'template'">
-                    <div class="tree-view__search-row">
-                        <basic-search-box
-                                ng-model="ui.templateSearch"
-                                placeholder="Search template"
-                                ng-change="applyTemplateSearch()"
-                        >
-                        </basic-search-box>
-                    </div>
-                    <div class="tree-view__search-results">
-                        <ul ng-if="ui.templateSearchResults">
-                            <li ng-repeat="node in ui.templateSearchResults track by node.id">
-                                <tree-node node="node" get-children-from-db="" toggle-display-attributes="toggleDisplayAttributes"
-                                           config="config" clicked-nodes="ui.clickedNodes" toggle-node-visualization="toggleNodeVisualization(node)"
-                                           selected-element-paths="selectedElementPaths" hide-children="true"
-                                ></tree-node>
-                            </li>
-                        </ul>
-                    </div>
-                </div>
-                <button
-                        class="btn btn--outline btn--secondary btn--dku-icon"
-                        ng-click="clearAllVisualizedNodes()"
-                        ng-if="ui.clickedNodes.length > 0">
-                    <i class="dku-icon-dismiss-16"></i>
-                    Clear all
-                </button>
             </div>
-            <div class="tree-view__separator" ng-if="activeTab === 'template'"></div>
+            <div class="tree-view__separator"></div>
             <div class="tree-view__content">
-<!--                <div>-->
-<!--                    Filter by category<select dku-bs-select ng-model="config.element_category"-->
-<!--                                              ng-options="dbn.title as dbn.title for dbn in config.element_categories" ng-init="getCategoriesFromDB()"-->
-<!--                                              ng-change="doSearch(config.element_name, config.attribute_name)"/>-->
-<!--                </div>-->
                 <ul ng-if="activeTab === 'element' && elementTree && elementTree.length">
                     <li ng-repeat="node in elementTree track by node.id">
                         <tree-node node="node" get-children-from-db="getChildrenFromDB" toggle-display-attributes="toggleDisplayAttributes"
@@ -130,9 +99,11 @@
                     Login
                 </button>
             </div>
-            <!-- TODO: move the table to a separate component-->
             <!-- Attributes Section -->
-            <div class="attribute-tab pi-system-explorer__center-view" ng-if="showTreeData">
+            <div class="attribute-tab pi-system-explorer__center-view" ng-if="searchMode">
+                Searchmode
+            </div>
+            <div class="attribute-tab pi-system-explorer__center-view" ng-if="showTreeData && !searchMode">
                 <div class="attribute-section__search">
                     <div><strong>Attributes and templates</strong></div>
                     <div>
