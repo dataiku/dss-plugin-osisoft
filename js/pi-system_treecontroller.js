@@ -349,6 +349,7 @@ app.controller('AfExplorerFormCtrl', [
         $scope.showTreeData = false;
         $scope.errorBannerVisible = false;
         $scope.errorBannerMessage = '';
+        $scope.loginPromptVisible = false;
 
         $scope.aggregateDataTypeFields = aggregateDataTypeFields;
         $scope.prettifyElementPath = prettifyElementPath;
@@ -408,6 +409,7 @@ app.controller('AfExplorerFormCtrl', [
             CreateModalFromTemplate('/plugins/pi-system/resource/pi-system_auth-banner.html', $scope, null, function(modalScope) {
                 modalScope.$on('$destroy', function() {
                     loginModalOpen = false;
+                    $scope.loginPromptVisible = !$scope.authConfigured() || !$scope.showTreeData;
                 });
 
                 modalScope.login = function() {

@@ -115,6 +115,19 @@
             </button>
         </div>
         <div class="pi-system-explorer__content">
+            <div
+                    class="pi-system-explorer__login-prompt"
+                    ng-if="loginPromptVisible" style="display: flex; flex-direction: column; gap: 8px;">
+                <div>
+                    Your database login information has changed but hasn’t been applied yet <br/>
+                    Reopen the LOGIN modal and complete your login to display the database content
+                </div>
+                <button
+                        class="btn btn--outline btn--primary btn--dku-icon"
+                        ng-click="openLoginModal()">
+                    Login
+                </button>
+            </div>
             <!-- TODO: move the table to a separate component-->
             <!-- Attributes Section -->
             <div class="attribute-tab pi-system-explorer__center-view" ng-if="showTreeData">
