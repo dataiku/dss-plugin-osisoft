@@ -222,9 +222,22 @@ def get_attributes(client, payload, config):
             database_name, element_name, attribute_name
         )
     )
-    attributes = []
-    for attribute in client.search_attributes(database_name, attribute_name=attribute_name, element_name=element_name, full_search=True):
-        attributes.append(get_item_details(attribute))
+    raw_attributes = list(client.search_attributes(
+        database_name,
+        attribute_name=attribute_name,
+        element_name=element_name,
+        full_search=True
+    ))
+    attributes = [get_item_details(attribute) for attribute in raw_attributes]
+    template_urls = [
+        extract_attribute_template_url(attribute)
+        for attribute in raw_attributes
+    ]
+    template_names = client.get_attributes_templates_names(template_urls)
+    for attribute, template_name in zip(attributes, template_names):
+        if template_name:
+            attribute["template_name"] = template_name
+
     result = {"choices": [], "attributes": attributes}
     logger.info(
         "End call [get_attributes] database_name={}, element_name={}, attribute_name={}".format(
@@ -675,4 +688,3 @@ def insert_missing_element(item, tree):
     if tree.exists(elements_paths_tokens):
         return
     tree.put(elements_paths_tokens, item)
-

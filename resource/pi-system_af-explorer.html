@@ -141,7 +141,18 @@
                         <option value="">Any template</option>
                     </select>
                 </div>
-                <div ng-if="search.searchMode === 'attribute'">Use filters to find what you need faster and improve loading times</div>
+                <div ng-if="search.searchMode === 'attribute'">
+                    <div>Use filters to find what you need faster and improve loading times</div>
+                    <div class="attribute-section__filters-row">
+                        <label class="attribute-section__filters-toggle">
+                            <span class="dku-toggle dku-toggle-no-content">
+                                <input type="checkbox" ng-model="ui.displayPath">
+                                <span></span>
+                            </span>
+                            <span>Display attribute paths</span>
+                        </label>
+                    </div>
+                </div>
                 <div ng-if="search.searchMode === 'attribute' && search.attributeResults">
                     <div
                             attribute-table-block
@@ -174,7 +185,7 @@
                             elements-by-template="elementsByTemplate"
                             title="getAttributeTableTitle()"
                             group-mode="groupMode"
-                            display-element-dropdown="true"
+                            display-element-dropdown="false"
                             active-tab="activeTab"
                             aggregate-data-type-fields="aggregateDataTypeFields"
                             prettify-element-path="prettifyElementPath"
