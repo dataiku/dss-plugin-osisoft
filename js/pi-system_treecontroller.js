@@ -351,7 +351,10 @@ app.controller('AfExplorerFormCtrl', [
             searchResults: []
         };
 
-        $scope.toggleSearchMode = function() {
+        $scope.toggleSearchMode = function(clickedSearchButton) {
+            if (clickedSearchButton === $scope.inSearchMode) {
+                return;
+            }
             clearSearchHighlights($scope.elementTree); // Clearing search hightlights on leaving search mode
             $scope.inSearchMode = !$scope.inSearchMode;
         }

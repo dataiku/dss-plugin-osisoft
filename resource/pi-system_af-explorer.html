@@ -19,20 +19,25 @@
                     <div style="display: flex; flex-direction: column; gap: 4px;">
                         <div ng-class="{'pi-system-explorer__page-mode--active': inSearchMode}"
                              class="pi-system-explorer__page-mode"
-                             ng-click="toggleSearchMode()"
+                             ng-click="toggleSearchMode(true)"
                         >
                             <i class="dku-icon-search-16"></i>
                             Search {{activeTab}}s or attributes
                         </div>
                         <div ng-class="{'pi-system-explorer__page-mode--active': !inSearchMode}"
                              class="pi-system-explorer__page-mode"
-                             ng-click="toggleSearchMode()"
+                             ng-click="toggleSearchMode(false)"
+                             style="display: flex; justify-content: space-between;"
                         >
-                            <i class="dku-icon-eye-16"></i>
-                            Attributes view
+                            <span style="display: flex; gap: 8px;">
+                                <i class="dku-icon-eye-16"></i>
+                                Attributes view
+                            </span>
                             <span
-                                    ng-click="clearAllVisualizedNodes()"
-                                    ng-if="ui.clickedNodes.length > 0">
+                                    ng-click="clearAllVisualizedNodes(); $event.stopPropagation();"
+                                    ng-if="ui.clickedNodes.length > 0"
+                                    style="color: #7092f2; cursor: pointer;"
+                            >
                                 Clear all
                             </span>
                         </div>
