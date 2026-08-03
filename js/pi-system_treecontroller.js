@@ -1146,6 +1146,10 @@ app.controller('AfExplorerFormCtrl', [
             return Object.keys($scope.search.searchResults || {}).length > 0;
         };
 
+        $scope.getSearchResultCount = function() {
+            return Object.keys($scope.search.searchResults || {}).length;
+        };
+
         $scope.selectAllResults = async function() {
             for (const result of Object.values($scope.search.searchResults)) {
                 await $scope.toggleNodeVisualization(result.nodes[0]);

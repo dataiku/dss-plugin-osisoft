@@ -135,6 +135,9 @@
                     </select>
                 </div>
                 <div ng-if="search.searchMode === 'attribute'">Use filters to find what you need faster and improve loading times</div>
+                <div ng-if="search.searchMode === 'element' || search.searchMode === 'template'">
+                    {{getSearchResultCount()}} results
+                </div>
                 <div style="display: flex; flex-direction: column; gap: 4px; border: 1px solid #f0efec;"
                      ng-if="hasSearchResults()"
                 >
