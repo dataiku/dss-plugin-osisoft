@@ -200,25 +200,29 @@
                             on-update-aggregate="updateMergedAttributeAggregate(mergedAttribute)">
                     </div>
                 </div>
-                <div ng-if="search.searchMode === 'element' || search.searchMode === 'template'">
+                <div ng-if="search.searchMode !== 'attribute'">
                     {{getSearchResultCount()}} results
                 </div>
-                <div style="display: flex; flex-direction: column; gap: 4px; border: 1px solid #f0efec;"
-                     ng-if="hasSearchResults()"
+                <div style="display: flex; flex-direction: column; border: 1px solid #f0efec;"
+                     ng-if="search.searchMode !== 'attribute' && hasSearchResults()"
                 >
-                    <div style="display: flex; justify-content: space-between; padding: 4px;">
+                    <div style="display: flex; justify-content: space-between; padding: 6px 12px; font-size: 14px; align-items: center;">
                         <span>Elements name</span>
-                        <span style="display: flex; gap: 4px;">
+                        <span style="display: flex; gap: 8px; align-items: center">
                             Show in attributes view
-                            <i class="dku-icon-eye-16" style="click: pointer" ng-click="selectAllResults()"></i>
+                            <i class="dku-icon-eye-16 pi-system-explorer__show-all-eye"
+                               style="click: pointer; padding: 4px 6px; border: 1px solid #f0efec; border-radius: 8px;"
+                               ng-style="{ 'border-color': areAllSearchResultsSelected() ? '#7092f2' : '#f0efec' }"
+                               ng-click="selectAllResults()"></i>
                         </span>
                     </div>
                     <div class="pi-system-explorer__search-result"
                          ng-class="{ 'pi-system-explorer__search-result--visualized': ui.clickedNodes.includes(result.nodes[0].url) }"
                          ng-repeat="(nodeId, result) in search.searchResults track by nodeId"
                          ng-click="toggleNodeVisualization(result.nodes[0])"
+                         style="border-top: 1px solid #f0efec; padding: 12px; font-size: 14px; align-items: center;"
                     >
-                        <div style="display: flex; gap: 4px;">
+                        <div style="display: flex; gap: 8px; align-items: center;">
                             <div ng-if="search.searchMode === 'element'">
                                 {{prettifyElementPath(result.nodes[0].path, config.database_title)}}
                             </div>
@@ -226,9 +230,14 @@
                                 {{result.nodes[0].title}}
                             </div>
                             <i ng-click="$event.stopPropagation(); targetSearchResult(result)"
-                               class="dku-icon-target-16 pi-system-explorer__search-result-action"></i>
+                               style="padding: 4px 6px;"
+                               class="dku-icon-target-16 pi-system-explorer__search-target-result"
+                               toggle="tooltip"
+                               title="Locate in tree view"></i>
                         </div>
-                        <i class="dku-icon-eye-16 pi-system-explorer__search-result-eye"></i>
+                        <i class="dku-icon-eye-16 pi-system-explorer__search-result-eye"
+                           style="padding: 4px 6px; "
+                        ></i>
                     </div>
                 </div>
             </div>

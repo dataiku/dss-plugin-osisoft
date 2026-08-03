@@ -814,7 +814,7 @@ pi-system-auth-banner {
     background-color: #C4E0FE;
 }
 
-.pi-system-explorer__search-result-action {
+.pi-system-explorer__search-target-result {
     visibility: hidden;
 }
 
@@ -822,12 +822,20 @@ pi-system-auth-banner {
     visibility: hidden;
 }
 
+.pi-system-explorer__show-all-eye:hover {
+    background-color: #e8eefd;
+}
+
 .pi-system-explorer__search-result:hover {
     background-color: #e7f3ff;
 }
 
-.pi-system-explorer__search-result:hover .pi-system-explorer__search-result-action {
+.pi-system-explorer__search-result:hover .pi-system-explorer__search-target-result {
     visibility: visible;
+}
+
+.pi-system-explorer__search-target-result:hover {
+    color: #7092f2;
 }
 
 .pi-system-explorer__search-result:hover .pi-system-explorer__search-result-eye,

@@ -1181,6 +1181,13 @@ app.controller('AfExplorerFormCtrl', [
             return Object.keys($scope.search.searchResults || {}).length > 0;
         };
 
+        $scope.areAllSearchResultsSelected = function() {
+            const results = Object.values($scope.search.searchResults || {});
+            return results.length > 0 && results.every((result) =>
+                $scope.ui.clickedNodes.includes(result.nodes[0].url)
+            );
+        };
+
         $scope.getSearchResultCount = function() {
             return Object.keys($scope.search.searchResults || {}).length;
         };
