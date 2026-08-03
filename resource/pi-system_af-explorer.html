@@ -120,12 +120,13 @@
                          ng-repeat="(nodeId, result) in search.searchResults track by nodeId">
                         <div style="display: flex; gap: 4px;">
                             <div ng-if="search.searchMode === 'element'">
-                                {{prettifyElementPath(result.node.path, config.database_title)}}
+                                {{prettifyElementPath(result.nodes[0].path, config.database_title)}}
                             </div>
                             <div ng-if="search.searchMode === 'template'">
-                                {{result.node.title}}
+                                {{result.nodes[0].title}}
                             </div>
-                            <i class="dku-icon-target-16 pi-system-explorer__search-result-action"></i>
+                            <i ng-click="targetSearchResult(result)"
+                               class="dku-icon-target-16 pi-system-explorer__search-result-action"></i>
                         </div>
                         <i class="dku-icon-eye-16 pi-system-explorer__search-result-action"></i>
                     </div>

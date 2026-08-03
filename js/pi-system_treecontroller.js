@@ -351,6 +351,7 @@ app.controller('AfExplorerFormCtrl', [
         };
 
         $scope.toggleSearchMode = function() {
+            clearSearchHighlights($scope.elementTree); // Clearing search hightlights on leaving search mode
             $scope.inSearchMode = !$scope.inSearchMode;
         }
 
@@ -1079,14 +1080,13 @@ app.controller('AfExplorerFormCtrl', [
                     // Handling weak links
                     if (resultArray[node.id]) {
                         resultArray[node.id].parentList.push(parentList);
-                        resultArray[node.id].node = node;
+                        resultArray[node.id].nodes.push(node);
                     } else {
                         resultArray[node.id] = {
-                            node: node,
+                            nodes: [node],
                             parentList: [parentList]
                         };
                     }
-                    console.log("resultArray", resultArray)
                 }
                 if (node.children.length > 0) {
                     addMatchingObjectsToSearchResults(
@@ -1099,6 +1099,7 @@ app.controller('AfExplorerFormCtrl', [
         }
 
         $scope.applySearch = function() {
+            clearSearchHighlights($scope.elementTree);
             if ($scope.search.searchMode === 'attribute') {
                 return;
             }
@@ -1106,6 +1107,25 @@ app.controller('AfExplorerFormCtrl', [
             const searchTree = $scope.search.searchMode === 'element' ? $scope.elementTree : $scope.templateTree;
             $scope.search.searchResults = {};
             addMatchingObjectsToSearchResults(searchTree, $scope.search.searchResults, []);
+        }
+
+        function openSearchResultInTree(parentNodeLists) {
+            // Multiple parent node lists because of weak links
+            parentNodeLists.forEach((parentNodeList) => {
+                parentNodeList.forEach((node) => {
+                    node.expanded = true;
+                })
+            })
+        }
+
+        function highlightSearchResult(nodes) {
+            nodes.forEach((node) => node.searchHighlighted = true);
+        }
+
+        $scope.targetSearchResult = function(result) {
+            clearSearchHighlights($scope.elementTree);
+            openSearchResultInTree(result.parentList);
+            highlightSearchResult(result.nodes);
         }
 
         function markSearchResults(nodes, matchedElementPaths) {
