@@ -794,6 +794,14 @@ pi-system-auth-banner {
 .pi-system-explorer__search-mode__search-box .basic-search-box__input {
     height: 48px;
 }
+
+.pi-system-explorer__search-mode__category-selector {
+    width: 200px !important;
+}
+
+.pi-system-explorer__search-mode__category-selector button {
+    height: 48px;
+}
 .pi-system-explorer__search-result {
     padding: 4px;
     display: flex;

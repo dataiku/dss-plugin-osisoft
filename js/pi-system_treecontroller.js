@@ -348,6 +348,7 @@ app.controller('AfExplorerFormCtrl', [
         $scope.search = {
             searchMode: 'element',
             searchString: '',
+            elementCategoryFilterList: [],
             searchResults: []
         };
 
@@ -1059,12 +1060,16 @@ app.controller('AfExplorerFormCtrl', [
             });
         };
 
-        function nodeMatchesSearch(searchText, name) {
-            if (!searchText) {
+        function nodeMatchesSearch(searchText, name, categoryNames) {
+            const selectedCategories = $scope.search.elementCategoryFilterList;
+            const hasCategoryFilters =
+                $scope.search.searchMode === 'element' && selectedCategories.length > 0;
+            if (!searchText && !hasCategoryFilters) {
                 return false;
             }
-            const lowercasedSearch = searchText.toLowerCase();
-            return name.toLowerCase().includes(lowercasedSearch);
+            const matchesName = !searchText || name.toLowerCase().includes(searchText.toLowerCase());
+            const matchesCategories = !hasCategoryFilters || selectedCategories.every((category) => categoryNames.includes(category));
+            return matchesName && matchesCategories;
         }
 
         $scope.prettifyElementPath = function(elementPath, databaseName) {
@@ -1082,7 +1087,7 @@ app.controller('AfExplorerFormCtrl', [
 
         function addMatchingObjectsToSearchResults(nodeList, resultArray, parentList) {
             nodeList.forEach((node) => {
-                if (nodeMatchesSearch($scope.search.searchString, node.title)) {
+                if (nodeMatchesSearch($scope.search.searchString, node.title, node.category_names)) {
                     // Handling weak links
                     if (resultArray[node.id]) {
                         resultArray[node.id].parentList.push(parentList);
