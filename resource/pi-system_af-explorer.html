@@ -116,8 +116,15 @@
                             ng-model="search.searchString"
                             placeholder="Search {{search.searchMode}}s by name"
                             ng-change="applySearch()"
+                            ng-keydown="search.searchMode === 'attribute' && search.searchString && search.searchString.trim() && $event.key === 'Enter' && searchAttributesInDb()"
                     >
                     </basic-search-box>
+                    <button class="btn btn--primary"
+                            ng-if="search.searchMode === 'attribute'"
+                            ng-click="searchAttributesInDb()"
+                            ng-disabled="!search.searchString || !search.searchString.trim()">
+                        Search
+                    </button>
                     <select dku-bs-select multiple
                             ng-if="search.searchMode === 'element'"
                             ng-model="search.elementCategoryFilterList"
@@ -135,6 +142,53 @@
                     </select>
                 </div>
                 <div ng-if="search.searchMode === 'attribute'">Use filters to find what you need faster and improve loading times</div>
+                <div ng-if="search.searchMode === 'attribute' && search.attributeResults">
+                    <div
+                            attribute-table-block
+                            ng-if="search.groupedAttributeResultsFallbackGrouping && !search.groupedAttributeResultsFallbackGrouping.empty"
+                            grouped-attributes="search.groupedAttributeResultsFallbackGrouping"
+                            config="config"
+                            display-path="ui.displayPath"
+                            elements-by-template="elementsByTemplate"
+                            title="getAttributeTableTitle(true)"
+                            group-mode="groupMode"
+                            display-element-dropdown="false"
+                            active-tab="activeTab"
+                            aggregate-data-type-fields="aggregateDataTypeFields"
+                            prettify-element-path="prettifyElementPath"
+                            on-toggle-select-all-grouped-attributes="toggleSelectAllGroupedAttributes(groupedAttributeGroup)"
+                            on-toggle-grouped-attributes="toggleGroupedAttributes(group)"
+                            on-is-at-least-partially-selected="isAtLeastPartiallySelected(item)"
+                            on-init-elements-dropdown="initElementsDropdown(templateName)"
+                            on-is-template-associated-element-selected="isTemplateAssociatedElementSelected(element)"
+                            on-apply-click-elements-dropdown="applyClickElementsDropdown(templateName, element, selected)"
+                            on-check-attribute="checkAttribute(mergedAttribute)"
+                            on-update-data-type="updateMergedAttributeDataType(mergedAttribute)"
+                            on-update-aggregate="updateMergedAttributeAggregate(mergedAttribute)">
+                    </div>
+                    <div
+                            attribute-table-block
+                            grouped-attributes="search.groupedAttributeResults"
+                            config="config"
+                            display-path="ui.displayPath"
+                            elements-by-template="elementsByTemplate"
+                            title="getAttributeTableTitle()"
+                            group-mode="groupMode"
+                            display-element-dropdown="true"
+                            active-tab="activeTab"
+                            aggregate-data-type-fields="aggregateDataTypeFields"
+                            prettify-element-path="prettifyElementPath"
+                            on-toggle-select-all-grouped-attributes="toggleSelectAllGroupedAttributes(groupedAttributeGroup)"
+                            on-toggle-grouped-attributes="toggleGroupedAttributes(group)"
+                            on-is-at-least-partially-selected="isAtLeastPartiallySelected(item)"
+                            on-init-elements-dropdown="initElementsDropdown(templateName)"
+                            on-is-template-associated-element-selected="isTemplateAssociatedElementSelected(element)"
+                            on-apply-click-elements-dropdown="applyClickElementsDropdown(templateName, element, selected)"
+                            on-check-attribute="checkAttribute(mergedAttribute)"
+                            on-update-data-type="updateMergedAttributeDataType(mergedAttribute)"
+                            on-update-aggregate="updateMergedAttributeAggregate(mergedAttribute)">
+                    </div>
+                </div>
                 <div ng-if="search.searchMode === 'element' || search.searchMode === 'template'">
                     {{getSearchResultCount()}} results
                 </div>

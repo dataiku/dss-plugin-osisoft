@@ -350,7 +350,10 @@ app.controller('AfExplorerFormCtrl', [
             searchString: '',
             elementCategoryFilterList: [],
             elementTemplateFilter: '',
-            searchResults: []
+            searchResults: [],
+            attributeResults: null,
+            groupedAttributeResults: null,
+            groupedAttributeResultsFallbackGrouping: null
         };
 
         function flattenTemplateTree(templateTree) {
@@ -877,6 +880,25 @@ app.controller('AfExplorerFormCtrl', [
             });
         }
 
+        $scope.searchAttributesInDb = function() {
+            return $scope.callPythonDo({
+                method: "get_attributes",
+                attribute_name: $scope.search.searchString
+            }).then(function(data) {
+                $scope.search.attributeResults = (data.attributes || []).map(attribute => {
+                    const elementPath = getElementPathFromAttributePath(attribute.path);
+                    return enrichAttribute({
+                        ...attribute,
+                        expanded: false,
+                        parent_element: getElementNameFromPath(elementPath),
+                        parent_element_path: elementPath
+                    }, {});
+                });
+                refreshSearchAttributeResults();
+                console.log("get_attributes", data);
+            });
+        };
+
         $scope.getAttributeCategoriesFromDB = function() {
             return $scope.callPythonDo({ method: "get_attribute_categories_from_db" }).then(function(data) {
                 console.log("get_attribute_categories_from_db", data);
@@ -904,14 +926,27 @@ app.controller('AfExplorerFormCtrl', [
             $scope.refreshAttributeSection();
         }
 
+        function resetSearch() {
+            $scope.search.searchString = '';
+            $scope.search.elementCategoryFilterList = [];
+            $scope.search.elementTemplateFilter = '';
+            $scope.search.searchResults = {};
+            $scope.search.attributeResults = null;
+            $scope.search.groupedAttributeResults = null;
+            $scope.search.groupedAttributeResultsFallbackGrouping = null;
+        }
+
         $scope.setTab = function(tab) {
             clearSearchHighlights($scope.elementTree); // Clearing highlights on change mode
             const previousTab = $scope.activeTab;
             if (tab !== previousTab) {
                 resetRightPanelForCurrentTabContext();
+                resetSearch();
             }
             $scope.activeTab = tab;
-            $scope.search.searchMode = $scope.activeTab;
+            $timeout(function() {
+                $scope.search.searchMode = tab;
+            });
         };
 
         $scope.doSearch = function(element_name) {
@@ -1132,10 +1167,10 @@ app.controller('AfExplorerFormCtrl', [
         }
 
         $scope.applySearch = function() {
-            clearSearchHighlights($scope.elementTree);
             if ($scope.search.searchMode === 'attribute') {
                 return;
             }
+            clearSearchHighlights($scope.elementTree);
             // console.log("$scope.templateTree", $scope.templateTree)
             const searchTree = $scope.search.searchMode === 'element' ? $scope.elementTree : $scope.templateTree;
             $scope.search.searchResults = {};
@@ -1152,7 +1187,10 @@ app.controller('AfExplorerFormCtrl', [
 
         $scope.selectAllResults = async function() {
             for (const result of Object.values($scope.search.searchResults)) {
-                await $scope.toggleNodeVisualization(result.nodes[0]);
+                const node = result.nodes[0];
+                if (!$scope.ui.clickedNodes.includes(node.url)) {
+                    await $scope.toggleNodeVisualization(node);
+                }
             }
         }
 
@@ -1637,8 +1675,7 @@ app.controller('AfExplorerFormCtrl', [
             return Object.values(deduplicatedAttributes.reduce(groupAttributesIntoSections(), {}));
         }
 
-        function splitAttributesOnProperty(splitProperty) {
-            const attributes = $scope.attributeList;
+        function splitAttributesOnProperty(attributes, splitProperty) {
             function hasGroupingValue(attribute) {
                 const value = attribute?.[splitProperty];
                 if (Array.isArray(value)) {
@@ -1665,20 +1702,24 @@ app.controller('AfExplorerFormCtrl', [
             }
         }
 
-        $scope.buildGroupedAttributes = function(grouping) {
-            const splitAttributes = splitAttributesOnProperty(grouping.group.groupingKey);
+        $scope.buildGroupedAttributes = function(
+            grouping,
+            attributes = $scope.attributeList,
+            searchFilters = $scope.ui.attributeFiltering
+        ) {
+            const splitAttributes = splitAttributesOnProperty(attributes, grouping.group.groupingKey);
             return {
                 attributesWithProperty: buildGroupedAttributesResult(
                     splitAttributes.attributesWithProperty,
                     grouping.group.groupingKey,
                     grouping.group.titleKey,
-                    $scope.ui.attributeFiltering,
+                    searchFilters,
                 ),
                 attributesWithoutProperty: buildGroupedAttributesResult(
                     splitAttributes.attributesWithoutProperty,
                     grouping.fallbackGroup.groupingKey,
                     grouping.fallbackGroup.titleKey,
-                    $scope.ui.attributeFiltering,
+                    searchFilters,
                 )
             };
         }
@@ -1704,6 +1745,23 @@ app.controller('AfExplorerFormCtrl', [
                 return "Categories";
             }
             return "Templates";
+        }
+
+        function refreshSearchAttributeResults() {
+            if (!$scope.search.attributeResults) {
+                return;
+            }
+            const groupedAttributes = $scope.buildGroupedAttributes(
+                getGrouping(),
+                $scope.search.attributeResults,
+                {
+                    attributeSearch: '',
+                    attributeCategoryFilterList: [],
+                    attributeValueTypeFilter: ''
+                }
+            );
+            $scope.search.groupedAttributeResults = groupedAttributes.attributesWithProperty;
+            $scope.search.groupedAttributeResultsFallbackGrouping = groupedAttributes.attributesWithoutProperty;
         }
 
         function getCheckboxStatus(checkboxStatuses) {
@@ -1762,6 +1820,7 @@ app.controller('AfExplorerFormCtrl', [
             const groupedAttributes = $scope.buildGroupedAttributes(grouping)
             $scope.groupedAttributes = groupedAttributes.attributesWithProperty;
             $scope.groupedAttributesFallbackGrouping = groupedAttributes.attributesWithoutProperty;
+            refreshSearchAttributeResults();
             console.log("Attribute List", $scope.attributeList)
             console.log("Grouped attributes", $scope.groupedAttributes)
             console.log("Grouped fallback attributes", $scope.groupedAttributesFallbackGrouping)
@@ -1815,7 +1874,7 @@ app.controller('AfExplorerFormCtrl', [
             $scope.refreshAttributeSection();
         }
 
-        function startLoadingState(headerLoadingOverlay, textLoadingOverlay, timeoutModalSeconds=0.001) {
+        function startLoadingState(headerLoadingOverlay, textLoadingOverlay, timeoutModalSeconds) {
             $scope.ui.uiFrozen = true;
             $scope.ui.loadingOverlay.displayed = false;
             $scope.ui.loadingOverlay.text = textLoadingOverlay;
