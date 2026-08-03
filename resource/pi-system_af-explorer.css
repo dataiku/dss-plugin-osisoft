@@ -795,11 +795,13 @@ pi-system-auth-banner {
     height: 48px;
 }
 
-.pi-system-explorer__search-mode__category-selector {
+.pi-system-explorer__search-mode__category-selector,
+.pi-system-explorer__search-mode__template-selector {
     width: 200px !important;
 }
 
-.pi-system-explorer__search-mode__category-selector button {
+.pi-system-explorer__search-mode__category-selector button,
+.pi-system-explorer__search-mode__template-selector button {
     height: 48px;
 }
 .pi-system-explorer__search-result {

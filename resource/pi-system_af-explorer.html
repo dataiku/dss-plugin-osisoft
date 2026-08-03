@@ -125,6 +125,14 @@
                             ng-options="category.title as category.title for category in elementCategories"
                             class="pi-system-explorer__search-mode__category-selector">
                     </select>
+                    <select dku-bs-select
+                            ng-if="search.searchMode === 'element'"
+                            ng-model="search.elementTemplateFilter"
+                            ng-change="applySearch()"
+                            ng-options="template.title as template.title for template in templateList"
+                            class="pi-system-explorer__search-mode__template-selector">
+                        <option value="">Any template</option>
+                    </select>
                 </div>
                 <div ng-if="search.searchMode === 'attribute'">Use filters to find what you need faster and improve loading times</div>
                 <div style="display: flex; flex-direction: column; gap: 4px; border: 1px solid #f0efec;"

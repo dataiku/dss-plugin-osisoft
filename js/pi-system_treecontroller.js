@@ -349,8 +349,20 @@ app.controller('AfExplorerFormCtrl', [
             searchMode: 'element',
             searchString: '',
             elementCategoryFilterList: [],
+            elementTemplateFilter: '',
             searchResults: []
         };
+
+        function flattenTemplateTree(templateTree) {
+            return (templateTree || []).flatMap((template) => [
+                template,
+                ...flattenTemplateTree(template.children)
+            ]);
+        }
+
+        function rebuildTemplateList() {
+            $scope.templateList = flattenTemplateTree($scope.templateTree);
+        }
 
         $scope.toggleSearchMode = function(clickedSearchButton) {
             if (clickedSearchButton === $scope.inSearchMode) {
@@ -457,6 +469,7 @@ app.controller('AfExplorerFormCtrl', [
             $scope.config.show_advanced_parameters = $scope.config.show_advanced_parameters || false;
             $scope.activeTab = $scope.activeTab || 'element';
             $scope.templateTree = $scope.templateTree || [];
+            rebuildTemplateList();
             $scope.attributeCategories = $scope.attributeCategories || [];
             $scope.elementCategories = $scope.elementCategories || [];
             $scope.groupMode = $scope.groupMode || GroupMode.TEMPLATE;
@@ -589,7 +602,7 @@ app.controller('AfExplorerFormCtrl', [
                 () => $scope.getTemplatesFromDB(),
                 () => $scope.cache.addOrUpdateTemplateTree(),
                 'templateTree',
-            );
+            ).then(rebuildTemplateList);
         }
 
         function loadElementsByTemplate() {
@@ -644,6 +657,7 @@ app.controller('AfExplorerFormCtrl', [
             $scope.config.database_name = null;
             $scope.config.database_title = null;
             $scope.templateTree = [];
+            rebuildTemplateList();
             $scope.attributeCategories = [];
             $scope.elementCategories = [];
             $scope.config.loadedDatabaseName = null;
@@ -658,6 +672,7 @@ app.controller('AfExplorerFormCtrl', [
             $scope.config.database_name = null;
             $scope.config.database_title = null;
             $scope.templateTree = [];
+            rebuildTemplateList();
             $scope.attributeCategories = [];
             $scope.elementCategories = [];
             $scope.config.loadedDatabaseName = null;
@@ -669,6 +684,7 @@ app.controller('AfExplorerFormCtrl', [
         $scope.onDatabaseChanged = function() {
             $scope.config.database_title = getDatabaseTitle($scope.config.database_name);
             $scope.templateTree = [];
+            rebuildTemplateList();
             $scope.attributeCategories = [];
             $scope.elementCategories = [];
             $scope.config.loadedDatabaseName = null;
@@ -700,6 +716,7 @@ app.controller('AfExplorerFormCtrl', [
             }).then(([elementTree, templateTree, attributeCategories, elementCategories]) => {
                 $scope.elementTree = elementTree;
                 $scope.templateTree = templateTree;
+                rebuildTemplateList();
                 $scope.attributeCategories = attributeCategories;
                 $scope.elementCategories = elementCategories;
                 cacheElementTree();
@@ -800,6 +817,7 @@ app.controller('AfExplorerFormCtrl', [
             ]).then(function([elementTree, templateTree]) {
                 $scope.elementTree = elementTree;
                 $scope.templateTree = templateTree;
+                rebuildTemplateList();
                 cacheElementTree();
                 cacheTemplateTree();
                 $scope.config.loadedDatabaseName = $scope.config.database_name || null;
@@ -1060,16 +1078,20 @@ app.controller('AfExplorerFormCtrl', [
             });
         };
 
-        function nodeMatchesSearch(searchText, name, categoryNames) {
+        function nodeMatchesSearch(searchText, name, categoryNames, templateName) {
             const selectedCategories = $scope.search.elementCategoryFilterList;
+            const selectedTemplate = $scope.search.elementTemplateFilter;
             const hasCategoryFilters =
                 $scope.search.searchMode === 'element' && selectedCategories.length > 0;
-            if (!searchText && !hasCategoryFilters) {
+            const hasTemplateFilter =
+                $scope.search.searchMode === 'element' && !!selectedTemplate;
+            if (!searchText && !hasCategoryFilters && !hasTemplateFilter) {
                 return false;
             }
             const matchesName = !searchText || name.toLowerCase().includes(searchText.toLowerCase());
             const matchesCategories = !hasCategoryFilters || selectedCategories.every((category) => categoryNames.includes(category));
-            return matchesName && matchesCategories;
+            const matchesTemplate = !hasTemplateFilter || templateName === selectedTemplate;
+            return matchesName && matchesCategories && matchesTemplate;
         }
 
         $scope.prettifyElementPath = function(elementPath, databaseName) {
@@ -1087,7 +1109,7 @@ app.controller('AfExplorerFormCtrl', [
 
         function addMatchingObjectsToSearchResults(nodeList, resultArray, parentList) {
             nodeList.forEach((node) => {
-                if (nodeMatchesSearch($scope.search.searchString, node.title, node.category_names)) {
+                if (nodeMatchesSearch($scope.search.searchString, node.title, node.category_names, node.template_name)) {
                     // Handling weak links
                     if (resultArray[node.id]) {
                         resultArray[node.id].parentList.push(parentList);
