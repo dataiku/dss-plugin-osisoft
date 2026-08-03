@@ -882,6 +882,7 @@ app.controller('AfExplorerFormCtrl', [
         }
 
         $scope.setTab = function(tab) {
+            clearSearchHighlights($scope.elementTree); // Clearing highlights on change mode
             const previousTab = $scope.activeTab;
             if (tab !== previousTab) {
                 resetRightPanelForCurrentTabContext();
@@ -1032,6 +1033,7 @@ app.controller('AfExplorerFormCtrl', [
         }
 
         $scope.toggleNodeVisualization = function(node) {
+            clearSearchHighlights($scope.elementTree);
             console.log("clicked on ", node)
 
             const indexClickedNode = $scope.ui.clickedNodes.indexOf(node.url);
