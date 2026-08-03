@@ -1049,14 +1049,14 @@ app.controller('AfExplorerFormCtrl', [
                 $scope.ui.clickedNodes.push(node.url);
             }
 
-            $scope.toggleDisplayAttributes(node, !nodeAlreadySelected).then(() => {
+            // In element node, the visualized nodes are reflected on the elements dropdown
+            console.log("clickedNodes: " + JSON.stringify($scope.ui.clickedNodes));
+
+            return $scope.toggleDisplayAttributes(node, !nodeAlreadySelected).then(() => {
                 $scope.refreshAttributeSection();
                 // Necessary because no digest cycle triggered for awaited cache reads
                 $scope.$applyAsync();
             });
-
-            // In element node, the visualized nodes are reflected on the elements dropdown
-            console.log("clickedNodes: " + JSON.stringify($scope.ui.clickedNodes));
         };
 
         function nodeMatchesSearch(searchText, name) {
@@ -1113,6 +1113,16 @@ app.controller('AfExplorerFormCtrl', [
             const searchTree = $scope.search.searchMode === 'element' ? $scope.elementTree : $scope.templateTree;
             $scope.search.searchResults = {};
             addMatchingObjectsToSearchResults(searchTree, $scope.search.searchResults, []);
+        }
+
+        $scope.hasSearchResults = function() {
+            return Object.keys($scope.search.searchResults || {}).length > 0;
+        };
+
+        $scope.selectAllResults = async function() {
+            for (const result of Object.values($scope.search.searchResults)) {
+                await $scope.toggleNodeVisualization(result.nodes[0]);
+            }
         }
 
         function openSearchResultInTree(parentNodeLists) {

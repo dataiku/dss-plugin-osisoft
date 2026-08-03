@@ -120,7 +120,16 @@
                     </basic-search-box>
                 </div>
                 <div ng-if="search.searchMode === 'attribute'">Use filters to find what you need faster and improve loading times</div>
-                <div style="display: flex; flex-direction: column; gap: 4px; border: 1px solid #f0efec;">
+                <div style="display: flex; flex-direction: column; gap: 4px; border: 1px solid #f0efec;"
+                     ng-if="hasSearchResults()"
+                >
+                    <div style="display: flex; justify-content: space-between; padding: 4px;">
+                        <span>Elements name</span>
+                        <span style="display: flex; gap: 4px;">
+                            Show in attributes view
+                            <i class="dku-icon-eye-16" style="click: pointer" ng-click="selectAllResults()"></i>
+                        </span>
+                    </div>
                     <div class="pi-system-explorer__search-result"
                          ng-class="{ 'pi-system-explorer__search-result--visualized': ui.clickedNodes.includes(result.nodes[0].url) }"
                          ng-repeat="(nodeId, result) in search.searchResults track by nodeId"
