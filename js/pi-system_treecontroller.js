@@ -344,7 +344,7 @@ app.controller('AfExplorerFormCtrl', [
 
         $scope.selectedElementPaths = buildSelectedElementPaths()
 
-        $scope.inSearchMode = true; // TODO: change only for testing
+        $scope.inSearchMode = false;
         $scope.search = {
             searchMode: 'element',
             searchString: '',
