@@ -70,9 +70,7 @@
             {{errorBannerMessage}}
         </div>
         <div class="pi-system-explorer__header">
-            <div>
-                Welcome to Pi System Plugin
-            </div>
+            <div></div>
             <div>
                 <button
                         class="btn btn--outline btn--primary btn--dku-icon"
@@ -137,7 +135,9 @@
                             ng-model="search.elementTemplateFilter"
                             ng-change="applySearch()"
                             ng-options="template.title as template.title for template in templateList"
-                            class="pi-system-explorer__search-mode__template-selector">
+                            class="pi-system-explorer__search-mode__template-selector"
+                            data-live-search="true"
+                    >
                         <option value="">Any template</option>
                     </select>
                 </div>
@@ -235,22 +235,25 @@
             <!-- Attributes view -->
             <div class="attribute-tab pi-system-explorer__center-view" ng-if="showTreeData && !inSearchMode">
                 <div class="attribute-section__search">
-                    <div><strong>Attributes and templates</strong></div>
-                    <div>
-                        <basic-search-box
-                                ng-model="ui.attributeFiltering.attributeSearch"
-                                placeholder="Filter by attribute or template name"
-                                ng-change="refreshAttributeSection()"
-                        >
-                        </basic-search-box>
-                    </div>
+                    <div style="font-size: 18px"><strong>Attributes view</strong></div>
                     <div class="attribute-section__filters">
+                        <div class="attribute-section__filter-column">
+                            <basic-search-box
+                                    style="margin-top: 24px;"
+                                    ng-model="ui.attributeFiltering.attributeSearch"
+                                    placeholder="Filter by attribute or template name"
+                                    ng-change="refreshAttributeSection()"
+                            >
+                            </basic-search-box>
+                        </div>
                         <div class="attribute-section__filter-column">
                             <div class="attribute-section__filter-label">Category</div>
                             <select dku-bs-select multiple
                                     ng-model="ui.attributeFiltering.attributeCategoryFilterList"
                                     ng-change="refreshAttributeSection()"
-                                    ng-options="category.value as category.label for category in attributeCategoryFilterOptions">
+                                    ng-options="category.value as category.label for category in attributeCategoryFilterOptions"
+                                    data-live-search="true"
+                            >
                             </select>
                         </div>
                         <div class="attribute-section__filter-column">
@@ -258,32 +261,37 @@
                             <select dku-bs-select
                                     ng-model="ui.attributeFiltering.attributeValueTypeFilter"
                                     ng-change="refreshAttributeSection()"
-                                    ng-options="valueType.value as valueType.label for valueType in attributeValueTypeFilterOptions">
+                                    ng-options="valueType.value as valueType.label for valueType in attributeValueTypeFilterOptions"
+                                    data-live-search="true"
+                            >
                             </select>
-                        </div>
-                    </div>
-                    <div class="attribute-section__grouping-toggle">
-                        <div class="attribute-section__grouping-toggle--element" ng-click="changeGroupingMode('TEMPLATE')" ng-class="{active: groupMode === 'TEMPLATE'}">
-                            <div class="attribute-section__grouping-toggle-content">Templates</div>
-                        </div>
-                        <div class="attribute-section__grouping-toggle--element" ng-click="changeGroupingMode('CATEGORY')" ng-class="{active: groupMode === 'CATEGORY'}">
-                            <div class="attribute-section__grouping-toggle-content">Categories</div>
                         </div>
                     </div>
                     <div class="attribute-section__filters-row">
                         <label class="attribute-section__filters-toggle">
-                            <span class="dku-toggle dku-toggle-no-content">
-                                <input type="checkbox" ng-model="ui.displayPath">
-                                <span></span>
-                            </span>
-                            <span>Display attribute paths</span>
-                        </label>
-                        <label class="attribute-section__filters-toggle">
+                            <span>Common attributes only</span>
                             <span class="dku-toggle dku-toggle-no-content">
                                 <input type="checkbox" ng-model="ui.onlyDisplayCommon" ng-change="refreshAttributeSection()">
                                 <span></span>
                             </span>
-                            <span>Only common attributes</span>
+                        </label>
+                        <label class="attribute-section__filters-toggle">
+                            <span>Group by categories</span>
+                            <span class="dku-toggle dku-toggle-no-content">
+                                <input type="checkbox"
+                                       ng-model="groupMode"
+                                       ng-true-value="'CATEGORY'"
+                                       ng-false-value="'TEMPLATE'"
+                                       ng-change="changeGroupingMode(groupMode)">
+                                <span></span>
+                            </span>
+                        </label>
+                        <label class="attribute-section__filters-toggle">
+                            <span>Show attribute paths</span>
+                            <span class="dku-toggle dku-toggle-no-content">
+                                <input type="checkbox" ng-model="ui.displayPath">
+                                <span></span>
+                            </span>
                         </label>
                     </div>
                 </div>
