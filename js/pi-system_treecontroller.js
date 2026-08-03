@@ -296,8 +296,9 @@ app.controller('AfExplorerFormCtrl', [
     '$scope',
     '$stateParams',
     '$q',
+    '$timeout',
     'CreateModalFromTemplate',
-    function($scope, $stateParams, $q, CreateModalFromTemplate) {
+    function($scope, $stateParams, $q, $timeout, CreateModalFromTemplate) {
 
         $scope.paramDesc = {
             'parameterSetId': 'basic-auth',
@@ -1128,6 +1129,20 @@ app.controller('AfExplorerFormCtrl', [
             clearSearchHighlights($scope.elementTree);
             openSearchResultInTree(result.parentList);
             highlightSearchResult(result.nodes);
+
+            $timeout(function() {
+                const targetUrl = result.nodes[0].url;
+                const targetRow = Array.prototype.find.call(
+                    document.querySelectorAll('.tree-node__row'),
+                    function(row) {
+                        return row.dataset.nodeUrl === targetUrl;
+                    }
+                );
+
+                if (targetRow) {
+                    targetRow.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                }
+            });
         }
 
         function markSearchResults(nodes, matchedElementPaths) {

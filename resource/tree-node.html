@@ -1,6 +1,7 @@
 <div class="tree-node" ng-if="ctrl.node.type !== 'attribute'">
     <div
             class="tree-node__row"
+            data-node-url="{{ ctrl.node.url }}"
             ng-class="{
                 'tree-node__row--search-result': ctrl.isSearchResult(ctrl.node),
                 'tree-node__row--visualized': ctrl.isNodeClicked(ctrl.node)
