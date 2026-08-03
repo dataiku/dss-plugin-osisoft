@@ -1073,14 +1073,27 @@ app.controller('AfExplorerFormCtrl', [
         }
 
 
-        function addMatchingObjectsToSearchResults(nodeList, resultSet) {
+        function addMatchingObjectsToSearchResults(nodeList, resultArray, parentList) {
             nodeList.forEach((node) => {
-                if (nodeMatchesSearch($scope.search.searchString, node.title) && !resultSet.has(node.id)) {
-                    $scope.search.searchResults.push(node);
-                    resultSet.add(node.id);
+                if (nodeMatchesSearch($scope.search.searchString, node.title)) {
+                    // Handling weak links
+                    if (resultArray[node.id]) {
+                        resultArray[node.id].parentList.push(parentList);
+                        resultArray[node.id].node = node;
+                    } else {
+                        resultArray[node.id] = {
+                            node: node,
+                            parentList: [parentList]
+                        };
+                    }
+                    console.log("resultArray", resultArray)
                 }
                 if (node.children.length > 0) {
-                    addMatchingObjectsToSearchResults(node.children, resultSet);
+                    addMatchingObjectsToSearchResults(
+                        node.children,
+                        resultArray,
+                        parentList.concat(node)
+                    );
                 }
             })
         }
@@ -1091,9 +1104,8 @@ app.controller('AfExplorerFormCtrl', [
             }
             // console.log("$scope.templateTree", $scope.templateTree)
             const searchTree = $scope.search.searchMode === 'element' ? $scope.elementTree : $scope.templateTree;
-            $scope.search.searchResults = [];
-            const resultSet = new Set(); // avoid weak link related duplication in search results
-            addMatchingObjectsToSearchResults(searchTree, resultSet);
+            $scope.search.searchResults = {};
+            addMatchingObjectsToSearchResults(searchTree, $scope.search.searchResults, []);
         }
 
         function markSearchResults(nodes, matchedElementPaths) {

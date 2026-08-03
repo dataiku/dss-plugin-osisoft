@@ -117,13 +117,13 @@
                 <div ng-if="search.searchMode === 'attribute'">Use filters to find what you need faster and improve loading times</div>
                 <div style="display: flex; flex-direction: column; gap: 4px; border: 1px solid #f0efec;">
                     <div class="pi-system-explorer__search-result"
-                         ng-repeat="result in search.searchResults track by result.id">
+                         ng-repeat="(nodeId, result) in search.searchResults track by nodeId">
                         <div style="display: flex; gap: 4px;">
                             <div ng-if="search.searchMode === 'element'">
-                                {{prettifyElementPath(result.path, config.database_title)}}
+                                {{prettifyElementPath(result.node.path, config.database_title)}}
                             </div>
-                                <div ng-if="search.searchMode === 'template'">
-                                {{result.title}}
+                            <div ng-if="search.searchMode === 'template'">
+                                {{result.node.title}}
                             </div>
                             <i class="dku-icon-target-16 pi-system-explorer__search-result-action"></i>
                         </div>
