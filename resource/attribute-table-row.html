@@ -2,23 +2,34 @@
     <input type="checkbox" ng-model="ctrl.mergedAttribute.allChecked"
            ng-change="ctrl.onCheckAttribute({ mergedAttribute: ctrl.mergedAttribute })"
            indeterminate="ctrl.mergedAttribute.checked"
-           ng-if="!ctrl.showPartialCheckInfo()"
+           ng-if="!ctrl.isSingleAttribute && !ctrl.showPartialCheckInfo()"
+    >
+    <input type="checkbox" ng-model="ctrl.mergedAttribute.checked"
+           ng-change="ctrl.onCheckAttribute({ mergedAttribute: ctrl.mergedAttribute })"
+           ng-if="ctrl.isSingleAttribute"
     >
     <input type="checkbox" ng-model="ctrl.mergedAttribute.allChecked"
            ng-change="ctrl.onCheckAttribute({ mergedAttribute: ctrl.mergedAttribute })"
            indeterminate="ctrl.mergedAttribute.checked"
-           ng-if="ctrl.showPartialCheckInfo()"
+           ng-if="!ctrl.isSingleAttribute && ctrl.showPartialCheckInfo()"
            toggle="tooltip-bottom"
            ng-attr-title="{{ ctrl.generatePartialStateInfo() }}"
     >
 </td>
-<td>
+<td colspan="{{ ctrl.isSingleAttribute ? (ctrl.displayPath ? 3 : 2) : 1 }}">
+        <div class="custom-table__attribute-title-info" ng-if="ctrl.isSingleAttribute">
+            {{ctrl.prettifyElementPath(ctrl.mergedAttribute.path, true)}}
+        </div>
     <div class="custom-table__attribute-title-info">
-        {{ctrl.mergedAttribute.title}}
+                <span ng-if="!ctrl.isSingleAttribute">
+           {{ctrl.mergedAttribute.title}}
+          </span>
     </div>
 </td>
-<td>{{ctrl.mergedAttribute.description}}</td>
-<td ng-if="ctrl.displayPath">
+<td ng-if="!ctrl.isSingleAttribute">
+    {{ctrl.mergedAttribute.description}}
+</td>
+<td ng-if="ctrl.displayPath && !ctrl.isSingleAttribute">
     <span ng-repeat="path in ctrl.mergedAttribute.paths">
         {{path}}<br/>
     </span>

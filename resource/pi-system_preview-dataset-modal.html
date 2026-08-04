@@ -19,10 +19,10 @@
                 <div class="scroll">
                     <div
                             attribute-table-block
+                            display-detail-attributes="false"
                             grouped-attributes="groupedSelectedAttributes"
                             config="config"
                             display-path="false"
-                            database-name="config.database_title"
                             display-group-path="true"
                             elements-by-template="{}"
                             title="'Selected Attributes'"
@@ -38,8 +38,11 @@
                             on-is-template-associated-element-selected="isTemplateAssociatedElementSelected(element)"
                             on-apply-click-elements-dropdown="None"
                             on-check-attribute="checkAttribute(mergedAttribute)"
+                            on-check-single-attribute="checkSingleAttribute(attribute)"
                             on-update-data-type="updateMergedAttributeDataType(mergedAttribute)"
-                            on-update-aggregate="updateMergedAttributeAggregate(mergedAttribute)">
+                            on-update-single-data-type="updateSingleAttributeDataType(attribute)"
+                            on-update-aggregate="updateMergedAttributeAggregate(mergedAttribute)"
+                            on-update-single-aggregate="updateSingleAttributeAggregate(attribute)">
                     </div>
                 </div>
             </div>

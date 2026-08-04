@@ -1129,10 +1129,12 @@ app.controller('AfExplorerFormCtrl', [
             return matchesName && matchesCategories && matchesTemplate;
         }
 
-        $scope.prettifyElementPath = function(elementPath, databaseName) {
-            console.log("databasename", databaseName)
+        $scope.prettifyElementPath = function(elementPath, isAttributePath=false) {
+            if (isAttributePath) {
+                elementPath = getElementPathFromAttributePath(elementPath);
+            }
             const pathParts = elementPath.split('\\').filter(Boolean);
-            const databaseIndex = pathParts.indexOf(databaseName);
+            const databaseIndex = pathParts.indexOf($scope.config.database_title);
 
             if (databaseIndex === -1) {
                 return pathParts.join(" > ");
@@ -1311,6 +1313,30 @@ app.controller('AfExplorerFormCtrl', [
                     $scope.addAttributeToSelection(attribute);
                 }
             )
+            $scope.refreshAttributeSection();
+        };
+
+        $scope.checkSingleAttribute = function(attribute) {
+            if (attribute.checked) {
+                $scope.addAttributeToSelection(attribute);
+            } else {
+                $scope.removeAttributeFromSelection(attribute);
+            }
+            $scope.refreshAttributeSection();
+        };
+
+        $scope.updateSingleAttributeDataType = function(attribute) {
+            resetAggregate(attribute);
+            if (attribute.checked) {
+                $scope.updateAttributeInSelection(attribute);
+            }
+            $scope.refreshAttributeSection();
+        };
+
+        $scope.updateSingleAttributeAggregate = function(attribute) {
+            if (attribute.checked) {
+                $scope.updateAttributeInSelection(attribute);
+            }
             $scope.refreshAttributeSection();
         };
 
@@ -1993,8 +2019,8 @@ app.directive('attributeTableBlock', function() {
             restrict: 'A',
             scope: {
                 title: '<',
+                displayDetailAttributes: '<?',
                 activeTab: '<',
-                databaseName: '<?',
                 displayGroupPath: '<?',
                 displayElementDropdown: '<',
                 displayPath: '<',
@@ -2009,11 +2035,14 @@ app.directive('attributeTableBlock', function() {
                 onToggleGroupedAttributes: '&',
                 onIsAtLeastPartiallySelected: '&',
                 onInitElementsDropdown: '&',
-            onIsTemplateAssociatedElementSelected: '&',
-            onApplyClickElementsDropdown: '&',
-            onCheckAttribute: '&',
-            onUpdateDataType: '&',
-            onUpdateAggregate: '&'
+                onIsTemplateAssociatedElementSelected: '&',
+                onApplyClickElementsDropdown: '&',
+                onCheckAttribute: '&',
+                onCheckSingleAttribute: '&',
+                onUpdateDataType: '&',
+                onUpdateSingleDataType: '&',
+                onUpdateAggregate: '&',
+                onUpdateSingleAggregate: '&'
         },
         bindToController: true,
         controller: function() {
@@ -2047,7 +2076,9 @@ app.directive('attributeTableRow', function() {
         scope: {
             groupMode: '<',
             mergedAttribute: '=',
+            isSingleAttribute: '<?',
             displayPath: '<',
+            prettifyElementPath: '<',
             aggregateDataTypeFields: '<',
             onCheckAttribute: '&',
             onUpdateDataType: '&',
@@ -2059,7 +2090,7 @@ app.directive('attributeTableRow', function() {
             const ctrl = this;
 
             ctrl.showPartialCheckInfo = function() {
-                return ctrl.mergedAttribute.checked === CheckboxStatus.PARTIAL_CHECK;
+                return !ctrl.isSingleAttribute && ctrl.mergedAttribute.checked === CheckboxStatus.PARTIAL_CHECK;
             }
 
             ctrl.generatePartialStateInfo = function() {
@@ -2101,7 +2132,6 @@ app.component('dropdownElements', {
     bindings: {
         elements: '<',
         groupName: '<',
-        databaseName: '<',
         initElementsDropdown: '&',
         isTemplateAssociatedElementSelected: '&',
         applyClickElementsDropdown: '&',
