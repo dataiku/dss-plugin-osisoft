@@ -118,17 +118,18 @@
                                     ng-model="search.searchString"
                                     placeholder="Search {{search.searchMode}}s by name"
                                     ng-change="applySearch()"
-                                    ng-keydown="search.searchMode === 'attribute' && search.searchString && search.searchString.trim() && $event.key === 'Enter' && searchAttributesInDb()"
+                                    ng-keydown="search.searchMode === 'attribute' && search.searchString && search.searchString.trim() && $event.key === 'Enter' && applySearch()"
                                     style="width: 600px;"
                             >
                             </basic-search-box>
                         </div>
                     </div>
                     <button class="btn btn--primary"
-                            style="align-self: flex-end;"
                             ng-if="search.searchMode === 'attribute'"
                             ng-click="searchAttributesInDb()"
-                            ng-disabled="!search.searchString || !search.searchString.trim()">
+                            ng-disabled="!search.searchString || !search.searchString.trim()"
+                            style="margin-top: 24px"
+                    >
                         Search
                     </button>
                     <div class="attribute-section__filter-column" ng-if="search.searchMode === 'element'">
