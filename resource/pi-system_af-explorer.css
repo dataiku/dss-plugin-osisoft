@@ -522,6 +522,10 @@ pi-system-auth-banner {
     margin-bottom: 6px;
 }
 
+.attribute-table-block__repeat-end {
+    display: none;
+}
+
 .pi-system-explorer__tree-view {
     display: flex;
     flex-direction: column;

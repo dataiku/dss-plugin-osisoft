@@ -24,7 +24,7 @@
             </tr>
         </tbody>
         <tbody
-                ng-repeat-start="group in ctrl.groupedAttributes.groups track by group.group_key"
+                ng-repeat="group in ctrl.groupedAttributes.groups track by group.group_key"
                 ng-show="!group.isDisplayed">
         <tr class="custom-table__group-row"
             ng-class="{ 'custom-table__group-row--selected': ctrl.onIsAtLeastPartiallySelected({ item: group }) }">
@@ -57,11 +57,9 @@
                 </div>
             </td>
         </tr>
-        </tbody>
-        <tbody
-                ng-repeat="mergedAttribute in group.attributes track by mergedAttribute.title"
-                ng-show="mergedAttribute.isDisplayed">
         <tr
+                ng-repeat-start="mergedAttribute in group.attributes track by mergedAttribute.title"
+                ng-show="mergedAttribute.isDisplayed"
                 attribute-table-row
                 group-mode="ctrl.groupMode"
                 merged-attribute="mergedAttribute"
@@ -73,8 +71,9 @@
                 on-update-aggregate="ctrl.onUpdateAggregate({ mergedAttribute: mergedAttribute })"
                 ng-class="{ 'custom-table__attribute-row--selected': ctrl.onIsAtLeastPartiallySelected({ item: mergedAttribute }) }">
         </tr>
-        <tr ng-if="ctrl.displayDetailAttributes !== false"
+        <tr
                 ng-repeat="attribute in mergedAttribute.attributes track by attribute.parent_element_path"
+                ng-if="ctrl.displayDetailAttributes !== false"
                 attribute-table-row
                 merged-attribute="attribute"
                 is-single-attribute="true"
@@ -86,7 +85,7 @@
                 on-update-data-type="ctrl.onUpdateSingleDataType({ attribute: attribute })"
                 on-update-aggregate="ctrl.onUpdateSingleAggregate({ attribute: attribute })">
         </tr>
+        <tr ng-repeat-end class="attribute-table-block__repeat-end"></tr>
         </tbody>
-        <tbody ng-repeat-end></tbody>
     </table>
 </div>
