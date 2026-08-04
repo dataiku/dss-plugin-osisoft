@@ -13,7 +13,7 @@ from osisoft_plugin_common import (
     iso_to_epoch, RecordsLimit, is_iso8601, get_next_page_url, change_key_in_dict
 )
 from osisoft_pagination import OffsetPagination
-from safe_logger import SafeLogger
+from osisoft_safe_logger import SafeLogger
 
 
 logger = SafeLogger("PI System", ["username", "password"])

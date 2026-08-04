@@ -1,5 +1,9 @@
 # Changelog
 
+## [Version 1.4.3](https://github.com/dataiku/dss-plugin-pi-server/releases/tag/v1.4.3) - Bugfix release - 2026-07-31
+
+- Fix issues link to libraries names collisions
+
 ## [Version 1.4.2](https://github.com/dataiku/dss-plugin-pi-server/releases/tag/v1.4.2) - Bugfix release - 2026-04-17
 
 - Fix issue with writing single value to static AF attributes
