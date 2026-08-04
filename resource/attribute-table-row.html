@@ -17,7 +17,7 @@
     >
 </td>
 <td class="custom-table__attribute-cell"
-    colspan="{{ ctrl.isSingleAttribute ? (ctrl.displayPath ? 3 : 2) : 1 }}">
+    colspan="{{ ctrl.isSingleAttribute ? 2 : 1 }}">
     <span
             class="tree-guide"
             ng-if="ctrl.isSingleAttribute"
@@ -42,11 +42,6 @@
 </td>
 <td ng-if="!ctrl.isSingleAttribute">
     {{ctrl.mergedAttribute.description}}
-</td>
-<td ng-if="ctrl.displayPath && !ctrl.isSingleAttribute">
-    <span ng-repeat="path in ctrl.mergedAttribute.paths">
-        {{path}}<br/>
-    </span>
 </td>
 <td>
     <select dku-bs-select ng-model="ctrl.mergedAttribute.data_type"

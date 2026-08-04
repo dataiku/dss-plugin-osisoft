@@ -106,91 +106,87 @@
             <div class="attribute-tab pi-system-explorer__center-view" ng-if="inSearchMode">
                 <div class="attribute-section__search">
                     <div style="font-size: 18px"><strong>Search</strong></div>
-                <div class="attribute-section__filters">
-                    <div class="attribute-section__filter-column">
-                        <div style="display: flex; margin-top: 24px;">
-                            <select dku-bs-select ng-model="search.searchMode" ng-change="applySearch()" class="pi-system-explorer__search-mode__type-selector">
-                                <option value="element" ng-if="activeTab === 'element'">Elements</option>
-                                <option value="template" ng-if="activeTab === 'template'">Templates</option>
-                                <option value="attribute">Attributes</option>
-                            </select>
-                            <basic-search-box class="pi-system-explorer__search-mode__search-box"
-                                    ng-model="search.searchString"
-                                    placeholder="Search {{search.searchMode}}s by name"
-                                    ng-change="applySearch()"
-                                    ng-keydown="search.searchMode === 'attribute' && search.searchString && search.searchString.trim() && $event.key === 'Enter' && applySearch()"
-                                    style="width: 600px;"
+                    <div style="display: flex; gap: 4px; flex-direction: column;">
+                        <div class="attribute-section__filters">
+                            <div class="attribute-section__filter-column">
+                                <div style="display: flex; margin-top: 24px;">
+                                    <select dku-bs-select ng-model="search.searchMode" ng-change="applySearch()" class="pi-system-explorer__search-mode__type-selector">
+                                        <option value="element" ng-if="activeTab === 'element'">Elements</option>
+                                        <option value="template" ng-if="activeTab === 'template'">Templates</option>
+                                        <option value="attribute">Attributes</option>
+                                    </select>
+                                    <basic-search-box class="pi-system-explorer__search-mode__search-box"
+                                            ng-model="search.searchString"
+                                            placeholder="Search {{search.searchMode}}s by name"
+                                            ng-change="applySearch()"
+                                            ng-keydown="search.searchMode === 'attribute' && search.searchString && search.searchString.trim() && $event.key === 'Enter' && applySearch()"
+                                            style="width: 600px;"
+                                    >
+                                    </basic-search-box>
+                                </div>
+                            </div>
+                            <div class="attribute-section__filter-column" ng-if="search.searchMode === 'attribute'">
+                                <div class="attribute-section__filter-label">Category</div>
+                                <select dku-bs-select multiple
+                                        ng-model="search.attributeCategoryFilterList"
+                                        ng-options="category.value as category.label for category in attributeCategoryFilterOptions"
+                                        data-live-search="true"
+                                >
+                                </select>
+                            </div>
+                            <div class="attribute-section__filter-column" ng-if="search.searchMode === 'attribute'">
+                                <div class="attribute-section__filter-label">Value type</div>
+                                <select dku-bs-select
+                                        ng-model="search.attributeValueTypeFilter"
+                                        ng-options="valueType.value as valueType.label for valueType in attributeValueTypeFilterOptions"
+                                        data-live-search="true"
+                                >
+                                </select>
+                            </div>
+                            <button class="btn btn--primary"
+                                    ng-if="search.searchMode === 'attribute'"
+                                    ng-click="searchAttributesInDb()"
+                                    ng-disabled="!search.searchString || !search.searchString.trim()"
+                                    style="margin-top: 24px"
                             >
-                            </basic-search-box>
+                                Search
+                            </button>
+                            <div class="attribute-section__filter-column" ng-if="search.searchMode === 'element'">
+                                <div class="attribute-section__filter-label">Categories</div>
+                                <select dku-bs-select multiple
+                                        ng-model="search.elementCategoryFilterList"
+                                        ng-change="applySearch()"
+                                        ng-options="category.title as category.title for category in elementCategories"
+                                        class="pi-system-explorer__search-mode__category-selector">
+                                </select>
+                            </div>
+                            <div class="attribute-section__filter-column" ng-if="search.searchMode === 'element'">
+                                <div class="attribute-section__filter-label">Template</div>
+                                <select dku-bs-select
+                                        ng-model="search.elementTemplateFilter"
+                                        ng-change="applySearch()"
+                                        ng-options="template.title as template.title for template in templateList"
+                                        class="pi-system-explorer__search-mode__template-selector"
+                                        data-live-search="true"
+                                >
+                                    <option value="">Any template</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div ng-if="search.searchMode === 'attribute'">
+                            <div>Use filters to find what you need faster and improve loading times</div>
                         </div>
                     </div>
-                    <div class="attribute-section__filter-column" ng-if="search.searchMode === 'attribute'">
-                        <div class="attribute-section__filter-label">Category</div>
-                        <select dku-bs-select multiple
-                                ng-model="search.attributeCategoryFilterList"
-                                ng-options="category.value as category.label for category in attributeCategoryFilterOptions"
-                                data-live-search="true"
-                        >
-                        </select>
-                    </div>
-                    <div class="attribute-section__filter-column" ng-if="search.searchMode === 'attribute'">
-                        <div class="attribute-section__filter-label">Value type</div>
-                        <select dku-bs-select
-                                ng-model="search.attributeValueTypeFilter"
-                                ng-options="valueType.value as valueType.label for valueType in attributeValueTypeFilterOptions"
-                                data-live-search="true"
-                        >
-                        </select>
-                    </div>
-                    <button class="btn btn--primary"
-                            ng-if="search.searchMode === 'attribute'"
-                            ng-click="searchAttributesInDb()"
-                            ng-disabled="!search.searchString || !search.searchString.trim()"
-                            style="margin-top: 24px"
-                    >
-                        Search
-                    </button>
-                    <div class="attribute-section__filter-column" ng-if="search.searchMode === 'element'">
-                        <div class="attribute-section__filter-label">Categories</div>
-                        <select dku-bs-select multiple
-                                ng-model="search.elementCategoryFilterList"
-                                ng-change="applySearch()"
-                                ng-options="category.title as category.title for category in elementCategories"
-                                class="pi-system-explorer__search-mode__category-selector">
-                        </select>
-                    </div>
-                    <div class="attribute-section__filter-column" ng-if="search.searchMode === 'element'">
-                        <div class="attribute-section__filter-label">Template</div>
-                        <select dku-bs-select
-                                ng-model="search.elementTemplateFilter"
-                                ng-change="applySearch()"
-                                ng-options="template.title as template.title for template in templateList"
-                                class="pi-system-explorer__search-mode__template-selector"
-                                data-live-search="true"
-                        >
-                            <option value="">Any template</option>
-                        </select>
-                    </div>
-                </div>
-                <div ng-if="search.searchMode === 'attribute'">
-                    <div>Use filters to find what you need faster and improve loading times</div>
-                    <div class="attribute-section__filters-row">
-                        <label class="attribute-section__filters-toggle">
-                            <span class="dku-toggle dku-toggle-no-content">
-                                <input type="checkbox" ng-model="ui.displayPath">
-                                <span></span>
-                            </span>
-                            <span>Display attribute paths</span>
-                        </label>
-                    </div>
-                </div>
-                <div ng-if="search.searchMode === 'attribute' && search.attributeResults">
+                <div ng-if="search.searchMode === 'attribute' && search.attributeResults"
+                     style="width: 100%;"
+                >
                     <div
+                            style="width: 100%;"
                             attribute-table-block
                             ng-if="search.groupedAttributeResultsFallbackGrouping && !search.groupedAttributeResultsFallbackGrouping.empty"
                             grouped-attributes="search.groupedAttributeResultsFallbackGrouping"
                             config="config"
-                            display-path="ui.displayPath"
+                            display-detail-attributes="true"
                             elements-by-template="elementsByTemplate"
                             title="getAttributeTableTitle(true)"
                             group-mode="groupMode"
@@ -215,7 +211,7 @@
                             attribute-table-block
                             grouped-attributes="search.groupedAttributeResults"
                             config="config"
-                            display-path="ui.displayPath"
+                            display-detail-attributes="true"
                             elements-by-template="elementsByTemplate"
                             title="getAttributeTableTitle()"
                             group-mode="groupMode"
@@ -240,7 +236,7 @@
                 <div ng-if="search.searchMode !== 'attribute'">
                     {{getSearchResultCount()}} results
                 </div>
-                <div style="display: flex; flex-direction: column; border: 1px solid #f0efec;"
+                <div style="display: flex; flex-direction: column; border: 1px solid #f0efec; width: 100%;"
                      ng-if="search.searchMode !== 'attribute' && hasSearchResults()"
                 >
                     <div style="display: flex; justify-content: space-between; padding: 6px 12px; font-size: 14px; align-items: center;">
@@ -344,11 +340,10 @@
                 </div>
                 <div
                         attribute-table-block
-                        display-detail-attributes="false"
+                        display-detail-attributes="ui.displayPath"
                         ng-if="groupedAttributesFallbackGrouping && !groupedAttributesFallbackGrouping.empty"
                         grouped-attributes="groupedAttributesFallbackGrouping"
                         config="config"
-                        display-path="ui.displayPath"
                         elements-by-template="elementsByTemplate"
                         title="getAttributeTableTitle(true)"
                         group-mode="groupMode"
@@ -371,10 +366,9 @@
                 </div>
                 <div
                         attribute-table-block
-                        display-detail-attributes="false"
+                        display-detail-attributes="ui.displayPath"
                         grouped-attributes="groupedAttributes"
                         config="config"
-                        display-path="ui.displayPath"
                         elements-by-template="elementsByTemplate"
                         title="getAttributeTableTitle()"
                         group-mode="groupMode"

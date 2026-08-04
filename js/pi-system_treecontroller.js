@@ -885,7 +885,8 @@ app.controller('AfExplorerFormCtrl', [
         $scope.searchAttributesInDb = function() {
             return $scope.callPythonDo({
                 method: "get_attributes",
-                attribute_name: $scope.search.searchString
+                attribute_name: $scope.search.searchString,
+                element_category: $scope.search.attributeCategoryFilterList
             }).then(function(data) {
                 $scope.search.attributeResults = (data.attributes || []).map(attribute => {
                     const elementPath = getElementPathFromAttributePath(attribute.path);
@@ -2025,7 +2026,6 @@ app.directive('attributeTableBlock', function() {
                 activeTab: '<',
                 displayGroupPath: '<?',
                 displayElementDropdown: '<',
-                displayPath: '<',
                 excludedColumns: '<',
                 groupMode: '<',
                 elementsByTemplate: '<',
@@ -2053,9 +2053,6 @@ app.directive('attributeTableBlock', function() {
             ctrl.getVisibleAttributeColumnCount = function(includeCheckbox) {
                 let count = includeCheckbox ? 5 : 4;
 
-                if (ctrl.displayPath) {
-                    count += 1;
-                }
                 if (ctrl.groupMode !== 'CATEGORY') {
                     count += 1;
                 }
@@ -2080,7 +2077,6 @@ app.directive('attributeTableRow', function() {
             mergedAttribute: '=',
             isSingleAttribute: '<?',
             isLast: '<',
-            displayPath: '<',
             prettifyElementPath: '<',
             aggregateDataTypeFields: '<',
             onCheckAttribute: '&',

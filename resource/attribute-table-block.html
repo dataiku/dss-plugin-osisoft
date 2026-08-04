@@ -11,7 +11,6 @@
                        indeterminate="ctrl.groupedAttributes.checked"></th>
             <th>Title</th>
             <th>Description</th>
-            <th ng-if="ctrl.displayPath">Path</th>
             <th>Data type</th>
             <th>Aggregates</th>
             <th ng-if="ctrl.groupMode !== 'CATEGORY'">Category</th>
@@ -63,7 +62,6 @@
                 attribute-table-row
                 group-mode="ctrl.groupMode"
                 merged-attribute="mergedAttribute"
-                display-path="ctrl.displayPath"
                 prettify-element-path="ctrl.prettifyElementPath"
                 aggregate-data-type-fields="ctrl.aggregateDataTypeFields"
                 on-check-attribute="ctrl.onCheckAttribute({ mergedAttribute: mergedAttribute })"
@@ -73,17 +71,18 @@
         </tr>
         <tr
                 ng-repeat="attribute in mergedAttribute.attributes track by attribute.parent_element_path"
+                ng-if="ctrl.displayDetailAttributes"
                 attribute-table-row
                 merged-attribute="attribute"
                 is-single-attribute="true"
                 is-last="$last"
                 group-mode="ctrl.groupMode"
-                display-path="ctrl.displayPath"
                 prettify-element-path="ctrl.prettifyElementPath"
                 aggregate-data-type-fields="ctrl.aggregateDataTypeFields"
                 on-check-attribute="ctrl.onCheckSingleAttribute({ attribute: attribute })"
                 on-update-data-type="ctrl.onUpdateSingleDataType({ attribute: attribute })"
-                on-update-aggregate="ctrl.onUpdateSingleAggregate({ attribute: attribute })">
+                on-update-aggregate="ctrl.onUpdateSingleAggregate({ attribute: attribute })"
+                ng-class="{ 'custom-table__attribute-detail-row--selected': attribute.checked }">
         </tr>
         <tr ng-repeat-end class="attribute-table-block__repeat-end"></tr>
         </tbody>

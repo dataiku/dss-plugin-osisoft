@@ -328,6 +328,10 @@ pi-system-auth-banner {
 }
 
 .custom-table__attribute-row--selected {
+    background: #BFE8E6;
+}
+
+.custom-table__attribute-detail-row--selected {
     background: #E6F6F5;
 }
 
@@ -336,7 +340,7 @@ pi-system-auth-banner {
 }
 
 .custom-table__group-row--selected {
-    background: #D2EFEE;
+    background: #95D8D7;
 }
 
 .pi-system-explorer__authentication-header {
