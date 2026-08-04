@@ -841,3 +841,36 @@ pi-system-auth-banner {
 .pi-system-explorer__center-view {
     width: 100%;
 }
+
+.tree-cell {
+    position: relative;
+    min-height: 42px;
+    display: flex;
+    align-items: center;
+}
+
+.custom-table__attribute-cell {
+    position: relative;
+}
+
+.tree-guide {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 1px;
+    background: #9b9b92;
+    left: 20px;
+}
+
+.tree-elbow {
+    position: absolute;
+    top: 0px;
+    width: 24px;
+    height: 50%;
+    border-bottom: 1px solid #9b9b92;
+}
+
+/* Last child: the vertical segment stops at this row’s midpoint */
+.tree-guide.is-last {
+    height: 50%;
+}

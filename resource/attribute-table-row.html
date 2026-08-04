@@ -16,10 +16,24 @@
            ng-attr-title="{{ ctrl.generatePartialStateInfo() }}"
     >
 </td>
-<td colspan="{{ ctrl.isSingleAttribute ? (ctrl.displayPath ? 3 : 2) : 1 }}">
-        <div class="custom-table__attribute-title-info" ng-if="ctrl.isSingleAttribute">
-            {{ctrl.prettifyElementPath(ctrl.mergedAttribute.path, true)}}
-        </div>
+<td class="custom-table__attribute-cell"
+    colspan="{{ ctrl.isSingleAttribute ? (ctrl.displayPath ? 3 : 2) : 1 }}">
+    <span
+            class="tree-guide"
+            ng-if="ctrl.isSingleAttribute"
+            ng-class="{ 'is-last': ctrl.isLast }"
+    ></span>
+    <div class="custom-table__attribute-title-info"
+         ng-if="ctrl.isSingleAttribute"
+         style="padding-left: 35px;"
+    >
+        <span
+                class="tree-elbow"
+                style="left: 20px;"
+        >
+        </span>
+        {{ctrl.prettifyElementPath(ctrl.mergedAttribute.path, true)}}
+    </div>
     <div class="custom-table__attribute-title-info">
                 <span ng-if="!ctrl.isSingleAttribute">
            {{ctrl.mergedAttribute.title}}

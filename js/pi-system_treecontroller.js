@@ -2077,6 +2077,7 @@ app.directive('attributeTableRow', function() {
             groupMode: '<',
             mergedAttribute: '=',
             isSingleAttribute: '<?',
+            isLast: '<',
             displayPath: '<',
             prettifyElementPath: '<',
             aggregateDataTypeFields: '<',
