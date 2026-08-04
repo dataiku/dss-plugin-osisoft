@@ -73,7 +73,6 @@
         </tr>
         <tr
                 ng-repeat="attribute in mergedAttribute.attributes track by attribute.parent_element_path"
-                ng-if="ctrl.displayDetailAttributes !== false"
                 attribute-table-row
                 merged-attribute="attribute"
                 is-single-attribute="true"

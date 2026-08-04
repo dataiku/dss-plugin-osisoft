@@ -350,6 +350,8 @@ app.controller('AfExplorerFormCtrl', [
             searchString: '',
             elementCategoryFilterList: [],
             elementTemplateFilter: '',
+            attributeCategoryFilterList: [],
+            attributeValueTypeFilter: '',
             searchResults: [],
             attributeResults: null,
             groupedAttributeResults: null,
@@ -574,7 +576,7 @@ app.controller('AfExplorerFormCtrl', [
                 () => $scope.getAttributeCategoriesFromDB(),
                 (categories) => $scope.cache.addOrUpdateAttributeCategories(categories),
                 'attributeCategories',
-            ).catch((error) => {
+            ).then(buildAttributeCategoryFilterOptions).catch((error) => {
                 console.error("Could not load attribute categories", error);
             });
         }

@@ -124,6 +124,24 @@
                             </basic-search-box>
                         </div>
                     </div>
+                    <div class="attribute-section__filter-column" ng-if="search.searchMode === 'attribute'">
+                        <div class="attribute-section__filter-label">Category</div>
+                        <select dku-bs-select multiple
+                                ng-model="search.attributeCategoryFilterList"
+                                ng-options="category.value as category.label for category in attributeCategoryFilterOptions"
+                                data-live-search="true"
+                        >
+                        </select>
+                    </div>
+                    <div class="attribute-section__filter-column" ng-if="search.searchMode === 'attribute'">
+                        <div class="attribute-section__filter-label">Value type</div>
+                        <select dku-bs-select
+                                ng-model="search.attributeValueTypeFilter"
+                                ng-options="valueType.value as valueType.label for valueType in attributeValueTypeFilterOptions"
+                                data-live-search="true"
+                        >
+                        </select>
+                    </div>
                     <button class="btn btn--primary"
                             ng-if="search.searchMode === 'attribute'"
                             ng-click="searchAttributesInDb()"
