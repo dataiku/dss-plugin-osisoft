@@ -103,43 +103,55 @@
                 </button>
             </div>
             <!-- Search mode -->
-            <div class="attribute-tab pi-system-explorer__center-view" ng-if="inSearchMode" style="display: flex; flex-direction: column; gap: 16px;">
-                <div style="display: flex;">
-                    <select dku-bs-select ng-model="search.searchMode" ng-change="applySearch()" class="pi-system-explorer__search-mode__type-selector">
-                        <option value="element" ng-if="activeTab === 'element'">Elements</option>
-                        <option value="template" ng-if="activeTab === 'template'">Templates</option>
-                        <option value="attribute">Attributes</option>
-                    </select>
-                    <basic-search-box class="pi-system-explorer__search-mode__search-box"
-                            ng-model="search.searchString"
-                            placeholder="Search {{search.searchMode}}s by name"
-                            ng-change="applySearch()"
-                            ng-keydown="search.searchMode === 'attribute' && search.searchString && search.searchString.trim() && $event.key === 'Enter' && searchAttributesInDb()"
-                    >
-                    </basic-search-box>
+            <div class="attribute-tab pi-system-explorer__center-view" ng-if="inSearchMode">
+                <div class="attribute-section__search">
+                    <div style="font-size: 18px"><strong>Search</strong></div>
+                <div class="attribute-section__filters">
+                    <div class="attribute-section__filter-column">
+                        <div style="display: flex; margin-top: 24px;">
+                            <select dku-bs-select ng-model="search.searchMode" ng-change="applySearch()" class="pi-system-explorer__search-mode__type-selector">
+                                <option value="element" ng-if="activeTab === 'element'">Elements</option>
+                                <option value="template" ng-if="activeTab === 'template'">Templates</option>
+                                <option value="attribute">Attributes</option>
+                            </select>
+                            <basic-search-box class="pi-system-explorer__search-mode__search-box"
+                                    ng-model="search.searchString"
+                                    placeholder="Search {{search.searchMode}}s by name"
+                                    ng-change="applySearch()"
+                                    ng-keydown="search.searchMode === 'attribute' && search.searchString && search.searchString.trim() && $event.key === 'Enter' && searchAttributesInDb()"
+                                    style="width: 600px;"
+                            >
+                            </basic-search-box>
+                        </div>
+                    </div>
                     <button class="btn btn--primary"
+                            style="align-self: flex-end;"
                             ng-if="search.searchMode === 'attribute'"
                             ng-click="searchAttributesInDb()"
                             ng-disabled="!search.searchString || !search.searchString.trim()">
                         Search
                     </button>
-                    <select dku-bs-select multiple
-                            ng-if="search.searchMode === 'element'"
-                            ng-model="search.elementCategoryFilterList"
-                            ng-change="applySearch()"
-                            ng-options="category.title as category.title for category in elementCategories"
-                            class="pi-system-explorer__search-mode__category-selector">
-                    </select>
-                    <select dku-bs-select
-                            ng-if="search.searchMode === 'element'"
-                            ng-model="search.elementTemplateFilter"
-                            ng-change="applySearch()"
-                            ng-options="template.title as template.title for template in templateList"
-                            class="pi-system-explorer__search-mode__template-selector"
-                            data-live-search="true"
-                    >
-                        <option value="">Any template</option>
-                    </select>
+                    <div class="attribute-section__filter-column" ng-if="search.searchMode === 'element'">
+                        <div class="attribute-section__filter-label">Categories</div>
+                        <select dku-bs-select multiple
+                                ng-model="search.elementCategoryFilterList"
+                                ng-change="applySearch()"
+                                ng-options="category.title as category.title for category in elementCategories"
+                                class="pi-system-explorer__search-mode__category-selector">
+                        </select>
+                    </div>
+                    <div class="attribute-section__filter-column" ng-if="search.searchMode === 'element'">
+                        <div class="attribute-section__filter-label">Template</div>
+                        <select dku-bs-select
+                                ng-model="search.elementTemplateFilter"
+                                ng-change="applySearch()"
+                                ng-options="template.title as template.title for template in templateList"
+                                class="pi-system-explorer__search-mode__template-selector"
+                                data-live-search="true"
+                        >
+                            <option value="">Any template</option>
+                        </select>
+                    </div>
                 </div>
                 <div ng-if="search.searchMode === 'attribute'">
                     <div>Use filters to find what you need faster and improve loading times</div>
@@ -245,6 +257,7 @@
                            style="padding: 4px 6px; "
                         ></i>
                     </div>
+                </div>
                 </div>
             </div>
             <!-- Attributes view -->

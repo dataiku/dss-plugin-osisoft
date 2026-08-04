@@ -785,18 +785,13 @@ pi-system-auth-banner {
 }
 
 .pi-system-explorer__search-mode__type-selector button {
-    height: 48px;
     border-right: none !important;
-    border-radius: 4px 0px 0px 4px !important;
+    border-color: #dddddd;
+    height: 26px;
 }
 
 .pi-system-explorer__search-mode__search-box {
-    height: 48px;
     flex: 1;
-}
-
-.pi-system-explorer__search-mode__search-box .basic-search-box__input {
-    height: 48px;
 }
 
 .pi-system-explorer__search-mode__category-selector,
@@ -804,10 +799,6 @@ pi-system-auth-banner {
     width: 200px !important;
 }
 
-.pi-system-explorer__search-mode__category-selector button,
-.pi-system-explorer__search-mode__template-selector button {
-    height: 48px;
-}
 .pi-system-explorer__search-result {
     padding: 4px;
     display: flex;
