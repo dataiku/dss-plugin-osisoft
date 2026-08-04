@@ -46,6 +46,7 @@ def build_af_element_tree(
                 "Type": "value_type",
             }  # should we stick to python naming convention or keep pi's ones throughout ?
         details = {}
+        details["category_names"] = []
         for key_to_check in KEYS_TO_CHECK:
             value = item.get(key_to_check)
             if value:
