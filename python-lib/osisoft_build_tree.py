@@ -29,7 +29,7 @@ def build_af_element_tree(
         ]
     """
     base_url = client.endpoint.get_base_url()
-    selectedFields = "Items.WebId;Items.Name;Items.Path;Items.TemplateName;Items.HasChildren;Items.Paths;Links.Next;Items.Links.Self"
+    selectedFields = "Items.WebId;Items.Name;Items.Path;Items.TemplateName;Items.CategoryNames;Items.HasChildren;Items.Paths;Links.Next;Items.Links.Self"
 
     # def to_node(element_json):
     #     return {
