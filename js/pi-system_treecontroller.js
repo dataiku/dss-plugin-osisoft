@@ -1027,6 +1027,9 @@ app.controller('AfExplorerFormCtrl', [
         };
 
         function clearSearchHighlights(nodes) {
+            if (!nodes) {
+                return;
+            }
             nodes.forEach(node => {
                 node.searchHighlighted = false;
                 if (node?.children?.length > 0) {
