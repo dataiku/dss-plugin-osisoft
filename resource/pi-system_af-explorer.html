@@ -110,7 +110,7 @@
                         <div class="attribute-section__filters">
                             <div class="attribute-section__filter-column">
                                 <div style="display: flex; margin-top: 24px;">
-                                    <select dku-bs-select ng-model="search.searchMode" ng-change="applySearch()" class="pi-system-explorer__search-mode__type-selector">
+                                    <select dku-bs-select ng-model="search.searchMode" ng-change="resetSearch()" class="pi-system-explorer__search-mode__type-selector">
                                         <option value="element" ng-if="activeTab === 'element'">Elements</option>
                                         <option value="template" ng-if="activeTab === 'template'">Templates</option>
                                         <option value="attribute">Attributes</option>

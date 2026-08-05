@@ -643,6 +643,7 @@ app.controller('AfExplorerFormCtrl', [
         }
 
         $scope.cleanTree = function() { // utile quand on change de serveur ou de db dans la config
+            $scope.resetSearch();
             $scope.elementTree = [];
             $scope.ui.clickedNodes = [];
             $scope.attributeList = [];
@@ -702,6 +703,7 @@ app.controller('AfExplorerFormCtrl', [
             if (!$scope.authConfigured() || !$scope.showTreeData) {
                 return;
             }
+            $scope.resetSearch();
             startLoadingState("Refreshing cache", "Refreshing the cache requires a full fetch from the database and can take several minutes. Keep this tab open and come back later if you'd like.")
             $scope.cache.clear().then(function() {
                 $scope.elementTree = [];
@@ -936,14 +938,17 @@ app.controller('AfExplorerFormCtrl', [
             $scope.refreshAttributeSection();
         }
 
-        function resetSearch() {
-            $scope.search.searchString = '';
-            $scope.search.elementCategoryFilterList = [];
-            $scope.search.elementTemplateFilter = '';
-            $scope.search.searchResults = {};
-            $scope.search.attributeResults = null;
-            $scope.search.groupedAttributeResults = null;
-            $scope.search.groupedAttributeResultsFallbackGrouping = null;
+        $scope.resetSearch = function() {
+            $scope.search.searchString = ''
+            $scope.search.elementCategoryFilterList = []
+            $scope.search.elementTemplateFilter = ''
+            $scope.search.attributeCategoryFilterList = []
+            $scope.search.attributeValueTypeFilter = ''
+            $scope.search.searchResults = []
+            $scope.search.attributeResults = null
+            $scope.search.groupedAttributeResults = null
+            $scope.search.groupedAttributeResultsFallbackGrouping = null
+            clearSearchHighlights($scope.elementTree);
         }
 
         $scope.setTab = function(tab) {
@@ -951,7 +956,7 @@ app.controller('AfExplorerFormCtrl', [
             const previousTab = $scope.activeTab;
             if (tab !== previousTab) {
                 resetRightPanelForCurrentTabContext();
-                resetSearch();
+                $scope.resetSearch();
             }
             $scope.activeTab = tab;
             $timeout(function() {
@@ -1281,14 +1286,6 @@ app.controller('AfExplorerFormCtrl', [
         $scope.searchFromElement = function() {
             $scope.elementSearchNoMatch = false;
             $scope.doSearch($scope.config.element_name);
-        };
-
-        $scope.clearSearch = function() {
-            $scope.ui.searchInProgress = false;
-            $scope.config.element_name = "";
-            $scope.ui.searchMatchedElementPaths = [];
-            $scope.elementSearchNoMatch = false;
-            clearSearchHighlights($scope.elementTree);
         };
 
         $scope.toggleSelectAllGroupedAttributes = function(groupedAttributes) {
