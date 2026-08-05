@@ -297,8 +297,9 @@ app.controller('AfExplorerFormCtrl', [
     '$stateParams',
     '$q',
     '$timeout',
+    '$window',
     'CreateModalFromTemplate',
-    function($scope, $stateParams, $q, $timeout, CreateModalFromTemplate) {
+    function($scope, $stateParams, $q, $timeout, $window, CreateModalFromTemplate) {
 
         $scope.paramDesc = {
             'parameterSetId': 'basic-auth',
@@ -332,6 +333,29 @@ app.controller('AfExplorerFormCtrl', [
         };
         let loadingOverlayTimeout = null;
         let loginModalOpen = false;
+
+        function warnBeforeLeavingDuringLoading(event) {
+            if (!$scope.ui.uiFrozen) {
+                return;
+            }
+            event.preventDefault();
+            event.returnValue = '';
+        }
+
+        $window.addEventListener('beforeunload', warnBeforeLeavingDuringLoading);
+        $scope.$on('$destroy', function() {
+            $window.removeEventListener('beforeunload', warnBeforeLeavingDuringLoading);
+        });
+        $scope.$on('$stateChangeStart', function(event) {
+            if (!$scope.ui.uiFrozen) {
+                return;
+            }
+
+            if (!$window.confirm('Do not leave this page, loading data from PI server.')) {
+                event.preventDefault();
+            }
+        });
+
         $scope.attributeCategoryFilterOptions = [];
 
         $scope.showTreeData = false;
