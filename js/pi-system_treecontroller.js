@@ -1851,6 +1851,12 @@ app.controller('AfExplorerFormCtrl', [
         }
 
         $scope.refreshAttributeSection = function() {
+            const selectedAttributePaths = new Set(
+                $scope.config.outputSelectedAttributes.map(attribute => attribute.path)
+            );
+            $scope.attributeList.forEach(attribute => {
+                attribute.checked = selectedAttributePaths.has(attribute.path);
+            });
             buildAttributeCategoryFilterOptions();
             const grouping = getGrouping();
             const groupedAttributes = $scope.buildGroupedAttributes(grouping)
