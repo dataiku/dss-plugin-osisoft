@@ -5,7 +5,9 @@ app.directive('loadingOverlay', function() {
         restrict: 'E',
         scope: {
             header: '<',
-            text: '<'
+            text: '<',
+            warning: '<',
+            warningText: '<',
         },
         templateUrl: '/plugins/pi-system/resource/loading-overlay.html'
     };
@@ -328,9 +330,14 @@ app.controller('AfExplorerFormCtrl', [
             loadingOverlay: {
                 displayed: false,
                 text: "",
-                header: ""
+                header: "",
+                warning: "",
+                warningText: ""
             }
         };
+
+        $scope.callInProgress = false;
+        let activeLoadingStates = 0;
         let loadingOverlayTimeout = null;
         let loginModalOpen = false;
 
@@ -347,11 +354,11 @@ app.controller('AfExplorerFormCtrl', [
             $window.removeEventListener('beforeunload', warnBeforeLeavingDuringLoading);
         });
         $scope.$on('$stateChangeStart', function(event) {
-            if (!$scope.ui.uiFrozen) {
+            if (!$scope.callInProgress) {
                 return;
             }
 
-            if (!$window.confirm('Do not leave this page, loading data from PI server.')) {
+            if (!$window.confirm('Setup is still in progress. Select Cancel to stay on this page.')) {
                 event.preventDefault();
             }
         });
@@ -547,17 +554,19 @@ app.controller('AfExplorerFormCtrl', [
         };
 
         $scope.getServers = function() {
+            startLoadingState(false);
             $scope.callPythonDo({ parameterName: "server_name" }).then(function(data) {
                 console.log("server_name", data);
                 $scope.server_name = data.choices;
-            });
+            }).finally(stopLoadingState);
         };
         $scope.getDatabases = function() {
+            startLoadingState(false);
             $scope.callPythonDo({ parameterName: "database_name" }).then(function(data) {
                 console.log("database_name", data);
                 $scope.database_name = data.choices;
                 $scope.config.database_title = getDatabaseTitle($scope.config.database_name);
-            });
+            }).finally(stopLoadingState);
         };
 
         function getDatabaseTitle(databaseName) {
@@ -648,7 +657,12 @@ app.controller('AfExplorerFormCtrl', [
 
         // Fetching data - only once auth has been verified
        function initData() {
-           startLoadingState("Getting everything ready", "The first load can take several minutes. It's a one-time process to optimize performance. Keep this tab open and come back later if you'd like.")
+           startLoadingState(true,
+               "Getting everything ready",
+               "The first load can take several minutes. It's a one-time process to optimize performance. Keep this tab open and come back later if you'd like.",
+               "Please don't close, refresh, or leave this page while loading",
+               "Leaving before the process is complete may interrupt the setup and cause errors"
+           )
             return initCache().catch((error) => {
                 // TODO: figure out what we want in that case
                 throw new Error(`There was an error initializing cache: ${error}`);
@@ -733,7 +747,11 @@ app.controller('AfExplorerFormCtrl', [
                 return;
             }
             $scope.resetSearch();
-            startLoadingState("Refreshing cache", "Refreshing the cache requires a full fetch from the database and can take several minutes. Keep this tab open and come back later if you'd like.")
+            startLoadingState(true, "Refreshing cache",
+                "Refreshing the cache requires a full fetch from the database and can take several minutes. Keep this tab open and come back later if you'd like.",
+                "Please don't close, refresh, or leave this page while loading",
+                "Leaving before the process is complete may interrupt the database load and cause errors"
+        )
             $scope.cache.clear().then(function() {
                 $scope.elementTree = [];
                 $scope.ui.clickedNodes = [];
@@ -841,10 +859,11 @@ app.controller('AfExplorerFormCtrl', [
         }
 
         $scope.getElementTreeFromDB = function() {
+            startLoadingState(false);
             return $scope.callPythonDo({ method: "build_af_tree"}).then(function(data) {
                 console.log("af_tree", data);
                 return data.tree;
-            });
+            }).finally(stopLoadingState);
         };
 
         $scope.getFromCacheOrFetchBaselineObjects = function() {
@@ -868,6 +887,7 @@ app.controller('AfExplorerFormCtrl', [
                 return getAttributesForTemplate(item);
             }
             startLoadingState(
+                true,
                 "Fetching element attributes",
                 "Fetching attributes for this element from the server can take a little bit of time"
             );
@@ -909,10 +929,11 @@ app.controller('AfExplorerFormCtrl', [
 
 
         $scope.getTemplatesFromDB = function() {
+            startLoadingState(false);
             return $scope.callPythonDo({ method: "get_templates_from_db" }).then(function(data) {
                 console.log("get_templates_from_db", data)
                 return data.choices.filter(template => template.title !== "-- Any --")
-            });
+            }).finally(stopLoadingState);
         }
 
         $scope.onAttributeSearchKeydown = function($event) {
@@ -931,6 +952,7 @@ app.controller('AfExplorerFormCtrl', [
             }
 
             startLoadingState(
+                true,
                 "Searching for attributes",
                 "Searching for your query. Loading the attributes can take a little bit of time"
             );
@@ -940,6 +962,8 @@ app.controller('AfExplorerFormCtrl', [
                 element_category: $scope.search.attributeCategoryFilterList,
                 attribute_value_type: $scope.search.attributeValueTypeFilter
             }).then(function(data) {
+                console.log("Attribute search results", data.attributes);
+                // TODO: double check this
                 $scope.search.attributeResults = (data.attributes || []).map(attribute => {
                     const elementPath = getElementPathFromAttributePath(attribute.path);
                     return enrichAttribute({
@@ -955,17 +979,19 @@ app.controller('AfExplorerFormCtrl', [
         };
 
         $scope.getAttributeCategoriesFromDB = function() {
+            startLoadingState(false);
             return $scope.callPythonDo({ method: "get_attribute_categories_from_db" }).then(function(data) {
                 console.log("get_attribute_categories_from_db", data);
                 return data.choices;
-            });
+            }).finally(stopLoadingState);
         }
 
         $scope.getElementCategoriesFromDB = function() {
+            startLoadingState(false);
             return $scope.callPythonDo({ method: "get_element_categories_from_db" }).then(function(data) {
                 console.log("get_element_categories_from_db", data);
                 return data.choices;
-            });
+            }).finally(stopLoadingState);
         }
 
         function resetRightPanelForCurrentTabContext() {
@@ -1010,7 +1036,8 @@ app.controller('AfExplorerFormCtrl', [
         $scope.doSearch = function(element_name) {
             $scope.ui.searchInProgress = true;
             $scope.ui.searchMatchedElementPaths = [];
-            $scope.callPythonDo({ method: "do_search", element_name: element_name, elementTree: $scope.elementTree }).then(
+            startLoadingState(false);
+            return $scope.callPythonDo({ method: "do_search", element_name: element_name, elementTree: $scope.elementTree }).then(
                 function(data) {
                     console.log("do_search", data);
                     $scope.elementTree = data.choices;
@@ -1023,7 +1050,7 @@ app.controller('AfExplorerFormCtrl', [
                     markSearchResults($scope.elementTree, matchedElementPaths);
                     cacheElementTree();
                 }
-            );
+            ).finally(stopLoadingState);
         };
 
         function clearSearchHighlights(nodes) {
@@ -1049,7 +1076,7 @@ app.controller('AfExplorerFormCtrl', [
         }
 
         function getAttributesForTemplate(node) {
-            startLoadingState("Fetching attributes", "Fetching attributes from the server can take a little bit of time");
+            startLoadingState(true, "Fetching attributes", "Fetching attributes from the server can take a little bit of time");
             return $scope.callPythonDo({ method: "get_attribute_for_template", template_name: node.title}).then(
                 function(data) {
                     console.log("get_attribute_for_template", data);
@@ -1082,13 +1109,14 @@ app.controller('AfExplorerFormCtrl', [
         }
 
         $scope.getElementsForTemplate = function (templateName) {
+            startLoadingState(false);
             return $scope.callPythonDo({ method: "get_elements_for_template", template_name: templateName}).then(
                 function(data) {
                     console.log("get_elements_for_template", data);
                     $scope.elementsByTemplate[templateName] = data.elements;
                     cacheElementsByTemplate();
                 }
-            );
+            ).finally(stopLoadingState);
         }
 
         $scope.templateModeExcludedAttributes = {};
@@ -1950,11 +1978,18 @@ app.controller('AfExplorerFormCtrl', [
             $scope.refreshAttributeSection();
         }
 
-        function startLoadingState(headerLoadingOverlay, textLoadingOverlay, timeoutModalSeconds) {
+        function startLoadingState(freezeUI, headerLoadingOverlay, textLoadingOverlay, warningLoadingOverlay, warningTextLoadingOverlay, timeoutModalSeconds) {
+            activeLoadingStates += 1;
+            $scope.callInProgress = true;
+            if (!freezeUI) {
+                return;
+            }
             $scope.ui.uiFrozen = true;
             $scope.ui.loadingOverlay.displayed = false;
             $scope.ui.loadingOverlay.text = textLoadingOverlay;
             $scope.ui.loadingOverlay.header = headerLoadingOverlay;
+            $scope.ui.loadingOverlay.warning = warningLoadingOverlay;
+            $scope.ui.loadingOverlay.warningText = warningTextLoadingOverlay;
             if (loadingOverlayTimeout) {
                 clearTimeout(loadingOverlayTimeout);
                 loadingOverlayTimeout = null;
@@ -1970,6 +2005,11 @@ app.controller('AfExplorerFormCtrl', [
         }
 
         function stopLoadingState() {
+            activeLoadingStates -= 1;
+            if (activeLoadingStates > 0) {
+                return;
+            }
+            $scope.callInProgress = false;
             if (loadingOverlayTimeout) {
                 clearTimeout(loadingOverlayTimeout);
                 loadingOverlayTimeout = null;

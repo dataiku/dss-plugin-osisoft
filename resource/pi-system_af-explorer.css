@@ -202,10 +202,9 @@
 
 .pi-system-explorer__loading-modal {
     position: absolute;
-    top: 50%;
+    top: 53%;
     left: 51%;
     width: 33%;
-    height: 20%;
     min-width: 320px;
     min-height: 160px;
     transform: translate(-50%, -50%);
@@ -222,8 +221,8 @@
 }
 
 .pi-system-explorer__loading-modal-icon {
-    height: 48px;
-    padding: 16px;
+    height: 60px;
+    padding: 27px;
 }
 
 .pi-system-explorer__loading-modal-header {
@@ -237,6 +236,22 @@
     color: #666;
     font-size: 14px;
     text-align: center;
+}
+
+.pi-system-explorer__loading-modal-warning {
+    color: #C05B0A;
+    text-align: center;
+    font-weight: 500;
+    font-size: 14px;
+    display: flex;
+    gap: 8px;
+    justify-content: center;
+}
+
+.pi-system-explorer__loading-modal-warning-text {
+    color: #666;
+    text-align: center;
+    font-size: 14px;
 }
 
 .pi-system-explorer__main {
