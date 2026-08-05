@@ -214,7 +214,7 @@ def get_attributes(client, payload, config):
     database_url = config.get("database_name")
     database_name = database_url.split("/")[-1]
     element_name = payload.get("element_name", None)
-    element_category = payload.get("element_category", None)
+    attribute_categories = payload.get("element_category", None)
     attribute_value_type =  payload.get("attribute_value_type", None)
     if not element_name:
         element_name = "*"
@@ -228,7 +228,7 @@ def get_attributes(client, payload, config):
         database_name,
         attribute_name=attribute_name,
         element_name=element_name,
-        element_category=element_category,
+        attribute_category=attribute_categories,
         attribute_value_type=attribute_value_type,
         search_associations="Paths",
         full_search=True

@@ -974,7 +974,14 @@ class OSIsoftClient(object):
             value = kwargs.get(argument)
             if value and argument in attribute_query_keys:
                 template = attribute_query_keys.get(argument)
-                output_tokens.append(template.format(value))
+                if argument == "attribute_category" and isinstance(value, list):
+                    output_tokens.extend(
+                        template.format(category)
+                        for category in value
+                        if category
+                    )
+                else:
+                    output_tokens.append(template.format(value))
         return " ".join(output_tokens)
 
     def traverse(self, path_elements):
