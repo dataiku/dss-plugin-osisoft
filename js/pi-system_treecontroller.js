@@ -333,7 +333,6 @@ app.controller('AfExplorerFormCtrl', [
         let loadingOverlayTimeout = null;
         let loginModalOpen = false;
         $scope.attributeCategoryFilterOptions = [];
-        $scope.attributeValueTypeFilterOptions = [];
 
         $scope.showTreeData = false;
         $scope.errorBannerVisible = false;
@@ -357,6 +356,8 @@ app.controller('AfExplorerFormCtrl', [
             groupedAttributeResults: null,
             groupedAttributeResultsFallbackGrouping: null
         };
+
+        $scope.valueTypes = Object.freeze(["Boolean", "Byte", "DateTime", "Double", "Guid", "Int16", "Int32", "Int64", "Single", "String"])
 
         function flattenTemplateTree(templateTree) {
             return (templateTree || []).flatMap((template) => [
@@ -723,6 +724,7 @@ app.controller('AfExplorerFormCtrl', [
                 $scope.templateTree = templateTree;
                 rebuildTemplateList();
                 $scope.attributeCategories = attributeCategories;
+                buildAttributeCategoryFilterOptions();
                 $scope.elementCategories = elementCategories;
                 cacheElementTree();
                 cacheTemplateTree();
@@ -890,7 +892,8 @@ app.controller('AfExplorerFormCtrl', [
             return $scope.callPythonDo({
                 method: "get_attributes",
                 attribute_name: $scope.search.searchString,
-                element_category: $scope.search.attributeCategoryFilterList
+                element_category: $scope.search.attributeCategoryFilterList,
+                attribute_value_type: $scope.search.attributeValueTypeFilter
             }).then(function(data) {
                 $scope.search.attributeResults = (data.attributes || []).map(attribute => {
                     const elementPath = getElementPathFromAttributePath(attribute.path);
@@ -1831,31 +1834,8 @@ app.controller('AfExplorerFormCtrl', [
             });
         }
 
-        function buildValueTypeFilterOptions() {
-            $scope.attributeValueTypeFilterOptions = ["", ...new Set($scope.attributeList.map(attribute => attribute.value_type))].map((valueType) => {
-                const occurrencesCount = $scope.attributeList?.filter((attribute) => {
-                    return attribute.value_type === valueType ;
-                }).length;
-
-                if (valueType === "") {
-                    return {
-                        value: "",
-                        // label: valueType + ' (' + occurrencesCount + ')'
-                        label: "Any"
-                    };
-                }
-
-                return {
-                    value: valueType,
-                    // label: valueType + ' (' + occurrencesCount + ')'
-                    label: valueType
-                };
-            });
-        }
-
         $scope.refreshAttributeSection = function() {
             buildAttributeCategoryFilterOptions();
-            buildValueTypeFilterOptions();
             const grouping = getGrouping();
             const groupedAttributes = $scope.buildGroupedAttributes(grouping)
             $scope.groupedAttributes = groupedAttributes.attributesWithProperty;

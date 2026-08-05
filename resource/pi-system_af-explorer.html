@@ -138,9 +138,10 @@
                                 <div class="attribute-section__filter-label">Value type</div>
                                 <select dku-bs-select
                                         ng-model="search.attributeValueTypeFilter"
-                                        ng-options="valueType.value as valueType.label for valueType in attributeValueTypeFilterOptions"
+                                        ng-options="valueType for valueType in valueTypes"
                                         data-live-search="true"
                                 >
+                                    <option value="">No filter</option>
                                 </select>
                             </div>
                             <button class="btn btn--primary"
@@ -304,9 +305,10 @@
                             <select dku-bs-select
                                     ng-model="ui.attributeFiltering.attributeValueTypeFilter"
                                     ng-change="refreshAttributeSection()"
-                                    ng-options="valueType.value as valueType.label for valueType in attributeValueTypeFilterOptions"
+                                    ng-options="valueType for valueType in valueTypes"
                                     data-live-search="true"
                             >
+                                <option value="">No filter</option>
                             </select>
                         </div>
                     </div>
