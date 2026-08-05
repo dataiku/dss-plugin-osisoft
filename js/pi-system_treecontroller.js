@@ -1810,6 +1810,7 @@ app.controller('AfExplorerFormCtrl', [
             if (!$scope.search.attributeResults) {
                 return;
             }
+            updateCheckStatus($scope.search.attributeResults);
             const groupedAttributes = $scope.buildGroupedAttributes(
                 getGrouping(),
                 $scope.search.attributeResults,
@@ -1850,13 +1851,19 @@ app.controller('AfExplorerFormCtrl', [
             });
         }
 
-        $scope.refreshAttributeSection = function() {
+        function updateCheckStatus(attributeList) {
+            // checking which attributes are still in the output selection
             const selectedAttributePaths = new Set(
                 $scope.config.outputSelectedAttributes.map(attribute => attribute.path)
             );
-            $scope.attributeList.forEach(attribute => {
+            attributeList.forEach(attribute => {
                 attribute.checked = selectedAttributePaths.has(attribute.path);
             });
+        }
+
+        $scope.refreshAttributeSection = function() {
+            updateCheckStatus($scope.attributeList)
+
             buildAttributeCategoryFilterOptions();
             const grouping = getGrouping();
             const groupedAttributes = $scope.buildGroupedAttributes(grouping)
