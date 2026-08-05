@@ -389,17 +389,22 @@ app.controller('AfExplorerFormCtrl', [
             };
 
             function rebuildGroupedSelectedAttributes() {
-                modalScope.groupedSelectedAttributes = buildGroupedAttributesResult(
+                if (!$scope.config.outputSelectedAttributes) {
+                    return;
+                }
+                const groupedAttributes = $scope.buildGroupedAttributes(
+                    getGrouping(),
                     $scope.config.outputSelectedAttributes,
-                    "parent_element_path",
-                    "parent_element",
                     {
                         attributeSearch: modalScope.ui.previewAttributeSearch,
                         attributeCategoryFilterList: [],
-                        attributeValueTypeFilter: "",
-                    },
+                        attributeValueTypeFilter: ''
+                    }
                 );
+                modalScope.groupedSelectedAttributes = groupedAttributes.attributesWithProperty;
+                modalScope.groupedSelectedAttributesFallBackGrouping = groupedAttributes.attributesWithoutProperty;
             }
+
 
             rebuildGroupedSelectedAttributes();
 
