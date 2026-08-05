@@ -66,6 +66,8 @@ def do(payload, config, plugin_config, inputs):
         return get_attributes(client, payload, config)
     if method == "build_af_tree":
         return build_af_tree(client, payload, config)
+    if method == "get_attributes_per_page":
+        return get_attributes_per_page(client, payload, config)
     if method == "do_search":
         return do_search(client, payload, config, network_timer)
 
@@ -248,6 +250,54 @@ def get_attributes(client, payload, config):
         "End call [get_attributes] database_name={}, element_name={}, attribute_name={}".format(
             database_name, element_name, attribute_name
         )
+    )
+    return result
+
+def get_attributes_per_page(client, payload, config):
+    next_page = payload.get("next_page", None)
+    if next_page:
+        logger.info(
+            "Start call [get_attributes_per_page] next_page={}".format(
+                next_page
+            )
+        )
+        raw_attributes, next_page = client.get_next_page(next_page)
+    else:
+        database_url = config.get("database_name")
+        database_name = database_url.split("/")[-1]
+        element_name = payload.get("element_name", None)
+        attribute_categories = payload.get("element_category", None)
+        attribute_value_type =  payload.get("attribute_value_type", None)
+        if not element_name:
+            element_name = "*"
+        attribute_name = payload.get("attribute_name", None)
+        logger.info(
+            "Start call [get_attributes_per_page] database_name={}, element_name={}, attribute_name={}".format(
+                database_name, element_name, attribute_name
+            )
+        )
+        raw_attributes, next_page = client.search_attributes_first_page(
+            database_name,
+            attribute_name=attribute_name,
+            element_name=element_name,
+            attribute_category=attribute_categories,
+            attribute_value_type=attribute_value_type,
+            search_associations="Paths",
+            full_search=True
+        )
+    attributes = [get_item_details(attribute) for attribute in raw_attributes]
+    template_urls = [
+        extract_attribute_template_url(attribute)
+        for attribute in raw_attributes
+    ]
+    template_names = client.get_attributes_templates_names(template_urls)
+    for attribute, template_name in zip(attributes, template_names):
+        if template_name:
+            attribute["template_name"] = template_name
+
+    result = {"choices": [], "attributes": attributes, "next_page": next_page}
+    logger.info(
+        "End call [get_attributes_per_page] "
     )
     return result
 
