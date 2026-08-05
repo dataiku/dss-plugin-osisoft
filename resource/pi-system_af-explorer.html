@@ -103,7 +103,7 @@
                 </button>
             </div>
             <!-- Search mode -->
-            <div class="attribute-tab pi-system-explorer__center-view" ng-if="inSearchMode">
+            <div class="attribute-tab pi-system-explorer__center-view" ng-if="showTreeData && inSearchMode">
                 <div class="attribute-section__search">
                     <div style="font-size: 18px"><strong>Search</strong></div>
                     <div style="display: flex; gap: 4px; flex-direction: column;">
@@ -117,10 +117,18 @@
                                     </select>
                                     <basic-search-box class="pi-system-explorer__search-mode__search-box"
                                             ng-model="search.searchString"
+                                            ng-if="search.searchMode !== 'attribute'"
                                             placeholder="Search {{search.searchMode}}s by name"
                                             ng-change="applySearch()"
-                                            ng-keydown="search.searchMode === 'attribute' && search.searchString && search.searchString.trim() && $event.key === 'Enter' && applySearch()"
                                             style="width: 600px;"
+                                    >
+                                    </basic-search-box>
+                                    <basic-search-box class="pi-system-explorer__search-mode__search-box"
+                                                      ng-if="search.searchMode === 'attribute'"
+                                                      ng-model="search.searchString"
+                                                      placeholder="Search {{search.searchMode}}s by name"
+                                                      ng-keydown="onAttributeSearchKeydown($event)"
+                                                      style="width: 600px;"
                                     >
                                     </basic-search-box>
                                 </div>

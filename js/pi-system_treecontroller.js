@@ -886,7 +886,21 @@ app.controller('AfExplorerFormCtrl', [
             });
         }
 
+        $scope.onAttributeSearchKeydown = function($event) {
+            if ($event.key !== "Enter") {
+                return;
+            }
+
+            $event.preventDefault();
+            $event.stopPropagation();
+            $scope.searchAttributesInDb();
+        };
+
         $scope.searchAttributesInDb = function() {
+            if (!$scope.search.searchString || !$scope.search.searchString.trim()) {
+                return;
+            }
+
             startLoadingState(
                 "Searching for attributes",
                 "Searching for your query. Loading the attributes can take a little bit of time"
