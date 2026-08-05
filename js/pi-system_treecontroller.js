@@ -883,6 +883,10 @@ app.controller('AfExplorerFormCtrl', [
         }
 
         $scope.searchAttributesInDb = function() {
+            startLoadingState(
+                "Searching for attributes",
+                "Searching for your query. Loading the attributes can take a little bit of time"
+            );
             return $scope.callPythonDo({
                 method: "get_attributes",
                 attribute_name: $scope.search.searchString,
@@ -899,7 +903,7 @@ app.controller('AfExplorerFormCtrl', [
                 });
                 refreshSearchAttributeResults();
                 console.log("get_attributes", data);
-            });
+            }).finally(stopLoadingState);
         };
 
         $scope.getAttributeCategoriesFromDB = function() {
