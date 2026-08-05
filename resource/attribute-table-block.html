@@ -70,7 +70,7 @@
                 ng-class="{ 'custom-table__attribute-row--selected': ctrl.onIsAtLeastPartiallySelected({ item: mergedAttribute }) }">
         </tr>
         <tr
-                ng-repeat="attribute in mergedAttribute.attributes track by attribute.parent_element_path"
+                ng-repeat="attribute in mergedAttribute.attributes track by attribute.id"
                 ng-if="ctrl.displayDetailAttributes"
                 attribute-table-row
                 merged-attribute="attribute"
