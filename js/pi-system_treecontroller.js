@@ -1748,6 +1748,7 @@ app.controller('AfExplorerFormCtrl', [
                 category_names: attr.category_names,
                 conflicting_categories: false,
                 value_type: attr.value_type,
+                opened: true,
             };
 
             getAggregateNames().forEach(aggregateName => {
@@ -1817,7 +1818,8 @@ app.controller('AfExplorerFormCtrl', [
                         attributes: [],
                         checkStates: [],
                         isDisplayed: true,
-                        nbSearchMatches: 0
+                        nbSearchMatches: 0,
+                        opened: true
                     }
                 }
 
@@ -2215,6 +2217,7 @@ app.directive('attributeTableRow', function() {
             groupMode: '<',
             mergedAttribute: '=',
             isSingleAttribute: '<?',
+            displayDetailAttributes: '<?',
             isLast: '<',
             prettifyElementPath: '<',
             aggregateDataTypeFields: '<',

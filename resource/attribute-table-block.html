@@ -34,6 +34,12 @@
             <td colspan="{{ctrl.getVisibleAttributeColumnCount(false)}}">
                 <div class="custom-table__group-actions">
                     <div class="custom-table__group-header">
+                        <i ng-if="group.opened"
+                           class="dku-icon-chevron-down-16"
+                           ng-click="group.opened = !group.opened"></i>
+                        <i ng-if="!group.opened"
+                           class="dku-icon-chevron-right-16"
+                           ng-click="group.opened = !group.opened"></i>
                         <span class="custom-table__group-name"><strong>{{group.group_name}}</strong></span>
                         <span ng-if="group.nbSearchMatches !== group.attributes.length">
                             - ({{group.nbSearchMatches}}/{{group.attributes.length}} attributes shown)
@@ -58,10 +64,11 @@
         </tr>
         <tr
                 ng-repeat-start="mergedAttribute in group.attributes track by mergedAttribute.title"
-                ng-show="mergedAttribute.isDisplayed"
+                ng-show="group.opened && mergedAttribute.isDisplayed"
                 attribute-table-row
                 group-mode="ctrl.groupMode"
                 merged-attribute="mergedAttribute"
+                display-detail-attributes="ctrl.displayDetailAttributes"
                 prettify-element-path="ctrl.prettifyElementPath"
                 aggregate-data-type-fields="ctrl.aggregateDataTypeFields"
                 on-check-attribute="ctrl.onCheckAttribute({ mergedAttribute: mergedAttribute })"
@@ -71,7 +78,7 @@
         </tr>
         <tr
                 ng-repeat="attribute in mergedAttribute.attributes track by attribute.id"
-                ng-if="ctrl.displayDetailAttributes"
+                ng-if="group.opened && ctrl.displayDetailAttributes && mergedAttribute.opened"
                 attribute-table-row
                 merged-attribute="attribute"
                 is-single-attribute="true"
