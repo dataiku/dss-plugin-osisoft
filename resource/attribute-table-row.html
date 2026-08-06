@@ -32,7 +32,7 @@
                 style="left: 20px;"
         >
         </span>
-        {{ctrl.prettifyElementPath(ctrl.mergedAttribute.path, true)}}
+        {{ctrl.prettifyElementPath(ctrl.mergedAttribute.path, ctrl.mergedAttribute.paths, true)}}
     </div>
     <div class="custom-table__attribute-title-info">
         <i ng-if="!ctrl.isSingleAttribute && ctrl.displayDetailAttributes && ctrl.mergedAttribute.opened"

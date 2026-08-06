@@ -50,7 +50,7 @@
                     </div>
                     <span class="custom-table__group-path"
                           ng-if="ctrl.displayGroupPath && group.group_path">
-                        {{ctrl.prettifyElementPath(group.group_path)}}
+                        {{ctrl.prettifyElementPath(group.group_path, group.paths)}}
                     </span>
                     <dropdown-elements
                             elements="ctrl.elementsByTemplate[group.group_name]"

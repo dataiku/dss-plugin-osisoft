@@ -311,6 +311,9 @@ app.controller('AfExplorerFormCtrl', [
         $scope.attributeList = []; // The list of attributes that are currently displayed in the main panel
         $scope.config.outputSelectedAttributes = $scope.config.outputSelectedAttributes || []; // The list of attributes selected by the user
         $scope.elementsByTemplate = {};
+        if (typeof $scope.config.displayLongestPath === "undefined") {
+            $scope.config.displayLongestPath = true;
+        }
 
         // $scope.config.selectedTemplateNames =  []; // la liste des templates sélectionnés utilisées pour filtrer le search. Stale
 
@@ -1275,7 +1278,12 @@ app.controller('AfExplorerFormCtrl', [
             return matchesName && matchesCategories && matchesTemplate;
         }
 
-        $scope.prettifyElementPath = function(elementPath, isAttributePath=false) {
+        $scope.prettifyElementPath = function(elementPath, paths, isAttributePath=false) {
+            if (paths && paths.length > 1 && $scope.config.displayLongestPath) {
+                elementPath = paths.reduce((longestPath, path) =>
+                    path.length > longestPath.length ? path : longestPath
+                );
+            }
             if (isAttributePath) {
                 elementPath = getElementPathFromAttributePath(elementPath);
             }

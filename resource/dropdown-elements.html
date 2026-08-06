@@ -22,7 +22,7 @@
             <span class="elements-dropdown--element-label">
                 <span class="elements-dropdown--element-name">{{element.title}}</span>
                 <span class="elements-dropdown--element-path">
-                    {{ctrl.prettifyElementPath(element.path)}}
+                    {{ctrl.prettifyElementPath(element.path, element.paths)}}
                 </span>
             </span>
             <i class="dku-icon-eye-16" ng-show="ctrl.isElementSelected(element)"></i>
@@ -35,7 +35,7 @@
             <span class="elements-dropdown--element-label">
                 <span class="elements-dropdown--element-name">{{element.title}}</span>
                 <span class="elements-dropdown--element-path">
-                    {{ctrl.prettifyElementPath(element.path)}}
+                    {{ctrl.prettifyElementPath(element.path, element.paths)}}
                 </span>
             </span>
             <i class="dku-icon-eye-16" ng-show="ctrl.isElementSelected(element)"></i>

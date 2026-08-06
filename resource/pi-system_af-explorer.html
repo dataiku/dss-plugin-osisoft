@@ -292,7 +292,7 @@
                         >
                             <div style="display: flex; gap: 8px; align-items: center;">
                                 <div ng-if="search.searchMode === 'element'">
-                                    {{prettifyElementPath(result.nodes[0].path)}}
+                                    {{prettifyElementPath(result.nodes[0].path, result.nodes[0].paths)}}
                                 </div>
                                 <div ng-if="search.searchMode === 'template'">
                                     {{result.nodes[0].title}}
