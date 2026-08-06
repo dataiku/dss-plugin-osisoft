@@ -70,7 +70,10 @@
             {{errorBannerMessage}}
         </div>
         <div class="pi-system-explorer__header">
-            <div></div>
+            <div ng-if="showTreeData" style="display: flex; gap: 8px; align-items: center;">
+                <i ng-class="inSearchMode ? 'dku-icon-search-24' : 'dku-icon-eye-24'"></i>
+                <strong>{{inSearchMode ? 'Search' : 'Attributes view'}}</strong>
+            </div>
             <div>
                 <button
                         class="btn btn--outline btn--primary btn--dku-icon"
@@ -104,10 +107,6 @@
             </div>
             <!-- Search mode -->
             <div class="attribute-tab pi-system-explorer__center-view" ng-if="showTreeData && inSearchMode">
-                <div class="pi-system--main-pane__header">
-                    <i class="dku-icon-search-24"></i>
-                    <strong>Search</strong>
-                </div>
                 <div class="pi-system--main-pane__content">
                     <div class="attribute-section__search">
                         <div style="display: flex; gap: 4px; flex-direction: column;">
@@ -310,10 +309,6 @@
             </div>
             <!-- Attributes view -->
             <div class="attribute-tab pi-system-explorer__center-view" ng-if="showTreeData && !inSearchMode">
-                <div class="pi-system--main-pane__header">
-                    <i class="dku-icon-eye-24"></i>
-                    <strong>Attributes view</strong>
-                </div>
                 <div class="pi-system--main-pane__content">
                     <div class="attribute-section__search">
                         <div class="attribute-section__filters">
