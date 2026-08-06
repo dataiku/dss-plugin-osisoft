@@ -384,6 +384,7 @@ app.controller('AfExplorerFormCtrl', [
             attributeValueTypeFilter: '',
             searchResults: [],
             attributeResults: null,
+            nextAttributeResultsPage: null,
             groupedAttributeResults: null,
             groupedAttributeResultsFallbackGrouping: null
         };
@@ -946,25 +947,28 @@ app.controller('AfExplorerFormCtrl', [
             $scope.searchAttributesInDb();
         };
 
-        $scope.searchAttributesInDb = function() {
+        $scope.searchAttributesInDb = function(nextPage) {
             if (!$scope.search.searchString || !$scope.search.searchString.trim()) {
                 return;
             }
 
+            if (!nextPage) {
+                $scope.search.nextAttributeResultsPage = null;
+            }
             startLoadingState(
                 true,
                 "Searching for attributes",
                 "Searching for your query. Loading the attributes can take a little bit of time"
             );
             return $scope.callPythonDo({
-                method: "get_attributes",
+                method: "get_attributes_per_page",
                 attribute_name: $scope.search.searchString,
                 element_category: $scope.search.attributeCategoryFilterList,
-                attribute_value_type: $scope.search.attributeValueTypeFilter
+                attribute_value_type: $scope.search.attributeValueTypeFilter,
+                next_page: nextPage,
             }).then(function(data) {
                 console.log("Attribute search results", data.attributes);
-                // TODO: double check this
-                $scope.search.attributeResults = (data.attributes || []).map(attribute => {
+                const attributes = (data.attributes || []).map(attribute => {
                     const elementPath = getElementPathFromAttributePath(attribute.path);
                     return enrichAttribute({
                         ...attribute,
@@ -973,8 +977,14 @@ app.controller('AfExplorerFormCtrl', [
                         parent_element_path: elementPath
                     }, {});
                 });
+                if (nextPage) {
+                    $scope.search.attributeResults = $scope.search.attributeResults.concat(attributes);
+                } else {
+                    $scope.search.attributeResults = attributes;
+                }
+                $scope.search.nextAttributeResultsPage = data.next_page || null;
                 refreshSearchAttributeResults();
-                console.log("get_attributes", data);
+                console.log("get_attributes_per_page", data);
             }).finally(stopLoadingState);
         };
 
@@ -1015,6 +1025,7 @@ app.controller('AfExplorerFormCtrl', [
             $scope.search.attributeValueTypeFilter = ''
             $scope.search.searchResults = []
             $scope.search.attributeResults = null
+            $scope.search.nextAttributeResultsPage = null
             $scope.search.groupedAttributeResults = null
             $scope.search.groupedAttributeResultsFallbackGrouping = null
             clearSearchHighlights($scope.elementTree);
