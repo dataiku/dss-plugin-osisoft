@@ -244,6 +244,13 @@
                                 on-update-aggregate="updateMergedAttributeAggregate(mergedAttribute)"
                                 on-update-single-aggregate="updateSingleAttributeAggregate(attribute)">
                         </div>
+                        <div ng-if="search.nextAttributeResultsPage"
+                             style="display: flex; justify-content: center; margin-top: 16px;">
+                            <button class="btn btn--primary"
+                                    ng-click="searchAttributesInDb(search.nextAttributeResultsPage)">
+                                Load more
+                            </button>
+                        </div>
                     </div>
                     <div ng-if="search.searchMode !== 'attribute'">
                         {{getSearchResultCount()}} results
