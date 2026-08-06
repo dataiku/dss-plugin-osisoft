@@ -46,8 +46,10 @@
 <td>
     <select dku-bs-select ng-model="ctrl.mergedAttribute.data_type"
             ng-options="option.value as option.label for option in ctrl.aggregateDataTypeFields.data_type.options"
-            ng-change="ctrl.onUpdateDataType({ mergedAttribute: ctrl.mergedAttribute })">
+            ng-change="ctrl.onUpdateDataType({ mergedAttribute: ctrl.mergedAttribute })"
+            ng-if="!ctrl.isSingleAttribute">
     </select>
+    <span ng-if="ctrl.isSingleAttribute">{{ctrl.mergedAttribute.data_type}}</span>
 </td>
 <td>
     <div class="custom-table__aggregate-field"
@@ -57,19 +59,20 @@
         <select dku-bs-select ng-model="ctrl.mergedAttribute[aggregateName]"
                 ng-options="option.value as option.label for option in aggregate.options"
                 ng-change="ctrl.onUpdateAggregate({ mergedAttribute: ctrl.mergedAttribute })"
-                ng-if="aggregate.type === 'select'">
+                ng-if="!ctrl.isSingleAttribute && aggregate.type === 'select'">
         </select>
         <select dku-bs-select multiple ng-model="ctrl.mergedAttribute[aggregateName]"
                 ng-options="option.value as option.label for option in aggregate.options"
                 ng-change="ctrl.onUpdateAggregate({ mergedAttribute: ctrl.mergedAttribute })"
-                ng-if="aggregate.type === 'multiselect'">
+                ng-if="!ctrl.isSingleAttribute && aggregate.type === 'multiselect'">
         </select>
         <input type="text" ng-model="ctrl.mergedAttribute[aggregateName]"
                ng-change="ctrl.onUpdateAggregate({ mergedAttribute: ctrl.mergedAttribute })"
-               ng-if="aggregate.type === 'text'">
+               ng-if="!ctrl.isSingleAttribute && aggregate.type === 'text'">
         <input type="number" ng-model="ctrl.mergedAttribute[aggregateName]"
                ng-change="ctrl.onUpdateAggregate({ mergedAttribute: ctrl.mergedAttribute })"
-               ng-if="aggregate.type === 'number'">
+               ng-if="!ctrl.isSingleAttribute && aggregate.type === 'number'">
+        <span ng-if="ctrl.isSingleAttribute">{{ctrl.mergedAttribute[aggregateName]}}</span>
     </div>
 </td>
 <td ng-if="ctrl.groupMode !== 'CATEGORY'">

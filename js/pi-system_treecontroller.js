@@ -383,7 +383,9 @@ app.controller('AfExplorerFormCtrl', [
             attributeCategoryFilterList: [],
             attributeValueTypeFilter: '',
             searchResults: [],
-            attributeResults: null,
+            attributeResults: [],
+            attributeSearchCurrentPage: 0,
+            attributeLastPage: null,
             nextAttributeResultsPage: null,
             groupedAttributeResults: null,
             groupedAttributeResultsFallbackGrouping: null
@@ -952,8 +954,13 @@ app.controller('AfExplorerFormCtrl', [
                 return;
             }
 
-            if (!nextPage) {
+            const isFirstLoad = !nextPage;
+
+            if (isFirstLoad) {
+                $scope.search.attributeResults = [];
                 $scope.search.nextAttributeResultsPage = null;
+                $scope.search.attributeSearchCurrentPage = 0;
+                $scope.search.attributeLastPage = null;
             }
             startLoadingState(
                 true,
@@ -977,15 +984,39 @@ app.controller('AfExplorerFormCtrl', [
                         parent_element_path: elementPath
                     }, {});
                 });
-                if (nextPage) {
-                    $scope.search.attributeResults = $scope.search.attributeResults.concat(attributes);
-                } else {
-                    $scope.search.attributeResults = attributes;
+                $scope.search.attributeResults.push(attributes);
+                if (!isFirstLoad) {
+                    $scope.search.attributeSearchCurrentPage += 1;
                 }
                 $scope.search.nextAttributeResultsPage = data.next_page || null;
+                if (!isFirstLoad && !data.next_page) {
+                    $scope.search.attributeLastPage =
+                        // a checker
+                        $scope.search.attributeSearchCurrentPage + 1;
+                }
                 refreshSearchAttributeResults();
                 console.log("get_attributes_per_page", data);
             }).finally(stopLoadingState);
+        };
+
+        $scope.showPreviousAttributeSearchPage = function() {
+            if ($scope.search.attributeSearchCurrentPage === 0) {
+                return;
+            }
+            $scope.search.attributeSearchCurrentPage -= 1;
+            refreshSearchAttributeResults();
+        };
+
+        $scope.showNextAttributeSearchPage = function() {
+            const nextPageIndex = $scope.search.attributeSearchCurrentPage + 1;
+            if ($scope.search.attributeResults[nextPageIndex]) {
+                $scope.search.attributeSearchCurrentPage = nextPageIndex;
+                refreshSearchAttributeResults();
+                return;
+            }
+            if ($scope.search.nextAttributeResultsPage) {
+                $scope.searchAttributesInDb($scope.search.nextAttributeResultsPage);
+            }
         };
 
         $scope.getAttributeCategoriesFromDB = function() {
@@ -1024,7 +1055,9 @@ app.controller('AfExplorerFormCtrl', [
             $scope.search.attributeCategoryFilterList = []
             $scope.search.attributeValueTypeFilter = ''
             $scope.search.searchResults = []
-            $scope.search.attributeResults = null
+            $scope.search.attributeResults = []
+            $scope.search.attributeSearchCurrentPage = 0
+            $scope.search.attributeLastPage = null
             $scope.search.nextAttributeResultsPage = null
             $scope.search.groupedAttributeResults = null
             $scope.search.groupedAttributeResultsFallbackGrouping = null
@@ -1886,10 +1919,12 @@ app.controller('AfExplorerFormCtrl', [
             if (!$scope.search.attributeResults) {
                 return;
             }
-            updateCheckStatus($scope.search.attributeResults);
+            const currentPageAttributes =
+                $scope.search.attributeResults[$scope.search.attributeSearchCurrentPage];
+            updateCheckStatus(currentPageAttributes);
             const groupedAttributes = $scope.buildGroupedAttributes(
                 getGrouping(),
-                $scope.search.attributeResults,
+                currentPageAttributes,
                 {
                     attributeSearch: '',
                     attributeCategoryFilterList: [],
@@ -1928,6 +1963,9 @@ app.controller('AfExplorerFormCtrl', [
         }
 
         function updateCheckStatus(attributeList) {
+            if (!attributeList || !$scope.config.outputSelectedAttributes) {
+                return;
+            }
             // checking which attributes are still in the output selection
             const selectedAttributePaths = new Set(
                 $scope.config.outputSelectedAttributes.map(attribute => attribute.path)

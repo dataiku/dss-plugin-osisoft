@@ -192,8 +192,26 @@
                     <div ng-if="search.searchMode === 'attribute' && search.attributeResults"
                          style="width: 100%;"
                     >
+                        <div ng-if="search.nextAttributeResultsPage || search.attributeResults.length > 1"
+                             style="display: flex; gap: 8px; margin-bottom: 8px;">
+                            <button class="btn btn--secondary"
+                                    type="button"
+                                    ng-click="showPreviousAttributeSearchPage()"
+                                    ng-disabled="search.attributeSearchCurrentPage === 0">
+                                <i class="dku-icon-chevron-left-20"></i>
+                            </button>
+                            <button class="btn btn--secondary"
+                                    type="button"
+                                    ng-click="showNextAttributeSearchPage()"
+                                    ng-disabled="!search.attributeResults[search.attributeSearchCurrentPage + 1] && !search.nextAttributeResultsPage">
+                                <i class="dku-icon-chevron-right-20"></i>
+                            </button>
+                            <span>
+                                Page {{search.attributeSearchCurrentPage + 1}} of {{search.attributeLastPage || '...'}}
+                            </span>
+                        </div>
                         <div>
-                            {{search.attributeResults.length}} results<span ng-if="search.nextAttributeResultsPage"> of ...</span>
+                            {{search.attributeResults[search.attributeSearchCurrentPage].length}} results
                         </div>
                         <div
                                 style="width: 100%;"
@@ -246,13 +264,6 @@
                                 on-update-single-data-type="updateSingleAttributeDataType(attribute)"
                                 on-update-aggregate="updateMergedAttributeAggregate(mergedAttribute)"
                                 on-update-single-aggregate="updateSingleAttributeAggregate(attribute)">
-                        </div>
-                        <div ng-if="search.nextAttributeResultsPage"
-                             style="display: flex; justify-content: center; margin-top: 16px;">
-                            <button class="btn btn--primary"
-                                    ng-click="searchAttributesInDb(search.nextAttributeResultsPage)">
-                                Load more
-                            </button>
                         </div>
                     </div>
                     <div ng-if="hasSearchCriteria(search.searchMode)">
