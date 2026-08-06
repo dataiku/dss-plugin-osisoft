@@ -1283,6 +1283,16 @@ app.controller('AfExplorerFormCtrl', [
             return Object.keys($scope.search.searchResults || {}).length > 0;
         };
 
+        $scope.hasSearchCriteria = function(searchType) {
+            const hasSearchString = Boolean($scope.search.searchString.trim());
+            if (searchType === 'element') {
+                return hasSearchString ||
+                    $scope.search.elementCategoryFilterList.length > 0 ||
+                    Boolean($scope.search.elementTemplateFilter);
+            }
+            return searchType === 'template' && hasSearchString;
+        };
+
         $scope.areAllSearchResultsSelected = function() {
             const results = Object.values($scope.search.searchResults || {});
             return results.length > 0 && results.every((result) =>

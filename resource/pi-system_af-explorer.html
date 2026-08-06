@@ -192,6 +192,9 @@
                     <div ng-if="search.searchMode === 'attribute' && search.attributeResults"
                          style="width: 100%;"
                     >
+                        <div>
+                            {{search.attributeResults.length}} results<span ng-if="search.nextAttributeResultsPage"> of ...</span>
+                        </div>
                         <div
                                 style="width: 100%;"
                                 attribute-table-block
@@ -252,7 +255,7 @@
                             </button>
                         </div>
                     </div>
-                    <div ng-if="search.searchMode !== 'attribute'">
+                    <div ng-if="hasSearchCriteria(search.searchMode)">
                         {{getSearchResultCount()}} results
                     </div>
                     <div style="display: flex; flex-direction: column; border: 1px solid #f0efec; width: 100%;"
