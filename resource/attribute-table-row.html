@@ -17,7 +17,7 @@
     >
 </td>
 <td class="custom-table__attribute-cell"
-    colspan="{{ ctrl.isSingleAttribute ? 2 : 1 }}">
+    colspan="{{ ctrl.isSingleAttribute ? 5 : 1 }}">
     <span
             class="tree-guide"
             ng-if="ctrl.isSingleAttribute"
@@ -47,15 +47,14 @@
 <td ng-if="!ctrl.isSingleAttribute">
     {{ctrl.mergedAttribute.description}}
 </td>
-<td>
+<td ng-if="!ctrl.isSingleAttribute">
     <select dku-bs-select ng-model="ctrl.mergedAttribute.data_type"
             ng-options="option.value as option.label for option in ctrl.aggregateDataTypeFields.data_type.options"
             ng-change="ctrl.onUpdateDataType({ mergedAttribute: ctrl.mergedAttribute })"
             ng-if="!ctrl.isSingleAttribute">
     </select>
-    <span ng-if="ctrl.isSingleAttribute">{{ctrl.mergedAttribute.data_type}}</span>
 </td>
-<td>
+<td ng-if="!ctrl.isSingleAttribute">
     <div class="custom-table__aggregate-field"
          ng-repeat="(aggregateName, aggregate) in ctrl.aggregateDataTypeFields.aggregates"
          ng-show="aggregate.isVisible(ctrl.mergedAttribute)">
@@ -76,15 +75,14 @@
         <input type="number" ng-model="ctrl.mergedAttribute[aggregateName]"
                ng-change="ctrl.onUpdateAggregate({ mergedAttribute: ctrl.mergedAttribute })"
                ng-if="!ctrl.isSingleAttribute && aggregate.type === 'number'">
-        <span ng-if="ctrl.isSingleAttribute">{{ctrl.mergedAttribute[aggregateName]}}</span>
     </div>
 </td>
-<td ng-if="ctrl.groupMode !== 'CATEGORY'">
+<td ng-if="!ctrl.isSingleAttribute && ctrl.groupMode !== 'CATEGORY'">
     <span ng-if="ctrl.mergedAttribute.conflicting_categories" style="display: flex; align-items: center; gap: 4px" toggle="tooltip" title="These attributes belong to different categories">
         <i class="dku-icon-warning-outline-16"></i>Conflict
     </span>
     <span ng-if="!ctrl.mergedAttribute.conflicting_categories">{{ctrl.mergedAttribute.category_names.join(", ")}}</span>
 </td>
-<td ng-if="ctrl.groupMode !== 'TEMPLATE'">
+<td ng-if="!ctrl.isSingleAttribute && ctrl.groupMode !== 'TEMPLATE'">
     <span>{{ctrl.mergedAttribute.template_name}}</span>
 </td>
