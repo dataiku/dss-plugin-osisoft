@@ -192,25 +192,28 @@
                          style="width: 100%;"
                     >
                         <div ng-if="search.nextAttributeResultsPage || search.attributeResults.length > 1"
-                             style="display: flex; gap: 8px; margin-bottom: 8px;">
-                            <button class="btn btn--secondary"
-                                    type="button"
-                                    ng-click="showPreviousAttributeSearchPage()"
-                                    ng-disabled="search.attributeSearchCurrentPage === 0">
-                                <i class="dku-icon-chevron-left-20"></i>
-                            </button>
-                            <button class="btn btn--secondary"
-                                    type="button"
-                                    ng-click="showNextAttributeSearchPage()"
-                                    ng-disabled="!search.attributeResults[search.attributeSearchCurrentPage + 1] && !search.nextAttributeResultsPage">
-                                <i class="dku-icon-chevron-right-20"></i>
-                            </button>
-                            <span>
-                                Page {{search.attributeSearchCurrentPage + 1}} of {{search.attributeLastPage || '...'}}
-                            </span>
-                        </div>
-                        <div>
-                            {{search.attributeResults[search.attributeSearchCurrentPage].length}} results
+                             style="display: flex; justify-content: space-between;">
+                            <div>
+                                Showing results {{getDisplayedAttributeResultsRange().start}}-{{getDisplayedAttributeResultsRange().end}}
+                            </div>
+                            <div style="display: flex; gap: 8px;">
+                                <span
+                                        ng-click="showPreviousAttributeSearchPage()"
+                                        class="pi-system-explorer__pagination-link"
+                                        ng-class="{'pi-system-explorer__pagination-link--disabled': search.attributeSearchCurrentPage === 0}"
+                                >
+                                    <i class="dku-icon-chevron-left-16"></i>
+                                    Previous
+                                </span>
+                                <span
+                                        ng-click="showNextAttributeSearchPage()"
+                                        class="pi-system-explorer__pagination-link"
+                                        ng-class="{'pi-system-explorer__pagination-link--disabled': !search.attributeResults[search.attributeSearchCurrentPage + 1] && !search.nextAttributeResultsPage}"
+                                >
+                                    Next
+                                    <i class="dku-icon-chevron-right-16"></i>
+                                </span>
+                            </div>
                         </div>
                         <div
                                 style="width: 100%;"
@@ -265,7 +268,7 @@
                                 on-update-single-aggregate="updateSingleAttributeAggregate(attribute)">
                         </div>
                     </div>
-                    <div ng-if="hasSearchCriteria(search.searchMode)">
+                    <div ng-if="search.searchMode !== 'attribute' && hasSearchCriteria(search.searchMode)">
                         {{getSearchResultCount()}} results
                     </div>
                     <div style="display: flex; flex-direction: column; border: 1px solid #f0efec; width: 100%;"
@@ -276,7 +279,7 @@
                             <span style="display: flex; gap: 8px; align-items: center">
                             Show in attributes view
                             <i class="dku-icon-eye-16 pi-system-explorer__show-all-eye"
-                               style="click: pointer; padding: 4px 6px; border: 1px solid #f0efec; border-radius: 8px;"
+                               style="cursor: pointer; padding: 4px 6px; border: 1px solid #f0efec; border-radius: 8px;"
                                ng-style="{ 'border-color': areAllSearchResultsSelected() ? '#7092f2' : '#f0efec' }"
                                ng-click="selectAllResults()"></i>
                         </span>

@@ -1019,6 +1019,19 @@ app.controller('AfExplorerFormCtrl', [
             }
         };
 
+        $scope.getDisplayedAttributeResultsRange = function() {
+            const currentPage = $scope.search.attributeSearchCurrentPage;
+            const previousResultsCount = $scope.search.attributeResults
+                .slice(0, currentPage)
+                .reduce((count, page) => count + page.length, 0);
+            const currentResultsCount = $scope.search.attributeResults[currentPage].length;
+
+            return {
+                start: previousResultsCount + 1,
+                end: previousResultsCount + currentResultsCount
+            };
+        };
+
         $scope.getAttributeCategoriesFromDB = function() {
             startLoadingState(false);
             return $scope.callPythonDo({ method: "get_attribute_categories_from_db" }).then(function(data) {
@@ -1323,7 +1336,7 @@ app.controller('AfExplorerFormCtrl', [
                     $scope.search.elementCategoryFilterList.length > 0 ||
                     Boolean($scope.search.elementTemplateFilter);
             }
-            return searchType === 'template' && hasSearchString;
+            return hasSearchString;
         };
 
         $scope.areAllSearchResultsSelected = function() {

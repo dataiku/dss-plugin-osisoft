@@ -200,6 +200,17 @@
     cursor: not-allowed;
 }
 
+.pi-system-explorer__pagination-link {
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+}
+
+.pi-system-explorer__pagination-link--disabled {
+    color: #999;
+    cursor: default;
+}
+
 .pi-system-explorer__loading-modal {
     position: absolute;
     top: 53%;
