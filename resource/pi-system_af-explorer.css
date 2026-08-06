@@ -469,6 +469,10 @@ pi-system-auth-banner {
     width: 100%;
 }
 
+.custom-table__checkbox-column {
+    width: 40px;
+}
+
 .custom-table th,
 .custom-table td {
     border: 1px solid #ccc;
