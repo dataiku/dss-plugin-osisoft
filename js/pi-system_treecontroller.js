@@ -540,6 +540,10 @@ app.controller('AfExplorerFormCtrl', [
                 tableSortStatus: [],
                 groupSortStatus: {}
             };
+            $scope.closedFolds = {
+                groupClosedFolds: {},
+                mergedAttributeClosedFolds: {}
+            };
             DataikuAPI.plugins.listAccessiblePresets('pi-system', $stateParams.projectKey, 'basic-auth').success(function(data) {
                 $scope.inlineParams = data.inlineParams;
                 $scope.inlinePluginParams = data.inlinePluginParams;
@@ -1788,7 +1792,6 @@ app.controller('AfExplorerFormCtrl', [
                 category_names: attr.category_names,
                 conflicting_categories: false,
                 value_type: attr.value_type,
-                opened: true,
             };
 
             getAggregateNames().forEach(aggregateName => {
@@ -1858,8 +1861,7 @@ app.controller('AfExplorerFormCtrl', [
                         attributes: [],
                         checkStates: [],
                         isDisplayed: true,
-                        nbSearchMatches: 0,
-                        opened: true
+                        nbSearchMatches: 0
                     }
                 }
 
@@ -2238,6 +2240,7 @@ app.directive('attributeTableBlock', function() {
                 identifier: '@',
                 groupMode: '<',
                 tableState: '<',
+                closedFolds: '<',
                 elementsByTemplate: '<',
                 groupedAttributes: '=',
                 config: '=',
@@ -2279,6 +2282,29 @@ app.directive('attributeTableBlock', function() {
                 sortAttributeGroups(attributesGroups, reverse);
             };
 
+            ctrl.closeGroup = function(group) {
+                if (!ctrl.closedFolds.groupClosedFolds[ctrl.identifier]) {
+                    ctrl.closedFolds.groupClosedFolds[ctrl.identifier] = new Set();
+                }
+                ctrl.closedFolds.groupClosedFolds[ctrl.identifier].add(group.group_key);
+            };
+
+            ctrl.openGroup = function(group) {
+                ctrl.closedFolds.groupClosedFolds[ctrl.identifier]?.delete(group.group_key);
+            };
+
+            ctrl.isGroupFoldOpen = function(group) {
+                return !ctrl.closedFolds.groupClosedFolds[ctrl.identifier]?.has(group.group_key);
+            };
+
+            ctrl.isMergedAttributeOpened = function(mergedAttributeKey) {
+                return !ctrl.closedFolds.mergedAttributeClosedFolds[ctrl.identifier]?.has(mergedAttributeKey);
+            };
+
+            ctrl.getMergedAttributeFoldKey = function(mergedAttribute) {
+                return mergedAttribute.group_key + "::" + mergedAttribute.title;
+            };
+
             ctrl.getVisibleAttributeColumnCount = function(includeCheckbox) {
                 let count = includeCheckbox ? 5 : 4;
 
@@ -2306,9 +2332,13 @@ app.directive('attributeTableRow', function() {
             mergedAttribute: '=',
             isSingleAttribute: '<?',
             displayDetailAttributes: '<?',
+            closedFolds: '<',
+            tableIdentifier: '<',
             isLast: '<',
             prettifyElementPath: '<',
             aggregateDataTypeFields: '<',
+            isMergedAttributeOpened: '<',
+            getMergedAttributeFoldKey: '<',
             onCheckAttribute: '&',
             onUpdateDataType: '&',
             onUpdateAggregate: '&',
@@ -2333,7 +2363,21 @@ app.directive('attributeTableRow', function() {
                 , []);
                 const stringParentElements = listParentElements.join(', ');
                 return 'Already selected for elements: ' + stringParentElements;
-            }
+            };
+
+            ctrl.closeMergedAttribute = function(mergedAttributeKey) {
+                ctrl.closedFolds.mergedAttributeClosedFolds[ctrl.tableIdentifier] ||= new Set();
+                ctrl.closedFolds.mergedAttributeClosedFolds[ctrl.tableIdentifier].add(mergedAttributeKey);
+            };
+
+            ctrl.openMergedAttribute = function(mergedAttributeKey) {
+                ctrl.closedFolds.mergedAttributeClosedFolds[ctrl.tableIdentifier]?.delete(mergedAttributeKey);
+            };
+
+            ctrl.isGroupFoldOpen = function(group) {
+                return !ctrl.closedFolds.groupClosedFolds[ctrl.tableIdentifier]?.has(group.group_key);
+            };
+
         },
         templateUrl: "/plugins/pi-system/resource/attribute-table-row.html"
     };
