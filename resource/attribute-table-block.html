@@ -29,14 +29,14 @@
                             </li>
                             <li>
                                 <a class="attribute-table-block__sort-menu-option"
-                                   ng-click="ctrl.sortGroups(ctrl.groupedAttributes.groups, false)">
+                                   ng-click="ctrl.sortGroups(ctrl.groupedAttributes.groups, ctrl.identifier, false)">
                                     <i class="dku-icon-sort-natural-order-ascending-alphanumeric-16"></i>
                                     Ascending
                                 </a>
                             </li>
                             <li>
                                 <a class="attribute-table-block__sort-menu-option"
-                                   ng-click="ctrl.sortGroups(ctrl.groupedAttributes.groups, true)">
+                                   ng-click="ctrl.sortGroups(ctrl.groupedAttributes.groups, ctrl.identifier, true)">
                                     <i class="dku-icon-sort-natural-order-descending-alphanumeric-20"></i>
                                     Descending
                                 </a>
@@ -92,14 +92,14 @@
                                 </li>
                                 <li>
                                     <a class="attribute-table-block__sort-menu-option"
-                                       ng-click="ctrl.sortGroupAttributes(group.attributes, false)">
+                                       ng-click="ctrl.sortGroupAttributes(group.attributes, group.group_key, false)">
                                         <i class="dku-icon-sort-natural-order-ascending-alphanumeric-16"></i>
                                         Ascending
                                     </a>
                                 </li>
                                 <li>
                                     <a class="attribute-table-block__sort-menu-option"
-                                       ng-click="ctrl.sortGroupAttributes(group.attributes, true)">
+                                       ng-click="ctrl.sortGroupAttributes(group.attributes, group.group_key, true)">
                                         <i class="dku-icon-sort-natural-order-descending-alphanumeric-20"></i>
                                         Descending
                                     </a>

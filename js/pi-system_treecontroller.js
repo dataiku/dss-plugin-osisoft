@@ -1,5 +1,16 @@
 const app = angular.module('piSystemTreeApp.module', []);
 
+function sortAttributeGroups(attributesGroups, reverse = false) {
+    if (!attributesGroups.length) {
+        return;
+    }
+
+    attributesGroups.sort((firstGroup, secondGroup) => {
+        const order = firstGroup.group_name.localeCompare(secondGroup.group_name);
+        return reverse ? -order : order;
+    });
+}
+
 app.directive('loadingOverlay', function() {
     return {
         restrict: 'E',
@@ -521,6 +532,10 @@ app.controller('AfExplorerFormCtrl', [
             $scope.attributeCategories = $scope.attributeCategories || [];
             $scope.elementCategories = $scope.elementCategories || [];
             $scope.groupMode = $scope.groupMode || GroupMode.TEMPLATE;
+            $scope.tableState = {
+                tableSortStatus: [],
+                groupSortStatus: {}
+            };
             DataikuAPI.plugins.listAccessiblePresets('pi-system', $stateParams.projectKey, 'basic-auth').success(function(data) {
                 $scope.inlineParams = data.inlineParams;
                 $scope.inlinePluginParams = data.inlinePluginParams;
@@ -1998,6 +2013,25 @@ app.controller('AfExplorerFormCtrl', [
             });
         }
 
+        function applyGroupSort(groupedAttributes, identifier) {
+            const sortStatus = $scope.tableState.tableSortStatus[identifier];
+            if (sortStatus != null) {
+                sortAttributeGroups(groupedAttributes.groups, sortStatus === 'reverse');
+            }
+        }
+
+        function applyGroupAttributesSort(groupedAttributes) {
+            groupedAttributes.groups.forEach(group => {
+                const sortStatus = $scope.tableState.groupSortStatus[group.group_key];
+                if (sortStatus != null) {
+                    group.attributes.sort((firstAttribute, secondAttribute) => {
+                        const order = firstAttribute.title.localeCompare(secondAttribute.title);
+                        return sortStatus === 'reverse' ? -order : order;
+                    });
+                }
+            });
+        }
+
         $scope.refreshAttributeSection = function() {
             updateCheckStatus($scope.attributeList)
 
@@ -2006,6 +2040,10 @@ app.controller('AfExplorerFormCtrl', [
             const groupedAttributes = $scope.buildGroupedAttributes(grouping)
             $scope.groupedAttributes = groupedAttributes.attributesWithProperty;
             $scope.groupedAttributesFallbackGrouping = groupedAttributes.attributesWithoutProperty;
+            applyGroupSort($scope.groupedAttributes, 'attributesViewMain');
+            applyGroupSort($scope.groupedAttributesFallbackGrouping, 'attributesViewFallback');
+            applyGroupAttributesSort($scope.groupedAttributes);
+            applyGroupAttributesSort($scope.groupedAttributesFallbackGrouping);
             refreshSearchAttributeResults();
             console.log("Attribute List", $scope.attributeList)
             console.log("Grouped attributes", $scope.groupedAttributes)
@@ -2189,7 +2227,9 @@ app.directive('attributeTableBlock', function() {
                 displayGroupPath: '<?',
                 displayElementDropdown: '<',
                 excludedColumns: '<',
+                identifier: '@',
                 groupMode: '<',
+                tableState: '<',
                 elementsByTemplate: '<',
                 groupedAttributes: '=',
                 config: '=',
@@ -2212,7 +2252,8 @@ app.directive('attributeTableBlock', function() {
         controller: function() {
             const ctrl = this;
 
-            ctrl.sortGroupAttributes = function(attributesGroup, reverse = false) {
+            ctrl.sortGroupAttributes = function(attributesGroup, id, reverse = false) {
+                ctrl.tableState.groupSortStatus[id] = reverse ? 'reverse' : 'sort';
                 if (!attributesGroup.length) {
                     return;
                 }
@@ -2223,15 +2264,10 @@ app.directive('attributeTableBlock', function() {
                 });
             };
 
-            ctrl.sortGroups = function(attributesGroups, reverse = false) {
-                if (!attributesGroups.length) {
-                    return;
-                }
-
-                attributesGroups.sort((firstGroup, secondGroup) => {
-                    const order = firstGroup.group_name.localeCompare(secondGroup.group_name);
-                    return reverse ? -order : order;
-                });
+            ctrl.sortGroups = function(attributesGroups, identifier, reverse = false) {
+                ctrl.tableState.tableSortStatus[identifier] = reverse ? 'reverse' : 'sort';
+                console.log("tableState", ctrl.tableState);
+                sortAttributeGroups(attributesGroups, reverse);
             };
 
             ctrl.getVisibleAttributeColumnCount = function(includeCheckbox) {
