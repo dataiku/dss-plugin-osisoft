@@ -92,14 +92,14 @@
                                 </li>
                                 <li>
                                     <a class="attribute-table-block__sort-menu-option"
-                                       ng-click="ctrl.sortGroupAttributes(group.attributes, group.group_key, false)">
+                                       ng-click="ctrl.sortGroupAttributes(group.attributes, ctrl.identifier, group.group_key, false)">
                                         <i class="dku-icon-sort-natural-order-ascending-alphanumeric-16"></i>
                                         Ascending
                                     </a>
                                 </li>
                                 <li>
                                     <a class="attribute-table-block__sort-menu-option"
-                                       ng-click="ctrl.sortGroupAttributes(group.attributes, group.group_key, true)">
+                                       ng-click="ctrl.sortGroupAttributes(group.attributes, ctrl.identifier, group.group_key, true)">
                                         <i class="dku-icon-sort-natural-order-descending-alphanumeric-20"></i>
                                         Descending
                                     </a>

@@ -451,6 +451,10 @@ app.controller('AfExplorerFormCtrl', [
                 );
                 modalScope.groupedSelectedAttributes = groupedAttributes.attributesWithProperty;
                 modalScope.groupedSelectedAttributesFallBackGrouping = groupedAttributes.attributesWithoutProperty;
+                applyGroupSort(modalScope.groupedSelectedAttributes, 'previewDatasetMain');
+                applyGroupSort(modalScope.groupedSelectedAttributesFallBackGrouping, 'previewDatasetFallback');
+                applyGroupAttributesSort(modalScope.groupedSelectedAttributes, 'previewDatasetMain');
+                applyGroupAttributesSort(modalScope.groupedSelectedAttributesFallBackGrouping, 'previewDatasetFallback');
             }
 
 
@@ -1971,6 +1975,10 @@ app.controller('AfExplorerFormCtrl', [
             );
             $scope.search.groupedAttributeResults = groupedAttributes.attributesWithProperty;
             $scope.search.groupedAttributeResultsFallbackGrouping = groupedAttributes.attributesWithoutProperty;
+            applyGroupSort($scope.search.groupedAttributeResults, 'attributeSearchResultsMain');
+            applyGroupSort($scope.search.groupedAttributeResultsFallbackGrouping, 'attributeSearchResultsFallback');
+            applyGroupAttributesSort($scope.search.groupedAttributeResults, 'attributeSearchResultsMain');
+            applyGroupAttributesSort($scope.search.groupedAttributeResultsFallbackGrouping, 'attributeSearchResultsFallback');
         }
 
         function getCheckboxStatus(checkboxStatuses) {
@@ -2020,9 +2028,9 @@ app.controller('AfExplorerFormCtrl', [
             }
         }
 
-        function applyGroupAttributesSort(groupedAttributes) {
+        function applyGroupAttributesSort(groupedAttributes, tableIdentifier) {
             groupedAttributes.groups.forEach(group => {
-                const sortStatus = $scope.tableState.groupSortStatus[group.group_key];
+                const sortStatus = $scope.tableState.groupSortStatus[tableIdentifier]?.[group.group_key];
                 if (sortStatus != null) {
                     group.attributes.sort((firstAttribute, secondAttribute) => {
                         const order = firstAttribute.title.localeCompare(secondAttribute.title);
@@ -2042,8 +2050,8 @@ app.controller('AfExplorerFormCtrl', [
             $scope.groupedAttributesFallbackGrouping = groupedAttributes.attributesWithoutProperty;
             applyGroupSort($scope.groupedAttributes, 'attributesViewMain');
             applyGroupSort($scope.groupedAttributesFallbackGrouping, 'attributesViewFallback');
-            applyGroupAttributesSort($scope.groupedAttributes);
-            applyGroupAttributesSort($scope.groupedAttributesFallbackGrouping);
+            applyGroupAttributesSort($scope.groupedAttributes, 'attributesViewMain');
+            applyGroupAttributesSort($scope.groupedAttributesFallbackGrouping, 'attributesViewFallback');
             refreshSearchAttributeResults();
             console.log("Attribute List", $scope.attributeList)
             console.log("Grouped attributes", $scope.groupedAttributes)
@@ -2252,12 +2260,13 @@ app.directive('attributeTableBlock', function() {
         controller: function() {
             const ctrl = this;
 
-            ctrl.sortGroupAttributes = function(attributesGroup, id, reverse = false) {
-                ctrl.tableState.groupSortStatus[id] = reverse ? 'reverse' : 'sort';
+            ctrl.sortGroupAttributes = function(attributesGroup, tableIdentifier, groupId, reverse = false) {
+                ctrl.tableState.groupSortStatus[tableIdentifier] ||= {};
+                ctrl.tableState.groupSortStatus[tableIdentifier][groupId] = reverse ? 'reverse' : 'sort';
                 if (!attributesGroup.length) {
                     return;
                 }
-
+                console.log("tableState", ctrl.tableState);
                 attributesGroup.sort((firstAttribute, secondAttribute) => {
                     const order = firstAttribute.title.localeCompare(secondAttribute.title);
                     return reverse ? -order : order;
