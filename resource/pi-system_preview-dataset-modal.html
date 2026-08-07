@@ -18,27 +18,61 @@
                 </div>
                 <div class="scroll">
                     <div
+                            style="width: 100%;"
                             attribute-table-block
-                            grouped-attributes="groupedSelectedAttributes"
+                            ng-if="groupedSelectedAttributesFallBackGrouping && !groupedSelectedAttributesFallBackGrouping.empty"
+                            grouped-attributes="groupedSelectedAttributesFallBackGrouping"
                             config="config"
-                            display-path="false"
-                            database-name="config.database_title"
-                            display-group-path="true"
-                            elements-by-template="{}"
-                            title="'Selected Attributes'"
-                            group-mode="None"
+                            display-detail-attributes="true"
+                            elements-by-template="elementsByTemplate"
+                            title="getAttributeTableTitle(true)"
+                            identifier="previewDatasetFallback"
+                            group-mode="groupMode"
+                            table-state="uiState"
                             display-element-dropdown="false"
-                            active-tab="None"
+                            active-tab="activeTab"
                             aggregate-data-type-fields="aggregateDataTypeFields"
+                            prettify-element-path="prettifyElementPath"
                             on-toggle-select-all-grouped-attributes="toggleSelectAllGroupedAttributes(groupedAttributeGroup)"
                             on-toggle-grouped-attributes="toggleGroupedAttributes(group)"
                             on-is-at-least-partially-selected="isAtLeastPartiallySelected(item)"
                             on-init-elements-dropdown="initElementsDropdown(templateName)"
                             on-is-template-associated-element-selected="isTemplateAssociatedElementSelected(element)"
-                            on-apply-click-elements-dropdown="None"
+                            on-apply-click-elements-dropdown="applyClickElementsDropdown(templateName, element, selected)"
                             on-check-attribute="checkAttribute(mergedAttribute)"
+                            on-check-single-attribute="checkSingleAttribute(attribute)"
                             on-update-data-type="updateMergedAttributeDataType(mergedAttribute)"
-                            on-update-aggregate="updateMergedAttributeAggregate(mergedAttribute)">
+                            on-update-single-data-type="updateSingleAttributeDataType(attribute)"
+                            on-update-aggregate="updateMergedAttributeAggregate(mergedAttribute)"
+                            on-update-single-aggregate="updateSingleAttributeAggregate(attribute)">
+                    </div>
+                    <div
+                            attribute-table-block
+                            ng-if="groupedSelectedAttributes && !groupedSelectedAttributes.empty"
+                            grouped-attributes="groupedSelectedAttributes"
+                            config="config"
+                            display-detail-attributes="true"
+                            elements-by-template="elementsByTemplate"
+                            title="getAttributeTableTitle()"
+                            identifier="previewDatasetMain"
+                            group-mode="groupMode"
+                            table-state="uiState"
+                            display-element-dropdown="false"
+                            active-tab="activeTab"
+                            aggregate-data-type-fields="aggregateDataTypeFields"
+                            prettify-element-path="prettifyElementPath"
+                            on-toggle-select-all-grouped-attributes="toggleSelectAllGroupedAttributes(groupedAttributeGroup)"
+                            on-toggle-grouped-attributes="toggleGroupedAttributes(group)"
+                            on-is-at-least-partially-selected="isAtLeastPartiallySelected(item)"
+                            on-init-elements-dropdown="initElementsDropdown(templateName)"
+                            on-is-template-associated-element-selected="isTemplateAssociatedElementSelected(element)"
+                            on-apply-click-elements-dropdown="applyClickElementsDropdown(templateName, element, selected)"
+                            on-check-attribute="checkAttribute(mergedAttribute)"
+                            on-check-single-attribute="checkSingleAttribute(attribute)"
+                            on-update-data-type="updateMergedAttributeDataType(mergedAttribute)"
+                            on-update-single-data-type="updateSingleAttributeDataType(attribute)"
+                            on-update-aggregate="updateMergedAttributeAggregate(mergedAttribute)"
+                            on-update-single-aggregate="updateSingleAttributeAggregate(attribute)">
                     </div>
                 </div>
             </div>

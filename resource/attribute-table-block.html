@@ -3,15 +3,49 @@
 <div class="attribute-table-block">
     <div class="attribute-table-block__title"><strong>{{ctrl.title}}</strong></div>
     <table class="custom-table">
+        <colgroup>
+            <col class="custom-table__checkbox-column">
+        </colgroup>
         <thead>
         <tr>
             <th><input type="checkbox" ng-model="ctrl.groupedAttributes.allChecked"
                        ng-change="ctrl.onToggleSelectAllGroupedAttributes({ groupedAttributeGroup: ctrl.groupedAttributes })"
                        ng-disabled="!ctrl.groupedAttributes.groups.length"
                        indeterminate="ctrl.groupedAttributes.checked"></th>
-            <th>Title</th>
+            <th>
+                <div style=" display: flex; align-items: center; gap: 4px;">
+                    Title
+                    <div class="dropdown">
+                        <button
+                                type="button"
+                                class="btn btn--secondary btn--text btn--dku-icon-only"
+                                data-toggle="dropdown"
+                                aria-label="Sort templates & attributes">
+                            <i aria-hidden="true" class="dku-icon-menu-vertical-dots-16"></i>
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu--dku-icon pull-right attribute-table-block__sort-menu">
+                            <li class="dropdown-header attribute-table-block__sort-menu-header">
+                                Sort templates & attributes
+                            </li>
+                            <li>
+                                <a class="attribute-table-block__sort-menu-option"
+                                   ng-click="ctrl.sortGroups(ctrl.groupedAttributes.groups, ctrl.identifier, false)">
+                                    <i class="dku-icon-sort-natural-order-ascending-alphanumeric-16"></i>
+                                    Ascending
+                                </a>
+                            </li>
+                            <li>
+                                <a class="attribute-table-block__sort-menu-option"
+                                   ng-click="ctrl.sortGroups(ctrl.groupedAttributes.groups, ctrl.identifier, true)">
+                                    <i class="dku-icon-sort-natural-order-descending-alphanumeric-20"></i>
+                                    Descending
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </th>
             <th>Description</th>
-            <th ng-if="ctrl.displayPath">Path</th>
             <th>Data type</th>
             <th>Aggregates</th>
             <th ng-if="ctrl.groupMode !== 'CATEGORY'">Category</th>
@@ -35,41 +69,94 @@
             <td colspan="{{ctrl.getVisibleAttributeColumnCount(false)}}">
                 <div class="custom-table__group-actions">
                     <div class="custom-table__group-header">
+                        <i ng-if="group.opened"
+                           style="cursor: pointer;"
+                           class="dku-icon-chevron-down-16"
+                           ng-click="group.opened = !group.opened"></i>
+                        <i ng-if="!group.opened"
+                           style="cursor: pointer;"
+                           class="dku-icon-chevron-right-16"
+                           ng-click="group.opened = !group.opened"></i>
                         <span class="custom-table__group-name"><strong>{{group.group_name}}</strong></span>
+                        <div class="dropdown">
+                            <button
+                                    type="button"
+                                    class="btn btn--secondary btn--text btn--dku-icon-only"
+                                    data-toggle="dropdown"
+                                    aria-label="Sort templates & attributes">
+                                <i aria-hidden="true" class="dku-icon-menu-vertical-dots-16"></i>
+                            </button>
+                            <ul class="dropdown-menu dropdown-menu--dku-icon pull-right attribute-table-block__sort-menu">
+                                <li class="dropdown-header attribute-table-block__sort-menu-header">
+                                    Sort templates & attributes
+                                </li>
+                                <li>
+                                    <a class="attribute-table-block__sort-menu-option"
+                                       ng-click="ctrl.sortGroupAttributes(group.attributes, group.group_key, false)">
+                                        <i class="dku-icon-sort-natural-order-ascending-alphanumeric-16"></i>
+                                        Ascending
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="attribute-table-block__sort-menu-option"
+                                       ng-click="ctrl.sortGroupAttributes(group.attributes, group.group_key, true)">
+                                        <i class="dku-icon-sort-natural-order-descending-alphanumeric-20"></i>
+                                        Descending
+                                    </a>
+                                </li>
+                            </ul>
+                        </div>
                         <span ng-if="group.nbSearchMatches !== group.attributes.length">
                             - ({{group.nbSearchMatches}}/{{group.attributes.length}} attributes shown)
                         </span>
                     </div>
                     <span class="custom-table__group-path"
                           ng-if="ctrl.displayGroupPath && group.group_path">
-                        {{ctrl.prettifyElementPath(group.group_path, ctrl.databaseName)}}
+                        {{ctrl.prettifyElementPath(group.group_path, group.paths)}}
                     </span>
                     <dropdown-elements
                             elements="ctrl.elementsByTemplate[group.group_name]"
                             group-name="group.group_name"
-                            database-name="ctrl.config.database_title"
                             init-elements-dropdown="ctrl.onInitElementsDropdown({ templateName: templateName })"
                             is-template-associated-element-selected="ctrl.onIsTemplateAssociatedElementSelected({ element: element })"
                             apply-click-elements-dropdown="ctrl.onApplyClickElementsDropdown({ templateName: templateName, element: element, selected: selected })"
                             active-tab="ctrl.activeTab"
+                            prettify-element-path="ctrl.prettifyElementPath"
                             ng-if="ctrl.displayElementDropdown && ctrl.groupMode === 'TEMPLATE'">
                     </dropdown-elements>
                 </div>
             </td>
         </tr>
         <tr
-                ng-repeat="mergedAttribute in group.attributes track by mergedAttribute.title"
-                ng-show="mergedAttribute.isDisplayed"
+                ng-repeat-start="mergedAttribute in group.attributes track by mergedAttribute.title"
+                ng-show="group.opened && mergedAttribute.isDisplayed"
                 attribute-table-row
                 group-mode="ctrl.groupMode"
                 merged-attribute="mergedAttribute"
-                display-path="ctrl.displayPath"
+                display-detail-attributes="ctrl.displayDetailAttributes"
+                prettify-element-path="ctrl.prettifyElementPath"
                 aggregate-data-type-fields="ctrl.aggregateDataTypeFields"
                 on-check-attribute="ctrl.onCheckAttribute({ mergedAttribute: mergedAttribute })"
                 on-update-data-type="ctrl.onUpdateDataType({ mergedAttribute: mergedAttribute })"
                 on-update-aggregate="ctrl.onUpdateAggregate({ mergedAttribute: mergedAttribute })"
                 ng-class="{ 'custom-table__attribute-row--selected': ctrl.onIsAtLeastPartiallySelected({ item: mergedAttribute }) }">
         </tr>
+        <tr
+                ng-repeat="attribute in mergedAttribute.attributes track by attribute.id"
+                ng-if="group.opened && ctrl.displayDetailAttributes && mergedAttribute.opened"
+                attribute-table-row
+                merged-attribute="attribute"
+                is-single-attribute="true"
+                is-last="$last"
+                group-mode="ctrl.groupMode"
+                prettify-element-path="ctrl.prettifyElementPath"
+                aggregate-data-type-fields="ctrl.aggregateDataTypeFields"
+                on-check-attribute="ctrl.onCheckSingleAttribute({ attribute: attribute })"
+                on-update-data-type="ctrl.onUpdateSingleDataType({ attribute: attribute })"
+                on-update-aggregate="ctrl.onUpdateSingleAggregate({ attribute: attribute })"
+                ng-class="{ 'custom-table__attribute-detail-row--selected': attribute.checked }">
+        </tr>
+        <tr ng-repeat-end class="attribute-table-block__repeat-end"></tr>
         </tbody>
     </table>
 </div>

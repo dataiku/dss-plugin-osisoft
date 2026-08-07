@@ -15,63 +15,37 @@
                         <div class="tree-view__tab-content">Templates</div>
                     </div>
                 </div>
-                <div class="tree-view__search-panel" ng-if="activeTab === 'element'">
-                    <div class="tree-view__search-row">
-                        <basic-search-box
-                                ng-model="config.element_name"
-                                placeholder="Search element"
-                                click-clear="clearSearch()"
-                                ng-keydown="onSearchInputKeydown($event)"
+                <div class="tree-view__search-panel">
+                    <div style="display: flex; flex-direction: column; gap: 4px;">
+                        <div ng-class="{'pi-system-explorer__page-mode--active': inSearchMode}"
+                             class="pi-system-explorer__page-mode"
+                             ng-click="toggleSearchMode(true)"
                         >
-                        </basic-search-box>
-                        <button ng-click="searchFromElement()" class="btn btn--secondary link-like"
-                                id="get-query-dim-prop" ng-disabled="!config.element_name">Search
-                        </button>
-                    </div>
-                    <div class="tree-view__search-actions" ng-if="ui.searchInProgress">
-                        <button ng-click="clearSearch()" class="btn btn--secondary link-like">
-                            Clear search
-                        </button>
-                    </div>
-                    <div ng-if="elementSearchNoMatch" class="alert alert-warning">
-                        No matching element found
+                            <i class="dku-icon-search-16"></i>
+                            Search {{activeTab}}s or attributes
+                        </div>
+                        <div ng-class="{'pi-system-explorer__page-mode--active': !inSearchMode}"
+                             class="pi-system-explorer__page-mode"
+                             ng-click="toggleSearchMode(false)"
+                             style="display: flex; justify-content: space-between;"
+                        >
+                            <span style="display: flex; gap: 8px;">
+                                <i class="dku-icon-eye-16"></i>
+                                Attributes view
+                            </span>
+                            <span
+                                    ng-click="clearAllVisualizedNodes(); $event.stopPropagation();"
+                                    ng-if="ui.clickedNodes.length > 0"
+                                    class="pi-system-explorer__page-mode-clear-all"
+                            >
+                                Clear all
+                            </span>
+                        </div>
                     </div>
                 </div>
-                <div class="tree-view__search-panel" ng-if="activeTab === 'template'">
-                    <div class="tree-view__search-row">
-                        <basic-search-box
-                                ng-model="ui.templateSearch"
-                                placeholder="Search template"
-                                ng-change="applyTemplateSearch()"
-                        >
-                        </basic-search-box>
-                    </div>
-                    <div class="tree-view__search-results">
-                        <ul ng-if="ui.templateSearchResults">
-                            <li ng-repeat="node in ui.templateSearchResults track by node.id">
-                                <tree-node node="node" get-children-from-db="" toggle-display-attributes="toggleDisplayAttributes"
-                                           config="config" clicked-nodes="ui.clickedNodes" toggle-node-visualization="toggleNodeVisualization(node)"
-                                           selected-element-paths="selectedElementPaths" hide-children="true"
-                                ></tree-node>
-                            </li>
-                        </ul>
-                    </div>
-                </div>
-                <button
-                        class="btn btn--outline btn--secondary btn--dku-icon"
-                        ng-click="clearAllVisualizedNodes()"
-                        ng-if="ui.clickedNodes.length > 0">
-                    <i class="dku-icon-dismiss-16"></i>
-                    Clear all
-                </button>
             </div>
-            <div class="tree-view__separator" ng-if="activeTab === 'template'"></div>
+            <div class="tree-view__separator"></div>
             <div class="tree-view__content">
-<!--                <div>-->
-<!--                    Filter by category<select dku-bs-select ng-model="config.element_category"-->
-<!--                                              ng-options="dbn.title as dbn.title for dbn in config.element_categories" ng-init="getCategoriesFromDB()"-->
-<!--                                              ng-change="doSearch(config.element_name, config.attribute_name)"/>-->
-<!--                </div>-->
                 <ul ng-if="activeTab === 'element' && elementTree && elementTree.length">
                     <li ng-repeat="node in elementTree track by node.id">
                         <tree-node node="node" get-children-from-db="getChildrenFromDB" toggle-display-attributes="toggleDisplayAttributes"
@@ -96,117 +70,369 @@
             {{errorBannerMessage}}
         </div>
         <div class="pi-system-explorer__header">
-            <div>
-                Welcome to Pi System Plugin
+            <div ng-if="showTreeData" style="display: flex; gap: 8px; align-items: center;">
+                <i ng-class="inSearchMode ? 'dku-icon-search-24' : 'dku-icon-eye-24'"></i>
+                <strong>{{inSearchMode ? 'Search' : 'Attributes view'}}</strong>
             </div>
-            <button
-                    class="btn btn--outline btn--primary btn--dku-icon"
-                    ng-click="showDatasetPreviewModal()"
-                    ng-disabled="!config.outputSelectedAttributes.length">
-                <i class="dku-icon-dataset-16"></i>
-                Preview dataset
-            </button>
+            <div>
+                <button
+                        class="btn btn--outline btn--primary btn--dku-icon"
+                        ng-click="showDatasetPreviewModal()"
+                        ng-disabled="!config.outputSelectedAttributes.length">
+                    <i class="dku-icon-dataset-16"></i>
+                    Preview dataset
+                </button>
+                <button
+                        class="btn btn--outline btn--primary btn--dku-icon"
+                        ng-click="openLoginModal()">
+                    Login
+                    <i class="dku-icon-arrow-sign-in-16" ng-if="!authConfigured()"></i>
+                    <i class="dku-icon-checkmark-12" ng-if="authConfigured()" style="padding-left: 4px;"></i>
+                </button>
+            </div>
         </div>
         <div class="pi-system-explorer__content">
-            <pi-system-auth-banner></pi-system-auth-banner>
-            <!-- TODO: move the table to a separate component-->
-            <!-- Attributes Section -->
-            <div class="attribute-tab pi-system-explorer__center-view" ng-if="showTreeData">
-                <div class="attribute-section__search">
-                    <div><strong>Attributes and templates</strong></div>
-                    <div>
-                        <basic-search-box
-                                ng-model="ui.attributeFiltering.attributeSearch"
-                                placeholder="Filter by attribute or template name"
-                                ng-change="refreshAttributeSection()"
+            <div
+                    class="pi-system-explorer__login-prompt"
+                    ng-if="!authConfigured() || !showTreeData" style="display: flex; flex-direction: column; gap: 8px;">
+                <div>
+                    Your database login information has changed but hasn’t been applied yet <br/>
+                    Reopen the LOGIN modal and complete your login to display the database content
+                </div>
+                <button
+                        class="btn btn--outline btn--primary btn--dku-icon"
+                        ng-click="openLoginModal()">
+                    Login
+                </button>
+            </div>
+            <!-- Search mode -->
+            <div class="attribute-tab pi-system-explorer__center-view" ng-if="showTreeData && inSearchMode">
+                <div class="pi-system--main-pane__content">
+                    <div class="attribute-section__search">
+                        <div style="display: flex; gap: 4px; flex-direction: column;">
+                            <div class="attribute-section__filters">
+                                <div class="attribute-section__filter-column" style="flex-grow: 1;">
+                                    <div style="display: flex; margin-top: 24px;">
+                                        <select dku-bs-select ng-model="search.searchMode" ng-change="resetSearch()" class="pi-system-explorer__search-mode__type-selector">
+                                            <option value="element" ng-if="activeTab === 'element'">Elements</option>
+                                            <option value="template" ng-if="activeTab === 'template'">Templates</option>
+                                            <option value="attribute">Attributes</option>
+                                        </select>
+                                        <basic-search-box class="pi-system-explorer__search-mode__search-box"
+                                                          ng-model="search.searchString"
+                                                          ng-if="search.searchMode !== 'attribute'"
+                                                          placeholder="Search {{search.searchMode}}s by name"
+                                                          ng-change="applySearch()"
+                                        >
+                                        </basic-search-box>
+                                        <basic-search-box class="pi-system-explorer__search-mode__search-box"
+                                                          ng-if="search.searchMode === 'attribute'"
+                                                          ng-model="search.searchString"
+                                                          placeholder="Search {{search.searchMode}}s by name"
+                                                          ng-keydown="onAttributeSearchKeydown($event)"
+                                        >
+                                        </basic-search-box>
+                                    </div>
+                                </div>
+                                <div class="attribute-section__filter-column" ng-if="search.searchMode === 'attribute'">
+                                    <div class="attribute-section__filter-label">Category</div>
+                                    <select dku-bs-select multiple
+                                            ng-model="search.attributeCategoryFilterList"
+                                            ng-options="category.value as category.label for category in attributeCategoryFilterOptions"
+                                            data-live-search="true"
+                                    >
+                                    </select>
+                                </div>
+                                <div class="attribute-section__filter-column" ng-if="search.searchMode === 'attribute'">
+                                    <div class="attribute-section__filter-label">Value type</div>
+                                    <select dku-bs-select
+                                            ng-model="search.attributeValueTypeFilter"
+                                            ng-options="valueType for valueType in valueTypes"
+                                            data-live-search="true"
+                                    >
+                                        <option value="">No filter</option>
+                                    </select>
+                                </div>
+                                <button class="btn btn--primary"
+                                        ng-if="search.searchMode === 'attribute'"
+                                        ng-click="searchAttributesInDb()"
+                                        ng-disabled="!search.searchString || !search.searchString.trim()"
+                                        style="margin-top: 24px"
+                                >
+                                    Search
+                                </button>
+                                <div class="attribute-section__filter-column" ng-if="search.searchMode === 'element'">
+                                    <div class="attribute-section__filter-label">Categories</div>
+                                    <select dku-bs-select multiple
+                                            ng-model="search.elementCategoryFilterList"
+                                            ng-change="applySearch()"
+                                            ng-options="category.title as category.title for category in elementCategories"
+                                            class="pi-system-explorer__search-mode__category-selector">
+                                    </select>
+                                </div>
+                                <div class="attribute-section__filter-column" ng-if="search.searchMode === 'element'">
+                                    <div class="attribute-section__filter-label">Template</div>
+                                    <select dku-bs-select
+                                            ng-model="search.elementTemplateFilter"
+                                            ng-change="applySearch()"
+                                            ng-options="template.title as template.title for template in templateList"
+                                            class="pi-system-explorer__search-mode__template-selector"
+                                            data-live-search="true"
+                                    >
+                                        <option value="">Any template</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div ng-if="search.searchMode === 'attribute'">
+                                <div>Use filters to find what you need faster and improve loading times</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div ng-if="search.searchMode === 'attribute' && search.attributeResults"
+                         style="width: 100%;"
+                    >
+                        <div ng-if="search.nextAttributeResultsPage || search.attributeResults.length > 1"
+                             style="display: flex; justify-content: space-between;">
+                            <div>
+                                Showing results {{getDisplayedAttributeResultsRange().start}}-{{getDisplayedAttributeResultsRange().end}}
+                            </div>
+                            <div style="display: flex; gap: 8px;">
+                                <span
+                                        ng-click="showPreviousAttributeSearchPage()"
+                                        class="pi-system-explorer__pagination-link"
+                                        ng-class="{'pi-system-explorer__pagination-link--disabled': search.attributeSearchCurrentPage === 0}"
+                                >
+                                    <i class="dku-icon-chevron-left-16"></i>
+                                    Previous
+                                </span>
+                                <span
+                                        ng-click="showNextAttributeSearchPage()"
+                                        class="pi-system-explorer__pagination-link"
+                                        ng-class="{'pi-system-explorer__pagination-link--disabled': !search.attributeResults[search.attributeSearchCurrentPage + 1] && !search.nextAttributeResultsPage}"
+                                >
+                                    Next
+                                    <i class="dku-icon-chevron-right-16"></i>
+                                </span>
+                            </div>
+                        </div>
+                        <div
+                                style="width: 100%;"
+                                attribute-table-block
+                                ng-if="search.groupedAttributeResultsFallbackGrouping && !search.groupedAttributeResultsFallbackGrouping.empty"
+                                grouped-attributes="search.groupedAttributeResultsFallbackGrouping"
+                                config="config"
+                                display-detail-attributes="true"
+                                elements-by-template="elementsByTemplate"
+                                title="getAttributeTableTitle(true)"
+                                identifier="attributeSearchResultsFallback"
+                                group-mode="groupMode"
+                                table-state="tableState"
+                                display-element-dropdown="false"
+                                active-tab="activeTab"
+                                aggregate-data-type-fields="aggregateDataTypeFields"
+                                prettify-element-path="prettifyElementPath"
+                                on-toggle-select-all-grouped-attributes="toggleSelectAllGroupedAttributes(groupedAttributeGroup)"
+                                on-toggle-grouped-attributes="toggleGroupedAttributes(group)"
+                                on-is-at-least-partially-selected="isAtLeastPartiallySelected(item)"
+                                on-init-elements-dropdown="initElementsDropdown(templateName)"
+                                on-is-template-associated-element-selected="isTemplateAssociatedElementSelected(element)"
+                                on-apply-click-elements-dropdown="applyClickElementsDropdown(templateName, element, selected)"
+                                on-check-attribute="checkAttribute(mergedAttribute)"
+                                on-check-single-attribute="checkSingleAttribute(attribute)"
+                                on-update-data-type="updateMergedAttributeDataType(mergedAttribute)"
+                                on-update-single-data-type="updateSingleAttributeDataType(attribute)"
+                                on-update-aggregate="updateMergedAttributeAggregate(mergedAttribute)"
+                                on-update-single-aggregate="updateSingleAttributeAggregate(attribute)">
+                        </div>
+                        <div
+                                attribute-table-block
+                                grouped-attributes="search.groupedAttributeResults"
+                                config="config"
+                                display-detail-attributes="true"
+                                elements-by-template="elementsByTemplate"
+                                title="getAttributeTableTitle()"
+                                identifier="attributeSearchResultsMain"
+                                group-mode="groupMode"
+                                table-state="tableState"
+                                display-element-dropdown="false"
+                                active-tab="activeTab"
+                                aggregate-data-type-fields="aggregateDataTypeFields"
+                                prettify-element-path="prettifyElementPath"
+                                on-toggle-select-all-grouped-attributes="toggleSelectAllGroupedAttributes(groupedAttributeGroup)"
+                                on-toggle-grouped-attributes="toggleGroupedAttributes(group)"
+                                on-is-at-least-partially-selected="isAtLeastPartiallySelected(item)"
+                                on-init-elements-dropdown="initElementsDropdown(templateName)"
+                                on-is-template-associated-element-selected="isTemplateAssociatedElementSelected(element)"
+                                on-apply-click-elements-dropdown="applyClickElementsDropdown(templateName, element, selected)"
+                                on-check-attribute="checkAttribute(mergedAttribute)"
+                                on-check-single-attribute="checkSingleAttribute(attribute)"
+                                on-update-data-type="updateMergedAttributeDataType(mergedAttribute)"
+                                on-update-single-data-type="updateSingleAttributeDataType(attribute)"
+                                on-update-aggregate="updateMergedAttributeAggregate(mergedAttribute)"
+                                on-update-single-aggregate="updateSingleAttributeAggregate(attribute)">
+                        </div>
+                    </div>
+                    <div ng-if="search.searchMode !== 'attribute' && hasSearchCriteria(search.searchMode)">
+                        {{getSearchResultCount()}} results
+                    </div>
+                    <div style="display: flex; flex-direction: column; border: 1px solid #f0efec; width: 100%;"
+                         ng-if="search.searchMode !== 'attribute' && hasSearchResults()"
+                    >
+                        <div style="display: flex; justify-content: space-between; padding: 6px 12px; font-size: 14px; align-items: center;">
+                            <span>Elements name</span>
+                            <span style="display: flex; gap: 8px; align-items: center">
+                            Show in attributes view
+                            <i class="dku-icon-eye-16 pi-system-explorer__show-all-eye"
+                               style="cursor: pointer; padding: 4px 6px; border: 1px solid #f0efec; border-radius: 8px;"
+                               ng-style="{ 'border-color': areAllSearchResultsSelected() ? '#7092f2' : '#f0efec' }"
+                               ng-click="selectAllResults()"></i>
+                        </span>
+                        </div>
+                        <div class="pi-system-explorer__search-result"
+                             ng-class="{ 'pi-system-explorer__search-result--visualized': ui.clickedNodes.includes(result.nodes[0].url) }"
+                             ng-repeat="(nodeId, result) in search.searchResults track by nodeId"
+                             ng-click="toggleNodeVisualization(result.nodes[0])"
+                             style="border-top: 1px solid #f0efec; padding: 12px; font-size: 14px; align-items: center;"
                         >
-                        </basic-search-box>
-                    </div>
-                    <div class="attribute-section__filters">
-                        <div class="attribute-section__filter-column">
-                            <div class="attribute-section__filter-label">Category</div>
-                            <select dku-bs-select multiple
-                                    ng-model="ui.attributeFiltering.attributeCategoryFilterList"
-                                    ng-change="refreshAttributeSection()"
-                                    ng-options="category.value as category.label for category in attributeCategoryFilterOptions">
-                            </select>
+                            <div style="display: flex; gap: 8px; align-items: center;">
+                                <div ng-if="search.searchMode === 'element'">
+                                    {{prettifyElementPath(result.nodes[0].path, result.nodes[0].paths)}}
+                                </div>
+                                <div ng-if="search.searchMode === 'template'">
+                                    {{result.nodes[0].title}}
+                                </div>
+                                <i ng-click="$event.stopPropagation(); targetSearchResult(result)"
+                                   style="padding: 4px 6px;"
+                                   class="dku-icon-target-16 pi-system-explorer__search-target-result"
+                                   toggle="tooltip"
+                                   title="Locate in tree view"></i>
+                            </div>
+                            <i class="dku-icon-eye-16 pi-system-explorer__search-result-eye"
+                               style="padding: 4px 6px; "
+                            ></i>
                         </div>
-                        <div class="attribute-section__filter-column">
-                            <div class="attribute-section__filter-label">Value type</div>
-                            <select dku-bs-select
-                                    ng-model="ui.attributeFiltering.attributeValueTypeFilter"
-                                    ng-change="refreshAttributeSection()"
-                                    ng-options="valueType.value as valueType.label for valueType in attributeValueTypeFilterOptions">
-                            </select>
-                        </div>
-                    </div>
-                    <div class="attribute-section__grouping-toggle">
-                        <div class="attribute-section__grouping-toggle--element" ng-click="changeGroupingMode('TEMPLATE')" ng-class="{active: groupMode === 'TEMPLATE'}">
-                            <div class="attribute-section__grouping-toggle-content">Templates</div>
-                        </div>
-                        <div class="attribute-section__grouping-toggle--element" ng-click="changeGroupingMode('CATEGORY')" ng-class="{active: groupMode === 'CATEGORY'}">
-                            <div class="attribute-section__grouping-toggle-content">Categories</div>
-                        </div>
-                    </div>
-                    <div class="attribute-section__filters-row">
-                        <label class="attribute-section__filters-toggle">
-                            <span class="dku-toggle dku-toggle-no-content">
-                                <input type="checkbox" ng-model="ui.displayPath">
-                                <span></span>
-                            </span>
-                            <span>Display attribute paths</span>
-                        </label>
-                        <label class="attribute-section__filters-toggle">
-                            <span class="dku-toggle dku-toggle-no-content">
-                                <input type="checkbox" ng-model="ui.onlyDisplayCommon" ng-change="refreshAttributeSection()">
-                                <span></span>
-                            </span>
-                            <span>Only common attributes</span>
-                        </label>
                     </div>
                 </div>
-                <div
-                        attribute-table-block
-                        ng-if="groupedAttributesFallbackGrouping && !groupedAttributesFallbackGrouping.empty"
-                        grouped-attributes="groupedAttributesFallbackGrouping"
-                        config="config"
-                        display-path="ui.displayPath"
-                        elements-by-template="elementsByTemplate"
-                        title="getAttributeTableTitle(true)"
-                        group-mode="groupMode"
-                        display-element-dropdown="false"
-                        active-tab="activeTab"
-                        aggregate-data-type-fields="aggregateDataTypeFields"
-                        on-toggle-select-all-grouped-attributes="toggleSelectAllGroupedAttributes(groupedAttributeGroup)"
-                        on-toggle-grouped-attributes="toggleGroupedAttributes(group)"
-                        on-is-at-least-partially-selected="isAtLeastPartiallySelected(item)"
-                        on-init-elements-dropdown="initElementsDropdown(templateName)"
-                        on-is-template-associated-element-selected="isTemplateAssociatedElementSelected(element)"
-                        on-apply-click-elements-dropdown="applyClickElementsDropdown(templateName, element, selected)"
-                        on-check-attribute="checkAttribute(mergedAttribute)"
-                        on-update-data-type="updateMergedAttributeDataType(mergedAttribute)"
-                        on-update-aggregate="updateMergedAttributeAggregate(mergedAttribute)">
-                </div>
-                <div
-                        attribute-table-block
-                        grouped-attributes="groupedAttributes"
-                        config="config"
-                        display-path="ui.displayPath"
-                        elements-by-template="elementsByTemplate"
-                        title="getAttributeTableTitle()"
-                        group-mode="groupMode"
-                        display-element-dropdown="true"
-                        active-tab="activeTab"
-                        aggregate-data-type-fields="aggregateDataTypeFields"
-                        on-toggle-select-all-grouped-attributes="toggleSelectAllGroupedAttributes(groupedAttributeGroup)"
-                        on-toggle-grouped-attributes="toggleGroupedAttributes(group)"
-                        on-is-at-least-partially-selected="isAtLeastPartiallySelected(item)"
-                        on-init-elements-dropdown="initElementsDropdown(templateName)"
-                        on-is-template-associated-element-selected="isTemplateAssociatedElementSelected(element)"
-                        on-apply-click-elements-dropdown="applyClickElementsDropdown(templateName, element, selected)"
-                        on-check-attribute="checkAttribute(mergedAttribute)"
-                        on-update-data-type="updateMergedAttributeDataType(mergedAttribute)"
-                        on-update-aggregate="updateMergedAttributeAggregate(mergedAttribute)">
+            </div>
+            <!-- Attributes view -->
+            <div class="attribute-tab pi-system-explorer__center-view" ng-if="showTreeData && !inSearchMode">
+                <div class="pi-system--main-pane__content">
+                    <div class="attribute-section__search">
+                        <div class="attribute-section__filters">
+                            <div class="attribute-section__filter-column" style="-">
+                                <basic-search-box
+                                        style="margin-top: 24px;"
+                                        ng-model="ui.attributeFiltering.attributeSearch"
+                                        placeholder="Filter by attribute or template name"
+                                        ng-change="refreshAttributeSection()"
+                                >
+                                </basic-search-box>
+                            </div>
+                            <div class="attribute-section__filter-column">
+                                <div class="attribute-section__filter-label">Category</div>
+                                <select dku-bs-select multiple
+                                        ng-model="ui.attributeFiltering.attributeCategoryFilterList"
+                                        ng-change="refreshAttributeSection()"
+                                        ng-options="category.value as category.label for category in attributeCategoryFilterOptions"
+                                        data-live-search="true"
+                                >
+                                </select>
+                            </div>
+                            <div class="attribute-section__filter-column">
+                                <div class="attribute-section__filter-label">Value type</div>
+                                <select dku-bs-select
+                                        ng-model="ui.attributeFiltering.attributeValueTypeFilter"
+                                        ng-change="refreshAttributeSection()"
+                                        ng-options="valueType for valueType in valueTypes"
+                                        data-live-search="true"
+                                >
+                                    <option value="">No filter</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="attribute-section__filters-row">
+                            <label class="attribute-section__filters-toggle">
+                                <span>Common attributes only</span>
+                                <span class="dku-toggle dku-toggle-no-content">
+                                    <input type="checkbox" ng-model="ui.onlyDisplayCommon" ng-change="refreshAttributeSection()">
+                                    <span></span>
+                                </span>
+                            </label>
+                            <label class="attribute-section__filters-toggle">
+                                <span>Group by categories</span>
+                                <span class="dku-toggle dku-toggle-no-content">
+                                    <input type="checkbox"
+                                           ng-model="groupMode"
+                                           ng-true-value="'CATEGORY'"
+                                           ng-false-value="'TEMPLATE'"
+                                           ng-change="changeGroupingMode(groupMode)">
+                                    <span></span>
+                                </span>
+                            </label>
+                            <label class="attribute-section__filters-toggle">
+                                <span>Show attribute paths</span>
+                                <span class="dku-toggle dku-toggle-no-content">
+                                    <input type="checkbox" ng-model="ui.displayPath">
+                                    <span></span>
+                                </span>
+                            </label>
+                        </div>
+                    </div>
+                    <div
+                            attribute-table-block
+                            display-detail-attributes="ui.displayPath"
+                            ng-if="groupedAttributesFallbackGrouping && !groupedAttributesFallbackGrouping.empty"
+                            grouped-attributes="groupedAttributesFallbackGrouping"
+                            config="config"
+                            elements-by-template="elementsByTemplate"
+                            title="getAttributeTableTitle(true)"
+                            identifier="attributesViewFallback"
+                            group-mode="groupMode"
+                            table-state="tableState"
+                            display-element-dropdown="false"
+                            active-tab="activeTab"
+                            aggregate-data-type-fields="aggregateDataTypeFields"
+                            prettify-element-path="prettifyElementPath"
+                            on-toggle-select-all-grouped-attributes="toggleSelectAllGroupedAttributes(groupedAttributeGroup)"
+                            on-toggle-grouped-attributes="toggleGroupedAttributes(group)"
+                            on-is-at-least-partially-selected="isAtLeastPartiallySelected(item)"
+                            on-init-elements-dropdown="initElementsDropdown(templateName)"
+                            on-is-template-associated-element-selected="isTemplateAssociatedElementSelected(element)"
+                            on-apply-click-elements-dropdown="applyClickElementsDropdown(templateName, element, selected)"
+                            on-check-attribute="checkAttribute(mergedAttribute)"
+                            on-check-single-attribute="checkSingleAttribute(attribute)"
+                            on-update-data-type="updateMergedAttributeDataType(mergedAttribute)"
+                            on-update-single-data-type="updateSingleAttributeDataType(attribute)"
+                            on-update-aggregate="updateMergedAttributeAggregate(mergedAttribute)"
+                            on-update-single-aggregate="updateSingleAttributeAggregate(attribute)">
+                    </div>
+                    <div
+                            attribute-table-block
+                            display-detail-attributes="ui.displayPath"
+                            grouped-attributes="groupedAttributes"
+                            config="config"
+                            elements-by-template="elementsByTemplate"
+                            title="getAttributeTableTitle()"
+                            identifier="attributesViewMain"
+                            group-mode="groupMode"
+                            table-state="tableState"
+                            display-element-dropdown="true"
+                            active-tab="activeTab"
+                            aggregate-data-type-fields="aggregateDataTypeFields"
+                            prettify-element-path="prettifyElementPath"
+                            on-toggle-select-all-grouped-attributes="toggleSelectAllGroupedAttributes(groupedAttributeGroup)"
+                            on-toggle-grouped-attributes="toggleGroupedAttributes(group)"
+                            on-is-at-least-partially-selected="isAtLeastPartiallySelected(item)"
+                            on-init-elements-dropdown="initElementsDropdown(templateName)"
+                            on-is-template-associated-element-selected="isTemplateAssociatedElementSelected(element)"
+                            on-apply-click-elements-dropdown="applyClickElementsDropdown(templateName, element, selected)"
+                            on-check-attribute="checkAttribute(mergedAttribute)"
+                            on-check-single-attribute="checkSingleAttribute(attribute)"
+                            on-update-data-type="updateMergedAttributeDataType(mergedAttribute)"
+                            on-update-single-data-type="updateSingleAttributeDataType(attribute)"
+                            on-update-aggregate="updateMergedAttributeAggregate(mergedAttribute)"
+                            on-update-single-aggregate="updateSingleAttributeAggregate(attribute)">
+                    </div>
                 </div>
             </div>
         </div>
@@ -216,6 +442,8 @@
     <loading-overlay
             ng-if="ui.loadingOverlay.displayed"
             header="ui.loadingOverlay.header"
-            text="ui.loadingOverlay.text">
+            text="ui.loadingOverlay.text"
+            warning="ui.loadingOverlay.warning"
+            warning-text="ui.loadingOverlay.warningText">
     </loading-overlay>
 </div>

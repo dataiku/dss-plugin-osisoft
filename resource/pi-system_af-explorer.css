@@ -25,6 +25,10 @@
     height: 75vh;
 }
 
+.pi-system-auth-modal {
+    width: 45%;
+}
+
 .pi-system-preview-dataset-modal__search {
     margin-bottom: 12px;
 }
@@ -66,6 +70,10 @@
 }
 
 .tree-node__row--visualized {
+    background: #C4E0FE;
+}
+
+.tree-node__row:hover {
     background: #E7F3FF;
 }
 
@@ -140,6 +148,12 @@
     flex-shrink: 0;
     margin-left: auto;
     margin-right: 4px;
+    visibility: hidden;
+}
+
+.tree-node__row:hover .tree-node__status,
+.tree-node__row--visualized .tree-node__status {
+    visibility: visible;
 }
 
 .tree-node__children {
@@ -186,16 +200,25 @@
     cursor: not-allowed;
 }
 
+.pi-system-explorer__pagination-link {
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+}
+
+.pi-system-explorer__pagination-link--disabled {
+    color: #999;
+    cursor: default;
+}
+
 .pi-system-explorer__loading-modal {
     position: absolute;
-    top: 50%;
+    top: 53%;
     left: 51%;
     width: 33%;
-    height: 20%;
     min-width: 320px;
     min-height: 160px;
     transform: translate(-50%, -50%);
-    z-index: 11;
     background: #FFF;
     border: 1px solid #CCC;
     border-radius: 16px;
@@ -205,11 +228,12 @@
     justify-content: flex-start;
     gap: 12px;
     padding: 20px 24px;
+    z-index: 3004; /* above modal */
 }
 
 .pi-system-explorer__loading-modal-icon {
-    height: 48px;
-    padding: 16px;
+    height: 60px;
+    padding: 27px;
 }
 
 .pi-system-explorer__loading-modal-header {
@@ -223,6 +247,22 @@
     color: #666;
     font-size: 14px;
     text-align: center;
+}
+
+.pi-system-explorer__loading-modal-warning {
+    color: #C05B0A;
+    text-align: center;
+    font-weight: 500;
+    font-size: 14px;
+    display: flex;
+    gap: 8px;
+    justify-content: center;
+}
+
+.pi-system-explorer__loading-modal-warning-text {
+    color: #666;
+    text-align: center;
+    font-size: 14px;
 }
 
 .pi-system-explorer__main {
@@ -247,9 +287,7 @@
 }
 
 .pi-system-explorer__content {
-    padding: 16px;
     display: flex;
-    padding: 16px;
     flex-direction: column;
     align-items: flex-start;
     gap: 16px;
@@ -262,6 +300,21 @@
     width: 100%;
     box-sizing: border-box;
     margin: 0;
+}
+
+.pi-system-explorer__login-prompt {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: space-between;
+    align-self: center;
+    min-width: 350px;
+    min-height: 100px;
+    box-sizing: border-box;
+    margin: auto;
+    padding: 20px 24px;
+    background: #fde5ca;
+    border-radius: 16px;
 }
 
 pi-system-auth-banner {
@@ -299,6 +352,10 @@ pi-system-auth-banner {
 }
 
 .custom-table__attribute-row--selected {
+    background: #BFE8E6;
+}
+
+.custom-table__attribute-detail-row--selected {
     background: #E6F6F5;
 }
 
@@ -307,7 +364,7 @@ pi-system-auth-banner {
 }
 
 .custom-table__group-row--selected {
-    background: #D2EFEE;
+    background: #95D8D7;
 }
 
 .pi-system-explorer__authentication-header {
@@ -371,16 +428,13 @@ pi-system-auth-banner {
 
 .pi-system-config--mandatory {
     display: flex;
-    gap: 64px;
+    gap: 40px;
 }
 
 .attribute-section__search {
     display: flex;
-    padding: 16px;
     flex-direction: column;
-    align-items: flex-start;
     gap: 16px;
-    flex: 1 0 0;
     align-self: stretch;
 }
 
@@ -410,7 +464,7 @@ pi-system-auth-banner {
 .attribute-section__filters-toggle {
     display: flex;
     align-items: center;
-    gap: 4px;
+    gap: 8px;
     height: 30px;
     margin-bottom: 0;
     cursor: pointer;
@@ -424,6 +478,10 @@ pi-system-auth-banner {
 .custom-table {
     border-collapse: collapse;
     width: 100%;
+}
+
+.custom-table__checkbox-column {
+    width: 40px;
 }
 
 .custom-table th,
@@ -493,6 +551,23 @@ pi-system-auth-banner {
     margin-bottom: 6px;
 }
 
+.attribute-table-block__sort-menu {
+    border: 1px solid #e2e2e2;
+}
+
+.attribute-table-block__sort-menu-header {
+    padding: 6px;
+    border-bottom: 1px solid #e2e2e2;
+}
+
+.attribute-table-block__sort-menu-option {
+    padding: 2px;
+}
+
+.attribute-table-block__repeat-end {
+    display: none;
+}
+
 .pi-system-explorer__tree-view {
     display: flex;
     flex-direction: column;
@@ -529,7 +604,8 @@ pi-system-auth-banner {
 }
 
 .tree-view__tab.active {
-    background: #E7F3FF;
+    background: #333B4A;
+    color: white;
 }
 
 .tree-view__tab-content {
@@ -541,11 +617,11 @@ pi-system-auth-banner {
     color: #000;
     font-size: 14px;
     line-height: 18px;
-    font-weight: 400;
+    font-weight: 500;
 }
 
 .tree-view__tab.active .tree-view__tab-content {
-    font-weight: 600;
+    color: white;
 }
 
 /* TODO: cleanup toggle implem here and for element/template thing */
@@ -734,4 +810,139 @@ pi-system-auth-banner {
 
 .elements-dropdown--element i {
     color: #196BFA;
+}
+
+.pi-system-explorer__page-mode--active {
+    background: #525B6B;
+    color: white;
+}
+
+.pi-system-explorer__page-mode-clear-all {
+    color: #7092f2;
+    cursor: pointer;
+}
+
+.pi-system-explorer__page-mode--active .pi-system-explorer__page-mode-clear-all {
+    color: white;
+}
+
+.pi-system-explorer__page-mode {
+    cursor: pointer;
+    display: flex;
+    padding: 4px 8px;
+    gap: 8px;
+    border-radius: 8px;
+}
+.pi-system-explorer__search-mode__type-selector {
+    width: 150px !important;
+}
+
+.pi-system-explorer__search-mode__type-selector button {
+    border-right: none !important;
+    border-color: #dddddd;
+    height: 26px;
+}
+
+.pi-system-explorer__search-mode__search-box {
+    flex: 1;
+}
+
+.pi-system-explorer__search-mode__category-selector,
+.pi-system-explorer__search-mode__template-selector {
+    width: 200px !important;
+}
+
+.pi-system-explorer__search-result {
+    padding: 4px;
+    display: flex;
+    justify-content: space-between;
+}
+
+.pi-system-explorer__search-result--visualized {
+    background-color: #C4E0FE;
+}
+
+.pi-system-explorer__search-target-result {
+    visibility: hidden;
+}
+
+.pi-system-explorer__search-result-eye {
+    visibility: hidden;
+}
+
+.pi-system-explorer__show-all-eye:hover {
+    background-color: #e8eefd;
+}
+
+.pi-system-explorer__search-result:hover {
+    background-color: #e7f3ff;
+}
+
+.pi-system-explorer__search-result:hover .pi-system-explorer__search-target-result {
+    visibility: visible;
+}
+
+.pi-system-explorer__search-target-result:hover {
+    color: #7092f2;
+}
+
+.pi-system-explorer__search-result:hover .pi-system-explorer__search-result-eye,
+.pi-system-explorer__search-result--visualized .pi-system-explorer__search-result-eye {
+    visibility: visible;
+}
+
+.pi-system-explorer__center-view {
+    width: 100%;
+}
+
+.tree-cell {
+    position: relative;
+    min-height: 42px;
+    display: flex;
+    align-items: center;
+}
+
+.custom-table__attribute-cell {
+    position: relative;
+}
+
+.tree-guide {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 1px;
+    background: #9b9b92;
+    left: 20px;
+}
+
+.tree-elbow {
+    position: absolute;
+    top: 0px;
+    width: 24px;
+    height: 50%;
+    border-bottom: 1px solid #9b9b92;
+}
+
+/* Last child: the vertical segment stops at this row’s midpoint */
+.tree-guide.is-last {
+    height: 50%;
+}
+
+.pi-system--main-pane__header {
+    padding: 16px;
+    font-size: 18px;
+    position: sticky;
+    top: 0px;
+    z-index: 1;
+    background: #FFF;
+    border-bottom: 1px solid #BBB;
+    display: flex;
+    gap: 8px;
+}
+
+.pi-system--main-pane__content {
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
 }

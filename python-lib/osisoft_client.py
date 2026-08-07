@@ -781,6 +781,37 @@ class OSIsoftClient(object):
             else:
                 json_response = None
 
+    def search_attributes_first_page(self, database_webid, **kwargs):
+            search_attributes_base_url = self.endpoint.get_attribute_url()
+            query = "Element:{{{}}} {}".format(
+                self.build_element_query(**kwargs),
+                self.build_attribute_query(**kwargs)
+            )
+            headers = self.get_requests_headers()
+            params = {
+                "query": query,
+                "databaseWebId": database_webid,
+                "maxCount": 1000
+            }
+            if "search_associations" in kwargs:
+                params["associations"] = kwargs.get("search_associations")
+            json_response = self.get(url=search_attributes_base_url, headers=headers, params=params)
+            if OSIsoftConstants.DKU_ERROR_KEY in json_response:
+                return json_response, None
+
+            next_page_url = get_next_page_url(json_response)
+            items = json_response.get(OSIsoftConstants.API_ITEM_KEY, [])
+            return items, next_page_url
+
+    def get_next_page(self, page_url):
+        headers = self.get_requests_headers()
+        json_response = self.get(url=page_url, headers=headers, params={})
+        if OSIsoftConstants.DKU_ERROR_KEY in json_response:
+            return json_response, None
+        next_page_url = get_next_page_url(json_response)
+        items = json_response.get(OSIsoftConstants.API_ITEM_KEY, [])
+        return items, next_page_url
+
     def search_elements(self, database, name=None, description=None, category=None, template=None, full_search=True):
         headers = self.get_requests_headers()
         tempo_maxcount = OSIsoftConstants.DEFAULT_MAXCOUNT
@@ -974,7 +1005,14 @@ class OSIsoftClient(object):
             value = kwargs.get(argument)
             if value and argument in attribute_query_keys:
                 template = attribute_query_keys.get(argument)
-                output_tokens.append(template.format(value))
+                if argument == "attribute_category" and isinstance(value, list):
+                    output_tokens.extend(
+                        template.format(category)
+                        for category in value
+                        if category
+                    )
+                else:
+                    output_tokens.append(template.format(value))
         return " ".join(output_tokens)
 
     def traverse(self, path_elements):

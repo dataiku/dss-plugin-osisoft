@@ -2,34 +2,61 @@
     <input type="checkbox" ng-model="ctrl.mergedAttribute.allChecked"
            ng-change="ctrl.onCheckAttribute({ mergedAttribute: ctrl.mergedAttribute })"
            indeterminate="ctrl.mergedAttribute.checked"
-           ng-if="!ctrl.showPartialCheckInfo()"
+           ng-if="!ctrl.isSingleAttribute && !ctrl.showPartialCheckInfo()"
+    >
+    <input type="checkbox" ng-model="ctrl.mergedAttribute.checked"
+           ng-change="ctrl.onCheckAttribute({ mergedAttribute: ctrl.mergedAttribute })"
+           ng-if="ctrl.isSingleAttribute"
     >
     <input type="checkbox" ng-model="ctrl.mergedAttribute.allChecked"
            ng-change="ctrl.onCheckAttribute({ mergedAttribute: ctrl.mergedAttribute })"
            indeterminate="ctrl.mergedAttribute.checked"
-           ng-if="ctrl.showPartialCheckInfo()"
+           ng-if="!ctrl.isSingleAttribute && ctrl.showPartialCheckInfo()"
            toggle="tooltip-bottom"
            ng-attr-title="{{ ctrl.generatePartialStateInfo() }}"
     >
 </td>
-<td>
+<td class="custom-table__attribute-cell"
+    colspan="{{ ctrl.isSingleAttribute ? 5 : 1 }}">
+    <span
+            class="tree-guide"
+            ng-if="ctrl.isSingleAttribute"
+            ng-class="{ 'is-last': ctrl.isLast }"
+    ></span>
+    <div class="custom-table__attribute-title-info"
+         ng-if="ctrl.isSingleAttribute"
+         style="padding-left: 35px;"
+    >
+        <span
+                class="tree-elbow"
+                style="left: 20px;"
+        >
+        </span>
+        {{ctrl.prettifyElementPath(ctrl.mergedAttribute.path, ctrl.mergedAttribute.paths, true)}}
+    </div>
     <div class="custom-table__attribute-title-info">
-        {{ctrl.mergedAttribute.title}}
+        <i ng-if="!ctrl.isSingleAttribute && ctrl.displayDetailAttributes && ctrl.mergedAttribute.opened"
+           style="cursor: pointer;"
+           class="dku-icon-chevron-down-16"
+           ng-click="ctrl.mergedAttribute.opened = !ctrl.mergedAttribute.opened"></i>
+        <i ng-if="!ctrl.isSingleAttribute && ctrl.displayDetailAttributes && !ctrl.mergedAttribute.opened"
+           style="cursor: pointer;"
+           class="dku-icon-chevron-right-16"
+           ng-click="ctrl.mergedAttribute.opened = !ctrl.mergedAttribute.opened"></i>
+        <span ng-if="!ctrl.isSingleAttribute">{{ctrl.mergedAttribute.title}}</span>
     </div>
 </td>
-<td>{{ctrl.mergedAttribute.description}}</td>
-<td ng-if="ctrl.displayPath">
-    <span ng-repeat="path in ctrl.mergedAttribute.paths">
-        {{path}}<br/>
-    </span>
+<td ng-if="!ctrl.isSingleAttribute">
+    {{ctrl.mergedAttribute.description}}
 </td>
-<td>
+<td ng-if="!ctrl.isSingleAttribute">
     <select dku-bs-select ng-model="ctrl.mergedAttribute.data_type"
             ng-options="option.value as option.label for option in ctrl.aggregateDataTypeFields.data_type.options"
-            ng-change="ctrl.onUpdateDataType({ mergedAttribute: ctrl.mergedAttribute })">
+            ng-change="ctrl.onUpdateDataType({ mergedAttribute: ctrl.mergedAttribute })"
+            ng-if="!ctrl.isSingleAttribute">
     </select>
 </td>
-<td>
+<td ng-if="!ctrl.isSingleAttribute">
     <div class="custom-table__aggregate-field"
          ng-repeat="(aggregateName, aggregate) in ctrl.aggregateDataTypeFields.aggregates"
          ng-show="aggregate.isVisible(ctrl.mergedAttribute)">
@@ -37,27 +64,27 @@
         <select dku-bs-select ng-model="ctrl.mergedAttribute[aggregateName]"
                 ng-options="option.value as option.label for option in aggregate.options"
                 ng-change="ctrl.onUpdateAggregate({ mergedAttribute: ctrl.mergedAttribute })"
-                ng-if="aggregate.type === 'select'">
+                ng-if="!ctrl.isSingleAttribute && aggregate.type === 'select'">
         </select>
         <select dku-bs-select multiple ng-model="ctrl.mergedAttribute[aggregateName]"
                 ng-options="option.value as option.label for option in aggregate.options"
                 ng-change="ctrl.onUpdateAggregate({ mergedAttribute: ctrl.mergedAttribute })"
-                ng-if="aggregate.type === 'multiselect'">
+                ng-if="!ctrl.isSingleAttribute && aggregate.type === 'multiselect'">
         </select>
         <input type="text" ng-model="ctrl.mergedAttribute[aggregateName]"
                ng-change="ctrl.onUpdateAggregate({ mergedAttribute: ctrl.mergedAttribute })"
-               ng-if="aggregate.type === 'text'">
+               ng-if="!ctrl.isSingleAttribute && aggregate.type === 'text'">
         <input type="number" ng-model="ctrl.mergedAttribute[aggregateName]"
                ng-change="ctrl.onUpdateAggregate({ mergedAttribute: ctrl.mergedAttribute })"
-               ng-if="aggregate.type === 'number'">
+               ng-if="!ctrl.isSingleAttribute && aggregate.type === 'number'">
     </div>
 </td>
-<td ng-if="ctrl.groupMode !== 'CATEGORY'">
+<td ng-if="!ctrl.isSingleAttribute && ctrl.groupMode !== 'CATEGORY'">
     <span ng-if="ctrl.mergedAttribute.conflicting_categories" style="display: flex; align-items: center; gap: 4px" toggle="tooltip" title="These attributes belong to different categories">
         <i class="dku-icon-warning-outline-16"></i>Conflict
     </span>
     <span ng-if="!ctrl.mergedAttribute.conflicting_categories">{{ctrl.mergedAttribute.category_names.join(", ")}}</span>
 </td>
-<td ng-if="ctrl.groupMode !== 'TEMPLATE'">
+<td ng-if="!ctrl.isSingleAttribute && ctrl.groupMode !== 'TEMPLATE'">
     <span>{{ctrl.mergedAttribute.template_name}}</span>
 </td>
