@@ -36,9 +36,11 @@
     </div>
     <div class="custom-table__attribute-title-info">
         <i ng-if="!ctrl.isSingleAttribute && ctrl.displayDetailAttributes && ctrl.mergedAttribute.opened"
+           style="cursor: pointer;"
            class="dku-icon-chevron-down-16"
            ng-click="ctrl.mergedAttribute.opened = !ctrl.mergedAttribute.opened"></i>
         <i ng-if="!ctrl.isSingleAttribute && ctrl.displayDetailAttributes && !ctrl.mergedAttribute.opened"
+           style="cursor: pointer;"
            class="dku-icon-chevron-right-16"
            ng-click="ctrl.mergedAttribute.opened = !ctrl.mergedAttribute.opened"></i>
         <span ng-if="!ctrl.isSingleAttribute">{{ctrl.mergedAttribute.title}}</span>

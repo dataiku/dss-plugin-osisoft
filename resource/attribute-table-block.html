@@ -70,9 +70,11 @@
                 <div class="custom-table__group-actions">
                     <div class="custom-table__group-header">
                         <i ng-if="group.opened"
+                           style="cursor: pointer;"
                            class="dku-icon-chevron-down-16"
                            ng-click="group.opened = !group.opened"></i>
                         <i ng-if="!group.opened"
+                           style="cursor: pointer;"
                            class="dku-icon-chevron-right-16"
                            ng-click="group.opened = !group.opened"></i>
                         <span class="custom-table__group-name"><strong>{{group.group_name}}</strong></span>
