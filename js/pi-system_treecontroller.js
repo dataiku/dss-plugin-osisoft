@@ -2212,6 +2212,28 @@ app.directive('attributeTableBlock', function() {
         controller: function() {
             const ctrl = this;
 
+            ctrl.sortGroupAttributes = function(attributesGroup, reverse = false) {
+                if (!attributesGroup.length) {
+                    return;
+                }
+
+                attributesGroup.sort((firstAttribute, secondAttribute) => {
+                    const order = firstAttribute.title.localeCompare(secondAttribute.title);
+                    return reverse ? -order : order;
+                });
+            };
+
+            ctrl.sortGroups = function(attributesGroups, reverse = false) {
+                if (!attributesGroups.length) {
+                    return;
+                }
+
+                attributesGroups.sort((firstGroup, secondGroup) => {
+                    const order = firstGroup.group_name.localeCompare(secondGroup.group_name);
+                    return reverse ? -order : order;
+                });
+            };
+
             ctrl.getVisibleAttributeColumnCount = function(includeCheckbox) {
                 let count = includeCheckbox ? 5 : 4;
 

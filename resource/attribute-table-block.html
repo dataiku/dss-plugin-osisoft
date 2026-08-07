@@ -12,7 +12,13 @@
                        ng-change="ctrl.onToggleSelectAllGroupedAttributes({ groupedAttributeGroup: ctrl.groupedAttributes })"
                        ng-disabled="!ctrl.groupedAttributes.groups.length"
                        indeterminate="ctrl.groupedAttributes.checked"></th>
-            <th>Title</th>
+            <th>
+                Title
+                <button type="button"
+                        ng-click="ctrl.sortGroups(ctrl.groupedAttributes.groups, false)">Sort</button>
+                <button type="button"
+                        ng-click="ctrl.sortGroups(ctrl.groupedAttributes.groups, true)">Reverse Sort</button>
+            </th>
             <th>Description</th>
             <th>Data type</th>
             <th>Aggregates</th>
@@ -44,6 +50,10 @@
                            class="dku-icon-chevron-right-16"
                            ng-click="group.opened = !group.opened"></i>
                         <span class="custom-table__group-name"><strong>{{group.group_name}}</strong></span>
+                        <button type="button"
+                                ng-click="ctrl.sortGroupAttributes(group.attributes, false)">Sort</button>
+                        <button type="button"
+                                ng-click="ctrl.sortGroupAttributes(group.attributes, true)">Reverse Sort</button>
                         <span ng-if="group.nbSearchMatches !== group.attributes.length">
                             - ({{group.nbSearchMatches}}/{{group.attributes.length}} attributes shown)
                         </span>
