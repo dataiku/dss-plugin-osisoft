@@ -551,6 +551,19 @@ pi-system-auth-banner {
     margin-bottom: 6px;
 }
 
+.attribute-table-block__sort-menu {
+    border: 1px solid #e2e2e2;
+}
+
+.attribute-table-block__sort-menu-header {
+    padding: 6px;
+    border-bottom: 1px solid #e2e2e2;
+}
+
+.attribute-table-block__sort-menu-option {
+    padding: 2px;
+}
+
 .attribute-table-block__repeat-end {
     display: none;
 }

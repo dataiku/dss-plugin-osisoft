@@ -13,11 +13,37 @@
                        ng-disabled="!ctrl.groupedAttributes.groups.length"
                        indeterminate="ctrl.groupedAttributes.checked"></th>
             <th>
-                Title
-                <button type="button"
-                        ng-click="ctrl.sortGroups(ctrl.groupedAttributes.groups, false)">Sort</button>
-                <button type="button"
-                        ng-click="ctrl.sortGroups(ctrl.groupedAttributes.groups, true)">Reverse Sort</button>
+                <div style=" display: flex; align-items: center; gap: 4px;">
+                    Title
+                    <div class="dropdown">
+                        <button
+                                type="button"
+                                class="btn btn--secondary btn--text btn--dku-icon-only"
+                                data-toggle="dropdown"
+                                aria-label="Sort templates & attributes">
+                            <i aria-hidden="true" class="dku-icon-menu-vertical-dots-16"></i>
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu--dku-icon pull-right attribute-table-block__sort-menu">
+                            <li class="dropdown-header attribute-table-block__sort-menu-header">
+                                Sort templates & attributes
+                            </li>
+                            <li>
+                                <a class="attribute-table-block__sort-menu-option"
+                                   ng-click="ctrl.sortGroups(ctrl.groupedAttributes.groups, false)">
+                                    <i class="dku-icon-sort-natural-order-ascending-alphanumeric-16"></i>
+                                    Ascending
+                                </a>
+                            </li>
+                            <li>
+                                <a class="attribute-table-block__sort-menu-option"
+                                   ng-click="ctrl.sortGroups(ctrl.groupedAttributes.groups, true)">
+                                    <i class="dku-icon-sort-natural-order-descending-alphanumeric-20"></i>
+                                    Descending
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
             </th>
             <th>Description</th>
             <th>Data type</th>
@@ -50,10 +76,34 @@
                            class="dku-icon-chevron-right-16"
                            ng-click="group.opened = !group.opened"></i>
                         <span class="custom-table__group-name"><strong>{{group.group_name}}</strong></span>
-                        <button type="button"
-                                ng-click="ctrl.sortGroupAttributes(group.attributes, false)">Sort</button>
-                        <button type="button"
-                                ng-click="ctrl.sortGroupAttributes(group.attributes, true)">Reverse Sort</button>
+                        <div class="dropdown">
+                            <button
+                                    type="button"
+                                    class="btn btn--secondary btn--text btn--dku-icon-only"
+                                    data-toggle="dropdown"
+                                    aria-label="Sort templates & attributes">
+                                <i aria-hidden="true" class="dku-icon-menu-vertical-dots-16"></i>
+                            </button>
+                            <ul class="dropdown-menu dropdown-menu--dku-icon pull-right attribute-table-block__sort-menu">
+                                <li class="dropdown-header attribute-table-block__sort-menu-header">
+                                    Sort templates & attributes
+                                </li>
+                                <li>
+                                    <a class="attribute-table-block__sort-menu-option"
+                                       ng-click="ctrl.sortGroupAttributes(group.attributes, false)">
+                                        <i class="dku-icon-sort-natural-order-ascending-alphanumeric-16"></i>
+                                        Ascending
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="attribute-table-block__sort-menu-option"
+                                       ng-click="ctrl.sortGroupAttributes(group.attributes, true)">
+                                        <i class="dku-icon-sort-natural-order-descending-alphanumeric-20"></i>
+                                        Descending
+                                    </a>
+                                </li>
+                            </ul>
+                        </div>
                         <span ng-if="group.nbSearchMatches !== group.attributes.length">
                             - ({{group.nbSearchMatches}}/{{group.attributes.length}} attributes shown)
                         </span>
