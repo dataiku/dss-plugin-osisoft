@@ -68,6 +68,8 @@ def compute_time_spent(start, end, bla):
     # 2023-06-30T13:05:10.8692786Z->2024-06-30T13:05:10.9640942Z
     start = iso_to_epoch(start)
     end = iso_to_epoch(end)
+    if not start or not end:
+        return 0
     return end - start
 
 
@@ -119,10 +121,12 @@ def get_summary_parameters(config):
     data_type = config.get("data_type")
     summary_type = None
     summary_duration = None
+    calculation_basis = None
     if data_type == "SummaryData":
         summary_type = config.get("summary_type")
         summary_duration = config.get("summary_duration")
-    return summary_type, summary_duration
+        calculation_basis = config.get("calculation_basis")
+    return summary_type, summary_duration, calculation_basis
 
 
 def build_select_choices(choices=None):
@@ -163,6 +167,7 @@ def build_requests_params(**kwargs):
         "start_index": "startIndex",
         "summary_type": "summaryType",
         "summary_duration": "summaryDuration",
+        "calculation_basis": "calculationBasis",
         "selected_fields": "selectedFields",
     }
     requests_params = build_query_requests_params(
