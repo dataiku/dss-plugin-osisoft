@@ -33,8 +33,15 @@
     margin-bottom: 12px;
 }
 
+/*This is causing the job runner problem*/
 .h100.mainPane {
     overflow: visible;
+}
+
+.recipe-settings-floating-result.recipe-job-result {
+    position: absolute;
+    bottom: 16px;
+    left: 200px;
 }
 
 /* Make custom UI full width */
@@ -46,6 +53,12 @@
 /* Hide standard recipe header */
 .fh.w800.oa > :first-child {
     display: none;
+}
+
+div.no-flex.ng-scope {
+    position: absolute !important;
+    bottom: 0 !important;
+    left: 300px !important;
 }
 
 .recipe-settings-section1 {
