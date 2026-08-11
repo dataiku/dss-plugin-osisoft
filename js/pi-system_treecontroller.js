@@ -447,7 +447,8 @@ app.controller('AfExplorerFormCtrl', [
                         attributeSearch: modalScope.ui.previewAttributeSearch,
                         attributeCategoryFilterList: [],
                         attributeValueTypeFilter: ''
-                    }
+                    },
+                    false
                 );
                 modalScope.groupedSelectedAttributes = groupedAttributes.attributesWithProperty;
                 modalScope.groupedSelectedAttributesFallBackGrouping = groupedAttributes.attributesWithoutProperty;
@@ -1882,9 +1883,9 @@ app.controller('AfExplorerFormCtrl', [
             }
         }
 
-        function buildAggregatedAttributes(attributes, groupingKey, titleKey, searchFilters) {
+        function buildAggregatedAttributes(attributes, groupingKey, titleKey, searchFilters, onlyDisplayCommonAttributes) {
             let deduplicatedAttributes = Object.values(attributes.reduce(conflateAttributes(groupingKey, titleKey, searchFilters), {})).map(conflatedAttribute => {
-                if ($scope.ui.onlyDisplayCommon && conflatedAttribute.parent_elements.length < $scope.ui.clickedNodes.length) {
+                if (onlyDisplayCommonAttributes && conflatedAttribute.parent_elements.length < $scope.ui.clickedNodes.length) {
                     conflatedAttribute.isDisplayed = false;
                 }
                 return conflatedAttribute;
@@ -1906,8 +1907,8 @@ app.controller('AfExplorerFormCtrl', [
             };
         }
 
-        function buildGroupedAttributesResult(attributes, groupingKey, titleKey, searchFilters) {
-            const groups = buildAggregatedAttributes(attributes, groupingKey, titleKey, searchFilters);
+        function buildGroupedAttributesResult(attributes, groupingKey, titleKey, searchFilters, onlyDisplayCommonAttributes) {
+            const groups = buildAggregatedAttributes(attributes, groupingKey, titleKey, searchFilters, onlyDisplayCommonAttributes);
             const displayedGroups = groups.filter(group => !group.isDisplayed);
             // TODO: probably turn this into a reduce
             return {
@@ -1922,8 +1923,10 @@ app.controller('AfExplorerFormCtrl', [
         $scope.buildGroupedAttributes = function(
             grouping,
             attributes,
-            searchFilters
+            searchFilters,
+            onlyDisplayCommonAttributes,
         ) {
+            console.log("buildGroupedAttributes", attributes)
             const splitAttributes = splitAttributesOnProperty(attributes, grouping.group.groupingKey);
             return {
                 attributesWithProperty: buildGroupedAttributesResult(
@@ -1931,12 +1934,14 @@ app.controller('AfExplorerFormCtrl', [
                     grouping.group.groupingKey,
                     grouping.group.titleKey,
                     searchFilters,
+                    onlyDisplayCommonAttributes
                 ),
                 attributesWithoutProperty: buildGroupedAttributesResult(
                     splitAttributes.attributesWithoutProperty,
                     grouping.fallbackGroup.groupingKey,
                     grouping.fallbackGroup.titleKey,
                     searchFilters,
+                    onlyDisplayCommonAttributes
                 )
             };
         }
@@ -1978,7 +1983,8 @@ app.controller('AfExplorerFormCtrl', [
                     attributeSearch: '',
                     attributeCategoryFilterList: [],
                     attributeValueTypeFilter: ''
-                }
+                },
+                false
             );
             $scope.search.groupedAttributeResults = groupedAttributes.attributesWithProperty;
             $scope.search.groupedAttributeResultsFallbackGrouping = groupedAttributes.attributesWithoutProperty;
@@ -2048,11 +2054,17 @@ app.controller('AfExplorerFormCtrl', [
         }
 
         $scope.refreshAttributeSection = function() {
+            console.log("Refresh attribute selction")
             updateCheckStatus($scope.attributeList)
 
             buildAttributeCategoryFilterOptions();
             const grouping = getGrouping();
-            const groupedAttributes = $scope.buildGroupedAttributes(grouping, $scope.attributeList, $scope.ui.attributeFiltering)
+            const groupedAttributes = $scope.buildGroupedAttributes(
+                grouping,
+                $scope.attributeList,
+                $scope.ui.attributeFiltering,
+                $scope.ui.onlyDisplayCommon
+            )
             $scope.groupedAttributes = groupedAttributes.attributesWithProperty;
             $scope.groupedAttributesFallbackGrouping = groupedAttributes.attributesWithoutProperty;
             applyGroupSort($scope.groupedAttributes, 'attributesViewMain');
