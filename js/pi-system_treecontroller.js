@@ -1751,28 +1751,33 @@ app.controller('AfExplorerFormCtrl', [
         // Meaning all elements with the same template will share the attributes in this template
         // If multiple elements with the same template are selected, we only show the attribute once
         function getGroups(attr, groupingKey, titleKey) {
-            const groupingPropertyValues = attr[groupingKey];
+            const groupingPropertyValue = attr[groupingKey];
             const groupTitles = attr[titleKey];
-            if (Array.isArray(groupingPropertyValues)) {
-                // Not working with different grouping and title key if array of values
-                return groupingPropertyValues.map(( value, index ) => {
+            if (groupingKey === "category_names"){
+                // category_names is an array
+                return groupingPropertyValue.map(( value, index ) => {
+                    const differentiatingKey = attr.template_name ? attr.template_name : attr.parent_element_path;
                     return {
-                        key: value + "::" + attr.title,
+                        key: value + "::" + differentiatingKey + "::" + attr.title,
                         sectionKey: value,
-                        value: value
+                        value: value,
+                        getConflatedAttributeKey: (attribute) => differentiatingKey + "::" + attr.title
                     };
                 });
             }
             return [ {
-                key: groupingPropertyValues + "::" + attr.title,
-                sectionKey: groupingPropertyValues,
+                //
+                key: groupingPropertyValue + "::" + attr.title,
+                sectionKey: groupingPropertyValue,
                 value: groupTitles,
-                path: groupingPropertyValues
+                path: groupingPropertyValue,
+                getConflatedAttributeKey: (attribute) => attribute.title
             } ];
         }
 
         function initConflatedAttribute(attr, group, searchFilters) {
             const conflatedAttribute = {
+                key: group.getConflatedAttributeKey(attr),
                 title: attr.title,
                 description: attr.description,
                 group: group.value,

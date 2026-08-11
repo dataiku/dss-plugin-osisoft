@@ -128,7 +128,7 @@
             </td>
         </tr>
         <tr
-                ng-repeat-start="mergedAttribute in group.attributes track by mergedAttribute.title"
+                ng-repeat-start="mergedAttribute in group.attributes track by mergedAttribute.key"
                 ng-show="ctrl.isGroupFoldOpen(group) && mergedAttribute.isDisplayed"
                 attribute-table-row
                 group-mode="ctrl.groupMode"
