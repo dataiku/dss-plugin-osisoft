@@ -285,9 +285,14 @@
                             <span style="display: flex; gap: 8px; align-items: center">
                             Show in attributes view
                             <i class="dku-icon-eye-16 pi-system-explorer__show-all-eye"
-                               style="cursor: pointer; padding: 4px 6px; border: 1px solid #f0efec; border-radius: 8px;"
-                               ng-style="{ 'border-color': areAllSearchResultsSelected() ? '#7092f2' : '#f0efec' }"
-                               ng-click="selectAllResults()"></i>
+                               ng-class="{
+                                   'pi-system-explorer__show-all-eye--selected': getSearchResultCount() <= 100 && areAllSearchResultsSelected(),
+                                   'pi-system-explorer__show-all-eye--disabled': getSearchResultCount() > 100
+                               }"
+                               ng-click="getSearchResultCount() <= 100 && selectAllResults()"
+                               toggle="tooltip"
+                               ng-attr-title="{{getSearchResultCount() > 100 ? 'There are too many elements in your results, please refine your search' : undefined}}"
+                            ></i>
                         </span>
                         </div>
                         <div class="pi-system-explorer__search-result"

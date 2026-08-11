@@ -891,6 +891,24 @@ pi-system-auth-banner {
     visibility: hidden;
 }
 
+.pi-system-explorer__show-all-eye {
+    cursor: pointer;
+    padding: 4px 6px;
+    border: 1px solid #f0efec;
+    border-radius: 8px;
+}
+
+.pi-system-explorer__show-all-eye--selected {
+    border-color: #7092f2;
+}
+
+.pi-system-explorer__show-all-eye--disabled,
+.pi-system-explorer__show-all-eye--disabled:hover {
+    cursor: not-allowed;
+    color: #9A9A9A;
+    background-color: #f5f5f5;
+}
+
 .pi-system-explorer__show-all-eye:hover {
     background-color: #e8eefd;
 }
