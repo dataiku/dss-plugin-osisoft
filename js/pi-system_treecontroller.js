@@ -2054,7 +2054,6 @@ app.controller('AfExplorerFormCtrl', [
             applyGroupSort($scope.groupedAttributesFallbackGrouping, 'attributesViewFallback');
             applyGroupAttributesSort($scope.groupedAttributes, 'attributesViewMain');
             applyGroupAttributesSort($scope.groupedAttributesFallbackGrouping, 'attributesViewFallback');
-            refreshSearchAttributeResults();
             console.log("Attribute List", $scope.attributeList)
             console.log("Grouped attributes", $scope.groupedAttributes)
             console.log("Grouped fallback attributes", $scope.groupedAttributesFallbackGrouping)
