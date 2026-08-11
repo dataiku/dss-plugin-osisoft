@@ -1916,8 +1916,8 @@ app.controller('AfExplorerFormCtrl', [
 
         $scope.buildGroupedAttributes = function(
             grouping,
-            attributes = $scope.attributeList,
-            searchFilters = $scope.ui.attributeFiltering
+            attributes,
+            searchFilters
         ) {
             const splitAttributes = splitAttributesOnProperty(attributes, grouping.group.groupingKey);
             return {
@@ -2047,7 +2047,7 @@ app.controller('AfExplorerFormCtrl', [
 
             buildAttributeCategoryFilterOptions();
             const grouping = getGrouping();
-            const groupedAttributes = $scope.buildGroupedAttributes(grouping)
+            const groupedAttributes = $scope.buildGroupedAttributes(grouping, $scope.attributeList, $scope.ui.attributeFiltering)
             $scope.groupedAttributes = groupedAttributes.attributesWithProperty;
             $scope.groupedAttributesFallbackGrouping = groupedAttributes.attributesWithoutProperty;
             applyGroupSort($scope.groupedAttributes, 'attributesViewMain');
