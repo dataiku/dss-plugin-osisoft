@@ -816,14 +816,14 @@ pi-system-auth-banner {
     border-bottom: 1px solid #d9d9d9;
 }
 
+.elements-dropdown--element--visualized {
+    background: #C4E0FE;
+}
+
 .elements-dropdown--element:hover {
-    background: #F4F7F8;
+    background: #E7F3FF;
 }
 
-
-.elements-dropdown--element i {
-    color: #196BFA;
-}
 
 .elements-dropdown--hover-eye {
     visibility: hidden;
