@@ -1302,7 +1302,7 @@ app.controller('AfExplorerFormCtrl', [
             return matchesName && matchesCategories && matchesTemplate;
         }
 
-        $scope.prettifyElementPath = function(elementPath, paths, isAttributePath=false) {
+        $scope.prettifyElementPath = function(elementPath, paths, isAttributePath=false, cutEndElement=false) {
             if (paths && paths.length > 1 && $scope.config.displayLongestPath) {
                 elementPath = paths.reduce((longestPath, path) =>
                     path.length > longestPath.length ? path : longestPath
@@ -1318,6 +1318,9 @@ app.controller('AfExplorerFormCtrl', [
                 return pathParts.join(" > ");
             }
 
+            if (cutEndElement) {
+                return pathParts.slice(databaseIndex + 1, -1).join(" > ");
+            }
             return pathParts.slice(databaseIndex + 1).join(" > ");
         }
 

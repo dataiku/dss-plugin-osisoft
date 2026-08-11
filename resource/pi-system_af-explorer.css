@@ -798,7 +798,7 @@ pi-system-auth-banner {
 }
 
 .elements-dropdown--element-name {
-    min-width: 0;
+    min-width: 60px;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -823,6 +823,14 @@ pi-system-auth-banner {
 
 .elements-dropdown--element i {
     color: #196BFA;
+}
+
+.elements-dropdown--hover-eye {
+    visibility: hidden;
+}
+
+.elements-dropdown--element:hover .elements-dropdown--hover-eye {
+    visibility: visible;
 }
 
 .pi-system-explorer__page-mode--active {
