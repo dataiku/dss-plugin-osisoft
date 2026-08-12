@@ -35,14 +35,14 @@
         {{ctrl.prettifyElementPath(ctrl.mergedAttribute.path, ctrl.mergedAttribute.paths, true)}}
     </div>
     <div class="custom-table__attribute-title-info">
-        <i ng-if="!ctrl.isSingleAttribute && ctrl.displayDetailAttributes && ctrl.mergedAttribute.opened"
+        <i ng-if="!ctrl.isSingleAttribute && ctrl.displayDetailAttributes && ctrl.isMergedAttributeOpened(ctrl.getMergedAttributeFoldKey(ctrl.mergedAttribute))"
            style="cursor: pointer;"
            class="dku-icon-chevron-down-16"
-           ng-click="ctrl.mergedAttribute.opened = !ctrl.mergedAttribute.opened"></i>
-        <i ng-if="!ctrl.isSingleAttribute && ctrl.displayDetailAttributes && !ctrl.mergedAttribute.opened"
+           ng-click="ctrl.closeMergedAttribute(ctrl.getMergedAttributeFoldKey(ctrl.mergedAttribute))"></i>
+        <i ng-if="!ctrl.isSingleAttribute && ctrl.displayDetailAttributes && !ctrl.isMergedAttributeOpened(ctrl.getMergedAttributeFoldKey(ctrl.mergedAttribute))"
            style="cursor: pointer;"
            class="dku-icon-chevron-right-16"
-           ng-click="ctrl.mergedAttribute.opened = !ctrl.mergedAttribute.opened"></i>
+           ng-click="ctrl.openMergedAttribute(ctrl.getMergedAttributeFoldKey(ctrl.mergedAttribute))"></i>
         <span ng-if="!ctrl.isSingleAttribute">{{ctrl.mergedAttribute.title}}</span>
     </div>
 </td>

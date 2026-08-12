@@ -69,14 +69,14 @@
             <td colspan="{{ctrl.getVisibleAttributeColumnCount(false)}}">
                 <div class="custom-table__group-actions">
                     <div class="custom-table__group-header">
-                        <i ng-if="group.opened"
+                        <i ng-if="ctrl.isGroupFoldOpen(group)"
                            style="cursor: pointer;"
                            class="dku-icon-chevron-down-16"
-                           ng-click="group.opened = !group.opened"></i>
-                        <i ng-if="!group.opened"
+                           ng-click="ctrl.closeGroup(group)"></i>
+                        <i ng-if="!ctrl.isGroupFoldOpen(group)"
                            style="cursor: pointer;"
                            class="dku-icon-chevron-right-16"
-                           ng-click="group.opened = !group.opened"></i>
+                           ng-click="ctrl.openGroup(group)"></i>
                         <span class="custom-table__group-name"><strong>{{group.group_name}}</strong></span>
                         <div class="dropdown">
                             <button
@@ -92,14 +92,14 @@
                                 </li>
                                 <li>
                                     <a class="attribute-table-block__sort-menu-option"
-                                       ng-click="ctrl.sortGroupAttributes(group.attributes, group.group_key, false)">
+                                       ng-click="ctrl.sortGroupAttributes(group.attributes, ctrl.identifier, group.group_key, false)">
                                         <i class="dku-icon-sort-natural-order-ascending-alphanumeric-16"></i>
                                         Ascending
                                     </a>
                                 </li>
                                 <li>
                                     <a class="attribute-table-block__sort-menu-option"
-                                       ng-click="ctrl.sortGroupAttributes(group.attributes, group.group_key, true)">
+                                       ng-click="ctrl.sortGroupAttributes(group.attributes, ctrl.identifier, group.group_key, true)">
                                         <i class="dku-icon-sort-natural-order-descending-alphanumeric-20"></i>
                                         Descending
                                     </a>
@@ -128,12 +128,16 @@
             </td>
         </tr>
         <tr
-                ng-repeat-start="mergedAttribute in group.attributes track by mergedAttribute.title"
-                ng-show="group.opened && mergedAttribute.isDisplayed"
+                ng-repeat-start="mergedAttribute in group.attributes track by mergedAttribute.key"
+                ng-show="ctrl.isGroupFoldOpen(group) && mergedAttribute.isDisplayed"
                 attribute-table-row
                 group-mode="ctrl.groupMode"
                 merged-attribute="mergedAttribute"
                 display-detail-attributes="ctrl.displayDetailAttributes"
+                closed-folds="ctrl.closedFolds"
+                table-identifier="ctrl.identifier"
+                is-merged-attribute-opened="ctrl.isMergedAttributeOpened"
+                get-merged-attribute-fold-key="ctrl.getMergedAttributeFoldKey"
                 prettify-element-path="ctrl.prettifyElementPath"
                 aggregate-data-type-fields="ctrl.aggregateDataTypeFields"
                 on-check-attribute="ctrl.onCheckAttribute({ mergedAttribute: mergedAttribute })"
@@ -143,12 +147,16 @@
         </tr>
         <tr
                 ng-repeat="attribute in mergedAttribute.attributes track by attribute.id"
-                ng-if="group.opened && ctrl.displayDetailAttributes && mergedAttribute.opened"
+                ng-if="ctrl.isGroupFoldOpen(group) && ctrl.displayDetailAttributes && ctrl.isMergedAttributeOpened(ctrl.getMergedAttributeFoldKey(mergedAttribute))"
                 attribute-table-row
                 merged-attribute="attribute"
                 is-single-attribute="true"
                 is-last="$last"
                 group-mode="ctrl.groupMode"
+                closed-folds="ctrl.closedFolds"
+                table-identifier="ctrl.identifier"
+                is-merged-attribute-opened="ctrl.isMergedAttributeOpened"
+                get-merged-attribute-fold-key="ctrl.getMergedAttributeFoldKey"
                 prettify-element-path="ctrl.prettifyElementPath"
                 aggregate-data-type-fields="ctrl.aggregateDataTypeFields"
                 on-check-attribute="ctrl.onCheckSingleAttribute({ attribute: attribute })"

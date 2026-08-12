@@ -791,7 +791,7 @@ class OSIsoftClient(object):
             params = {
                 "query": query,
                 "databaseWebId": database_webid,
-                "maxCount": 1000
+                "maxCount": 100
             }
             if "search_associations" in kwargs:
                 params["associations"] = kwargs.get("search_associations")

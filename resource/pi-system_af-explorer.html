@@ -70,7 +70,7 @@
             {{errorBannerMessage}}
         </div>
         <div class="pi-system-explorer__header">
-            <div ng-if="showTreeData" style="display: flex; gap: 8px; align-items: center;">
+            <div style="display: flex; gap: 8px; align-items: center;">
                 <i ng-class="inSearchMode ? 'dku-icon-search-24' : 'dku-icon-eye-24'"></i>
                 <strong>{{inSearchMode ? 'Search' : 'Attributes view'}}</strong>
             </div>
@@ -128,7 +128,7 @@
                                         <basic-search-box class="pi-system-explorer__search-mode__search-box"
                                                           ng-if="search.searchMode === 'attribute'"
                                                           ng-model="search.searchString"
-                                                          placeholder="Search {{search.searchMode}}s by name"
+                                                          placeholder="Search attributes using PI Systems query syntax"
                                                           ng-keydown="onAttributeSearchKeydown($event)"
                                         >
                                         </basic-search-box>
@@ -227,6 +227,7 @@
                                 identifier="attributeSearchResultsFallback"
                                 group-mode="groupMode"
                                 table-state="tableState"
+                                closed-folds="closedFolds"
                                 display-element-dropdown="false"
                                 active-tab="activeTab"
                                 aggregate-data-type-fields="aggregateDataTypeFields"
@@ -254,6 +255,7 @@
                                 identifier="attributeSearchResultsMain"
                                 group-mode="groupMode"
                                 table-state="tableState"
+                                closed-folds="closedFolds"
                                 display-element-dropdown="false"
                                 active-tab="activeTab"
                                 aggregate-data-type-fields="aggregateDataTypeFields"
@@ -279,13 +281,18 @@
                          ng-if="search.searchMode !== 'attribute' && hasSearchResults()"
                     >
                         <div style="display: flex; justify-content: space-between; padding: 6px 12px; font-size: 14px; align-items: center;">
-                            <span>Elements name</span>
+                            <strong>Elements name</strong>
                             <span style="display: flex; gap: 8px; align-items: center">
                             Show in attributes view
                             <i class="dku-icon-eye-16 pi-system-explorer__show-all-eye"
-                               style="cursor: pointer; padding: 4px 6px; border: 1px solid #f0efec; border-radius: 8px;"
-                               ng-style="{ 'border-color': areAllSearchResultsSelected() ? '#7092f2' : '#f0efec' }"
-                               ng-click="selectAllResults()"></i>
+                               ng-class="{
+                                   'pi-system-explorer__show-all-eye--selected': getSearchResultCount() <= 100 && areAllSearchResultsSelected(),
+                                   'pi-system-explorer__show-all-eye--disabled': getSearchResultCount() > 100
+                               }"
+                               ng-click="getSearchResultCount() <= 100 && selectAllResults()"
+                               toggle="tooltip"
+                               ng-attr-title="{{getSearchResultCount() > 100 ? 'There are too many elements in your results, please refine your search' : undefined}}"
+                            ></i>
                         </span>
                         </div>
                         <div class="pi-system-explorer__search-result"
@@ -389,6 +396,7 @@
                             identifier="attributesViewFallback"
                             group-mode="groupMode"
                             table-state="tableState"
+                            closed-folds="closedFolds"
                             display-element-dropdown="false"
                             active-tab="activeTab"
                             aggregate-data-type-fields="aggregateDataTypeFields"
@@ -416,6 +424,7 @@
                             identifier="attributesViewMain"
                             group-mode="groupMode"
                             table-state="tableState"
+                            closed-folds="closedFolds"
                             display-element-dropdown="true"
                             active-tab="activeTab"
                             aggregate-data-type-fields="aggregateDataTypeFields"

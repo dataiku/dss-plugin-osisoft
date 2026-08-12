@@ -447,10 +447,15 @@ app.controller('AfExplorerFormCtrl', [
                         attributeSearch: modalScope.ui.previewAttributeSearch,
                         attributeCategoryFilterList: [],
                         attributeValueTypeFilter: ''
-                    }
+                    },
+                    false
                 );
                 modalScope.groupedSelectedAttributes = groupedAttributes.attributesWithProperty;
                 modalScope.groupedSelectedAttributesFallBackGrouping = groupedAttributes.attributesWithoutProperty;
+                applyGroupSort(modalScope.groupedSelectedAttributes, 'previewDatasetMain');
+                applyGroupSort(modalScope.groupedSelectedAttributesFallBackGrouping, 'previewDatasetFallback');
+                applyGroupAttributesSort(modalScope.groupedSelectedAttributes, 'previewDatasetMain');
+                applyGroupAttributesSort(modalScope.groupedSelectedAttributesFallBackGrouping, 'previewDatasetFallback');
             }
 
 
@@ -535,6 +540,10 @@ app.controller('AfExplorerFormCtrl', [
             $scope.tableState = {
                 tableSortStatus: [],
                 groupSortStatus: {}
+            };
+            $scope.closedFolds = {
+                groupClosedFolds: {},
+                mergedAttributeClosedFolds: {}
             };
             DataikuAPI.plugins.listAccessiblePresets('pi-system', $stateParams.projectKey, 'basic-auth').success(function(data) {
                 $scope.inlineParams = data.inlineParams;
@@ -910,7 +919,9 @@ app.controller('AfExplorerFormCtrl', [
             startLoadingState(
                 true,
                 "Fetching element attributes",
-                "Fetching attributes for this element from the server can take a little bit of time"
+                "Fetching attributes for this element from the server can take a little bit of time",
+                "Please don't close, refresh, or leave this page while loading",
+                "Leaving before the process is complete may interrupt download and cause errors"
             );
             return $scope.callPythonDo({ method: "get_children_from_db", parent: item })
                 .then(function(data) {
@@ -1293,7 +1304,7 @@ app.controller('AfExplorerFormCtrl', [
             return matchesName && matchesCategories && matchesTemplate;
         }
 
-        $scope.prettifyElementPath = function(elementPath, paths, isAttributePath=false) {
+        $scope.prettifyElementPath = function(elementPath, paths, isAttributePath=false, cutEndElement=false) {
             if (paths && paths.length > 1 && $scope.config.displayLongestPath) {
                 elementPath = paths.reduce((longestPath, path) =>
                     path.length > longestPath.length ? path : longestPath
@@ -1309,6 +1320,9 @@ app.controller('AfExplorerFormCtrl', [
                 return pathParts.join(" > ");
             }
 
+            if (cutEndElement) {
+                return pathParts.slice(databaseIndex + 1, -1).join(" > ");
+            }
             return pathParts.slice(databaseIndex + 1).join(" > ");
         }
 
@@ -1743,28 +1757,33 @@ app.controller('AfExplorerFormCtrl', [
         // Meaning all elements with the same template will share the attributes in this template
         // If multiple elements with the same template are selected, we only show the attribute once
         function getGroups(attr, groupingKey, titleKey) {
-            const groupingPropertyValues = attr[groupingKey];
+            const groupingPropertyValue = attr[groupingKey];
             const groupTitles = attr[titleKey];
-            if (Array.isArray(groupingPropertyValues)) {
-                // Not working with different grouping and title key if array of values
-                return groupingPropertyValues.map(( value, index ) => {
+            if (groupingKey === "category_names"){
+                // category_names is an array
+                return groupingPropertyValue.map(( value, index ) => {
+                    const differentiatingKey = attr.template_name ? attr.template_name : attr.parent_element_path;
                     return {
-                        key: value + "::" + attr.title,
+                        key: value + "::" + differentiatingKey + "::" + attr.title,
                         sectionKey: value,
-                        value: value
+                        value: value,
+                        getConflatedAttributeKey: (attribute) => differentiatingKey + "::" + attr.title
                     };
                 });
             }
             return [ {
-                key: groupingPropertyValues + "::" + attr.title,
-                sectionKey: groupingPropertyValues,
+                //
+                key: groupingPropertyValue + "::" + attr.title,
+                sectionKey: groupingPropertyValue,
                 value: groupTitles,
-                path: groupingPropertyValues
+                path: groupingPropertyValue,
+                getConflatedAttributeKey: (attribute) => attribute.title
             } ];
         }
 
         function initConflatedAttribute(attr, group, searchFilters) {
             const conflatedAttribute = {
+                key: group.getConflatedAttributeKey(attr),
                 title: attr.title,
                 description: attr.description,
                 group: group.value,
@@ -1784,7 +1803,6 @@ app.controller('AfExplorerFormCtrl', [
                 category_names: attr.category_names,
                 conflicting_categories: false,
                 value_type: attr.value_type,
-                opened: true,
             };
 
             getAggregateNames().forEach(aggregateName => {
@@ -1854,8 +1872,7 @@ app.controller('AfExplorerFormCtrl', [
                         attributes: [],
                         checkStates: [],
                         isDisplayed: true,
-                        nbSearchMatches: 0,
-                        opened: true
+                        nbSearchMatches: 0
                     }
                 }
 
@@ -1871,9 +1888,9 @@ app.controller('AfExplorerFormCtrl', [
             }
         }
 
-        function buildAggregatedAttributes(attributes, groupingKey, titleKey, searchFilters) {
+        function buildAggregatedAttributes(attributes, groupingKey, titleKey, searchFilters, onlyDisplayCommonAttributes) {
             let deduplicatedAttributes = Object.values(attributes.reduce(conflateAttributes(groupingKey, titleKey, searchFilters), {})).map(conflatedAttribute => {
-                if ($scope.ui.onlyDisplayCommon && conflatedAttribute.parent_elements.length < $scope.ui.clickedNodes.length) {
+                if (onlyDisplayCommonAttributes && conflatedAttribute.parent_elements.length < $scope.ui.clickedNodes.length) {
                     conflatedAttribute.isDisplayed = false;
                 }
                 return conflatedAttribute;
@@ -1895,8 +1912,8 @@ app.controller('AfExplorerFormCtrl', [
             };
         }
 
-        function buildGroupedAttributesResult(attributes, groupingKey, titleKey, searchFilters) {
-            const groups = buildAggregatedAttributes(attributes, groupingKey, titleKey, searchFilters);
+        function buildGroupedAttributesResult(attributes, groupingKey, titleKey, searchFilters, onlyDisplayCommonAttributes) {
+            const groups = buildAggregatedAttributes(attributes, groupingKey, titleKey, searchFilters, onlyDisplayCommonAttributes);
             const displayedGroups = groups.filter(group => !group.isDisplayed);
             // TODO: probably turn this into a reduce
             return {
@@ -1910,9 +1927,11 @@ app.controller('AfExplorerFormCtrl', [
 
         $scope.buildGroupedAttributes = function(
             grouping,
-            attributes = $scope.attributeList,
-            searchFilters = $scope.ui.attributeFiltering
+            attributes,
+            searchFilters,
+            onlyDisplayCommonAttributes,
         ) {
+            console.log("buildGroupedAttributes", attributes)
             const splitAttributes = splitAttributesOnProperty(attributes, grouping.group.groupingKey);
             return {
                 attributesWithProperty: buildGroupedAttributesResult(
@@ -1920,12 +1939,14 @@ app.controller('AfExplorerFormCtrl', [
                     grouping.group.groupingKey,
                     grouping.group.titleKey,
                     searchFilters,
+                    onlyDisplayCommonAttributes
                 ),
                 attributesWithoutProperty: buildGroupedAttributesResult(
                     splitAttributes.attributesWithoutProperty,
                     grouping.fallbackGroup.groupingKey,
                     grouping.fallbackGroup.titleKey,
                     searchFilters,
+                    onlyDisplayCommonAttributes
                 )
             };
         }
@@ -1967,10 +1988,15 @@ app.controller('AfExplorerFormCtrl', [
                     attributeSearch: '',
                     attributeCategoryFilterList: [],
                     attributeValueTypeFilter: ''
-                }
+                },
+                false
             );
             $scope.search.groupedAttributeResults = groupedAttributes.attributesWithProperty;
             $scope.search.groupedAttributeResultsFallbackGrouping = groupedAttributes.attributesWithoutProperty;
+            applyGroupSort($scope.search.groupedAttributeResults, 'attributeSearchResultsMain');
+            applyGroupSort($scope.search.groupedAttributeResultsFallbackGrouping, 'attributeSearchResultsFallback');
+            applyGroupAttributesSort($scope.search.groupedAttributeResults, 'attributeSearchResultsMain');
+            applyGroupAttributesSort($scope.search.groupedAttributeResultsFallbackGrouping, 'attributeSearchResultsFallback');
         }
 
         function getCheckboxStatus(checkboxStatuses) {
@@ -2020,9 +2046,9 @@ app.controller('AfExplorerFormCtrl', [
             }
         }
 
-        function applyGroupAttributesSort(groupedAttributes) {
+        function applyGroupAttributesSort(groupedAttributes, tableIdentifier) {
             groupedAttributes.groups.forEach(group => {
-                const sortStatus = $scope.tableState.groupSortStatus[group.group_key];
+                const sortStatus = $scope.tableState.groupSortStatus[tableIdentifier]?.[group.group_key];
                 if (sortStatus != null) {
                     group.attributes.sort((firstAttribute, secondAttribute) => {
                         const order = firstAttribute.title.localeCompare(secondAttribute.title);
@@ -2033,18 +2059,23 @@ app.controller('AfExplorerFormCtrl', [
         }
 
         $scope.refreshAttributeSection = function() {
+            console.log("Refresh attribute selction")
             updateCheckStatus($scope.attributeList)
 
             buildAttributeCategoryFilterOptions();
             const grouping = getGrouping();
-            const groupedAttributes = $scope.buildGroupedAttributes(grouping)
+            const groupedAttributes = $scope.buildGroupedAttributes(
+                grouping,
+                $scope.attributeList,
+                $scope.ui.attributeFiltering,
+                $scope.ui.onlyDisplayCommon
+            )
             $scope.groupedAttributes = groupedAttributes.attributesWithProperty;
             $scope.groupedAttributesFallbackGrouping = groupedAttributes.attributesWithoutProperty;
             applyGroupSort($scope.groupedAttributes, 'attributesViewMain');
             applyGroupSort($scope.groupedAttributesFallbackGrouping, 'attributesViewFallback');
-            applyGroupAttributesSort($scope.groupedAttributes);
-            applyGroupAttributesSort($scope.groupedAttributesFallbackGrouping);
-            refreshSearchAttributeResults();
+            applyGroupAttributesSort($scope.groupedAttributes, 'attributesViewMain');
+            applyGroupAttributesSort($scope.groupedAttributesFallbackGrouping, 'attributesViewFallback');
             console.log("Attribute List", $scope.attributeList)
             console.log("Grouped attributes", $scope.groupedAttributes)
             console.log("Grouped fallback attributes", $scope.groupedAttributesFallbackGrouping)
@@ -2230,6 +2261,7 @@ app.directive('attributeTableBlock', function() {
                 identifier: '@',
                 groupMode: '<',
                 tableState: '<',
+                closedFolds: '<',
                 elementsByTemplate: '<',
                 groupedAttributes: '=',
                 config: '=',
@@ -2252,12 +2284,13 @@ app.directive('attributeTableBlock', function() {
         controller: function() {
             const ctrl = this;
 
-            ctrl.sortGroupAttributes = function(attributesGroup, id, reverse = false) {
-                ctrl.tableState.groupSortStatus[id] = reverse ? 'reverse' : 'sort';
+            ctrl.sortGroupAttributes = function(attributesGroup, tableIdentifier, groupId, reverse = false) {
+                ctrl.tableState.groupSortStatus[tableIdentifier] ||= {};
+                ctrl.tableState.groupSortStatus[tableIdentifier][groupId] = reverse ? 'reverse' : 'sort';
                 if (!attributesGroup.length) {
                     return;
                 }
-
+                console.log("tableState", ctrl.tableState);
                 attributesGroup.sort((firstAttribute, secondAttribute) => {
                     const order = firstAttribute.title.localeCompare(secondAttribute.title);
                     return reverse ? -order : order;
@@ -2268,6 +2301,29 @@ app.directive('attributeTableBlock', function() {
                 ctrl.tableState.tableSortStatus[identifier] = reverse ? 'reverse' : 'sort';
                 console.log("tableState", ctrl.tableState);
                 sortAttributeGroups(attributesGroups, reverse);
+            };
+
+            ctrl.closeGroup = function(group) {
+                if (!ctrl.closedFolds.groupClosedFolds[ctrl.identifier]) {
+                    ctrl.closedFolds.groupClosedFolds[ctrl.identifier] = new Set();
+                }
+                ctrl.closedFolds.groupClosedFolds[ctrl.identifier].add(group.group_key);
+            };
+
+            ctrl.openGroup = function(group) {
+                ctrl.closedFolds.groupClosedFolds[ctrl.identifier]?.delete(group.group_key);
+            };
+
+            ctrl.isGroupFoldOpen = function(group) {
+                return !ctrl.closedFolds.groupClosedFolds[ctrl.identifier]?.has(group.group_key);
+            };
+
+            ctrl.isMergedAttributeOpened = function(mergedAttributeKey) {
+                return !ctrl.closedFolds.mergedAttributeClosedFolds[ctrl.identifier]?.has(mergedAttributeKey);
+            };
+
+            ctrl.getMergedAttributeFoldKey = function(mergedAttribute) {
+                return mergedAttribute.group_key + "::" + mergedAttribute.title;
             };
 
             ctrl.getVisibleAttributeColumnCount = function(includeCheckbox) {
@@ -2297,9 +2353,13 @@ app.directive('attributeTableRow', function() {
             mergedAttribute: '=',
             isSingleAttribute: '<?',
             displayDetailAttributes: '<?',
+            closedFolds: '<',
+            tableIdentifier: '<',
             isLast: '<',
             prettifyElementPath: '<',
             aggregateDataTypeFields: '<',
+            isMergedAttributeOpened: '<',
+            getMergedAttributeFoldKey: '<',
             onCheckAttribute: '&',
             onUpdateDataType: '&',
             onUpdateAggregate: '&',
@@ -2324,7 +2384,21 @@ app.directive('attributeTableRow', function() {
                 , []);
                 const stringParentElements = listParentElements.join(', ');
                 return 'Already selected for elements: ' + stringParentElements;
-            }
+            };
+
+            ctrl.closeMergedAttribute = function(mergedAttributeKey) {
+                ctrl.closedFolds.mergedAttributeClosedFolds[ctrl.tableIdentifier] ||= new Set();
+                ctrl.closedFolds.mergedAttributeClosedFolds[ctrl.tableIdentifier].add(mergedAttributeKey);
+            };
+
+            ctrl.openMergedAttribute = function(mergedAttributeKey) {
+                ctrl.closedFolds.mergedAttributeClosedFolds[ctrl.tableIdentifier]?.delete(mergedAttributeKey);
+            };
+
+            ctrl.isGroupFoldOpen = function(group) {
+                return !ctrl.closedFolds.groupClosedFolds[ctrl.tableIdentifier]?.has(group.group_key);
+            };
+
         },
         templateUrl: "/plugins/pi-system/resource/attribute-table-row.html"
     };
