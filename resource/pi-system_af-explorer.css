@@ -26,7 +26,7 @@
 }
 
 .pi-system-auth-modal {
-    width: 45%;
+    width: auto;
 }
 
 .pi-system-preview-dataset-modal__search {

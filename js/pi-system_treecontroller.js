@@ -919,7 +919,9 @@ app.controller('AfExplorerFormCtrl', [
             startLoadingState(
                 true,
                 "Fetching element attributes",
-                "Fetching attributes for this element from the server can take a little bit of time"
+                "Fetching attributes for this element from the server can take a little bit of time",
+                "Please don't close, refresh, or leave this page while loading",
+                "Leaving before the process is complete may interrupt download and cause errors"
             );
             return $scope.callPythonDo({ method: "get_children_from_db", parent: item })
                 .then(function(data) {
