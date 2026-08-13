@@ -36,6 +36,8 @@ const aggregateDataTypeFields = Object.freeze({
             { value: 'SummaryData', label: 'Summary' },
             { value: 'Value', label: 'Value' },
             { value: 'EndValue', label: 'End value' },
+            { value: 'RecordedAtTimes', label: 'Recorded at times' },
+            { value: 'InterpolatedAtTimes', label: 'Interpolated at times' },
         ]
     },
     aggregates: {
