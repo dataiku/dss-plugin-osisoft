@@ -427,7 +427,12 @@ app.controller('AfExplorerFormCtrl', [
         }
 
         function buildSelectedElementPaths() {
-            return $scope.config.outputSelectedAttributes.flatMap(attribute => attribute.paths).map(getElementPathFromAttributePath);
+            return $scope.config.outputSelectedAttributes.flatMap(attribute => {
+                    if (attribute.paths && attribute.paths.length > 0) {
+                        return attribute.paths;
+                    }
+                    return [ attribute.path ];
+                }).map(getElementPathFromAttributePath);
         }
 
         $scope.showDatasetPreviewModal = function() {
