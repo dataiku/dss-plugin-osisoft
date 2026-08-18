@@ -670,7 +670,7 @@ app.controller('AfExplorerFormCtrl', [
             return loadObject(
                 () => $scope.cache.getElementTree(),
                 () => $scope.getElementTreeFromDB(),
-                 () => $scope.cache.addOrUpdateElementTree(),
+                 (elementTree) => $scope.cache.addOrUpdateElementTree(elementTree),
                 'elementTree',
             );
         }
@@ -679,7 +679,7 @@ app.controller('AfExplorerFormCtrl', [
             return loadObject(
                 () => $scope.cache.getTemplateTree(),
                 () => $scope.getTemplatesFromDB(),
-                () => $scope.cache.addOrUpdateTemplateTree(),
+                (templateTree) => $scope.cache.addOrUpdateTemplateTree(templateTree),
                 'templateTree',
             ).then(rebuildTemplateList);
         }
