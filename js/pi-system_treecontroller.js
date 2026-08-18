@@ -613,16 +613,20 @@ app.controller('AfExplorerFormCtrl', [
 
         function loadObject(cacheGetter, dbGetter, cacheSetter, scopeKey) {
             let fromDb = false;
+            console.log("Loading object ", scopeKey)
             return cacheGetter()
                 .catch(() => {
+                    console.log("There was an issue getting object from cache, fetching from db instead", scopeKey)
                     fromDb = true;
                     return dbGetter()
                 })
                 .then(object => {
                     if (object === undefined || object.length === 0) {
+                        console.log("Object from cache was empty, fetching from db instead", scopeKey)
                         fromDb = true;
                         return dbGetter();
                     }
+                    console.log("Loading from cache successful", scopeKey)
                     return object;
                 })
                 .catch(error => {
@@ -634,6 +638,7 @@ app.controller('AfExplorerFormCtrl', [
                     }
                     $scope[scopeKey] = object;
                     if (fromDb) {
+                        console.log("Saving in cache", scopeKey)
                         cacheSetter(object);
                     }
                 });
@@ -687,6 +692,7 @@ app.controller('AfExplorerFormCtrl', [
 
         // Fetching data - only once auth has been verified
        function initData() {
+            console.log("Initializing application data for PI systems Af tree explorer")
            startLoadingState(true,
                "Getting everything ready",
                "The first load can take several minutes. It's a one-time process to optimize performance. Keep this tab open and come back later if you'd like.",
@@ -697,6 +703,7 @@ app.controller('AfExplorerFormCtrl', [
                 // TODO: figure out what we want in that case
                 throw new Error(`There was an error initializing cache: ${error}`);
             }).then(() => {
+                console.log("Loading data")
                 return $q.all([
                     loadElementTree(),
                     loadTemplateTree(),
