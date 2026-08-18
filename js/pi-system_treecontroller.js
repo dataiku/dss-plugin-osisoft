@@ -422,7 +422,7 @@ app.controller('AfExplorerFormCtrl', [
             if (clickedSearchButton === $scope.inSearchMode) {
                 return;
             }
-            clearSearchHighlights($scope.elementTree); // Clearing search hightlights on leaving search mode
+            clearAllSearchHighlights(); // Clearing search hightlights on leaving search mode
             $scope.inSearchMode = !$scope.inSearchMode;
         }
 
@@ -1115,11 +1115,11 @@ app.controller('AfExplorerFormCtrl', [
             $scope.search.nextAttributeResultsPage = null
             $scope.search.groupedAttributeResults = null
             $scope.search.groupedAttributeResultsFallbackGrouping = null
-            clearSearchHighlights($scope.elementTree);
+            clearAllSearchHighlights();
         }
 
         $scope.setTab = function(tab) {
-            clearSearchHighlights($scope.elementTree); // Clearing highlights on change mode
+            clearAllSearchHighlights(); // Clearing highlights on change mode
             const previousTab = $scope.activeTab;
             if (tab !== previousTab) {
                 resetRightPanelForCurrentTabContext();
@@ -1150,6 +1150,11 @@ app.controller('AfExplorerFormCtrl', [
                 }
             ).finally(stopLoadingState);
         };
+
+        function clearAllSearchHighlights() {
+            clearSearchHighlights($scope.elementTree);
+            clearSearchHighlights($scope.templateTree);
+        }
 
         function clearSearchHighlights(nodes) {
             if (!nodes) {
@@ -1278,7 +1283,7 @@ app.controller('AfExplorerFormCtrl', [
         }
 
         $scope.toggleNodeVisualization = function(node) {
-            clearSearchHighlights($scope.elementTree);
+            clearAllSearchHighlights();
             console.log("clicked on ", node)
 
             const indexClickedNode = $scope.ui.clickedNodes.indexOf(node.url);
@@ -1367,7 +1372,7 @@ app.controller('AfExplorerFormCtrl', [
             if ($scope.search.searchMode === 'attribute') {
                 return;
             }
-            clearSearchHighlights($scope.elementTree);
+            clearAllSearchHighlights();
             // console.log("$scope.templateTree", $scope.templateTree)
             const searchTree = $scope.search.searchMode === 'element' ? $scope.elementTree : $scope.templateTree;
             $scope.search.searchResults = {};
@@ -1422,7 +1427,7 @@ app.controller('AfExplorerFormCtrl', [
         }
 
         $scope.targetSearchResult = function(result) {
-            clearSearchHighlights($scope.elementTree);
+            clearAllSearchHighlights();
             openSearchResultInTree(result.parentList);
             highlightSearchResult(result.nodes);
 
