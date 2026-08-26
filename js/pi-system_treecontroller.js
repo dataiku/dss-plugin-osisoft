@@ -2107,6 +2107,7 @@ app.controller('AfExplorerFormCtrl', [
             attribute.checked = true;
             $scope.config.outputSelectedAttributes.push(attribute);
             $scope.selectedElementPaths = buildSelectedElementPaths();
+            console.log("selectedElementPaths", $scope.selectedElementPaths)
             console.log("Removed attribute from selection", attribute);
         }
 
@@ -2120,6 +2121,7 @@ app.controller('AfExplorerFormCtrl', [
             $scope.config.outputSelectedAttributes.splice(index, 1);
             $scope.selectedElementPaths = buildSelectedElementPaths();
             $scope.refreshAttributeSection();
+            console.log("selectedElementPaths", $scope.selectedElementPaths)
             console.log("Removed attribute from selection", attribute);
         }
 
