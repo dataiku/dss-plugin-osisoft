@@ -424,12 +424,17 @@ app.controller('AfExplorerFormCtrl', [
             if (clickedSearchButton === $scope.inSearchMode) {
                 return;
             }
-            clearSearchHighlights($scope.elementTree); // Clearing search hightlights on leaving search mode
+            clearAllSearchHighlights(); // Clearing search hightlights on leaving search mode
             $scope.inSearchMode = !$scope.inSearchMode;
         }
 
         function buildSelectedElementPaths() {
-            return $scope.config.outputSelectedAttributes.flatMap(attribute => attribute.paths).map(getElementPathFromAttributePath);
+            return $scope.config.outputSelectedAttributes.flatMap(attribute => {
+                    if (attribute.paths && attribute.paths.length > 0) {
+                        return attribute.paths;
+                    }
+                    return [ attribute.path ];
+                }).map(getElementPathFromAttributePath);
         }
 
         $scope.showDatasetPreviewModal = function() {
@@ -615,16 +620,20 @@ app.controller('AfExplorerFormCtrl', [
 
         function loadObject(cacheGetter, dbGetter, cacheSetter, scopeKey) {
             let fromDb = false;
+            console.log("Loading object ", scopeKey)
             return cacheGetter()
                 .catch(() => {
+                    console.log("There was an issue getting object from cache, fetching from db instead", scopeKey)
                     fromDb = true;
                     return dbGetter()
                 })
                 .then(object => {
                     if (object === undefined || object.length === 0) {
+                        console.log("Object from cache was empty, fetching from db instead", scopeKey)
                         fromDb = true;
                         return dbGetter();
                     }
+                    console.log("Loading from cache successful", scopeKey)
                     return object;
                 })
                 .catch(error => {
@@ -636,6 +645,7 @@ app.controller('AfExplorerFormCtrl', [
                     }
                     $scope[scopeKey] = object;
                     if (fromDb) {
+                        console.log("Saving in cache", scopeKey)
                         cacheSetter(object);
                     }
                 });
@@ -667,7 +677,7 @@ app.controller('AfExplorerFormCtrl', [
             return loadObject(
                 () => $scope.cache.getElementTree(),
                 () => $scope.getElementTreeFromDB(),
-                 () => $scope.cache.addOrUpdateElementTree(),
+                 (elementTree) => $scope.cache.addOrUpdateElementTree(elementTree),
                 'elementTree',
             );
         }
@@ -676,7 +686,7 @@ app.controller('AfExplorerFormCtrl', [
             return loadObject(
                 () => $scope.cache.getTemplateTree(),
                 () => $scope.getTemplatesFromDB(),
-                () => $scope.cache.addOrUpdateTemplateTree(),
+                (templateTree) => $scope.cache.addOrUpdateTemplateTree(templateTree),
                 'templateTree',
             ).then(rebuildTemplateList);
         }
@@ -689,6 +699,7 @@ app.controller('AfExplorerFormCtrl', [
 
         // Fetching data - only once auth has been verified
        function initData() {
+            console.log("Initializing application data for PI systems Af tree explorer")
            startLoadingState(true,
                "Getting everything ready",
                "The first load can take several minutes. It's a one-time process to optimize performance. Keep this tab open and come back later if you'd like.",
@@ -699,6 +710,7 @@ app.controller('AfExplorerFormCtrl', [
                 // TODO: figure out what we want in that case
                 throw new Error(`There was an error initializing cache: ${error}`);
             }).then(() => {
+                console.log("Loading data")
                 return $q.all([
                     loadElementTree(),
                     loadTemplateTree(),
@@ -1105,11 +1117,11 @@ app.controller('AfExplorerFormCtrl', [
             $scope.search.nextAttributeResultsPage = null
             $scope.search.groupedAttributeResults = null
             $scope.search.groupedAttributeResultsFallbackGrouping = null
-            clearSearchHighlights($scope.elementTree);
+            clearAllSearchHighlights();
         }
 
         $scope.setTab = function(tab) {
-            clearSearchHighlights($scope.elementTree); // Clearing highlights on change mode
+            clearAllSearchHighlights(); // Clearing highlights on change mode
             const previousTab = $scope.activeTab;
             if (tab !== previousTab) {
                 resetRightPanelForCurrentTabContext();
@@ -1140,6 +1152,11 @@ app.controller('AfExplorerFormCtrl', [
                 }
             ).finally(stopLoadingState);
         };
+
+        function clearAllSearchHighlights() {
+            clearSearchHighlights($scope.elementTree);
+            clearSearchHighlights($scope.templateTree);
+        }
 
         function clearSearchHighlights(nodes) {
             if (!nodes) {
@@ -1268,7 +1285,7 @@ app.controller('AfExplorerFormCtrl', [
         }
 
         $scope.toggleNodeVisualization = function(node) {
-            clearSearchHighlights($scope.elementTree);
+            clearAllSearchHighlights();
             console.log("clicked on ", node)
 
             const indexClickedNode = $scope.ui.clickedNodes.indexOf(node.url);
@@ -1357,7 +1374,7 @@ app.controller('AfExplorerFormCtrl', [
             if ($scope.search.searchMode === 'attribute') {
                 return;
             }
-            clearSearchHighlights($scope.elementTree);
+            clearAllSearchHighlights();
             // console.log("$scope.templateTree", $scope.templateTree)
             const searchTree = $scope.search.searchMode === 'element' ? $scope.elementTree : $scope.templateTree;
             $scope.search.searchResults = {};
@@ -1412,7 +1429,7 @@ app.controller('AfExplorerFormCtrl', [
         }
 
         $scope.targetSearchResult = function(result) {
-            clearSearchHighlights($scope.elementTree);
+            clearAllSearchHighlights();
             openSearchResultInTree(result.parentList);
             highlightSearchResult(result.nodes);
 
@@ -2092,6 +2109,7 @@ app.controller('AfExplorerFormCtrl', [
             attribute.checked = true;
             $scope.config.outputSelectedAttributes.push(attribute);
             $scope.selectedElementPaths = buildSelectedElementPaths();
+            console.log("selectedElementPaths", $scope.selectedElementPaths)
             console.log("Removed attribute from selection", attribute);
         }
 
@@ -2105,6 +2123,7 @@ app.controller('AfExplorerFormCtrl', [
             $scope.config.outputSelectedAttributes.splice(index, 1);
             $scope.selectedElementPaths = buildSelectedElementPaths();
             $scope.refreshAttributeSection();
+            console.log("selectedElementPaths", $scope.selectedElementPaths)
             console.log("Removed attribute from selection", attribute);
         }
 
