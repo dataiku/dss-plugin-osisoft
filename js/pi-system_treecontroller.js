@@ -435,14 +435,12 @@ app.controller('AfExplorerFormCtrl', [
 
         $scope.showDatasetPreviewModal = function() {
             if (datasetPreviewModalOpen) {
-                console.log("Can't open modal, already opened")
                 return;
             }
 
             datasetPreviewModalOpen = true;
             CreateModalFromTemplate('/plugins/pi-system/resource/pi-system_preview-dataset-modal.html', $scope, null, function(modalScope) {
                 modalScope.$on('$destroy', function() {
-                    console.log("closing modal")
                     datasetPreviewModalOpen = false;
                 });
                 modalScope.ui = {
@@ -597,14 +595,12 @@ app.controller('AfExplorerFormCtrl', [
         $scope.getServers = function() {
             startLoadingState(false);
             $scope.callPythonDo({ parameterName: "server_name" }).then(function(data) {
-                console.log("server_name", data);
                 $scope.server_name = data.choices;
             }).finally(stopLoadingState);
         };
         $scope.getDatabases = function() {
             startLoadingState(false);
             $scope.callPythonDo({ parameterName: "database_name" }).then(function(data) {
-                console.log("database_name", data);
                 $scope.database_name = data.choices;
                 $scope.config.database_title = getDatabaseTitle($scope.config.database_name);
             }).finally(stopLoadingState);
@@ -902,7 +898,6 @@ app.controller('AfExplorerFormCtrl', [
         $scope.getElementTreeFromDB = function() {
             startLoadingState(false);
             return $scope.callPythonDo({ method: "build_af_tree"}).then(function(data) {
-                console.log("af_tree", data);
                 return data.tree;
             }).finally(stopLoadingState);
         };
@@ -936,7 +931,6 @@ app.controller('AfExplorerFormCtrl', [
             );
             return $scope.callPythonDo({ method: "get_children_from_db", parent: item })
                 .then(function(data) {
-                    console.log("get_children_from_db", data);
                     const attributeLoadPromises = [];
                     item.attribute_children = [];
                     const loadedAttributes = data.choices.filter(node => node.type === 'attribute').map(attribute =>
@@ -974,7 +968,6 @@ app.controller('AfExplorerFormCtrl', [
         $scope.getTemplatesFromDB = function() {
             startLoadingState(false);
             return $scope.callPythonDo({ method: "get_templates_from_db" }).then(function(data) {
-                console.log("get_templates_from_db", data)
                 return data.choices.filter(template => template.title !== "-- Any --")
             }).finally(stopLoadingState);
         }
@@ -1014,7 +1007,6 @@ app.controller('AfExplorerFormCtrl', [
                 attribute_value_type: $scope.search.attributeValueTypeFilter,
                 next_page: nextPage,
             }).then(function(data) {
-                console.log("Attribute search results", data.attributes);
                 const attributes = (data.attributes || []).map(attribute => {
                     const elementPath = getElementPathFromAttributePath(attribute.path);
                     return enrichAttribute({
@@ -1035,7 +1027,6 @@ app.controller('AfExplorerFormCtrl', [
                         $scope.search.attributeSearchCurrentPage + 1;
                 }
                 refreshSearchAttributeResults();
-                console.log("get_attributes_per_page", data);
             }).finally(stopLoadingState);
         };
 
@@ -1075,7 +1066,6 @@ app.controller('AfExplorerFormCtrl', [
         $scope.getAttributeCategoriesFromDB = function() {
             startLoadingState(false);
             return $scope.callPythonDo({ method: "get_attribute_categories_from_db" }).then(function(data) {
-                console.log("get_attribute_categories_from_db", data);
                 return data.choices;
             }).finally(stopLoadingState);
         }
@@ -1083,7 +1073,6 @@ app.controller('AfExplorerFormCtrl', [
         $scope.getElementCategoriesFromDB = function() {
             startLoadingState(false);
             return $scope.callPythonDo({ method: "get_element_categories_from_db" }).then(function(data) {
-                console.log("get_element_categories_from_db", data);
                 return data.choices;
             }).finally(stopLoadingState);
         }
@@ -1136,7 +1125,6 @@ app.controller('AfExplorerFormCtrl', [
             startLoadingState(false);
             return $scope.callPythonDo({ method: "do_search", element_name: element_name, elementTree: $scope.elementTree }).then(
                 function(data) {
-                    console.log("do_search", data);
                     $scope.elementTree = data.choices;
                     const matchedAttributes = data.attributes || [];
                     const matchedElementPaths = getMatchedElementPaths(matchedAttributes);
@@ -1176,7 +1164,6 @@ app.controller('AfExplorerFormCtrl', [
             startLoadingState(true, "Fetching attributes", "Fetching attributes from the server can take a little bit of time");
             return $scope.callPythonDo({ method: "get_attribute_for_template", template_name: node.title}).then(
                 function(data) {
-                    console.log("get_attribute_for_template", data);
                     node.attribute_children = [];
                     const loadedAttributes = data.attributes.map(attribute => {
                         const elementPath = getElementPathFromAttributePath(attribute.path);
@@ -1209,7 +1196,6 @@ app.controller('AfExplorerFormCtrl', [
             startLoadingState(false);
             return $scope.callPythonDo({ method: "get_elements_for_template", template_name: templateName}).then(
                 function(data) {
-                    console.log("get_elements_for_template", data);
                     $scope.elementsByTemplate[templateName] = data.elements;
                     cacheElementsByTemplate();
                 }
@@ -1278,7 +1264,6 @@ app.controller('AfExplorerFormCtrl', [
 
         $scope.toggleNodeVisualization = function(node) {
             clearSearchHighlights($scope.elementTree);
-            console.log("clicked on ", node)
 
             const indexClickedNode = $scope.ui.clickedNodes.indexOf(node.url);
             const nodeAlreadySelected = indexClickedNode > -1;
@@ -1290,7 +1275,6 @@ app.controller('AfExplorerFormCtrl', [
             }
 
             // In element node, the visualized nodes are reflected on the elements dropdown
-            console.log("clickedNodes: " + JSON.stringify($scope.ui.clickedNodes));
 
             return $scope.toggleDisplayAttributes(node, !nodeAlreadySelected).then(() => {
                 $scope.refreshAttributeSection();
@@ -1367,7 +1351,6 @@ app.controller('AfExplorerFormCtrl', [
                 return;
             }
             clearSearchHighlights($scope.elementTree);
-            // console.log("$scope.templateTree", $scope.templateTree)
             const searchTree = $scope.search.searchMode === 'element' ? $scope.elementTree : $scope.templateTree;
             $scope.search.searchResults = {};
             addMatchingObjectsToSearchResults(searchTree, $scope.search.searchResults, []);
@@ -1583,7 +1566,6 @@ app.controller('AfExplorerFormCtrl', [
         // Put node children in the displayed attribute list
         // Enrich them with data from the selected list + their parent
         function addChildrenToAttributeList(node, loadedAttributes) {
-            console.log("enriching children and adding them to the attributeList")
             const parentTemplateName = node?.template_name;
 
             loadedAttributes.forEach(attribute => {
@@ -1602,10 +1584,7 @@ app.controller('AfExplorerFormCtrl', [
         }
 
         function loadAndAddChildrenAttributes(node) {
-            console.log("loading children from db and adding them to the list")
             return $scope.getChildrenFromDB(node).then(data => {
-                console.log("node", data.node)
-                console.log("loadedAttributes", data.loadedAttributes)
                 return addChildrenToAttributeList(data.updatedNode, data.loadedAttributes);
             });
         }
@@ -1615,7 +1594,6 @@ app.controller('AfExplorerFormCtrl', [
                return stopDisplayingAttributes(node);
             }
             if (!hasAttributeChildren(node)) {
-                console.log("loading children from the first time")
                 return loadAndAddChildrenAttributes(node);
             }
             return Promise.all(
@@ -1629,10 +1607,8 @@ app.controller('AfExplorerFormCtrl', [
                 })
             ).then((loadedAttributes) => {
                 // When all the attributes are properly fetched from the cache, they can be added to the attribute list
-                console.log("loaded the attributes from the cache and adding them")
                 return addChildrenToAttributeList(node, loadedAttributes);
             }).catch(() => {
-                console.log("could not load attributes from the cache, refetching")
                 // if they are not in the cache, we refetch them all from db and update the cache
                 return loadAndAddChildrenAttributes(node);
             })
@@ -1942,7 +1918,6 @@ app.controller('AfExplorerFormCtrl', [
             searchFilters,
             onlyDisplayCommonAttributes,
         ) {
-            console.log("buildGroupedAttributes", attributes)
             const splitAttributes = splitAttributesOnProperty(attributes, grouping.group.groupingKey);
             return {
                 attributesWithProperty: buildGroupedAttributesResult(
@@ -2070,7 +2045,6 @@ app.controller('AfExplorerFormCtrl', [
         }
 
         $scope.refreshAttributeSection = function() {
-            console.log("Refresh attribute selction")
             updateCheckStatus($scope.attributeList)
 
             buildAttributeCategoryFilterOptions();
@@ -2087,9 +2061,6 @@ app.controller('AfExplorerFormCtrl', [
             applyGroupSort($scope.groupedAttributesFallbackGrouping, 'attributesViewFallback');
             applyGroupAttributesSort($scope.groupedAttributes, 'attributesViewMain');
             applyGroupAttributesSort($scope.groupedAttributesFallbackGrouping, 'attributesViewFallback');
-            console.log("Attribute List", $scope.attributeList)
-            console.log("Grouped attributes", $scope.groupedAttributes)
-            console.log("Grouped fallback attributes", $scope.groupedAttributesFallbackGrouping)
         }
 
         $scope.addAttributeToSelection = function(attribute) {
@@ -2101,7 +2072,6 @@ app.controller('AfExplorerFormCtrl', [
             attribute.checked = true;
             $scope.config.outputSelectedAttributes.push(attribute);
             $scope.selectedElementPaths = buildSelectedElementPaths();
-            console.log("Removed attribute from selection", attribute);
         }
 
         $scope.removeAttributeFromSelection = function(attribute) {
@@ -2114,7 +2084,6 @@ app.controller('AfExplorerFormCtrl', [
             $scope.config.outputSelectedAttributes.splice(index, 1);
             $scope.selectedElementPaths = buildSelectedElementPaths();
             $scope.refreshAttributeSection();
-            console.log("Removed attribute from selection", attribute);
         }
 
         $scope.updateAttributeInSelection = function(attribute) {
@@ -2301,7 +2270,6 @@ app.directive('attributeTableBlock', function() {
                 if (!attributesGroup.length) {
                     return;
                 }
-                console.log("tableState", ctrl.tableState);
                 attributesGroup.sort((firstAttribute, secondAttribute) => {
                     const order = firstAttribute.title.localeCompare(secondAttribute.title);
                     return reverse ? -order : order;
@@ -2310,7 +2278,6 @@ app.directive('attributeTableBlock', function() {
 
             ctrl.sortGroups = function(attributesGroups, identifier, reverse = false) {
                 ctrl.tableState.tableSortStatus[identifier] = reverse ? 'reverse' : 'sort';
-                console.log("tableState", ctrl.tableState);
                 sortAttributeGroups(attributesGroups, reverse);
             };
 
@@ -2467,11 +2434,6 @@ app.component('dropdownElements', {
                         ctrl.templatedModeUnselectedElements = ctrl.templatedModeUnselectedElements.filter(url => url !== element.url);
                     } else {
                         ctrl.templatedModeUnselectedElements.push(element.url)
-                        console.log("ctrl.templatedModeUnselectedElements", ctrl.templatedModeUnselectedElements)
-                        console.log("ctrl.elements", ctrl.elements)
-                        if (ctrl.templatedModeUnselectedElements.length === ctrl.elements.length) {
-                            console.log("empty dropdown")
-                        }
                     }
                 } else {
                     wasUnselected = ctrl.isTemplateAssociatedElementSelected({ element: element });
