@@ -356,6 +356,7 @@ app.controller('AfExplorerFormCtrl', [
         let activeLoadingStates = 0;
         let loadingOverlayTimeout = null;
         let loginModalOpen = false;
+        let datasetPreviewModalOpen = false;
 
         function warnBeforeLeavingDuringLoading(event) {
             if (!$scope.ui.uiFrozen) {
@@ -433,51 +434,59 @@ app.controller('AfExplorerFormCtrl', [
         }
 
         $scope.showDatasetPreviewModal = function() {
-            const modalScope = $scope.$new();
-            modalScope.ui = {
-                previewAttributeSearch: ""
-            };
-
-            function rebuildGroupedSelectedAttributes() {
-                if (!$scope.config.outputSelectedAttributes) {
-                    return;
-                }
-                const groupedAttributes = $scope.buildGroupedAttributes(
-                    getGrouping(),
-                    $scope.config.outputSelectedAttributes,
-                    {
-                        attributeSearch: modalScope.ui.previewAttributeSearch,
-                        attributeCategoryFilterList: [],
-                        attributeValueTypeFilter: ''
-                    },
-                    false
-                );
-                modalScope.groupedSelectedAttributes = groupedAttributes.attributesWithProperty;
-                modalScope.groupedSelectedAttributesFallBackGrouping = groupedAttributes.attributesWithoutProperty;
-                applyGroupSort(modalScope.groupedSelectedAttributes, 'previewDatasetMain');
-                applyGroupSort(modalScope.groupedSelectedAttributesFallBackGrouping, 'previewDatasetFallback');
-                applyGroupAttributesSort(modalScope.groupedSelectedAttributes, 'previewDatasetMain');
-                applyGroupAttributesSort(modalScope.groupedSelectedAttributesFallBackGrouping, 'previewDatasetFallback');
+            if (datasetPreviewModalOpen) {
+                console.log("Can't open modal, already opened")
+                return;
             }
 
+            datasetPreviewModalOpen = true;
+            CreateModalFromTemplate('/plugins/pi-system/resource/pi-system_preview-dataset-modal.html', $scope, null, function(modalScope) {
+                modalScope.$on('$destroy', function() {
+                    console.log("closing modal")
+                    datasetPreviewModalOpen = false;
+                });
+                modalScope.ui = {
+                    previewAttributeSearch: ""
+                };
 
-            rebuildGroupedSelectedAttributes();
+                function rebuildGroupedSelectedAttributes() {
+                    if (!$scope.config.outputSelectedAttributes) {
+                        return;
+                    }
+                    const groupedAttributes = $scope.buildGroupedAttributes(
+                        getGrouping(),
+                        $scope.config.outputSelectedAttributes,
+                        {
+                            attributeSearch: modalScope.ui.previewAttributeSearch,
+                            attributeCategoryFilterList: [],
+                            attributeValueTypeFilter: ''
+                        },
+                        false
+                    );
+                    modalScope.groupedSelectedAttributes = groupedAttributes.attributesWithProperty;
+                    modalScope.groupedSelectedAttributesFallBackGrouping = groupedAttributes.attributesWithoutProperty;
+                    applyGroupSort(modalScope.groupedSelectedAttributes, 'previewDatasetMain');
+                    applyGroupSort(modalScope.groupedSelectedAttributesFallBackGrouping, 'previewDatasetFallback');
+                    applyGroupAttributesSort(modalScope.groupedSelectedAttributes, 'previewDatasetMain');
+                    applyGroupAttributesSort(modalScope.groupedSelectedAttributesFallBackGrouping, 'previewDatasetFallback');
+                }
 
-            modalScope.$watchCollection(
-                function() {
-                    return $scope.config.outputSelectedAttributes;
-                },
-                rebuildGroupedSelectedAttributes
-            );
+                rebuildGroupedSelectedAttributes();
 
-            modalScope.$watch(
-                function() {
-                    return modalScope.ui.previewAttributeSearch;
-                },
-                rebuildGroupedSelectedAttributes
-            );
+                modalScope.$watchCollection(
+                    function() {
+                        return $scope.config.outputSelectedAttributes;
+                    },
+                    rebuildGroupedSelectedAttributes
+                );
 
-            CreateModalFromTemplate('/plugins/pi-system/resource/pi-system_preview-dataset-modal.html', modalScope);
+                modalScope.$watch(
+                    function() {
+                        return modalScope.ui.previewAttributeSearch;
+                    },
+                    rebuildGroupedSelectedAttributes
+                );
+            });
         };
 
         $scope.openLoginModal = function() {
