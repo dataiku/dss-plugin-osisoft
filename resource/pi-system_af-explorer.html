@@ -76,6 +76,7 @@
             </div>
             <div>
                 <button
+                        type="button"
                         class="btn btn--outline btn--primary btn--dku-icon"
                         ng-click="showDatasetPreviewModal()"
                         ng-disabled="!config.outputSelectedAttributes.length">
@@ -83,6 +84,7 @@
                     Preview dataset
                 </button>
                 <button
+                        type="button"
                         class="btn btn--outline btn--primary btn--dku-icon"
                         ng-click="openLoginModal()">
                     Login
@@ -332,6 +334,7 @@
                                         ng-model="ui.attributeFiltering.attributeSearch"
                                         placeholder="Filter by attribute or template name"
                                         ng-change="refreshAttributeSection()"
+                                        ng-keydown="$event.key === 'Enter' && $event.preventDefault()"
                                 >
                                 </basic-search-box>
                             </div>
