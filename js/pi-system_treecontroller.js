@@ -2254,7 +2254,7 @@ app.directive('attributeTableBlock', function() {
         return {
             restrict: 'A',
             scope: {
-                title: '<',
+                tableTitle: '<',
                 displayDetailAttributes: '<?',
                 activeTab: '<',
                 displayGroupPath: '<?',
