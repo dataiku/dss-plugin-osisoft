@@ -1293,8 +1293,8 @@ app.controller('AfExplorerFormCtrl', [
             if (!searchText && !hasCategoryFilters && !hasTemplateFilter) {
                 return false;
             }
-            const matchesName = !searchText || name.toLowerCase().includes(searchText.toLowerCase());
-            const matchesCategories = !hasCategoryFilters || selectedCategories.every((category) => categoryNames.includes(category));
+            const matchesName = !searchText || name?.toLowerCase()?.includes(searchText?.toLowerCase());
+            const matchesCategories = !hasCategoryFilters || selectedCategories.every((category) => categoryNames?.length > 0 && categoryNames.includes(category));
             const matchesTemplate = !hasTemplateFilter || templateName === selectedTemplate;
             return matchesName && matchesCategories && matchesTemplate;
         }
