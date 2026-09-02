@@ -147,7 +147,7 @@
         </tr>
         <tr
                 ng-repeat="attribute in mergedAttribute.attributes track by attribute.id"
-                ng-if="ctrl.isGroupFoldOpen(group) && ctrl.displayDetailAttributes && ctrl.isMergedAttributeOpened(ctrl.getMergedAttributeFoldKey(mergedAttribute))"
+                ng-if="ctrl.isGroupFoldOpen(group) && mergedAttribute.isDisplayed && ctrl.displayDetailAttributes && ctrl.isMergedAttributeOpened(ctrl.getMergedAttributeFoldKey(mergedAttribute))"
                 attribute-table-row
                 merged-attribute="attribute"
                 is-single-attribute="true"
