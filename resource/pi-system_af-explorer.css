@@ -225,13 +225,10 @@ div.no-flex.ng-scope {
 }
 
 .pi-system-explorer__loading-modal {
-    position: absolute;
-    top: 54%;
-    left: 51%;
-    width: 33%;
-    min-width: 320px;
-    min-height: 160px;
-    transform: translate(-50%, -50%);
+    position: fixed;
+    top: calc(50% - 66px);
+    left: calc(50% - 270px);
+    width: 500px;
     background: #FFF;
     border: 1px solid #CCC;
     border-radius: 16px;
@@ -245,8 +242,7 @@ div.no-flex.ng-scope {
 }
 
 .pi-system-explorer__loading-modal-icon {
-    height: 60px;
-    padding: 27px;
+    padding: 50px;
 }
 
 .pi-system-explorer__loading-modal-header {
