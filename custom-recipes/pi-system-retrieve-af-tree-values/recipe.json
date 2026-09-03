@@ -1,0 +1,185 @@
+{
+    "meta": {
+        "label": "2. Download AF tree values",
+        "description": "Retrieve PI values of the selected AF tree",
+        "icon": "icon-pi-system icon-cogs",
+        "iconColor": "yellow"
+    },
+    "kind": "PYTHON",
+    "selectableFromDataset": "input_dataset",
+    "inputRoles": [
+        {
+            "name": "input_dataset",
+            "label": "Dataset from AF tree explorer",
+            "description": "",
+            "arity": "UNARY",
+            "required": true,
+            "acceptsDataset": true
+        }
+    ],
+
+    "outputRoles": [
+        {
+            "name": "api_output",
+            "label": "Main output displayed name",
+            "description": "",
+            "arity": "UNARY",
+            "required": true,
+            "acceptsDataset": true
+        }
+    ],
+    "params": [
+        {
+            "type": "SEPARATOR",
+            "label": "Authentication"
+        },
+        {
+            "name": "credentials",
+            "label": "User preset",
+            "type": "PRESET",
+            "parameterSetId": "basic-auth"
+        },
+        {
+            "name": "show_advanced_parameters",
+            "label": "Show advanced parameters",
+            "type": "BOOLEAN",
+            "definition": "",
+            "defaultValue": false
+        },
+
+        {
+            "name": "is_ssl_check_disabled",
+            "label": "Disable SSL check",
+            "visibilityCondition": "model.show_advanced_parameters==true",
+            "type": "BOOLEAN",
+            "definition": "",
+            "defaultValue": false
+        },
+        {
+            "name": "ssl_cert_path",
+            "label": "Path to SSL certificate",
+            "type": "STRING",
+            "description": "(optional)",
+            "visibilityCondition": "model.show_advanced_parameters==true && model.is_ssl_check_disabled==false",
+            "mandatory": false
+        },
+        {
+            "name": "must_convert_object_to_string",
+            "label": "Convert objects to string",
+            "visibilityCondition": "false && model.show_advanced_parameters==true",
+            "type": "BOOLEAN",
+            "description": "(for direct output to databases)",
+            "defaultValue": false
+        },
+        {
+            "name": "is_debug_mode",
+            "label": "Verbose logging",
+            "visibilityCondition": "false && model.show_advanced_parameters==true",
+            "type": "BOOLEAN",
+            "description": "",
+            "defaultValue": false
+        },
+        {
+            "name": "batch_size",
+            "label": "Batch size",
+            "type": "INT",
+            "description": "",
+            "visibilityCondition": "false && model.show_advanced_parameters==true && model.use_batch_mode==true",
+            "minI": 1,
+            "defaultValue": 500
+        },
+        {
+            "type": "SEPARATOR",
+            "description": "Source",
+            "visibilityCondition": false
+        },
+        {
+            "name": "path_column",
+            "label": "Path column",
+            "description": "",
+            "type": "COLUMN",
+            "columnRole": "input_dataset",
+            "visibilityCondition": false
+        },
+        {
+            "name": "do_duplicate_input_row",
+            "label": "Copy other input columns",
+            "description": "(those with matching names will be overwritten by PI system data)",
+            "type": "BOOLEAN",
+            "visibilityCondition": false
+        },
+        {
+            "name": "download_strategy",
+            "label": "Download strategy",
+            "type": "SELECT",
+            "selectChoices":[
+                {"value": "recursive", "label": "Recursive (large time periods)"},
+                {"value": "batch", "label": "Batch (many attributes, few points each)"}
+            ],
+            "defaultValue": "recursive"
+        },
+        {
+            "type": "SEPARATOR",
+            "description": "Time"
+        },
+        {
+            "type": "SEPARATOR",
+            "description": "Date / time in yyyy-mm-ddThh:mm:ssZ or <a href='https://docs.aveva.com/bundle/pi-web-api-reference/page/help/topics/time-strings.html'>Pi Time String</a> format"
+        },
+        {
+            "name": "use_start_time_column",
+            "label": "Use start time value per row",
+            "description": "",
+            "type": "BOOLEAN",
+            "defaultValue": false
+        },
+        {
+            "visibilityCondition": "model.use_start_time_column==true",
+            "name": "start_time_column",
+            "label": "Start times column",
+            "description": "Column type must be string",
+            "type": "COLUMN",
+            "columnRole": "input_dataset"
+        },
+        {
+            "visibilityCondition": "model.use_start_time_column==false",
+            "name": "start_time",
+            "label": "Start time",
+            "description": "Optional",
+            "type": "STRING",
+            "defaultValue": ""
+        },
+        {
+            "name": "use_end_time_column",
+            "label": "Use end time value per row",
+            "description": "",
+            "type": "BOOLEAN",
+            "defaultValue": false
+        },
+        {
+            "visibilityCondition": "model.use_end_time_column==true",
+            "name": "end_time_column",
+            "label": "End times column",
+            "description": "Column type must be string",
+            "type": "COLUMN",
+            "columnRole": "input_dataset"
+        },
+        {
+            "visibilityCondition": "model.use_end_time_column==false",
+            "name": "end_time",
+            "label": "End time",
+            "description": "Optional",
+            "type": "STRING",
+            "defaultValue": ""
+        },
+        {
+            "name": "max_count",
+            "label": "Max count",
+            "visibilityCondition": "model.show_advanced_parameters==true && ['InterpolatedData','PlotData','RecordedData'].includes(model.data_type)",
+            "description": "Larger number speeds data transfer but loads the PI server",
+            "type": "INT",
+            "defaultValue": 10000
+        }
+    ],
+    "resourceKeys": []
+}
