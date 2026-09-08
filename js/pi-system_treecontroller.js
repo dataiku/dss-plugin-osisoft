@@ -1302,6 +1302,9 @@ app.controller('AfExplorerFormCtrl', [
         };
 
         function nodeMatchesSearch(searchText, name, categoryNames, templateName) {
+            if (!name || !searchText) {
+                return true;
+            }
             const selectedCategories = $scope.search.elementCategoryFilterList;
             const selectedTemplate = $scope.search.elementTemplateFilter;
             const hasCategoryFilters =
