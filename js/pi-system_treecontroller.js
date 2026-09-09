@@ -146,20 +146,22 @@ class Cache {
     constructor(projectKey, server, database) {
         // TODO: include preset in db name
         this.dbName = [projectKey, server, database].join("::")
-        this.dbVersion = 2
+        this.dbVersion = 3
         this.attributesStoreName = "attributes"
         this.elementTreeStoreName = "elementTree"
         this.templateTreeStoreName = "templateTree"
         this.elementsByTemplateStoreName = "elementsByTemplate"
         this.elementCategoriesStoreName = "elementCategories"
         this.attributeCategoriesStoreName = "attributeCategories"
+        this.lastTreeUpdateDateStoreName = "lastTreeUpdateDate"
         this.stores = [
             this.attributesStoreName,
             this.elementTreeStoreName,
             this.templateTreeStoreName,
             this.elementsByTemplateStoreName,
             this.elementCategoriesStoreName,
-            this.attributeCategoriesStoreName
+            this.attributeCategoriesStoreName,
+            this.lastTreeUpdateDateStoreName
         ]
 
         this.elementTreeRecordId = "elementTree"
@@ -167,6 +169,7 @@ class Cache {
         this.elementsByTemplateRecordId = "elementsByTemplate"
         this.elementCategoriesRecordId = "elementCategories"
         this.attributeCategoriesRecordId = "attributeCategories"
+        this.lastTreeUpdateDateRecordId = "lastTreeUpdateDate"
     }
 
     async init() {
@@ -215,6 +218,10 @@ class Cache {
 
     async getAttributeCategories() {
         return this.getObject(this.attributeCategoriesStoreName, this.attributeCategoriesRecordId).then((data) => data?.nodes);
+    }
+
+    async getLastTreeUpdateDate() {
+        return this.getObject(this.lastTreeUpdateDateStoreName, this.lastTreeUpdateDateRecordId).then((data) => data?.date);
     }
 
     async getObject(objectStoreName, objectId) {
@@ -269,6 +276,13 @@ class Cache {
                 id: this.attributeCategoriesRecordId,
                 nodes: attributeCategories
         }, this.attributeCategoriesStoreName);
+    }
+
+    async addOrUpdateLastTreeUpdateDate(date) {
+        return this.addOrUpdate({
+                id: this.lastTreeUpdateDateRecordId,
+                date
+        }, this.lastTreeUpdateDateStoreName);
     }
 
     async addOrUpdate(object, objectStoreName) {
@@ -545,6 +559,7 @@ app.controller('AfExplorerFormCtrl', [
 
         $scope.init = function() {
             $scope.config.show_advanced_parameters = $scope.config.show_advanced_parameters || false;
+            $scope.lastTreeUpdateDate = null;
             $scope.activeTab = $scope.activeTab || 'element';
             $scope.templateTree = $scope.templateTree || [];
             rebuildTemplateList();
@@ -721,11 +736,13 @@ app.controller('AfExplorerFormCtrl', [
                     loadTemplateTree(),
                     loadElementsByTemplate(),
                     loadElementCategories(),
-                    loadAttributeCategories()
+                    loadAttributeCategories(),
+                    loadLastTreeUpdateDate()
                 ])
             }).catch((error) => {
                 throw new Error(`There was an error initializing data: ${error}`);
             }).then(() => {
+                cacheLastTreeUpdateDate();
                 $scope.$applyAsync();
             }).finally(stopLoadingState);
         }
@@ -818,6 +835,7 @@ app.controller('AfExplorerFormCtrl', [
                     $scope.getElementCategoriesFromDB()
                 ]);
             }).then(([elementTree, templateTree, attributeCategories, elementCategories]) => {
+                cacheLastTreeUpdateDate();
                 $scope.elementTree = elementTree;
                 $scope.templateTree = templateTree;
                 rebuildTemplateList();
@@ -907,6 +925,18 @@ app.controller('AfExplorerFormCtrl', [
             $scope.cache.addOrUpdateElementsByTemplate($scope.elementsByTemplate);
         }
 
+        function cacheLastTreeUpdateDate() {
+            const date = new Date().toISOString();
+            $scope.lastTreeUpdateDate = date;
+            return $scope.cache.addOrUpdateLastTreeUpdateDate(date);
+        }
+
+        function loadLastTreeUpdateDate() {
+            return $scope.cache.getLastTreeUpdateDate().then((date) => {
+                $scope.lastTreeUpdateDate = date;
+            });
+        }
+
         $scope.getElementTreeFromDB = function() {
             startLoadingState(false);
             return $scope.callPythonDo({ method: "build_af_tree"}).then(function(data) {
@@ -920,6 +950,7 @@ app.controller('AfExplorerFormCtrl', [
                 $scope.getElementTreeFromDB(),
                 $scope.getTemplatesFromDB(),
             ]).then(function([elementTree, templateTree]) {
+                cacheLastTreeUpdateDate();
                 $scope.elementTree = elementTree;
                 $scope.templateTree = templateTree;
                 rebuildTemplateList();

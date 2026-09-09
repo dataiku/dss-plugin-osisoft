@@ -435,6 +435,12 @@ pi-system-auth-banner {
     gap: 64px;
 }
 
+.pi-system-config--refresh-cache {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
 .pi-system-config--mandatory {
     display: flex;
     gap: 40px;
