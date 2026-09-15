@@ -221,10 +221,13 @@ else:
 output_schema_data_type = "All"
 start_time = config.get("start_time")
 end_time = config.get("end_time")
+time = config.get("time")
 use_start_time_column = config.get("use_start_time_column", False)
 start_time_column = config.get("start_time_column")
 use_end_time_column = config.get("use_end_time_column", False)
 end_time_column = config.get("end_time_column")
+use_time_column = config.get("use_time_column", False)
+time_column = config.get("time_column")
 server_url_column = config.get("server_url_column")
 _, batch_size = get_advanced_parameters(config)
 download_strategy = config.get("download_strategy", "recursive")
@@ -256,6 +259,7 @@ with output_dataset.get_writer() as writer:
         server_url = input_parameters_row.get(server_url_column, server_url) if use_server_url_column else server_url
         start_time = input_parameters_row.get(start_time_column, start_time) if use_start_time_column else start_time
         end_time = input_parameters_row.get(end_time_column, end_time) if use_end_time_column else end_time
+        time = input_parameters_row.get(time_column, time) if use_time_column else time
         row_name = input_parameters_row.get("Name")
 
         # if self_contained_mode:
@@ -293,6 +297,7 @@ with output_dataset.get_writer() as writer:
                     "max_count": max_count,
                     "start_date": start_time,
                     "end_date": end_time,
+                    "time": time,
                     "interval": interval,
                     "sync_time": sync_time,
                     "boundary_type": boundary_type,
@@ -323,6 +328,7 @@ with output_dataset.get_writer() as writer:
                 data_type,
                 start_date=start_time,
                 end_date=end_time,
+                time=time,
                 interval=interval,
                 sync_time=sync_time,
                 boundary_type=boundary_type,

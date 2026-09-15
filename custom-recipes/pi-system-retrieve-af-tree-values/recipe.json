@@ -172,6 +172,29 @@
             "type": "STRING",
             "defaultValue": ""
         },
+                {
+            "name": "use_time_column",
+            "label": "Use time value per row",
+            "description": "",
+            "type": "BOOLEAN",
+            "defaultValue": false
+        },
+        {
+            "visibilityCondition": "model.use_time_column==true",
+            "name": "time_column",
+            "label": "Times column",
+            "description": "Column type must be string",
+            "type": "COLUMN",
+            "columnRole": "input_dataset"
+        },
+        {
+            "visibilityCondition": "model.use_time_column==false",
+            "name": "time",
+            "label": "Time",
+            "description": "Optional",
+            "type": "STRING",
+            "defaultValue": ""
+        },
         {
             "name": "max_count",
             "label": "Max count",
