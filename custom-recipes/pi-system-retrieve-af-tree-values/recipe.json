@@ -191,7 +191,7 @@
             "visibilityCondition": "model.use_time_column==false",
             "name": "time",
             "label": "Time",
-            "description": "Optional",
+            "description": "Optional, for RecordedAtTime data type",
             "type": "STRING",
             "defaultValue": ""
         },
