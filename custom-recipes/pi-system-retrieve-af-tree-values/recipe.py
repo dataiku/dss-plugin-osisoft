@@ -85,27 +85,6 @@ def format_results(results, output_schema_data_type):
         formated_results.append(formated_result)
     return formated_results
 
-def dataframe_schema(dataframe):
-    from pandas.api import types as ptypes
-    """Return a simplified schema for a pandas DataFrame."""
-    schema = []
-
-    for column_name, dtype in dataframe.dtypes.items():
-        if ptypes.is_string_dtype(dtype):
-            column_type = "string"
-        elif ptypes.is_datetime64_any_dtype(dtype):
-            column_type = "date"
-        elif ptypes.is_bool_dtype(dtype):
-            column_type = "boolean"
-        elif ptypes.is_float_dtype(dtype):
-            column_type = "float"
-        elif ptypes.is_integer_dtype(dtype):
-            column_type = "int"
-        else:
-            column_type = "object"
-        schema.append({"name": column_name, "type": column_type})
-    return schema
-
 
 def combine_schemas(input_schema, pi_response_schema):
     """Combine two schemas and return the combined schema plus input renames."""
@@ -159,9 +138,53 @@ def schema_from_sample_data(input_schema, pi_response_schema, sample_data):
             elif column_name in input_types:
                 output_schema.append({"name": column_name, "type": input_types[column_name]})
                 added_names.add(column_name)
-
     return output_schema
 
+
+class Columns():
+    def __init__(self):
+        self.columns = {}
+    def add(self, column_name, columns_type=None):
+        columns_type = columns_type or "string"
+        self.columns[column_name] = columns_type
+    def set_schema(self, new_schema={}):
+        for column in new_schema:
+            self.columns[column] = new_schema.get(column)
+    def get_schema(self):
+        schema = []
+        for column in self.columns:
+            schema.append(
+                {
+                    "name": column,
+                    "type": self.columns.get(column)
+                }
+            )
+        return schema
+    def parse_row(self, row):
+        # Constraining the output row to the declared schema
+        row = row or {}
+        output_row = {}
+        for column in row:
+            if column in self.columns:
+                output_row[column] = row.get(column)
+                # TODO: check the type and cast if necessary
+        for column in self.columns:
+            if column not in output_row:
+                output_row[column] = ""
+        return self._reorder_row(output_row)
+    def _reorder_row(self, row):
+        # SRSLY PANDAS ???!!!
+        output_row = {}
+        for column_name in self.columns:
+            output_row[column_name] = row.get(column_name)
+        return output_row
+    def parse_rows(self, rows):
+        output_rows = []
+        for row in rows:
+            output_rows.append(self.parse_row(row))
+        return output_rows
+
+STANDARD_SCHEMA = {"title":"string", "template_name":"string", "category_names":"string", "path":"string", "paths":"string", "id":"string", "url":"string", "data_type":"string", "summary_type":"string", "boundary_type":"string", "record_boundary_type":"string", "summary_duration":"string", "calculation_basis":"string", "max_count":"string", "interval":"string", "sync_time":"string", "Type":"string", "Timestamp":"string", "Value":"float", "UnitsAbbreviation":"string", "Good":"boolean", "Questionable":"boolean", "Substituted":"boolean", "Annotated":"boolean", "Errors": "string"}
 
 input_dataset = get_input_names_for_role('input_dataset')
 output_names_stats = get_output_names_for_role('api_output')
@@ -185,7 +208,6 @@ input_parameters_dataframe = input_parameters_dataset.get_dataframe()
 do_duplicate_input_row = config.get("do_duplicate_input_row", False)
 input_columns = list(input_parameters_dataframe.columns)
 input_columns_types = list(input_parameters_dataframe.dtypes)
-input_schema = dataframe_schema(input_parameters_dataframe)
 
 self_contained_mode = False
 if not path_column:
@@ -222,6 +244,8 @@ client = None
 previous_server_url = ""
 time_not_parsed = True
 
+columns_formater = Columns()
+columns_formater.set_schema(STANDARD_SCHEMA)
 with output_dataset.get_writer() as writer:
     first_dataframe = True
     absolute_index = 0
@@ -259,7 +283,6 @@ with output_dataset.get_writer() as writer:
                 start_time = client.parse_pi_time(start_time)
                 end_time = client.parse_pi_time(end_time)
                 sync_time = client.parse_pi_time(sync_time)
-
         step_value = None
 
         if download_strategy=="batch":
@@ -327,10 +350,10 @@ with output_dataset.get_writer() as writer:
                 extention = client.unnest_row(base)
                 results.extend(extention)
 
+        results = columns_formater.parse_rows(results)
         unnested_items_rows = pd.DataFrame(results)
         if first_dataframe:
-            pi_response_schema = dataframe_schema(unnested_items_rows)
-            final_schema = schema_from_sample_data(input_schema, pi_response_schema, results[0])
+            final_schema = columns_formater.get_schema()
             output_dataset.write_schema(final_schema)
             first_dataframe = False
         if not unnested_items_rows.empty:

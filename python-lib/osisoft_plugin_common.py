@@ -150,6 +150,7 @@ def build_requests_params(**kwargs):
         "start_time": "starttime",
         "end_time": "endtime",
         "start_date": "starttime",
+        "time": "time",
         "end_date": "endtime",
         "interval": "interval",
         "sync_time": "syncTime",

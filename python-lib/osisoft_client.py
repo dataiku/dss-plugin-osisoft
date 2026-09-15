@@ -296,6 +296,7 @@ class OSIsoftClient(object):
                         if endpoint_type == "event_frames":
                             response_content['event_frame_webid'] = "{}".format(webid)
                         yield response_content
+                        continue
                     items = response_content.get(OSIsoftConstants.API_ITEM_KEY, [])
                     if len(items)==0:
                         item = {}
