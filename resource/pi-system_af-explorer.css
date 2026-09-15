@@ -435,6 +435,12 @@ pi-system-auth-banner {
     gap: 64px;
 }
 
+.pi-system-config--refresh-cache {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
 .pi-system-config--mandatory {
     display: flex;
     gap: 40px;
@@ -771,7 +777,11 @@ pi-system-auth-banner {
 }
 
 .elements-dropdown--dropdown {
-    width: 400px;
+    min-width: 400px;
+    width: max-content;
+    max-width: 1400px;
+    right: 0;
+    left: auto;
     box-sizing: border-box;
     max-height: min(200px, calc(100dvh - 16px));
     overflow-y: auto;
@@ -783,6 +793,7 @@ pi-system-auth-banner {
     flex-direction: row;
     align-items: center;
     justify-content: space-between;
+    gap: 8px;
 }
 
 .elements-dropdown--element-label {
@@ -794,9 +805,7 @@ pi-system-auth-banner {
 }
 
 .elements-dropdown--element-name {
-    min-width: 60px;
-    overflow: hidden;
-    text-overflow: ellipsis;
+    flex: 0 0 auto;
     white-space: nowrap;
 }
 
