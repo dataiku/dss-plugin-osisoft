@@ -141,6 +141,28 @@ def schema_from_sample_data(input_schema, pi_response_schema, sample_data):
     return output_schema
 
 
+def dataframe_schema(dataframe):
+    from pandas.api import types as ptypes
+    """Return a simplified schema for a pandas DataFrame."""
+    schema = {}
+
+    for column_name, dtype in dataframe.dtypes.items():
+        if ptypes.is_string_dtype(dtype):
+            column_type = "string"
+        elif ptypes.is_datetime64_any_dtype(dtype):
+            column_type = "date"
+        elif ptypes.is_bool_dtype(dtype):
+            column_type = "boolean"
+        elif ptypes.is_float_dtype(dtype):
+            column_type = "float"
+        elif ptypes.is_integer_dtype(dtype):
+            column_type = "int"
+        else:
+            column_type = "object"
+        schema[column_name] = column_type
+    return schema
+
+
 class Columns():
     def __init__(self):
         self.columns = {}
@@ -208,6 +230,7 @@ input_parameters_dataframe = input_parameters_dataset.get_dataframe()
 do_duplicate_input_row = config.get("do_duplicate_input_row", False)
 input_columns = list(input_parameters_dataframe.columns)
 input_columns_types = list(input_parameters_dataframe.dtypes)
+input_schema = dataframe_schema(input_parameters_dataframe)
 
 self_contained_mode = False
 if not path_column:
@@ -248,7 +271,8 @@ previous_server_url = ""
 time_not_parsed = True
 
 columns_formater = Columns()
-columns_formater.set_schema(STANDARD_SCHEMA)
+input_schema.update(STANDARD_SCHEMA)
+columns_formater.set_schema(input_schema)
 with output_dataset.get_writer() as writer:
     first_dataframe = True
     absolute_index = 0
