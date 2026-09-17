@@ -371,7 +371,6 @@ with output_dataset.get_writer() as writer:
                 calculation_basis=calculation_basis
             )
         for row in rows:
-            print("ALX:row={}".format(row))
             if isinstance(row, list):
                 for line in row:
                     base = get_base_for_data_type(data_type, object_id, Step=step_value)
