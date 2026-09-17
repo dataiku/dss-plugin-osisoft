@@ -249,7 +249,7 @@ class OSIsoftClient(object):
                     for item in items:
                         yield item
 
-    def get_rows_from_af_trees(self, input_rows):
+    def get_rows_from_af_trees(self, input_rows, transpose_summaries=False):
         batch_requests_parameters = []
         number_processed_webids = 0
         number_of_webids_to_process = len(input_rows)
@@ -301,23 +301,28 @@ class OSIsoftClient(object):
                         yield response_content
                         continue
                     items = response_content.get(OSIsoftConstants.API_ITEM_KEY, [])
-                    if len(items)==0:
-                        item = {}
-                        if event_start_time:
-                            item['StartTime'] = event_start_time
-                        if event_end_time:
-                            item['EndTime'] = event_end_time
-                        if initial_index is not None:
-                            item['initial_index'] = initial_indexs[response_index]
-                        yield item
-                    for item in items:
-                        if event_start_time:
-                            item['StartTime'] = event_start_time
-                        if event_end_time:
-                            item['EndTime'] = event_end_time
-                        if initial_index is not None:
-                            item['initial_index'] = initial_indexs[response_index]
-                        yield item
+                    if transpose_summaries and type_in_items(items):
+                        combined_item = combined_items(items)
+                        combined_item['initial_index'] = initial_indexs[response_index]
+                        yield combined_item
+                    elif len(items)==0:
+                            item = {}
+                            if event_start_time:
+                                item['StartTime'] = event_start_time
+                            if event_end_time:
+                                item['EndTime'] = event_end_time
+                            if initial_index is not None:
+                                item['initial_index'] = initial_indexs[response_index]
+                            yield item
+                    else:
+                        for item in items:
+                            if event_start_time:
+                                item['StartTime'] = event_start_time
+                            if event_end_time:
+                                item['EndTime'] = event_end_time
+                            if initial_index is not None:
+                                item['initial_index'] = initial_indexs[response_index]
+                            yield item
                     response_index += 1
                 web_ids = []
 

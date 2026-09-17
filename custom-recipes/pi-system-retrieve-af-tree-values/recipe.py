@@ -345,7 +345,8 @@ with output_dataset.get_writer() as writer:
             batch_buffer_size += 1
             if (batch_buffer_size >= batch_size) or (absolute_index == nb_rows_to_process):
                 rows = client.get_rows_from_af_trees(
-                    buffer
+                    buffer,
+                    transpose_summaries=transpose_summaries
                 )
                 batch_buffer_size = 0
                 buffer = []
