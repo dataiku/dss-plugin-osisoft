@@ -208,7 +208,7 @@ class Columns():
 
 STANDARD_SCHEMA = {"title":"string", "template_name":"string", "category_names":"string", "path":"string", "paths":"string", "id":"string", "url":"string", "data_type":"string", "summary_type":"string", "boundary_type":"string", "record_boundary_type":"string", "summary_duration":"string", "calculation_basis":"string", "max_count":"string", "interval":"string", "sync_time":"string", "Type":"string", "Timestamp":"string", "Value":"float", "UnitsAbbreviation":"string", "Good":"boolean", "Questionable":"boolean", "Substituted":"boolean", "Annotated":"boolean", "Errors": "string"}
 
-TRANSPOSED_SCHEMA = {"Total": "string", "Average": "string",  "Minimum": "string", "Maximum": "string", "Range": "string", "StdDev": "string", "PopulationStdDev": "string", "Count": "string", "PercentGood": "string", "TotalWithUOM": "string", "All": "string", "AllForNonNumeric": "string"}
+TRANSPOSED_SCHEMA = {"Total": "string", "Average": "string",  "Minimum": "string", "Maximum": "string", "Range": "string", "StdDev": "string", "PopulationStdDev": "string", "Count": "string", "PercentGood": "string", "TotalWithUOM": "string"}
 
 input_dataset = get_input_names_for_role('input_dataset')
 output_names_stats = get_output_names_for_role('api_output')
