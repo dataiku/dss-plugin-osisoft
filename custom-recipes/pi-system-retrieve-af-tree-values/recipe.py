@@ -208,6 +208,8 @@ class Columns():
 
 STANDARD_SCHEMA = {"title":"string", "template_name":"string", "category_names":"string", "path":"string", "paths":"string", "id":"string", "url":"string", "data_type":"string", "summary_type":"string", "boundary_type":"string", "record_boundary_type":"string", "summary_duration":"string", "calculation_basis":"string", "max_count":"string", "interval":"string", "sync_time":"string", "Type":"string", "Timestamp":"string", "Value":"float", "UnitsAbbreviation":"string", "Good":"boolean", "Questionable":"boolean", "Substituted":"boolean", "Annotated":"boolean", "Errors": "string"}
 
+TRANSPOSED_SCHEMA = {"Total": "string", "Average": "string",  "Minimum": "string", "Maximum": "string", "Range": "string", "StdDev": "string", "PopulationStdDev": "string", "Count": "string", "PercentGood": "string", "TotalWithUOM": "string"}
+
 input_dataset = get_input_names_for_role('input_dataset')
 output_names_stats = get_output_names_for_role('api_output')
 config = get_recipe_config()
@@ -272,6 +274,9 @@ time_not_parsed = True
 
 columns_formater = Columns()
 input_schema.update(STANDARD_SCHEMA)
+transpose_summaries = config.get("transpose_summaries", False)
+if transpose_summaries:
+    input_schema.update(TRANSPOSED_SCHEMA)
 columns_formater.set_schema(input_schema)
 with output_dataset.get_writer() as writer:
     first_dataframe = True
@@ -340,7 +345,8 @@ with output_dataset.get_writer() as writer:
             batch_buffer_size += 1
             if (batch_buffer_size >= batch_size) or (absolute_index == nb_rows_to_process):
                 rows = client.get_rows_from_af_trees(
-                    buffer
+                    buffer,
+                    transpose_summaries=transpose_summaries
                 )
                 batch_buffer_size = 0
                 buffer = []
@@ -362,6 +368,7 @@ with output_dataset.get_writer() as writer:
                 endpoint_type="AF",
                 summary_type=summary_type,
                 summary_duration=summary_duration,
+                transpose_summaries=transpose_summaries,
                 calculation_basis=calculation_basis
             )
         for row in rows:

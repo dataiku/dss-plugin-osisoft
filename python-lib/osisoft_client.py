@@ -51,7 +51,7 @@ class OSIsoftClient(object):
         else:
             return None
 
-    def recursive_get_rows_from_webid(self, webid, data_type, **kwargs):
+    def recursive_get_rows_from_webid(self, webid, data_type, transpose_summaries=False, **kwargs):
         # Split the time range until no more HTTP 400
         kwargs["endpoint_type"] = kwargs.get("endpoint_type", "event_frames")
         kwargs["can_raise"] = kwargs.get("can_raise", True)
@@ -62,7 +62,7 @@ class OSIsoftClient(object):
         previous_item_timestamp = False
         while not done:
             logger.info("Attempting download webids from {} to {}".format(start_date, end_date))
-            rows = self.get_rows_from_webid(webid, data_type, **kwargs)
+            rows = self.get_rows_from_webid(webid, data_type, transpose_summaries=transpose_summaries, **kwargs)
             counter = 0
             try:
                 row = next(rows)
@@ -83,7 +83,7 @@ class OSIsoftClient(object):
                     kwargs["start_date"] = start_timestamp
                     kwargs["end_date"] = half_time_iso
                     first_half_rows = self.recursive_get_rows_from_webid(
-                        webid, data_type, **kwargs
+                        webid, data_type, transpose_summaries=transpose_summaries, **kwargs
                     )
                     for row in first_half_rows:
                         yield row
@@ -91,7 +91,7 @@ class OSIsoftClient(object):
                     kwargs["start_date"] = half_time_iso
                     kwargs["end_date"] = end_timestamp
                     second_half_rows = self.recursive_get_rows_from_webid(
-                        webid, data_type, **kwargs
+                        webid, data_type, transpose_summaries=transpose_summaries, **kwargs
                     )
                     for row in second_half_rows:
                         yield row
@@ -225,7 +225,7 @@ class OSIsoftClient(object):
             return iso_to_epoch(iso_timestamp)
         return iso_timestamp
 
-    def get_rows_from_webid(self, webid, data_type, **kwargs):
+    def get_rows_from_webid(self, webid, data_type, transpose_summaries=False, **kwargs):
         endpoint_type = kwargs.get("endpoint_type", "event_frames")
         kwargs["endpoint_type"] = endpoint_type
         url = self.endpoint.get_data_from_webid_url(endpoint_type, data_type, webid)
@@ -243,10 +243,13 @@ class OSIsoftClient(object):
                 items = json_response.get(OSIsoftConstants.API_ITEM_KEY, [json_response])
                 if not items:
                     items = [{}]
-                for item in items:
-                    yield item
+                if transpose_summaries and type_in_items(items):
+                    yield combined_items(items)
+                else:
+                    for item in items:
+                        yield item
 
-    def get_rows_from_af_trees(self, input_rows):
+    def get_rows_from_af_trees(self, input_rows, transpose_summaries=False):
         batch_requests_parameters = []
         number_processed_webids = 0
         number_of_webids_to_process = len(input_rows)
@@ -298,23 +301,28 @@ class OSIsoftClient(object):
                         yield response_content
                         continue
                     items = response_content.get(OSIsoftConstants.API_ITEM_KEY, [])
-                    if len(items)==0:
-                        item = {}
-                        if event_start_time:
-                            item['StartTime'] = event_start_time
-                        if event_end_time:
-                            item['EndTime'] = event_end_time
-                        if initial_index is not None:
-                            item['initial_index'] = initial_indexs[response_index]
-                        yield item
-                    for item in items:
-                        if event_start_time:
-                            item['StartTime'] = event_start_time
-                        if event_end_time:
-                            item['EndTime'] = event_end_time
-                        if initial_index is not None:
-                            item['initial_index'] = initial_indexs[response_index]
-                        yield item
+                    if transpose_summaries and type_in_items(items):
+                        combined_item = combined_items(items)
+                        combined_item['initial_index'] = initial_indexs[response_index]
+                        yield combined_item
+                    elif len(items)==0:
+                            item = {}
+                            if event_start_time:
+                                item['StartTime'] = event_start_time
+                            if event_end_time:
+                                item['EndTime'] = event_end_time
+                            if initial_index is not None:
+                                item['initial_index'] = initial_indexs[response_index]
+                            yield item
+                    else:
+                        for item in items:
+                            if event_start_time:
+                                item['StartTime'] = event_start_time
+                            if event_end_time:
+                                item['EndTime'] = event_end_time
+                            if initial_index is not None:
+                                item['initial_index'] = initial_indexs[response_index]
+                            yield item
                     response_index += 1
                 web_ids = []
 
@@ -1476,3 +1484,18 @@ def prepare_request_buffer(request_buffer):
             dku_counter.append(_dku_counter)
         row_counter.append(dku_counter)
     return request_buffer, row_counter
+
+
+def type_in_items(items):
+    for item in items:
+        if not 'Type' in item:
+            return False
+    return True
+
+
+def combined_items(items):
+    output = {}
+    output["Timestamp"] = items[0].get("Value", {}).get("Timestamp")
+    for item in items:
+        output[item.get("Type")] = item.get("Value", {}).get("Value")
+    return output

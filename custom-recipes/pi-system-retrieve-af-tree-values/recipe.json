@@ -119,6 +119,12 @@
             "defaultValue": "recursive"
         },
         {
+            "name": "transpose_summaries",
+            "label": "Transpose summaries",
+            "description": "",
+            "type": "BOOLEAN"
+        },
+        {
             "type": "SEPARATOR",
             "description": "Time"
         },
