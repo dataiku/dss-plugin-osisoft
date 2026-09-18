@@ -62,7 +62,7 @@ server_url_column = config.get("server_url_column")
 use_batch_mode, batch_size = get_advanced_parameters(config)
 interval, sync_time, boundary_type = get_interpolated_parameters(config)
 record_boundary_type = config.get("record_boundary_type") if data_type == "RecordedData" else None
-summary_type, summary_duration = get_summary_parameters(config)
+summary_type, summary_duration, calculation_basis = get_summary_parameters(config)
 do_duplicate_input_row = config.get("do_duplicate_input_row", False)
 max_request_size, estimated_density, maximum_points_returned = get_batch_parameters(config)
 max_time_to_retrieve_per_batch = estimated_density / maximum_points_returned #density per hour <- max time is in hour
@@ -134,7 +134,8 @@ with output_dataset.get_writer() as writer:
                 can_raise=False,
                 object_id=object_id,
                 summary_type=summary_type,
-                summary_duration=summary_duration
+                summary_duration=summary_duration,
+                calculation_basis=calculation_basis
             )
         elif use_batch_mode:
             buffer.append({"WebId": object_id})
@@ -153,6 +154,7 @@ with output_dataset.get_writer() as writer:
                     object_id=object_id,
                     summary_type=summary_type,
                     summary_duration=summary_duration,
+                    calculation_basis=calculation_basis
                     endpoint_type="AF",
                     estimated_density=estimated_density,
                     maximum_points_returned=maximum_points_returned
@@ -175,7 +177,8 @@ with output_dataset.get_writer() as writer:
                 can_raise=False,
                 endpoint_type="AF",
                 summary_type=summary_type,
-                summary_duration=summary_duration
+                summary_duration=summary_duration,
+                calculation_basis=calculation_basis
             )
         for row in rows:
             row["Name"] = row_name

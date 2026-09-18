@@ -1,8 +1,9 @@
 # Changelog
 
-## [Version 2.0.0-beta.1](https://github.com/dataiku/dss-plugin-pi-server/releases/tag/v2.0.0-beta.1) - Feature release - 2026-09-08
+## [Version 2.0.0-beta.2](https://github.com/dataiku/dss-plugin-pi-server/releases/tag/v2.0.0-beta.2) - Feature release - 2026-09-15
 
 - Add a AF hierarchy downloader
+- Add a AF hierarchy specific download recipe
 
 ## [Version 1.4.2](https://github.com/dataiku/dss-plugin-pi-server/releases/tag/v1.4.2) - Bugfix release - 2026-04-17
 
