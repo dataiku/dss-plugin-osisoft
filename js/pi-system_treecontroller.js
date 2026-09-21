@@ -338,9 +338,6 @@ app.controller('AfExplorerFormCtrl', [
         $scope.attributeList = []; // The list of attributes that are currently displayed in the main panel
         $scope.config.outputSelectedAttributes = $scope.config.outputSelectedAttributes || []; // The list of attributes selected by the user
         $scope.elementsByTemplate = {};
-        if (typeof $scope.config.displayLongestPath === "undefined") {
-            $scope.config.displayLongestPath = true;
-        }
 
         // $scope.config.selectedTemplateNames =  []; // la liste des templates sélectionnés utilisées pour filtrer le search. Stale
 
@@ -961,7 +958,7 @@ app.controller('AfExplorerFormCtrl', [
             });
         }
 
-        $scope.getChildrenFromDB = function(item) {
+        $scope.populateAttributesFromDb = function(item) {
             if (item.type === "template") {
                 return getAttributesForTemplate(item);
             }
@@ -1352,11 +1349,6 @@ app.controller('AfExplorerFormCtrl', [
         }
 
         $scope.prettifyElementPath = function(elementPath, paths, isAttributePath=false, cutEndElement=false) {
-            if (paths && paths.length > 1 && $scope.config.displayLongestPath) {
-                elementPath = paths.reduce((longestPath, path) =>
-                    path.length > longestPath.length ? path : longestPath
-                );
-            }
             if (isAttributePath) {
                 elementPath = getElementPathFromAttributePath(elementPath);
             }
@@ -1601,7 +1593,7 @@ app.controller('AfExplorerFormCtrl', [
             if (hasAttributeChildren(node)) {
                 return Promise.resolve(node);
             }
-            return $scope.getChildrenFromDB(node).then(data => {
+            return $scope.populateAttributesFromDb(node).then(data => {
                 return data.updatedNode;
             });
         }
@@ -1638,7 +1630,7 @@ app.controller('AfExplorerFormCtrl', [
         }
 
         function loadAndAddChildrenAttributes(node) {
-            return $scope.getChildrenFromDB(node).then(data => {
+            return $scope.populateAttributesFromDb(node).then(data => {
                 return addChildrenToAttributeList(data.updatedNode, data.loadedAttributes);
             });
         }
