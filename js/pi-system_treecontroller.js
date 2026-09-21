@@ -988,11 +988,6 @@ app.controller('AfExplorerFormCtrl', [
                         );
                         item.attribute_children.push(attribute.id);
                     });
-                    item.children = data.choices.filter(node => node.type === item.type);
-                    item.children.forEach(child => {
-                        child.expanded = false;
-                    });
-                    markSearchResults(item.children, $scope.ui.searchMatchedElementPaths || []);
                     cacheElementTree();
                     return Promise.all(attributeLoadPromises).then(() => {
                         return {
@@ -2250,13 +2245,6 @@ app.component('treeNode', {
                 $event.stopPropagation();
             }
             if (!ctrl.canExpand(node)) {
-                return;
-            }
-            // Loading children before toggling the node
-            if (!node.expanded && (!node.children?.length || !ctrl.hasRenderableChildren(node))) {
-                ctrl.getChildrenFromDb(node).then(() => {
-                    node.expanded = true;
-                });
                 return;
             }
             node.expanded = !node.expanded;
