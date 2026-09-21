@@ -3,6 +3,16 @@
 ## [Version 2.0.0-beta.1](https://github.com/dataiku/dss-plugin-pi-server/releases/tag/v2.0.0-beta.1) - Feature release - 2026-09-08
 
 - Add a AF hierarchy downloader
+- Add a AF hierarchy specific download recipe
+
+## [Version 1.4.4](https://github.com/dataiku/dss-plugin-pi-server/releases/tag/v1.4.4) - Enhancement release - 2026-09-09
+
+- Added supported Python versions: 3.11, 3.12, 3.13, 3.14
+- Fixes dependency issue with setuptools<82.0.0
+
+## [Version 1.4.3](https://github.com/dataiku/dss-plugin-pi-server/releases/tag/v1.4.3) - Bugfix release - 2026-07-31
+
+- Fix issues link to libraries names collisions
 
 ## [Version 1.4.2](https://github.com/dataiku/dss-plugin-pi-server/releases/tag/v1.4.2) - Bugfix release - 2026-04-17
 

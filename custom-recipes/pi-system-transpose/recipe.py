@@ -2,12 +2,12 @@
 import dataiku
 from dataiku.customrecipe import get_input_names_for_role, get_recipe_config, get_output_names_for_role
 import pandas as pd
-from safe_logger import SafeLogger
+from osisoft_safe_logger import SafeLogger
 import os
-from temp_utils import CustomTmpFile
+from osisoft_temp_utils import CustomTmpFile
 from osisoft_constants import OSIsoftConstants
 import dateutil.parser
-from column_name import normalise_name
+from osisoft_column_name import normalise_name
 from osisoft_plugin_common import reorder_dataframe
 from datetime import datetime
 
