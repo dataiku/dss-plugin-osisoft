@@ -2006,6 +2006,9 @@ app.controller('AfExplorerFormCtrl', [
 
         $scope.getAttributeTableTitle = function(fallback=false) {
             if (fallback) {
+                if ($scope.groupMode === GroupMode.CATEGORY) {
+                    return "Attributes with no categories";
+                }
                 return "Elements";
             }
             if ($scope.groupMode === GroupMode.CATEGORY) {
