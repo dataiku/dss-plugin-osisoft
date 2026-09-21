@@ -1433,7 +1433,7 @@ app.controller('AfExplorerFormCtrl', [
                     });
                 });
             });
-            $scope.refreshAttributeSection();
+            refreshAttributeTables();
         };
 
         $scope.checkAttribute = function(attributeList) {
@@ -1446,7 +1446,7 @@ app.controller('AfExplorerFormCtrl', [
                     $scope.addAttributeToSelection(attribute);
                 }
             )
-            $scope.refreshAttributeSection();
+            refreshAttributeTables();
         };
 
         $scope.checkSingleAttribute = function(attribute) {
@@ -1455,7 +1455,7 @@ app.controller('AfExplorerFormCtrl', [
             } else {
                 $scope.removeAttributeFromSelection(attribute);
             }
-            $scope.refreshAttributeSection();
+            refreshAttributeTables();
         };
 
         $scope.updateSingleAttributeDataType = function(attribute) {
@@ -1488,7 +1488,7 @@ app.controller('AfExplorerFormCtrl', [
                     });
                 }
             )
-            $scope.refreshAttributeSection();
+            refreshAttributeTables();
         };
 
         // TODO: mark as loaded elements and replace this logic
@@ -1906,6 +1906,9 @@ app.controller('AfExplorerFormCtrl', [
 
         $scope.getAttributeTableTitle = function(fallback=false) {
             if (fallback) {
+                if ($scope.groupMode === GroupMode.CATEGORY) {
+                    return "Attributes with no categories";
+                }
                 return "Elements";
             }
             if ($scope.groupMode === GroupMode.CATEGORY) {
@@ -1937,6 +1940,16 @@ app.controller('AfExplorerFormCtrl', [
             applyGroupSort($scope.search.groupedAttributeResultsFallbackGrouping, 'attributeSearchResultsFallback');
             applyGroupAttributesSort($scope.search.groupedAttributeResults, 'attributeSearchResultsMain');
             applyGroupAttributesSort($scope.search.groupedAttributeResultsFallbackGrouping, 'attributeSearchResultsFallback');
+        }
+
+        function refreshAttributeTables() {
+            $scope.refreshAttributeSection();
+
+            const currentSearchPage =
+                $scope.search.attributeResults[$scope.search.attributeSearchCurrentPage];
+            if ($scope.search.searchMode === 'attribute' && currentSearchPage) {
+                refreshSearchAttributeResults();
+            }
         }
 
         function getCheckboxStatus(checkboxStatuses) {
