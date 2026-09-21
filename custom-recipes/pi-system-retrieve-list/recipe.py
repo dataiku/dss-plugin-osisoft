@@ -154,7 +154,7 @@ with output_dataset.get_writer() as writer:
                     object_id=object_id,
                     summary_type=summary_type,
                     summary_duration=summary_duration,
-                    calculation_basis=calculation_basis
+                    calculation_basis=calculation_basis,
                     endpoint_type="AF",
                     estimated_density=estimated_density,
                     maximum_points_returned=maximum_points_returned
