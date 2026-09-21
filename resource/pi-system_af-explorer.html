@@ -47,7 +47,7 @@
             <div class="tree-view__separator"></div>
             <div class="tree-view__content">
                 <ul ng-if="activeTab === 'element' && elementTree && elementTree.length">
-                    <li ng-repeat="node in elementTree track by node.id">
+                    <li ng-repeat="node in elementTree track by node.true_path">
                         <tree-node node="node" get-children-from-db="getChildrenFromDB" toggle-display-attributes="toggleDisplayAttributes"
                                    config="config" clicked-nodes="ui.clickedNodes" toggle-node-visualization="toggleNodeVisualization(node)"
                                    selected-element-paths="selectedElementPaths"

@@ -48,7 +48,7 @@
 >
     <li
             class="tree-node__child"
-            ng-repeat="child in ctrl.node.children track by (child.id || child.path || (child.title + '_' + $index))"
+            ng-repeat="child in ctrl.node.children track by child.true_path"
     >
         <tree-node
                 node="child"
