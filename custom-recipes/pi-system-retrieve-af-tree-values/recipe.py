@@ -9,7 +9,6 @@ from osisoft_plugin_common import (
     get_credentials, get_base_for_data_type, check_debug_mode,
     PerformanceTimer, get_max_count, check_must_convert_object_to_string,
     get_advanced_parameters,
-    get_batch_parameters
 )
 from osisoft_client import OSIsoftClient
 from osisoft_constants import OSIsoftConstants
@@ -257,9 +256,6 @@ server_url_column = config.get("server_url_column")
 _, batch_size = get_advanced_parameters(config)
 download_strategy = config.get("download_strategy", "recursive")
 
-max_request_size, estimated_density, maximum_points_returned = get_batch_parameters(config)
-max_time_to_retrieve_per_batch = estimated_density / maximum_points_returned  # density per hour <- max time is in hour
-
 network_timer = PerformanceTimer()
 processing_timer = PerformanceTimer()
 processing_timer.start()
@@ -338,8 +334,6 @@ with output_dataset.get_writer() as writer:
                     "summary_duration": summary_duration,
                     "calculation_basis": calculation_basis,
                     "endpoint_type": "AF",
-                    "estimated_density": estimated_density,
-                    "maximum_points_returned": maximum_points_returned
                 }
             )
             batch_buffer_size += 1
