@@ -346,8 +346,6 @@ app.controller('AfExplorerFormCtrl', [
                 attributeCategoryFilterList: [],
                 attributeValueTypeFilter: ""
             },
-            templateSearch: "",
-            templateSearchResults: [],
             displayPath: false,
             onlyDisplayCommon: false,
             uiFrozen: false,
@@ -1106,7 +1104,6 @@ app.controller('AfExplorerFormCtrl', [
             $scope.ui.clickedNodes = [];
             $scope.attributeList = [];
             $scope.ui.attributeFiltering.attributeSearch = "";
-            $scope.ui.templateSearch = "";
             $scope.refreshAttributeSection();
         }
 
@@ -1957,13 +1954,8 @@ app.controller('AfExplorerFormCtrl', [
         function buildAttributeCategoryFilterOptions() {
             $scope.attributeCategoryFilterOptions = $scope.attributeCategories?.filter((category) => category.title !== "-- Any --").map((category) => {
                 const categoryName = category.title;
-                const occurrencesCount = $scope.attributeList?.filter((attribute) => {
-                    return Array.isArray(attribute.category_names) && attribute.category_names.includes(categoryName) ;
-                }).length;
-
                 return {
                     value: categoryName,
-                    // label: categoryName + ' (' + occurrencesCount + ')'
                     label: categoryName
                 };
             });
@@ -2114,10 +2106,7 @@ app.controller('AfExplorerFormCtrl', [
 app.component('treeNode', {
     bindings: {
         node: '=',
-        getChildrenFromDb: '<',
-        toggleDisplayAttributes: '<',
         clickedNodes: '<',
-        config: '<',
         toggleNodeVisualization: '&',
         selectedElementPaths: '<',
         hideChildren: '<?'
@@ -2139,13 +2128,6 @@ app.component('treeNode', {
 
         ctrl.showPaperclip = function(node) {
             return node?.paths?.some(path => ctrl.selectedElementPaths.includes(path));
-        };
-
-        ctrl.hasRenderableChildren = function(node) {
-            if (!node || !Array.isArray(node.children) || !node.children.length) {
-                return false;
-            }
-            return true;
         };
 
         ctrl.canExpand = function(node) {
@@ -2185,16 +2167,13 @@ app.directive('attributeTableBlock', function() {
                 tableTitle: '<',
                 displayDetailAttributes: '<?',
                 activeTab: '<',
-                displayGroupPath: '<?',
                 displayElementDropdown: '<',
-                excludedColumns: '<',
                 identifier: '@',
                 groupMode: '<',
                 tableState: '<',
                 closedFolds: '<',
                 elementsByTemplate: '<',
                 groupedAttributes: '=',
-                config: '=',
                 aggregateDataTypeFields: '<',
                 prettifyElementPath: '<',
                 onToggleSelectAllGroupedAttributes: '&',

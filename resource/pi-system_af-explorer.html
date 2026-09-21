@@ -48,16 +48,14 @@
             <div class="tree-view__content">
                 <ul ng-if="activeTab === 'element' && elementTree && elementTree.length">
                     <li ng-repeat="node in elementTree track by node.true_path">
-                        <tree-node node="node" toggle-display-attributes="toggleDisplayAttributes"
-                                   config="config" clicked-nodes="ui.clickedNodes" toggle-node-visualization="toggleNodeVisualization(node)"
+                        <tree-node node="node" clicked-nodes="ui.clickedNodes" toggle-node-visualization="toggleNodeVisualization(node)"
                                    selected-element-paths="selectedElementPaths"
                         ></tree-node>
                     </li>
                 </ul>
                 <ul ng-if="activeTab === 'template' && templateTree && templateTree.length">
                     <li ng-repeat="node in templateTree track by node.id">
-                        <tree-node node="node" toggle-display-attributes="toggleDisplayAttributes"
-                                   config="config" clicked-nodes="ui.clickedNodes" toggle-node-visualization="toggleNodeVisualization(node)"
+                        <tree-node node="node" clicked-nodes="ui.clickedNodes" toggle-node-visualization="toggleNodeVisualization(node)"
                                    selected-element-paths="selectedElementPaths"
                         ></tree-node>
                     </li>
@@ -222,7 +220,6 @@
                                 attribute-table-block
                                 ng-if="search.groupedAttributeResultsFallbackGrouping && !search.groupedAttributeResultsFallbackGrouping.empty"
                                 grouped-attributes="search.groupedAttributeResultsFallbackGrouping"
-                                config="config"
                                 display-detail-attributes="true"
                                 elements-by-template="elementsByTemplate"
                                 table-title="getAttributeTableTitle(true)"
@@ -250,7 +247,6 @@
                         <div
                                 attribute-table-block
                                 grouped-attributes="search.groupedAttributeResults"
-                                config="config"
                                 display-detail-attributes="true"
                                 elements-by-template="elementsByTemplate"
                                 table-title="getAttributeTableTitle()"
@@ -393,7 +389,6 @@
                             display-detail-attributes="ui.displayPath"
                             ng-if="groupedAttributesFallbackGrouping && !groupedAttributesFallbackGrouping.empty"
                             grouped-attributes="groupedAttributesFallbackGrouping"
-                            config="config"
                             elements-by-template="elementsByTemplate"
                             table-title="getAttributeTableTitle(true)"
                             identifier="attributesViewFallback"
@@ -421,7 +416,6 @@
                             attribute-table-block
                             display-detail-attributes="ui.displayPath"
                             grouped-attributes="groupedAttributes"
-                            config="config"
                             elements-by-template="elementsByTemplate"
                             table-title="getAttributeTableTitle()"
                             identifier="attributesViewMain"
