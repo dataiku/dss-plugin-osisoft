@@ -175,36 +175,6 @@ class OSIsoftConstants(object):
         {'name': 'Zero', 'type': 'string'},
         {'name': 'Errors', 'type': 'object'}
     ]
-    ALL_COLUMNS = [
-        {'name': 'object_id', 'type': 'string'},
-        {'name': 'WebId', 'type': 'string'},
-        {'name': 'Name', 'type': 'string'},
-        {'name': 'Path', 'type': 'string'},
-        {'name': 'Type', 'type': 'string'},
-        {'name': 'Timestamp', 'type': 'date'},
-        {'name': 'Value', 'type': 'string'},
-        # {'name': 'IsSystem', 'type': 'boolean'},
-        {'name': 'UnitsAbbreviation', 'type': 'string'},
-        {'name': 'Annotated', 'type': 'boolean'},
-        {'name': 'Good', 'type': 'boolean'},
-        {'name': 'Questionable', 'type': 'boolean'},
-        {'name': 'Substituted', 'type': 'boolean'},
-        {'name': 'title', 'type': 'string'},
-        {'name': 'template_name', 'type': 'string'},
-        {'name': 'category_names', 'type': 'string'},
-        {'name': 'path', 'type': 'string'},
-        {'name': 'paths', 'type': 'string'},
-        {'name': 'id', 'type': 'string'},
-        {'name': 'url', 'type': 'string'},
-        {'name': 'data_type', 'type': 'string'},
-        {'name': 'summary_type', 'type': 'string'},
-        {'name': 'boundary_type', 'type': 'string'},
-        {'name': 'record_boundary_type', 'type': 'string'},
-        {'name': 'summary_duration', 'type': 'string'},
-        {'name': 'calculation_basis', 'type': 'string'},
-        {'name': 'max_count', 'type': 'string'},
-        {'name': 'Errors', 'type': 'object'}
-    ]
     EVENT_FRAMES_SCHEMA = [
         {'name': 'object_id', 'type': 'string'},
         {'name': 'WebId', 'type': 'string'},
@@ -250,8 +220,7 @@ class OSIsoftConstants(object):
         "EndValue": VALUE_DATA_SCHEMA,
         "Categories": CATEGORIES_SCHEMA,
         "Attributes": ATTRIBUTES_SCHEMA,
-        "EventFrames": EVENT_FRAMES_SCHEMA,
-        "All": ALL_COLUMNS,
+        "EventFrames": EVENT_FRAMES_SCHEMA
     }
     RECORD_PATH = "recorded"
     SCHEMA_EVENT_FRAMES = [
@@ -416,7 +385,6 @@ class OSIsoftConstants(object):
     PIWEBAPI_AF_ENDPOINTS = {
         "InterpolatedData": "{base_url}/streams/{webid}/interpolated",
         "RecordedData": "{base_url}/streams/{webid}/recorded",
-        "RecordedAtTimes": "{base_url}/streams/{webid}/recordedattimes",
         "PlotData": "{base_url}/streams/{webid}/plot",
         "SummaryData": "{base_url}/streams/{webid}/summary",
         "Value": "{base_url}/streams/{webid}/value",
@@ -432,7 +400,6 @@ class OSIsoftConstants(object):
         "Categories": "{base_url}/eventframes/{webid}/categories",
         "InterpolatedData": "{base_url}/streamsets/{webid}/interpolated",
         "RecordedData": "{base_url}/streamsets/{webid}/recorded",
-        "RecordedAtTimes": "{base_url}/streams/{webid}/recordedattimes",
         "PlotData": "{base_url}/streamsets/{webid}/plot",
         "SummaryData": "{base_url}/streamsets/{webid}/summary",
         "Value": "{base_url}/streamsets/{webid}/value",
@@ -440,7 +407,7 @@ class OSIsoftConstants(object):
         "Security": "{base_url}/eventframes/{webid}/security",
         "SecurityEntries": "{base_url}/eventframes/{webid}/securityentries"
     }
-    PLUGIN_VERSION = "2.0.0-beta.2"
+    PLUGIN_VERSION = "2.0.0-beta.1"
     VALUE_COLUMN_SUFFIX = "_val"
     WEB_API_PATH = "piwebapi"
     WRITE_HEADERS = {'X-Requested-With': 'XmlHttpRequest'}

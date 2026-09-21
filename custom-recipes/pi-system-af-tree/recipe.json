@@ -1,6 +1,6 @@
 {
     "meta": {
-        "label": "1. AF tree explorer",
+        "label": "AF tree explorer",
         "description": "Explore the AF tree",
         "icon": "icon-pi-system icon-cogs",
         "iconColor": "yellow"
