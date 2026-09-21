@@ -3,7 +3,7 @@ import dataiku
 import copy
 from dataiku.customrecipe import get_input_names_for_role, get_recipe_config, get_output_names_for_role
 import pandas as pd
-from safe_logger import SafeLogger
+from osisoft_safe_logger import SafeLogger
 from osisoft_plugin_common import (
     get_credentials, get_interpolated_parameters,
     get_advanced_parameters, check_debug_mode, PerformanceTimer,

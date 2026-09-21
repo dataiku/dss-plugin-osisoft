@@ -16,7 +16,7 @@ from osisoft_plugin_common import (
 )
 from osisoft_plugin_common import get_item_details
 from osisoft_pagination import OffsetPagination
-from safe_logger import SafeLogger
+from osisoft_safe_logger import SafeLogger
 
 
 logger = SafeLogger("PI System", ["username", "password"])

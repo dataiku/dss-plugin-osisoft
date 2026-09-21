@@ -169,6 +169,8 @@ def build_af_element_tree(
 
     for element in root_elements:
         node = to_node(element)
+        node["true_path"] = node.get("path")
+        node["is_weak"] = False
         tree.append(node)
         node_by_webid[node["id"]] = node
         current_level_webids.append(node["id"])
@@ -180,14 +182,16 @@ def build_af_element_tree(
 
         for parent_webid in current_level_webids:
             parent_node = node_by_webid[parent_webid]
+            parent_true_path = parent_node.get("true_path")
             child_elements = children_map.get(parent_webid, [])
 
             for child_element in child_elements:
                 child_node = to_node(child_element)
+                child_node["true_path"] = parent_true_path + "\\" + child_node.get("title")
+                child_node["is_weak"] = (child_node["true_path"] != child_node["path"])
                 parent_node["children"].append(child_node)
                 node_by_webid[child_node["id"]] = child_node
                 next_level_webids.append(child_node["id"])
 
         current_level_webids = next_level_webids
-
     return tree
