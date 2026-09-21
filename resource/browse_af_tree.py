@@ -1,5 +1,5 @@
 from osisoft_client import OSIsoftClient
-from safe_logger import SafeLogger
+from osisoft_safe_logger import SafeLogger
 from osisoft_plugin_common import get_credentials, build_select_choices, check_debug_mode
 from osisoft_plugin_common import get_item_details, PerformanceTimer
 from osisoft_build_tree import build_af_element_tree

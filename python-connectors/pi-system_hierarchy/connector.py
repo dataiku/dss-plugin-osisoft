@@ -1,7 +1,7 @@
 import datetime
 from dataiku.connector import Connector
 from osisoft_client import OSIsoftClient
-from safe_logger import SafeLogger
+from osisoft_safe_logger import SafeLogger
 from osisoft_plugin_common import (
     RecordsLimit, get_credentials, 
     check_debug_mode, PerformanceTimer
