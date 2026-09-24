@@ -43,6 +43,7 @@
             "name": "show_advanced_parameters",
             "label": "Show advanced parameters",
             "type": "BOOLEAN",
+            "visibilityCondition": "model.credentials.mode != 'NONE'",
             "definition": "",
             "defaultValue": false
         },
@@ -50,7 +51,7 @@
         {
             "name": "is_ssl_check_disabled",
             "label": "Disable SSL check",
-            "visibilityCondition": "model.show_advanced_parameters==true",
+            "visibilityCondition": "model.credentials.mode != 'NONE' && model.show_advanced_parameters==true",
             "type": "BOOLEAN",
             "definition": "",
             "defaultValue": false
@@ -60,7 +61,7 @@
             "label": "Path to SSL certificate",
             "type": "STRING",
             "description": "(optional)",
-            "visibilityCondition": "model.show_advanced_parameters==true && model.is_ssl_check_disabled==false",
+            "visibilityCondition": "model.credentials.mode != 'NONE' && model.show_advanced_parameters==true && model.is_ssl_check_disabled==false",
             "mandatory": false
         },
         {
@@ -116,20 +117,24 @@
                 {"value": "recursive", "label": "Recursive (large time periods)"},
                 {"value": "batch", "label": "Batch (many attributes, few points each)"}
             ],
+            "visibilityCondition": "model.credentials.mode != 'NONE'",
             "defaultValue": "recursive"
         },
         {
             "name": "transpose_summaries",
             "label": "Transpose summaries",
             "description": "",
+            "visibilityCondition": "model.credentials.mode != 'NONE'",
             "type": "BOOLEAN"
         },
         {
             "type": "SEPARATOR",
+            "visibilityCondition": "model.credentials.mode != 'NONE'",
             "description": "Time"
         },
         {
             "type": "SEPARATOR",
+            "visibilityCondition": "model.credentials.mode != 'NONE'",
             "description": "Date / time in yyyy-mm-ddThh:mm:ssZ or <a href='https://docs.aveva.com/bundle/pi-web-api-reference/page/help/topics/time-strings.html'>Pi Time String</a> format"
         },
         {
@@ -137,10 +142,11 @@
             "label": "Use start time value per row",
             "description": "",
             "type": "BOOLEAN",
+            "visibilityCondition": "model.credentials.mode != 'NONE'",
             "defaultValue": false
         },
         {
-            "visibilityCondition": "model.use_start_time_column==true",
+            "visibilityCondition": "model.credentials.mode != 'NONE' && model.use_start_time_column==true",
             "name": "start_time_column",
             "label": "Start times column",
             "description": "Column type must be string",
@@ -148,7 +154,7 @@
             "columnRole": "input_dataset"
         },
         {
-            "visibilityCondition": "model.use_start_time_column==false",
+            "visibilityCondition": "model.credentials.mode != 'NONE' && model.use_start_time_column==false",
             "name": "start_time",
             "label": "Start time",
             "description": "Optional",
@@ -160,10 +166,11 @@
             "label": "Use end time value per row",
             "description": "",
             "type": "BOOLEAN",
+            "visibilityCondition": "model.credentials.mode != 'NONE'",
             "defaultValue": false
         },
         {
-            "visibilityCondition": "model.use_end_time_column==true",
+            "visibilityCondition": "model.credentials.mode != 'NONE' && model.use_end_time_column==true",
             "name": "end_time_column",
             "label": "End times column",
             "description": "Column type must be string",
@@ -171,7 +178,7 @@
             "columnRole": "input_dataset"
         },
         {
-            "visibilityCondition": "model.use_end_time_column==false",
+            "visibilityCondition": "model.credentials.mode != 'NONE' && model.use_end_time_column==false",
             "name": "end_time",
             "label": "End time",
             "description": "Optional",
@@ -183,10 +190,11 @@
             "label": "Use time value per row",
             "description": "",
             "type": "BOOLEAN",
+            "visibilityCondition": "model.credentials.mode != 'NONE'",
             "defaultValue": false
         },
         {
-            "visibilityCondition": "model.use_time_column==true",
+            "visibilityCondition": "model.credentials.mode != 'NONE' && model.use_time_column==true",
             "name": "time_column",
             "label": "Times column",
             "description": "Column type must be string",
@@ -194,7 +202,7 @@
             "columnRole": "input_dataset"
         },
         {
-            "visibilityCondition": "model.use_time_column==false",
+            "visibilityCondition": "model.credentials.mode != 'NONE' && model.use_time_column==false",
             "name": "time",
             "label": "Time",
             "description": "Optional, for RecordedAtTime data type",
@@ -204,7 +212,7 @@
         {
             "name": "max_count",
             "label": "Max count",
-            "visibilityCondition": "model.show_advanced_parameters==true && ['InterpolatedData','PlotData','RecordedData'].includes(model.data_type)",
+            "visibilityCondition": "model.credentials.mode != 'NONE' && model.show_advanced_parameters==true && ['InterpolatedData','PlotData','RecordedData'].includes(model.data_type)",
             "description": "Larger number speeds data transfer but loads the PI server",
             "type": "INT",
             "defaultValue": 10000

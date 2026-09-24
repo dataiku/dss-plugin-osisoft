@@ -21,6 +21,8 @@ class PISystemConnectorError(ValueError):
 def get_credentials(config, can_raise=True):
     error_message = None
     credentials = config.get('credentials', {})
+    if not credentials:
+        raise PISystemConnectorError("No credentials are selected.")
     auth_type = credentials.get("auth_type", "basic")
     osisoft_basic = credentials.get("osisoft_basic", {})
     ssl_cert_path = credentials.get("ssl_cert_path")
