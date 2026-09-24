@@ -1,0 +1,62 @@
+<div class="tree-node" ng-if="ctrl.node.type !== 'attribute'">
+    <div
+            class="tree-node__row"
+            data-node-url="{{ ctrl.node.url }}"
+            ng-class="{
+                'tree-node__row--search-result': ctrl.isSearchResult(ctrl.node),
+                'tree-node__row--visualized': ctrl.isNodeClicked(ctrl.node)
+            }"
+    >
+        <span
+                class="tree-node__toggle"
+                ng-class="{ 'tree-node__toggle--spacer': !ctrl.canExpand(ctrl.node) }"
+                ng-click="ctrl.canExpand(ctrl.node) && ctrl.toggleExpand(ctrl.node, $event)"
+        >
+            <i ng-if="ctrl.canExpand(ctrl.node) && ctrl.node.expanded" class="dku-icon-chevron-down-16"></i>
+            <i ng-if="ctrl.canExpand(ctrl.node) && !ctrl.node.expanded" class="dku-icon-chevron-right-16"></i>
+        </span>
+
+        <span class="tree-node__folder" ng-if="ctrl.showElementFolder(ctrl.node)">
+            <i ng-if="ctrl.node.expanded" class="dku-icon-folder-open-16"></i>
+            <i ng-if="!ctrl.node.expanded" class="dku-icon-folder-closed-16"></i>
+        </span>
+
+        <span class="tree-node__folder" ng-if="ctrl.node.type === 'template'">
+            <i class="dku-icon-file-16"></i>
+        </span>
+
+        <div
+                class="tree-node__content"
+            ng-click="ctrl.toggleNodeVisualization({ node: ctrl.node })"
+        >
+            <div class="tree-node__content--info">
+                <span class="tree-node__label">{{ ctrl.node.title }}</span>
+                <span ng-show="ctrl.showBreadcrumb(ctrl.node)" class="tree-node__content--marker tree-node__content--marker-dot"
+                      toggle="tooltip-right" title="Contains elements with attributes in the dataset"></span>
+                <i ng-show="ctrl.showPaperclip(ctrl.node)" class="dku-icon-attach-12 tree-node__content--marker" toggle="tooltip-right" title="Contains attributes added to the dataset"></i>
+            </div>
+            <span class="tree-node__status">
+                <i class="dku-icon-eye-16"></i>
+            </span>
+        </div>
+    </div>
+</div>
+
+<ul
+        class="tree-node__children"
+        ng-if="ctrl.node.children && ctrl.node.children.length && ctrl.node.expanded && !ctrl.hideChildren"
+>
+    <li
+            class="tree-node__child"
+            ng-repeat="child in ctrl.node.children track by child.true_path"
+    >
+        <tree-node
+                node="child"
+                clicked-nodes="ctrl.clickedNodes"
+                toggle-node-visualization="ctrl.toggleNodeVisualization({ node: node })"
+                selected-element-paths="ctrl.selectedElementPaths"
+
+        >
+        </tree-node>
+    </li>
+</ul>
