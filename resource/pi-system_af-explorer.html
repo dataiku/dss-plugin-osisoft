@@ -236,7 +236,7 @@
                                 on-is-at-least-partially-selected="isAtLeastPartiallySelected(item)"
                                 on-init-elements-dropdown="initElementsDropdown(templateName)"
                                 on-is-template-associated-element-selected="isTemplateAssociatedElementSelected(element)"
-                                on-apply-click-elements-dropdown="applyClickElementsDropdown(templateName, element, selected)"
+                            on-apply-click-elements-dropdown="applyClickElementsDropdown(templateName, element, selecting)"
                                 on-check-attribute="checkAttribute(mergedAttribute)"
                                 on-check-single-attribute="checkSingleAttribute(attribute)"
                                 on-update-data-type="updateMergedAttributeDataType(mergedAttribute)"
@@ -263,7 +263,7 @@
                                 on-is-at-least-partially-selected="isAtLeastPartiallySelected(item)"
                                 on-init-elements-dropdown="initElementsDropdown(templateName)"
                                 on-is-template-associated-element-selected="isTemplateAssociatedElementSelected(element)"
-                                on-apply-click-elements-dropdown="applyClickElementsDropdown(templateName, element, selected)"
+                            on-apply-click-elements-dropdown="applyClickElementsDropdown(templateName, element, selecting)"
                                 on-check-attribute="checkAttribute(mergedAttribute)"
                                 on-check-single-attribute="checkSingleAttribute(attribute)"
                                 on-update-data-type="updateMergedAttributeDataType(mergedAttribute)"
@@ -357,7 +357,7 @@
                             </div>
                         </div>
                         <div class="attribute-section__filters-row">
-                            <label class="attribute-section__filters-toggle">
+                            <label class="attribute-section__filters-toggle" ng-if="activeTab !== 'template'">
                                 <span>Common attributes only</span>
                                 <span class="dku-toggle dku-toggle-no-content">
                                     <input type="checkbox" ng-model="ui.onlyDisplayCommon" ng-change="refreshAttributeSection()">
@@ -404,7 +404,7 @@
                             on-is-at-least-partially-selected="isAtLeastPartiallySelected(item)"
                             on-init-elements-dropdown="initElementsDropdown(templateName)"
                             on-is-template-associated-element-selected="isTemplateAssociatedElementSelected(element)"
-                            on-apply-click-elements-dropdown="applyClickElementsDropdown(templateName, element, selected)"
+                            on-apply-click-elements-dropdown="applyClickElementsDropdown(templateName, element, selecting)"
                             on-check-attribute="checkAttribute(mergedAttribute)"
                             on-check-single-attribute="checkSingleAttribute(attribute)"
                             on-update-data-type="updateMergedAttributeDataType(mergedAttribute)"
@@ -431,7 +431,7 @@
                             on-is-at-least-partially-selected="isAtLeastPartiallySelected(item)"
                             on-init-elements-dropdown="initElementsDropdown(templateName)"
                             on-is-template-associated-element-selected="isTemplateAssociatedElementSelected(element)"
-                            on-apply-click-elements-dropdown="applyClickElementsDropdown(templateName, element, selected)"
+                            on-apply-click-elements-dropdown="applyClickElementsDropdown(templateName, element, selecting)"
                             on-check-attribute="checkAttribute(mergedAttribute)"
                             on-check-single-attribute="checkSingleAttribute(attribute)"
                             on-update-data-type="updateMergedAttributeDataType(mergedAttribute)"
