@@ -1831,6 +1831,8 @@ app.controller('AfExplorerFormCtrl', [
 
         function buildAggregatedAttributes(attributes, groupingKey, titleKey, searchFilters, onlyDisplayCommonAttributes) {
             let deduplicatedAttributes = Object.values(attributes.reduce(conflateAttributes(groupingKey, titleKey, searchFilters), {})).map(conflatedAttribute => {
+                // When only displaying attributes common to all selected we only display a conflated attribute if its number of parents (ie selected elements that contain it)
+                // Is equal to the number of element selected
                 if (onlyDisplayCommonAttributes && conflatedAttribute.parent_elements.length < $scope.ui.clickedNodes.length) {
                     conflatedAttribute.isDisplayed = false;
                 }
