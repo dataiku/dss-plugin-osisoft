@@ -1219,13 +1219,13 @@ app.controller('AfExplorerFormCtrl', [
         // FIXME: the parent_element_path is not properly present !!! probably because loaded from cache
         // should be properly populated f we want the condition l835 to populate
         // TODO: check if fixme is up to date
-        $scope.applyClickElementsDropdown = function(templateName, element, wasUnselected) {
+        $scope.applyClickElementsDropdown = function(templateName, element, selecting) {
             $scope.$applyAsync(() => {
                 // TODO: redo everything by templateID
                 if ($scope.activeTab === 'element') {
                     $scope.toggleNodeVisualization(element);
                 } else if ($scope.activeTab === 'template') {
-                    if (!wasUnselected) {
+                    if (!selecting) {
                         if (!$scope.templateModeExcludedAttributes[templateName]) {
                             $scope.templateModeExcludedAttributes[templateName] = {}
                         }
@@ -1237,7 +1237,7 @@ app.controller('AfExplorerFormCtrl', [
                                 element.path;
                         });
                         $scope.refreshAttributeSection();
-                    } else if (wasUnselected) {
+                    } else if (selecting) {
                         const attributesToAdd = $scope.templateModeExcludedAttributes[templateName]?.[element.path] || [];
                         $scope.attributeList.push(...attributesToAdd)
                         $scope.refreshAttributeSection();
@@ -1831,6 +1831,8 @@ app.controller('AfExplorerFormCtrl', [
 
         function buildAggregatedAttributes(attributes, groupingKey, titleKey, searchFilters, onlyDisplayCommonAttributes) {
             let deduplicatedAttributes = Object.values(attributes.reduce(conflateAttributes(groupingKey, titleKey, searchFilters), {})).map(conflatedAttribute => {
+                // When only displaying attributes common to all selected we only display a conflated attribute if its number of parents (ie selected elements that contain it)
+                // Is equal to the number of element selected
                 if (onlyDisplayCommonAttributes && conflatedAttribute.parent_elements.length < $scope.ui.clickedNodes.length) {
                     conflatedAttribute.isDisplayed = false;
                 }
@@ -2369,21 +2371,21 @@ app.component('dropdownElements', {
             ctrl.onClickElement = function(element, $event) {
                 $event.stopPropagation();
 
-                let wasUnselected;
+                let selecting;
                 if (ctrl.activeTab === 'template') {
-                    wasUnselected = ctrl.templatedModeUnselectedElements.includes(element.url);
-                    if (wasUnselected) {
+                    selecting = ctrl.templatedModeUnselectedElements.includes(element.url);
+                    if (selecting) {
                         ctrl.templatedModeUnselectedElements = ctrl.templatedModeUnselectedElements.filter(url => url !== element.url);
                     } else {
                         ctrl.templatedModeUnselectedElements.push(element.url)
                     }
                 } else {
-                    wasUnselected = ctrl.isTemplateAssociatedElementSelected({ element: element });
+                    selecting = ctrl.isTemplateAssociatedElementSelected({ element: element });
                 }
                 ctrl.applyClickElementsDropdown({
                     templateName: ctrl.groupName,
                     element: element,
-                    wasUnselected: wasUnselected
+                    selecting: selecting
                 })
             }
 

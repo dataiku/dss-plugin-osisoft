@@ -164,24 +164,30 @@ def build_af_element_tree(
     element_url = "/".join([database_url.strip("/"), "elements"])
     root_elements = get_root_elements_paginated(element_url)
     tree = []
-    node_by_webid = {}
-    current_level_webids = []
+    node_by_true_path = {}
+    current_level_paths = []
 
     for element in root_elements:
         node = to_node(element)
         node["true_path"] = node.get("path")
         node["is_weak"] = False
         tree.append(node)
-        node_by_webid[node["id"]] = node
-        current_level_webids.append(node["id"])
+        node_by_true_path[node["true_path"]] = node
+        current_level_paths.append(node["true_path"])
 
     # Traverse the hierarchy level by level to preserve the tree structure.
-    while current_level_webids:
-        children_map = fetch_children_batch_paginated(current_level_webids)
-        next_level_webids = []
+    while current_level_paths:
+        current_level_webids = [
+            node_by_true_path[parent_path]["id"]
+            for parent_path in current_level_paths
+        ]
+        unique_current_level_webids = list(dict.fromkeys(current_level_webids))
+        children_map = fetch_children_batch_paginated(unique_current_level_webids)
+        next_level_paths = []
 
-        for parent_webid in current_level_webids:
-            parent_node = node_by_webid[parent_webid]
+        for parent_path in current_level_paths:
+            parent_node = node_by_true_path[parent_path]
+            parent_webid = parent_node["id"]
             parent_true_path = parent_node.get("true_path")
             child_elements = children_map.get(parent_webid, [])
 
@@ -190,8 +196,8 @@ def build_af_element_tree(
                 child_node["true_path"] = parent_true_path + "\\" + child_node.get("title")
                 child_node["is_weak"] = (child_node["true_path"] != child_node["path"])
                 parent_node["children"].append(child_node)
-                node_by_webid[child_node["id"]] = child_node
-                next_level_webids.append(child_node["id"])
+                node_by_true_path[child_node["true_path"]] = child_node
+                next_level_paths.append(child_node["true_path"])
 
-        current_level_webids = next_level_webids
+        current_level_paths = next_level_paths
     return tree
