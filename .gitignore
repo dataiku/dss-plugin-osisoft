@@ -233,3 +233,6 @@ gradle-app.setting
 setup.cfg
 tests/allure_report
 prototypes
+
+# Code editor configuration
+.idea/

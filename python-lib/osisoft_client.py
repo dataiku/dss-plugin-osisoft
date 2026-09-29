@@ -3,6 +3,7 @@ import logging
 import copy
 import json
 import simplejson
+import re
 from datetime import datetime
 from requests_ntlm import HttpNtlmAuth
 from osisoft_constants import OSIsoftConstants
@@ -10,8 +11,10 @@ from osisoft_endpoints import OSIsoftEndpoints
 from osisoft_plugin_common import (
     assert_server_url_ok, build_requests_params,
     is_filtered_out, is_server_throttling, escape, epoch_to_iso,
-    iso_to_epoch, RecordsLimit, is_iso8601, get_next_page_url, change_key_in_dict
+    iso_to_epoch, RecordsLimit, is_iso8601, get_next_page_url, change_key_in_dict,
+    BatchTimeCounter
 )
+from osisoft_plugin_common import get_item_details
 from osisoft_pagination import OffsetPagination
 from osisoft_safe_logger import SafeLogger
 
@@ -28,6 +31,7 @@ class OSIsoftClient(object):
     def __init__(self, server_url, auth_type, username, password, is_ssl_check_disabled=False, can_raise=True, is_debug_mode=False, network_timer=None):
         if can_raise:
             assert_server_url_ok(server_url)
+        requests.packages.urllib3.disable_warnings()
         self.session = requests.Session()
         self.session.auth = self.get_auth(auth_type, username, password)
         self.session.verify = (not is_ssl_check_disabled)
@@ -47,7 +51,7 @@ class OSIsoftClient(object):
         else:
             return None
 
-    def recursive_get_rows_from_webid(self, webid, data_type, **kwargs):
+    def recursive_get_rows_from_webid(self, webid, data_type, transpose_summaries=False, **kwargs):
         # Split the time range until no more HTTP 400
         kwargs["endpoint_type"] = kwargs.get("endpoint_type", "event_frames")
         kwargs["can_raise"] = kwargs.get("can_raise", True)
@@ -58,7 +62,7 @@ class OSIsoftClient(object):
         previous_item_timestamp = False
         while not done:
             logger.info("Attempting download webids from {} to {}".format(start_date, end_date))
-            rows = self.get_rows_from_webid(webid, data_type, **kwargs)
+            rows = self.get_rows_from_webid(webid, data_type, transpose_summaries=transpose_summaries, **kwargs)
             counter = 0
             try:
                 row = next(rows)
@@ -79,7 +83,7 @@ class OSIsoftClient(object):
                     kwargs["start_date"] = start_timestamp
                     kwargs["end_date"] = half_time_iso
                     first_half_rows = self.recursive_get_rows_from_webid(
-                        webid, data_type, **kwargs
+                        webid, data_type, transpose_summaries=transpose_summaries, **kwargs
                     )
                     for row in first_half_rows:
                         yield row
@@ -87,7 +91,7 @@ class OSIsoftClient(object):
                     kwargs["start_date"] = half_time_iso
                     kwargs["end_date"] = end_timestamp
                     second_half_rows = self.recursive_get_rows_from_webid(
-                        webid, data_type, **kwargs
+                        webid, data_type, transpose_summaries=transpose_summaries, **kwargs
                     )
                     for row in second_half_rows:
                         yield row
@@ -109,7 +113,7 @@ class OSIsoftClient(object):
     def recursive_get_rows_from_item(self, item, data_type, start_date=None, end_date=None,
                                      interval=None, sync_time=None, boundary_type=None, record_boundary_type=None,
                                      can_raise=True, object_id=None, endpoint_type="event_frames", search_full_hierarchy=None,
-                                     max_count=None, summary_type=None, summary_duration=None):
+                                     max_count=None, summary_type=None, summary_duration=None, calculation_basis=None):
         # item can be an pi tag, a path to an element or event frame
         # Split the time range until no more HTTP 400
         done = False
@@ -120,7 +124,7 @@ class OSIsoftClient(object):
                                            sync_time=sync_time, boundary_type=boundary_type, record_boundary_type=record_boundary_type,
                                            can_raise=True, object_id=object_id,
                                            search_full_hierarchy=search_full_hierarchy, max_count=max_count,
-                                           summary_type=summary_type, summary_duration=summary_duration)
+                                           summary_type=summary_type, summary_duration=summary_duration, calculation_basis=calculation_basis)
             counter = 0
             try:
                 row = next(rows)
@@ -142,7 +146,8 @@ class OSIsoftClient(object):
                         item, data_type, start_date=start_timestamp, end_date=half_time_iso,
                         interval=interval, sync_time=sync_time, boundary_type=boundary_type,
                         record_boundary_type=record_boundary_type, can_raise=True, object_id=object_id,
-                        search_full_hierarchy=search_full_hierarchy, max_count=max_count, summary_type=summary_type, summary_duration=summary_duration
+                        search_full_hierarchy=search_full_hierarchy, max_count=max_count, summary_type=summary_type, summary_duration=summary_duration,
+                        calculation_basis=calculation_basis
                     )
                     for row in first_half_rows:
                         yield row
@@ -151,7 +156,8 @@ class OSIsoftClient(object):
                         item, data_type, start_date=half_time_iso, end_date=end_timestamp,
                         interval=interval, sync_time=sync_time, boundary_type=boundary_type,
                         record_boundary_type=record_boundary_type, can_raise=True, object_id=object_id,
-                        search_full_hierarchy=search_full_hierarchy, max_count=max_count, summary_type=summary_type, summary_duration=summary_duration
+                        search_full_hierarchy=search_full_hierarchy, max_count=max_count, summary_type=summary_type, summary_duration=summary_duration,
+                        calculation_basis=calculation_basis
                     )
                     for row in second_half_rows:
                         yield row
@@ -219,7 +225,7 @@ class OSIsoftClient(object):
             return iso_to_epoch(iso_timestamp)
         return iso_timestamp
 
-    def get_rows_from_webid(self, webid, data_type, **kwargs):
+    def get_rows_from_webid(self, webid, data_type, transpose_summaries=False, **kwargs):
         endpoint_type = kwargs.get("endpoint_type", "event_frames")
         kwargs["endpoint_type"] = endpoint_type
         url = self.endpoint.get_data_from_webid_url(endpoint_type, data_type, webid)
@@ -237,13 +243,96 @@ class OSIsoftClient(object):
                 items = json_response.get(OSIsoftConstants.API_ITEM_KEY, [json_response])
                 if not items:
                     items = [{}]
-                for item in items:
-                    yield item
+                if transpose_summaries and type_in_items(items):
+                    yield combined_items(items)
+                else:
+                    for item in items:
+                        yield item
+
+    def get_rows_from_af_trees(self, input_rows, transpose_summaries=False):
+        batch_requests_parameters = []
+        number_processed_webids = 0
+        number_of_webids_to_process = len(input_rows)
+        web_ids = []
+        event_start_times = []
+        event_end_times = []
+        initial_indexs = []
+        for input_row in input_rows:
+            initial_index = input_row.get("initial_index", None)
+            max_time_to_retrieve_per_batch = input_row.get("maximum_points_returned") / input_row.get("estimated_density")
+            batch_time = BatchTimeCounter(max_time_to_retrieve_per_batch)
+            endpoint_type = input_row.get("endpoint_type", "event_frames")
+            batch_size = input_row.get("batch_size", 500)
+            estimated_density = input_row.get("estimated_density", 500)
+            maximum_points_returned = input_row.get("maximum_points_returned", 500)
+            event_start_time = event_end_time = None
+            data_type = input_row.get("data_type")
+            if isinstance(input_row, dict):
+                webid = input_row.get("WebId")
+                event_start_time = input_row.get("StartTime")
+                event_end_time = input_row.get("EndTime")
+            else:
+                webid = input_row
+            url = self.endpoint.get_data_from_webid_url(endpoint_type, data_type, webid)
+            start_date = input_row.get("start_date")
+            end_date = input_row.get("end_date")
+            interval = input_row.get("interval")
+            requests_kwargs = self.generic_get_kwargs(**input_row)
+            batch_time.add(start_date, end_date, interval)
+            requests_kwargs['url'] = build_query_string(url, requests_kwargs.get("params"))
+            web_ids.append(webid)
+            event_start_times.append(event_start_time)
+            event_end_times.append(event_end_time)
+            initial_indexs.append(initial_index)
+            batch_requests_parameters.append(requests_kwargs)
+            number_processed_webids += 1
+            if (len(batch_requests_parameters) >= batch_size) or (number_processed_webids == number_of_webids_to_process) or batch_time.is_batch_full():
+                json_responses = self._batch_requests(batch_requests_parameters)
+                batch_requests_parameters = []
+                response_index = 0
+                for json_response in json_responses:
+                    response_content = json_response.get("Content", {})
+                    webid = web_ids[response_index]
+                    event_start_time = event_start_times[response_index]
+                    event_end_time = event_end_times[response_index]
+                    if OSIsoftConstants.DKU_ERROR_KEY in response_content:
+                        if endpoint_type == "event_frames":
+                            response_content['event_frame_webid'] = "{}".format(webid)
+                        yield response_content
+                        continue
+                    items = response_content.get(OSIsoftConstants.API_ITEM_KEY, [])
+                    if transpose_summaries and type_in_items(items):
+                        combined_item = combined_items(items)
+                        combined_item['initial_index'] = initial_indexs[response_index]
+                        yield combined_item
+                    elif len(items)==0:
+                            item = {}
+                            if event_start_time:
+                                item['StartTime'] = event_start_time
+                            if event_end_time:
+                                item['EndTime'] = event_end_time
+                            if initial_index is not None:
+                                item['initial_index'] = initial_indexs[response_index]
+                            yield item
+                    else:
+                        for item in items:
+                            if event_start_time:
+                                item['StartTime'] = event_start_time
+                            if event_end_time:
+                                item['EndTime'] = event_end_time
+                            if initial_index is not None:
+                                item['initial_index'] = initial_indexs[response_index]
+                            yield item
+                    response_index += 1
+                web_ids = []
 
     def get_rows_from_webids(self, input_rows, data_type, **kwargs):
         endpoint_type = kwargs.get("endpoint_type", "event_frames")
         batch_size = kwargs.get("batch_size", 500)
-
+        estimated_density = kwargs.get("estimated_density", 500)
+        maximum_points_returned = kwargs.get("maximum_points_returned", 500)
+        max_time_to_retrieve_per_batch = maximum_points_returned / estimated_density
+        batch_time = BatchTimeCounter(max_time_to_retrieve_per_batch)
         batch_requests_parameters = []
         number_processed_webids = 0
         number_of_webids_to_process = len(input_rows)
@@ -259,14 +348,18 @@ class OSIsoftClient(object):
             else:
                 webid = input_row
             url = self.endpoint.get_data_from_webid_url(endpoint_type, data_type, webid)
+            start_date = kwargs.get("start_date")
+            end_date = kwargs.get("end_date")
+            interval = kwargs.get("interval")
             requests_kwargs = self.generic_get_kwargs(**kwargs)
+            batch_time.add(start_date, end_date, interval)
             requests_kwargs['url'] = build_query_string(url, requests_kwargs.get("params"))
             web_ids.append(webid)
             event_start_times.append(event_start_time)
             event_end_times.append(event_end_time)
             batch_requests_parameters.append(requests_kwargs)
             number_processed_webids += 1
-            if (len(batch_requests_parameters) >= batch_size) or (number_processed_webids == number_of_webids_to_process):
+            if (len(batch_requests_parameters) >= batch_size) or (number_processed_webids == number_of_webids_to_process) or batch_time.is_batch_full():
                 json_responses = self._batch_requests(batch_requests_parameters)
                 batch_requests_parameters = []
                 response_index = 0
@@ -296,7 +389,12 @@ class OSIsoftClient(object):
         batch_endpoint = self.endpoint.get_batch_endpoint()
         batch_body = {}
         index = 0
+        empty_requests = []
         for row_request_parameters in batch_requests_parameters:
+            if row_request_parameters.get("url") is None:
+                empty_requests.append(index)
+                index += 1
+                continue
             batch_request = {}
             batch_request["Method"] = method
             batch_request["Resource"] = "{}".format(row_request_parameters.get("url"))
@@ -309,6 +407,9 @@ class OSIsoftClient(object):
         response = self.post_value(url=batch_endpoint, data=batch_body)
         json_response = simplejson.loads(response.content)
         for index in range(0, len(batch_requests_parameters)):
+            if index in empty_requests:
+                yield {}
+                continue
             batch_section = json_response.get("{}".format(index), {})
             yield batch_section
 
@@ -483,6 +584,33 @@ class OSIsoftClient(object):
         )
         return json_response
 
+    def get_next_item_from_url(self, url, params = None):
+        headers = self.get_requests_headers()
+        params = params or {}
+        while url:
+            json_response = self.get(
+                url=url,
+                headers=headers,
+                params=params,
+                can_raise=False,
+                error_source="get_next_item_from_url"
+            )
+            next_url = get_next_page_url(json_response)
+            if next_url != url:
+                url = next_url
+            else:
+                # Some endpoints lead to a loop
+                url = None
+            if isinstance(json_response, list):
+                for item in json_response:
+                    yield item
+            elif "Items" in json_response:
+                items = json_response.get("Items", [])
+                for item in items:
+                    yield item
+            else:
+                yield json_response
+
     def get(self, url, headers, params, can_raise=True, error_source=None):
         error_message = None
         url = build_query_string(url, params)
@@ -561,18 +689,33 @@ class OSIsoftClient(object):
     def post(self, url, headers, params, data, can_raise=True, error_source=None):
         url = build_query_string(url, params)
         logger.info("Trying to post to {}".format(url))
-        if self.network_timer:
-            self.network_timer.start(url)
-        response = self.session.post(
-            url=url,
-            headers=headers,
-            json=data
-        )
-        if self.network_timer:
-            self.network_timer.stop()
-        if self.is_debug_mode:
-            logger.info("post response.content={}".format(response.content)[:self.get_debug_level()])
-            logger.info("post response.status={}".format(response.status_code))
+        limit = RecordsLimit(OSIsoftConstants.MAXIMUM_RETRIES_ON_THROTTLING)
+        count = 0
+        try:
+            response = None
+            while is_server_throttling(response):
+                if self.network_timer:
+                    self.network_timer.start(url)
+                response = self.session.post(
+                    url=url,
+                    headers=headers,
+                    json=data
+                )
+                if self.network_timer:
+                    self.network_timer.stop()
+                if self.is_debug_mode:
+                    logger.info("post response.content={}".format(response.content)[:self.get_debug_level()])
+                    logger.info("post response.status={}".format(response.status_code))
+                if limit.is_reached():
+                    error_message = "The maximum number of retries has been reached."
+                    break
+                else:
+                    count += 1
+        except Exception as err:
+            error_message = "Could not connect. Error: {}{}".format(formatted_error_source(error_source), err)
+            logger.error(error_message)
+            if can_raise:
+                raise PISystemClientError(error_message)
         self.assert_valid_response(response, can_raise=can_raise, error_source=error_source)
         return response
 
@@ -705,6 +848,8 @@ class OSIsoftClient(object):
             "query": query,
             "databaseWebId": database_webid
         }
+        if "search_associations" in kwargs:
+            params["associations"] = kwargs.get("search_associations")
         json_response = self.get(url=search_attributes_base_url, headers=headers, params=params)
         if OSIsoftConstants.DKU_ERROR_KEY in json_response:
             yield json_response
@@ -717,6 +862,202 @@ class OSIsoftClient(object):
                 json_response = self.get(url=next_page_url, headers={}, params={})
             else:
                 json_response = None
+
+    def search_attributes_first_page(self, database_webid, **kwargs):
+            search_attributes_base_url = self.endpoint.get_attribute_url()
+            query = "Element:{{{}}} {}".format(
+                self.build_element_query(**kwargs),
+                self.build_attribute_query(**kwargs)
+            )
+            headers = self.get_requests_headers()
+            params = {
+                "query": query,
+                "databaseWebId": database_webid,
+                "maxCount": 100
+            }
+            if "search_associations" in kwargs:
+                params["associations"] = kwargs.get("search_associations")
+            json_response = self.get(url=search_attributes_base_url, headers=headers, params=params)
+            if OSIsoftConstants.DKU_ERROR_KEY in json_response:
+                return json_response, None
+
+            next_page_url = get_next_page_url(json_response)
+            items = json_response.get(OSIsoftConstants.API_ITEM_KEY, [])
+            return items, next_page_url
+
+    def get_next_page(self, page_url):
+        headers = self.get_requests_headers()
+        json_response = self.get(url=page_url, headers=headers, params={})
+        if OSIsoftConstants.DKU_ERROR_KEY in json_response:
+            return json_response, None
+        next_page_url = get_next_page_url(json_response)
+        items = json_response.get(OSIsoftConstants.API_ITEM_KEY, [])
+        return items, next_page_url
+
+    def search_elements(self, database, name=None, description=None, category=None, template=None, full_search=True):
+        headers = self.get_requests_headers()
+        tempo_maxcount = OSIsoftConstants.DEFAULT_MAXCOUNT
+        params = {
+            "maxCount": tempo_maxcount,
+            "associations": "Paths",
+        }
+        # url = self.endpoint.get_base_url() + "/assetdatabases/{}/elements".format(database_webid)
+        url = "{}/elements".format(database)
+        if name:
+            params["nameFilter"] = name
+        if description:
+            params["descriptionFilter"] = description
+        if category:
+            params["categoryName"] = category
+        if template:
+            params["templateName"] = template
+        if full_search:
+            params["searchFullHierarchy"] = True
+        json_response = self.get(url=url, headers=headers, params=params)
+        if OSIsoftConstants.DKU_ERROR_KEY in json_response:
+            yield json_response
+        start_index = 0
+        while json_response:
+            items = json_response.get(OSIsoftConstants.API_ITEM_KEY, [])
+            for item in items:
+                yield item
+            if len(items) < tempo_maxcount:
+                logger.info("No more result items")
+                return
+            start_index += tempo_maxcount
+            logger.info("Trying again with startIndex={}".format(start_index))
+            params["startIndex"] = start_index
+            json_response = self.get(url=url, headers=headers, params=params)
+
+    def search_element_attributes(self, database, template=None, full_search=True, selected_fields=[]):
+        headers = self.get_requests_headers()
+        tempo_maxcount = OSIsoftConstants.DEFAULT_MAXCOUNT
+        params = {
+            "maxCount": tempo_maxcount,
+            "associations": "Paths",
+        }
+        valid_attributes_names = []
+        if template:
+            params["elementTemplate"] = template
+            valid_attributes_names = self.get_attribute_templates_names(database, template)
+        if full_search:
+            params["searchFullHierarchy"] = True
+        if selected_fields:
+            params["selectedFields"] = ";".join(selected_fields)
+        next_url = "{}/elementattributes".format(database)
+        while next_url:
+            json_response = self.get(url=next_url, headers=headers, params=params)
+            items = json_response.get(OSIsoftConstants.API_ITEM_KEY, [])
+            next_url = json_response.get("Links", {}).get("Next", None)
+            params = {}
+            if template:
+                for item in items:
+                    if item.get("Name") not in valid_attributes_names:
+                        continue
+                    yield item
+            else:
+                for item in items:
+                    yield item
+
+    def get_attribute_templates_names(self, database, template):
+        names = []
+        url = "{}/elementtemplates".format(database)
+        headers = self.get_requests_headers()
+        params = {
+            "query": template
+        }
+        json_response = self.get(url=url, headers=headers, params=params)
+        items = json_response.get("Items", [])
+        if len(items)==1:
+            item = items[0]
+            attribute_templates_url = item.get("Links", {}).get("AttributeTemplates")
+            while attribute_templates_url:
+                json_response = self.get(url=attribute_templates_url, headers=headers, params={})
+                attribute_templates_url = json_response.get("Links", {}).get("Next")
+                items = json_response.get("Items", [])
+                for item in items:
+                    name = item.get("Name")
+                    names.append(name)
+        return names
+
+    def batched_search(self, database, element_name, attribute_name, element_category,
+                       attribute_category, template, restrict_to_elements):
+        elements_query = {
+            "templateName": template,
+            "categoryName": element_category,
+            "nameFilter": element_name,
+            "searchFullHierarchy": "true",
+            "associations": "Paths",
+            "maxCount": OSIsoftConstants.AF_TREE_ELEMENTS_MAX_COUNT
+        }
+        attribute_query = {
+            "searchFullHierarchy": "true",
+            "associations": "Paths",
+            "maxCount": OSIsoftConstants.AF_TREE_ATTRIBUTES_MAX_COUNT
+        }
+        if attribute_name:
+            attribute_query["nameFilter"] = attribute_name
+        if attribute_category:
+            attribute_query["categoryName"] = attribute_category
+        elements_url = "{}/elements".format(database)
+        if not restrict_to_elements:
+            request_body = {
+                "elements": {
+                    "Method": "GET",
+                    "Resource": "{}{}".format(
+                        elements_url,
+                        build_query_string("", elements_query)
+                    )
+                },
+                "attributes": {
+                    "Method": "GET",
+                    "RequestTemplate": {
+                        "Resource": "{{0}}{}".format(
+                            build_query_string("", attribute_query)
+                        )
+                    },
+                    "ParentIds": ["elements"],
+                    "Parameters": ["$.elements.Content.Items[*].Links.Attributes"]
+                }
+            }
+            url = self.endpoint.get_batch_endpoint()
+            headers = OSIsoftConstants.WRITE_HEADERS
+            response = self.post(url, headers=headers, data=request_body, params={})
+            json_response = response.json()
+            attributes = json_response.get("attributes", {})
+            attributes_content = attributes.get("Content", {})
+            if not isinstance(attributes_content, dict):
+                # the search returned nothing
+                return
+            attributes_content_items = attributes_content.get("Items", [])
+            for attributes_content_item in attributes_content_items:
+                content = attributes_content_item.get("Content", {})
+                sub_items = content.get("Items", [])
+                for sub_item in sub_items:
+                    yield sub_item
+        else:
+            count = 1
+            request_body = {}
+            for restrict_to_element in restrict_to_elements:
+                job_tag = "J_{}".format(count)
+                request_body[job_tag] = {
+                    "Method": "GET",
+                    "Resource": "{}/attributes{}".format(
+                        restrict_to_element,
+                        build_query_string("", attribute_query)
+                    )
+                }
+                count += 1
+            url = self.endpoint.get_batch_endpoint()
+            headers = OSIsoftConstants.WRITE_HEADERS
+            response = self.post(url, headers=headers, data=request_body, params={})
+            json_response = response.json()
+            for job_tag in json_response:
+                job_result = json_response.get(job_tag)
+                content = job_result.get("Content", {})
+                sub_items = content.get("Items", [])
+                for sub_item in sub_items:
+                    yield sub_item
 
     def build_element_query(self, **kwargs):
         element_query_keys = {
@@ -746,7 +1087,14 @@ class OSIsoftClient(object):
             value = kwargs.get(argument)
             if value and argument in attribute_query_keys:
                 template = attribute_query_keys.get(argument)
-                output_tokens.append(template.format(value))
+                if argument == "attribute_category" and isinstance(value, list):
+                    output_tokens.extend(
+                        template.format(category)
+                        for category in value
+                        if category
+                    )
+                else:
+                    output_tokens.append(template.format(value))
         return " ".join(output_tokens)
 
     def traverse(self, path_elements):
@@ -783,8 +1131,59 @@ class OSIsoftClient(object):
             json_response = self.get(url=next_url, headers=headers, params={}, error_source="traverse")
             if attribute:
                 item = self.extract_item_with_name(json_response, attribute)
-
         return item
+
+    def traverse_and_cache(self, ex_path_elements, ex_path_attributes, tree, trim_siblings=True):
+        path_elements = ex_path_elements.copy()
+        path_attributes = ex_path_attributes.copy()
+        full_path_elements = path_elements.copy() + path_attributes.copy()
+        if tree.exists(full_path_elements):
+            sending_back = tree.get(full_path_elements)
+            return sending_back
+        if path_attributes:
+            attribute_to_search = path_attributes.pop()
+            cached_item = self.traverse_and_cache(path_elements, path_attributes, tree, trim_siblings=trim_siblings)
+            last_know_url = cached_item.get("url") + "/attributes"
+            headers = self.get_requests_headers()
+            json_response = self.get(url=last_know_url, headers=headers, params={}, error_source="recursive traverse_and_cache")
+            for item in json_response.get(OSIsoftConstants.API_ITEM_KEY, []):
+                item_name = item.get("Name")
+                tree.put(path_elements + path_attributes + [item_name], get_item_details(item))
+            item = self.extract_item_with_name(json_response, attribute_to_search)
+            return get_item_details(item)
+
+        element_to_search = path_elements.pop()
+        cached_item = self.traverse_and_cache(path_elements, [], tree, trim_siblings=trim_siblings)
+        last_know_url = cached_item.get("url") + "/elements"
+        headers = self.get_requests_headers()
+        json_response = self.get(url=last_know_url, headers=headers, params={}, error_source="recursive traverse_and_cache")
+        for item in json_response.get(OSIsoftConstants.API_ITEM_KEY, []):
+            item_name = item.get("Name")
+            if not trim_siblings or item_name in ex_path_elements:
+                tree.put(path_elements + [item_name], get_item_details(item))
+        item = self.extract_item_with_name(json_response, element_to_search)
+        return get_item_details(item)
+
+    def get_attributes_templates_names(self, templates_urls):
+        batch_requests_parameters = []
+        templates_names = []
+        for template_url in templates_urls:
+            request_kwargs = {
+                "url": template_url,
+                "headers": self.get_requests_headers()
+            }
+            batch_requests_parameters.append(request_kwargs)
+        batch_size = 500
+        for start_index in range(0, len(batch_requests_parameters), batch_size):
+            for json_response in self._batch_requests(batch_requests_parameters[start_index:start_index + batch_size]):
+                response_content = json_response.get("Content", {})
+                template_path = response_content.get("Path", "")
+                template_name_match = re.search(r'ElementTemplates\[([^\]]+)\]', template_path)
+                template_name = None
+                if template_name_match:
+                    template_name = template_name_match.group(1)
+                templates_names.append(template_name)
+        return templates_names
 
     def split_element_attribute(self, path_element):
         attribute = None
@@ -1001,7 +1400,7 @@ class OSIsoftBatchWriter(object):
 
 
 def validate_timestamp(timestamp):
-    valid_formats=["%Y-%m-%dT%H:%M:%S.%fZ", "%Y-%m-%dT%H:%M:%SZ"]
+    valid_formats = ["%Y-%m-%dT%H:%M:%S.%fZ", "%Y-%m-%dT%H:%M:%SZ"]
     for valid_format in valid_formats:
         try:
             datetime.strptime(timestamp, valid_format)
@@ -1025,7 +1424,7 @@ def build_query_string(url, params):
         if isinstance(value, list):
             for element in value:
                 tokens.append(key+"="+str(element))
-        else:
+        elif value is not None:
             tokens.append(key+"="+str(value))
     if len(tokens) > 0:
         return url + "?" + "&".join(tokens)
@@ -1085,3 +1484,18 @@ def prepare_request_buffer(request_buffer):
             dku_counter.append(_dku_counter)
         row_counter.append(dku_counter)
     return request_buffer, row_counter
+
+
+def type_in_items(items):
+    for item in items:
+        if not 'Type' in item:
+            return False
+    return True
+
+
+def combined_items(items):
+    output = {}
+    output["Timestamp"] = items[0].get("Value", {}).get("Timestamp")
+    for item in items:
+        output[item.get("Type")] = item.get("Value", {}).get("Value")
+    return output

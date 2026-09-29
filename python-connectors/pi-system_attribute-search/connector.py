@@ -54,7 +54,7 @@ class OSIsoftConnector(Connector):  # Browse
         self.must_filter_child_attributes = not (config.get("must_keep_child_attributes", False))
         self.max_count = get_max_count(config)
         self.config = config
-        self.summary_type, self.summary_duration = get_summary_parameters(config)
+        self.summary_type, self.summary_duration, self.calculation_basis = get_summary_parameters(config)
 
         self.record_boundary_type = config.get("record_boundary_type") if self.data_type == "RecordedData" else None
 
@@ -116,6 +116,7 @@ class OSIsoftConnector(Connector):  # Browse
                         max_count=self.max_count,
                         summary_type=self.summary_type,
                         summary_duration=self.summary_duration,
+                        calculation_basis=self.calculation_basis,
                         boundary_type=self.boundary_type,
                         record_boundary_type=self.record_boundary_type
                     ):
