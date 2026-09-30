@@ -1,5 +1,9 @@
 # Changelog
 
+## [Version 2.0.0-beta.5](https://github.com/dataiku/dss-plugin-pi-server/releases/tag/v2.0.0-beta.5) - Bugfix release - 2026-09-30
+
+- Fix issues with date type input columns
+
 ## [Version 2.0.0-beta.4](https://github.com/dataiku/dss-plugin-pi-server/releases/tag/v2.0.0-beta.4) - Bugfix release - 2026-09-29
 
 - Fix select on template dropdown elements
