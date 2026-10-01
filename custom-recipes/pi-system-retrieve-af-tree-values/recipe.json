@@ -149,7 +149,7 @@
             "visibilityCondition": "model.credentials.mode != 'NONE' && model.use_start_time_column==true",
             "name": "start_time_column",
             "label": "Start times column",
-            "description": "Column type must be string",
+            "description": "If not set, defaults to 'start_time'",
             "type": "COLUMN",
             "columnRole": "input_dataset"
         },
@@ -173,7 +173,7 @@
             "visibilityCondition": "model.credentials.mode != 'NONE' && model.use_end_time_column==true",
             "name": "end_time_column",
             "label": "End times column",
-            "description": "Column type must be string",
+            "description": "If not set, defaults to 'end_time'",
             "type": "COLUMN",
             "columnRole": "input_dataset"
         },
@@ -197,7 +197,7 @@
             "visibilityCondition": "model.credentials.mode != 'NONE' && model.use_time_column==true",
             "name": "time_column",
             "label": "Times column",
-            "description": "Column type must be string",
+            "description": "If not set, defaults to 'time'",
             "type": "COLUMN",
             "columnRole": "input_dataset"
         },
