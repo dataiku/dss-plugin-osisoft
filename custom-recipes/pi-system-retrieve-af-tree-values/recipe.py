@@ -290,10 +290,16 @@ end_time = config.get("end_time")
 time = config.get("time")
 use_start_time_column = config.get("use_start_time_column", False)
 start_time_column = config.get("start_time_column")
+if use_start_time_column and not start_time_column:
+    start_time_column = "start_time"
 use_end_time_column = config.get("use_end_time_column", False)
 end_time_column = config.get("end_time_column")
+if use_end_time_column and not end_time_column:
+    end_time_column = "end_time"
 use_time_column = config.get("use_time_column", False)
 time_column = config.get("time_column")
+if use_time_column and not time_column:
+    time_column = "time"
 server_url_column = config.get("server_url_column")
 _, batch_size = get_advanced_parameters(config)
 download_strategy = config.get("download_strategy", "recursive")
