@@ -431,10 +431,20 @@ with output_dataset.get_writer() as writer:
                     extention = client.unnest_row(base)
                     results.extend(extention)
             else:
+                base = {"Errors": "Issue with this line"}
                 if row.get("initial_index") is not None:
                     base = json.loads(copy.deepcopy(input_parameters_dataframe.loc[row.get("initial_index")].to_json()))
                 else:
-                    base = json.loads(copy.deepcopy(input_parameters_dataframe.loc[absolute_index-1].to_json()))
+                    try:
+                        base = json.loads(copy.deepcopy(input_parameters_dataframe.loc[absolute_index-1].to_json()))
+                    except Exception as error:
+                        base = {"Errors": "{}".format(error)}
+                        logger.error("Error while loading json: {}".format(error))
+                        logger.error("absolute_index={}".format(absolute_index))
+                        logger.error("target schema={}".format(columns_formater.get_schema()))
+                        logger.error("input_parameters_dataframe.loc[absolute_index-1]={}".format(input_parameters_dataframe.loc[absolute_index-1]))
+                        logger.error("row to integrate={}".format(row))
+                        # logger.error("to_json={}".format(input_parameters_dataframe.loc[absolute_index-1].to_json()))
                 base = columns_formater.cast_to_column_type(base)
                 base.update(row)
                 extention = client.unnest_row(base)
