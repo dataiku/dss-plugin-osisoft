@@ -1,5 +1,9 @@
 # Changelog
 
+## [Version 2.0.0-beta.6](https://github.com/dataiku/dss-plugin-pi-server/releases/tag/v2.0.0-beta.6) - Bugfix release - 2026-10-07
+
+- Adding logs to AF download recipe
+
 ## [Version 2.0.0-beta.5](https://github.com/dataiku/dss-plugin-pi-server/releases/tag/v2.0.0-beta.5) - Bugfix release - 2026-09-30
 
 - Fix issues with date type input columns
