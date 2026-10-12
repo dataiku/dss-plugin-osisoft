@@ -185,7 +185,7 @@
             "type": "STRING",
             "defaultValue": ""
         },
-                {
+        {
             "name": "use_time_column",
             "label": "Use time value per row",
             "description": "",
@@ -208,6 +208,14 @@
             "description": "Optional, for RecordedAtTime data type",
             "type": "STRING",
             "defaultValue": ""
+        },
+        {
+            "name": "should_parse_date",
+            "label": "Parse dates",
+            "description": "",
+            "type": "BOOLEAN",
+            "visibilityCondition": "model.credentials.mode != 'NONE'",
+            "defaultValue": false
         },
         {
             "name": "max_count",
