@@ -452,11 +452,11 @@ def epoch_to_iso(epoch):
 
 def iso_to_epoch(iso_timestamp):
     # logger.info("Converting iso timestamp '{}' to epoch".format(iso_timestamp))
-    if is_epoch(iso_timestamp):
-        # logger.info("Timestamp is already epoch")
-        return iso_timestamp
     epoch_timestamp = None
     try:
+        if is_epoch(iso_timestamp):
+            # logger.info("Timestamp is already epoch")
+            return iso_timestamp
         parsed_timestamp = date_parser.parse(iso_timestamp)
         epoch_timestamp = parsed_timestamp.timestamp()
     except Exception:
