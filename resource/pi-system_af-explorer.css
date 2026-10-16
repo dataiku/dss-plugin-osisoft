@@ -878,6 +878,33 @@ pi-system-auth-banner {
     width: 200px !important;
 }
 
+.pi-system-explorer__search-view {
+    display: flex;
+    flex: 1;
+}
+
+.pi-system-explorer__search-view > .pi-system--main-pane__content {
+    flex: 1;
+    min-width: 0;
+}
+
+.pi-system-explorer__search-empty-state {
+    color: #666;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    text-align: center;
+    flex: 1;
+    min-height: 192px;
+    align-items: center;
+    justify-content: center;
+}
+
+.pi-system-explorer__search-empty-state > strong {
+    font-size: 20px;
+    line-height: 1.4;
+}
+
 .pi-system-explorer__search-result {
     padding: 4px;
     display: flex;

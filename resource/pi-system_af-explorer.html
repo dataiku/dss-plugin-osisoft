@@ -106,7 +106,7 @@
                 </button>
             </div>
             <!-- Search mode -->
-            <div class="attribute-tab pi-system-explorer__center-view" ng-if="showTreeData && inSearchMode">
+            <div class="attribute-tab pi-system-explorer__center-view pi-system-explorer__search-view" ng-if="showTreeData && inSearchMode">
                 <div class="pi-system--main-pane__content">
                     <div class="attribute-section__search">
                         <div style="display: flex; gap: 4px; flex-direction: column;">
@@ -188,7 +188,7 @@
                             </div>
                         </div>
                     </div>
-                    <div ng-if="search.searchMode === 'attribute' && search.attributeResults"
+                    <div ng-if="search.searchMode === 'attribute' && hasSearchCriteria('attribute') && search.attributeResults[search.attributeSearchCurrentPage].length"
                          style="width: 100%;"
                     >
                         <div ng-if="search.nextAttributeResultsPage || search.attributeResults.length > 1"
@@ -270,6 +270,18 @@
                                 on-update-single-data-type="updateSingleAttributeDataType(attribute)"
                                 on-update-aggregate="updateMergedAttributeAggregate(mergedAttribute)"
                                 on-update-single-aggregate="updateSingleAttributeAggregate(attribute)">
+                        </div>
+                    </div>
+                    <div class="pi-system-explorer__search-empty-state"
+                         ng-if="search.searchMode === 'attribute'
+                             ? !hasSearchCriteria('attribute') || !search.attributeResults[search.attributeSearchCurrentPage].length
+                             : !hasSearchResults()">
+                        <img src="/plugins/pi-system/resource/search_empty_state.svg"
+                             alt="No search results" width="192" height="192">
+                        <strong>Search for {{search.searchMode}}s</strong>
+                        <div>
+                            Use the search bar and filters above, or switch to
+                            <a href="" ng-click="toggleSearchMode(false)">Attributes view</a>.
                         </div>
                     </div>
                     <div ng-if="search.searchMode !== 'attribute' && hasSearchCriteria(search.searchMode)">
