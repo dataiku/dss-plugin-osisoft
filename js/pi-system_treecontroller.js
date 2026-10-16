@@ -942,24 +942,6 @@ app.controller('AfExplorerFormCtrl', [
             }).finally(stopLoadingState);
         };
 
-        $scope.getFromCacheOrFetchBaselineObjects = function() {
-            $scope.cleanTree();
-            return $q.all([
-                $scope.getElementTreeFromDB(),
-                $scope.getTemplatesFromDB(),
-            ]).then(function([elementTree, templateTree]) {
-                cacheLastTreeUpdateDate();
-                $scope.elementTree = elementTree;
-                $scope.templateTree = templateTree;
-                rebuildTemplateList();
-                rebuildElementsByTemplate();
-                cacheElementTree();
-                cacheTemplateTree();
-                $scope.config.loadedDatabaseName = $scope.config.database_name || null;
-                return [elementTree, templateTree];
-            });
-        }
-
         $scope.populateAttributesFromDb = function(item) {
             if (item.type === "template") {
                 return getAttributesForTemplate(item);
