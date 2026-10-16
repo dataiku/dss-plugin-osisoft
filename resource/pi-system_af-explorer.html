@@ -277,11 +277,11 @@
                              ? !hasSearchCriteria('attribute') || !search.attributeResults[search.attributeSearchCurrentPage].length
                              : !hasSearchResults()">
                         <img src="/plugins/pi-system/resource/search_empty_state.svg"
-                             alt="No search results" width="192" height="192">
+                             alt="No search results" width="120" height="120">
                         <strong>Search for {{search.searchMode}}s</strong>
                         <div>
                             Use the search bar and filters above, or switch to
-                            <a href="" ng-click="toggleSearchMode(false)">Attributes view</a>.
+                            <a href="" ng-click="toggleSearchMode(false)">Attributes view</a>
                         </div>
                     </div>
                     <div ng-if="search.searchMode !== 'attribute' && hasSearchCriteria(search.searchMode)">
