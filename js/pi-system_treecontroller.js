@@ -150,7 +150,6 @@ class Cache {
         this.attributesStoreName = "attributes"
         this.elementTreeStoreName = "elementTree"
         this.templateTreeStoreName = "templateTree"
-        this.elementsByTemplateStoreName = "elementsByTemplate"
         this.elementCategoriesStoreName = "elementCategories"
         this.attributeCategoriesStoreName = "attributeCategories"
         this.lastTreeUpdateDateStoreName = "lastTreeUpdateDate"
@@ -158,7 +157,6 @@ class Cache {
             this.attributesStoreName,
             this.elementTreeStoreName,
             this.templateTreeStoreName,
-            this.elementsByTemplateStoreName,
             this.elementCategoriesStoreName,
             this.attributeCategoriesStoreName,
             this.lastTreeUpdateDateStoreName
@@ -166,7 +164,6 @@ class Cache {
 
         this.elementTreeRecordId = "elementTree"
         this.templateTreeRecordId = "templateTree"
-        this.elementsByTemplateRecordId = "elementsByTemplate"
         this.elementCategoriesRecordId = "elementCategories"
         this.attributeCategoriesRecordId = "attributeCategories"
         this.lastTreeUpdateDateRecordId = "lastTreeUpdateDate"
@@ -206,10 +203,6 @@ class Cache {
 
     async getTemplateTree() {
         return this.getObject(this.templateTreeStoreName, this.templateTreeRecordId).then((data) => data?.nodes);
-    }
-
-    async getElementsByTemplate() {
-        return this.getObject(this.elementsByTemplateStoreName, this.elementsByTemplateRecordId).then((data) => data?.nodes);
     }
 
     async getElementCategories() {
@@ -255,13 +248,6 @@ class Cache {
                 id: this.templateTreeRecordId,
                 nodes: templateTree
         }, this.templateTreeStoreName);
-    }
-
-    async addOrUpdateElementsByTemplate(elementsByTemplate) {
-        return this.addOrUpdate({
-                id: this.elementsByTemplateRecordId,
-                nodes: elementsByTemplate
-        }, this.elementsByTemplateStoreName);
     }
 
     async addOrUpdateElementCategories(elementCategories) {
@@ -420,6 +406,42 @@ app.controller('AfExplorerFormCtrl', [
                 template,
                 ...flattenTemplateTree(template.children)
             ]);
+        }
+
+        function buildElementsByTemplate(elementTree, templateTree) {
+            const elementsByTemplate = {};
+            const ancestorsByTemplate = new Map();
+            const seenElementIds = new Set();
+
+            function visitTemplates(templates, ancestors) {
+                (templates || []).forEach(template => {
+                    const templateNames = [template.title, ...ancestors];
+                    elementsByTemplate[template.title] = [];
+                    ancestorsByTemplate.set(template.title, templateNames);
+                    visitTemplates(template.children, templateNames);
+                });
+            }
+
+            function visitElements(elements) {
+                (elements || []).forEach(element => {
+                    if (!seenElementIds.has(element.id)) {
+                        seenElementIds.add(element.id);
+                        const templateNames = ancestorsByTemplate.get(element.template_name) || [];
+                        templateNames.forEach(templateName => {
+                            elementsByTemplate[templateName].push(element);
+                        });
+                    }
+                    visitElements(element.children);
+                });
+            }
+
+            visitTemplates(templateTree, []);
+            visitElements(elementTree);
+            return elementsByTemplate;
+        }
+
+        function rebuildElementsByTemplate() {
+            $scope.elementsByTemplate = buildElementsByTemplate($scope.elementTree, $scope.templateTree);
         }
 
         function rebuildTemplateList() {
@@ -702,12 +724,6 @@ app.controller('AfExplorerFormCtrl', [
             ).then(rebuildTemplateList);
         }
 
-        function loadElementsByTemplate() {
-            return $scope.cache.getElementsByTemplate().then(elementsByTemplate => {
-                $scope.elementsByTemplate =  elementsByTemplate || {}
-            });
-        }
-
         // Fetching data - only once auth has been verified
        function initData() {
             console.log("Initializing application data for PI systems Af tree explorer")
@@ -725,7 +741,6 @@ app.controller('AfExplorerFormCtrl', [
                 return $q.all([
                     loadElementTree(),
                     loadTemplateTree(),
-                    loadElementsByTemplate(),
                     loadElementCategories(),
                     loadAttributeCategories(),
                     loadLastTreeUpdateDate()
@@ -733,6 +748,7 @@ app.controller('AfExplorerFormCtrl', [
             }).catch((error) => {
                 throw new Error(`There was an error initializing data: ${error}`);
             }).then(() => {
+                rebuildElementsByTemplate();
                 cacheLastTreeUpdateDate();
                 $scope.$applyAsync();
             }).finally(stopLoadingState);
@@ -824,6 +840,7 @@ app.controller('AfExplorerFormCtrl', [
                 $scope.elementTree = elementTree;
                 $scope.templateTree = templateTree;
                 rebuildTemplateList();
+                rebuildElementsByTemplate();
                 $scope.attributeCategories = attributeCategories;
                 buildAttributeCategoryFilterOptions();
                 $scope.elementCategories = elementCategories;
@@ -906,10 +923,6 @@ app.controller('AfExplorerFormCtrl', [
             return $scope.cache.addOrUpdateTemplateTree(snapshot);
         }
 
-        function cacheElementsByTemplate() {
-            $scope.cache.addOrUpdateElementsByTemplate($scope.elementsByTemplate);
-        }
-
         function cacheLastTreeUpdateDate() {
             const date = new Date().toISOString();
             $scope.lastTreeUpdateDate = date;
@@ -939,6 +952,7 @@ app.controller('AfExplorerFormCtrl', [
                 $scope.elementTree = elementTree;
                 $scope.templateTree = templateTree;
                 rebuildTemplateList();
+                rebuildElementsByTemplate();
                 cacheElementTree();
                 cacheTemplateTree();
                 $scope.config.loadedDatabaseName = $scope.config.database_name || null;
@@ -1195,25 +1209,10 @@ app.controller('AfExplorerFormCtrl', [
             return $scope.ui.clickedNodes.includes(element.url);
         }
 
-        $scope.getElementsForTemplate = function (templateName) {
-            startLoadingState(false);
-            return $scope.callPythonDo({ method: "get_elements_for_template", template_name: templateName}).then(
-                function(data) {
-                    $scope.elementsByTemplate[templateName] = data.elements;
-                    cacheElementsByTemplate();
-                }
-            ).finally(stopLoadingState);
-        }
-
         $scope.templateModeExcludedAttributes = {};
 
         $scope.initElementsDropdown = async function(templateName) {
-            const existingElements = $scope.elementsByTemplate[templateName];
-            if (Array.isArray(existingElements)) {
-                return existingElements.map(element => element.url);
-            }
-            await $scope.getElementsForTemplate(templateName);
-            return $scope.elementsByTemplate[templateName].map(element => element.url);
+            return ($scope.elementsByTemplate[templateName] || []).map(element => element.url);
         }
 
         // FIXME: the parent_element_path is not properly present !!! probably because loaded from cache
