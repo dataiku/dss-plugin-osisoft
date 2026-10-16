@@ -1,5 +1,9 @@
 # Changelog
 
+## [Version 2.0.0-beta.8](https://github.com/dataiku/dss-plugin-pi-server/releases/tag/v2.0.0-beta.8) - Bugfix release - 2026-10-16
+
+- Fix recursive download on AF download recipe
+
 ## [Version 2.0.0-beta.6](https://github.com/dataiku/dss-plugin-pi-server/releases/tag/v2.0.0-beta.6) - Bugfix release - 2026-10-07
 
 - Adding logs to AF download recipe
