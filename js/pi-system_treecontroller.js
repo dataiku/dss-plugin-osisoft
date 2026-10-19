@@ -145,7 +145,8 @@ const GroupMode = Object.freeze({
 class Cache {
     constructor(projectKey, server, database) {
         // TODO: include preset in db name
-        this.dbName = [projectKey, server, database].join("::")
+        this.oldDbName = [projectKey, server, database].join("::")
+        this.dbName = [server, database].join("::")
         this.dbVersion = 3
         this.attributesStoreName = "attributes"
         this.elementTreeStoreName = "elementTree"
@@ -170,6 +171,15 @@ class Cache {
     }
 
     async init() {
+        await new Promise((resolve, reject) => {
+            const request = indexedDB.deleteDatabase(this.oldDbName);
+            request.onsuccess = () => resolve();
+            request.onerror = () => reject(request.error);
+            request.onblocked = () => reject(new Error(
+                "Close other explorer tabs to allow deletion of the old cache."
+            ));
+        });
+
         return new Promise((resolve, reject) => {
             const request = indexedDB.open(this.dbName, this.dbVersion);
 
