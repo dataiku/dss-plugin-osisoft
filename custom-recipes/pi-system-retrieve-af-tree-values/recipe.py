@@ -269,7 +269,11 @@ if not server_url and not use_server_url_column:
 
 path_column = config.get("path_column", "")
 input_parameters_dataset = dataiku.Dataset(input_dataset[0])
-input_parameters_dataframe = input_parameters_dataset.get_dataframe()
+should_parse_date = config.get("should_parse_date", False)
+if should_parse_date:
+    input_parameters_dataframe = input_parameters_dataset.get_dataframe()
+else:
+    input_parameters_dataframe = input_parameters_dataset.get_dataframe(parse_dates=False)
 do_duplicate_input_row = config.get("do_duplicate_input_row", False)
 input_columns = list(input_parameters_dataframe.columns)
 input_columns_types = list(input_parameters_dataframe.dtypes)
@@ -445,6 +449,14 @@ with output_dataset.get_writer() as writer:
                         logger.error("input_parameters_dataframe.loc[absolute_index-1]={}".format(input_parameters_dataframe.loc[absolute_index-1]))
                         logger.error("row to integrate={}".format(row))
                         # logger.error("to_json={}".format(input_parameters_dataframe.loc[absolute_index-1].to_json()))
+                        faulty_row = input_parameters_dataframe.loc[absolute_index-1]
+                        for column, value in faulty_row.items():
+                            try:
+                                faulty_row.loc[[column]].to_json()
+                            except Exception:
+                                logger.error("Failing column:{}".format(column))
+                                base = {"Errors": "column {}={}:{}".format(column, value, error)}
+
                 base = columns_formater.cast_to_column_type(base)
                 base.update(row)
                 extention = client.unnest_row(base)

@@ -292,12 +292,17 @@ class OSIsoftClient(object):
                 response_index = 0
                 for json_response in json_responses:
                     response_content = json_response.get("Content", {})
+                    if error_in_batch_response(json_response):
+                        response_content = {"Errors": response_content}
                     webid = web_ids[response_index]
                     event_start_time = event_start_times[response_index]
                     event_end_time = event_end_times[response_index]
                     if OSIsoftConstants.DKU_ERROR_KEY in response_content:
                         if endpoint_type == "event_frames":
                             response_content['event_frame_webid'] = "{}".format(webid)
+                        if initial_index is not None:
+                            response_content['initial_index'] = initial_indexs[response_index]
+                            response_index += 1
                         yield response_content
                         continue
                     items = response_content.get(OSIsoftConstants.API_ITEM_KEY, [])
@@ -305,15 +310,15 @@ class OSIsoftClient(object):
                         combined_item = combined_items(items)
                         combined_item['initial_index'] = initial_indexs[response_index]
                         yield combined_item
-                    elif len(items)==0:
-                            item = {}
-                            if event_start_time:
-                                item['StartTime'] = event_start_time
-                            if event_end_time:
-                                item['EndTime'] = event_end_time
-                            if initial_index is not None:
-                                item['initial_index'] = initial_indexs[response_index]
-                            yield item
+                    elif len(items) == 0:
+                        item = {}
+                        if event_start_time:
+                            item['StartTime'] = event_start_time
+                        if event_end_time:
+                            item['EndTime'] = event_end_time
+                        if initial_index is not None:
+                            item['initial_index'] = initial_indexs[response_index]
+                        yield item
                     else:
                         for item in items:
                             if event_start_time:
@@ -584,7 +589,7 @@ class OSIsoftClient(object):
         )
         return json_response
 
-    def get_next_item_from_url(self, url, params = None):
+    def get_next_item_from_url(self, url, params=None):
         headers = self.get_requests_headers()
         params = params or {}
         while url:
@@ -670,7 +675,7 @@ class OSIsoftClient(object):
         return response
 
     def prepare_post_all_values(self, webid, buffer):
-        if len(buffer)==1:
+        if len(buffer) == 1:
             # Only one point, we use value endpoint which allows writing to static attributes
             url = self.endpoint.get_stream_value_url(webid)
         else:
@@ -864,26 +869,26 @@ class OSIsoftClient(object):
                 json_response = None
 
     def search_attributes_first_page(self, database_webid, **kwargs):
-            search_attributes_base_url = self.endpoint.get_attribute_url()
-            query = "Element:{{{}}} {}".format(
-                self.build_element_query(**kwargs),
-                self.build_attribute_query(**kwargs)
-            )
-            headers = self.get_requests_headers()
-            params = {
-                "query": query,
-                "databaseWebId": database_webid,
-                "maxCount": 100
-            }
-            if "search_associations" in kwargs:
-                params["associations"] = kwargs.get("search_associations")
-            json_response = self.get(url=search_attributes_base_url, headers=headers, params=params)
-            if OSIsoftConstants.DKU_ERROR_KEY in json_response:
-                return json_response, None
+        search_attributes_base_url = self.endpoint.get_attribute_url()
+        query = "Element:{{{}}} {}".format(
+            self.build_element_query(**kwargs),
+            self.build_attribute_query(**kwargs)
+        )
+        headers = self.get_requests_headers()
+        params = {
+            "query": query,
+            "databaseWebId": database_webid,
+            "maxCount": 100
+        }
+        if "search_associations" in kwargs:
+            params["associations"] = kwargs.get("search_associations")
+        json_response = self.get(url=search_attributes_base_url, headers=headers, params=params)
+        if OSIsoftConstants.DKU_ERROR_KEY in json_response:
+            return json_response, None
 
-            next_page_url = get_next_page_url(json_response)
-            items = json_response.get(OSIsoftConstants.API_ITEM_KEY, [])
-            return items, next_page_url
+        next_page_url = get_next_page_url(json_response)
+        items = json_response.get(OSIsoftConstants.API_ITEM_KEY, [])
+        return items, next_page_url
 
     def get_next_page(self, page_url):
         headers = self.get_requests_headers()
@@ -968,7 +973,7 @@ class OSIsoftClient(object):
         }
         json_response = self.get(url=url, headers=headers, params=params)
         items = json_response.get("Items", [])
-        if len(items)==1:
+        if len(items) == 1:
             item = items[0]
             attribute_templates_url = item.get("Links", {}).get("AttributeTemplates")
             while attribute_templates_url:
@@ -1488,7 +1493,7 @@ def prepare_request_buffer(request_buffer):
 
 def type_in_items(items):
     for item in items:
-        if not 'Type' in item:
+        if 'Type' not in item:
             return False
     return True
 
@@ -1499,3 +1504,10 @@ def combined_items(items):
     for item in items:
         output[item.get("Type")] = item.get("Value", {}).get("Value")
     return output
+
+
+def error_in_batch_response(json_response):
+    if "Status" in json_response:
+        if int(json_response.get("Status")) >= 400:
+            return True
+    return False
