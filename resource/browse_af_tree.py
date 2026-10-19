@@ -1,4 +1,4 @@
-from osisoft_client import OSIsoftClient
+from osisoft_client import OSIsoftClient, PISystemClientError
 from osisoft_safe_logger import SafeLogger
 from osisoft_plugin_common import get_credentials, build_select_choices, check_debug_mode
 from osisoft_plugin_common import get_item_details, PerformanceTimer
@@ -12,27 +12,27 @@ def do(payload, config, plugin_config, inputs):
     if "config" in config:
         config = config.get("config")
     if "credentials" not in config:
-        return {"choices": [{"label": "Requires DSS v10.0.4 or above. Please use the OSIsoft Search custom dataset instead"}]}
+        return {"choices": [], "error": "Requires DSS v10.0.4 or above. Please use the OSIsoft Search custom dataset instead"}
     elif config.get("credentials") == {}:
-        return {"choices": [{"label": "Pick a credential"}]}
+        return {"choices": [], "error": "Pick a credential"}
 
     auth_type, username, password, server_url, is_ssl_check_disabled, credential_error = get_credentials(config, can_raise=False)
     is_ssl_check_disabled = config.get("is_ssl_check_disabled", False)  # Because no advanced parameter switch
 
     if credential_error:
-        return build_select_choices(credential_error)
+        return {"choices": [], "error": credential_error}
 
     if not (auth_type and username and password):
-        return build_select_choices("Pick a credential")
+        return {"choices": [], "error": "Pick a credential"}
 
     if not username or not password:
-        return build_select_choices(
+        return {"choices": [], "error": (
             "Incorrect credential. "
             + "Go to you profile page > Credentials > Your preset, click the edit button and fill in you username and password details."
-        )
+        )}
 
     if not server_url:
-        return build_select_choices("Fill in the server address")
+        return {"choices": [], "error": "Fill in the server address"}
 
     if payload.get("method") == "get_username":
         return {"username": username}
@@ -69,10 +69,10 @@ def do(payload, config, plugin_config, inputs):
     if method == "get_attributes_per_page":
         return get_attributes_per_page(client, payload, config)
     if parameter_name == "server_name":
-        choices = []
-        servers = client.get_asset_servers(can_raise=False)
-        choices.extend(servers)
-        return build_select_choices(choices)
+        try:
+            return build_select_choices(client.get_asset_servers(can_raise=True))
+        except PISystemClientError as error:
+            return {"choices": [], "error": str(error)}
 
     if parameter_name == "data_server_url":
         choices = []
