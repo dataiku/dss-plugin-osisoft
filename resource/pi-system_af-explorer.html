@@ -86,8 +86,8 @@
                         class="btn btn--outline btn--primary btn--dku-icon"
                         ng-click="openLoginModal()">
                     Login
-                    <i class="dku-icon-arrow-sign-in-16" ng-if="!authConfigured()"></i>
-                    <i class="dku-icon-checkmark-12" ng-if="authConfigured()" style="padding-left: 4px;"></i>
+                    <i class="dku-icon-arrow-sign-in-16" ng-if="!authConfigured() || !showTreeData"></i>
+                    <i class="dku-icon-checkmark-12" ng-if="authConfigured() && showTreeData" style="padding-left: 4px;"></i>
                 </button>
             </div>
         </div>

@@ -34,6 +34,9 @@ def do(payload, config, plugin_config, inputs):
     if not server_url:
         return build_select_choices("Fill in the server address")
 
+    if payload.get("method") == "get_username":
+        return {"username": username}
+
     is_debug_mode = check_debug_mode(config)
 
     network_timer = PerformanceTimer()
