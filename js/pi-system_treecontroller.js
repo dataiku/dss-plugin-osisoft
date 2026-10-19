@@ -171,12 +171,9 @@ class Cache {
 
     async init() {
         await new Promise((resolve, reject) => {
+            // Cleanup old databases - fine if it fails
             const request = indexedDB.deleteDatabase(this.oldDbName);
             request.onsuccess = () => resolve();
-            request.onerror = () => reject(request.error);
-            request.onblocked = () => reject(new Error(
-                "Close other explorer tabs to allow deletion of the old cache."
-            ));
         });
 
         return new Promise((resolve, reject) => {
