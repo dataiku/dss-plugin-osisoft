@@ -260,7 +260,7 @@ logger.info("Initialization with config config={}".format(logger.filter_secrets(
 
 auth_type, username, password, server_url, is_ssl_check_disabled = get_credentials(config)
 is_debug_mode = check_debug_mode(config)
-max_count = get_max_count(config)
+max_count = config.get("max_count", 10000)
 must_convert_object_to_string = check_must_convert_object_to_string(config)
 
 use_server_url_column = config.get("use_server_url_column", False)
