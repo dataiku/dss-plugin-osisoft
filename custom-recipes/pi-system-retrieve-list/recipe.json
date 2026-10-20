@@ -105,7 +105,7 @@
             "name": "use_batch_mode",
             "label": "Use batch mode",
             "type": "BOOLEAN",
-            "description": "",
+            "description": "Use to quickly retrieve small samples from multiple paths. ⚠️Not for large time ranges",
             "visibilityCondition": "model.show_advanced_parameters==true",
             "defaultValue": false
         },
