@@ -142,10 +142,12 @@ const GroupMode = Object.freeze({
     CATEGORY: 'CATEGORY',
 });
 
+const CACHE_DB_PREFIX = "PI-SYS-AF-TREE::";
+
 class Cache {
     constructor(projectKey, username, server, database) {
         this.oldDbName = [projectKey, server, database].join("::")
-        this.dbName = ["PI-SYS-AF-TREE", username, server, database].join("::")
+        this.dbName = CACHE_DB_PREFIX + [username, server, database].join("::")
         this.dbVersion = 3
         this.attributesStoreName = "attributes"
         this.elementTreeStoreName = "elementTree"
@@ -281,22 +283,38 @@ class Cache {
         }, this.lastTreeUpdateDateStoreName);
     }
 
+    async cleanupLocalDatabases() {
+        const databases = await indexedDB.databases();
+        await Promise.all(databases
+            .filter(({ name }) => name?.startsWith(CACHE_DB_PREFIX) && name !== this.dbName)
+            .map(({ name }) => new Promise((resolve, reject) => {
+                const request = indexedDB.deleteDatabase(name);
+                request.onsuccess = () => resolve();
+                request.onerror = () => reject(request.error);
+                request.onblocked = () => reject(new Error('Close other tabs using local databases to finish cleanup.'));
+            })));
+    }
+
+    async handleWriteError(error) {
+        if (error?.name === "QuotaExceededError") {
+            try {
+                await this.cleanupLocalDatabases();
+            } catch (cleanupError) {
+                console.error("Could not clean up local databases", cleanupError);
+            }
+        }
+        throw error;
+    }
+
     async addOrUpdate(object, objectStoreName) {
         return new Promise((resolve, reject) => {
             const transaction = this.db.transaction([objectStoreName], "readwrite");
-            transaction.onerror = (event) => {
-                reject(transaction.error)
-            };
+            transaction.oncomplete = () => resolve(object);
+            transaction.onabort = () => reject(transaction.error);
 
             const objectStore = transaction.objectStore(objectStoreName);
-            const request = objectStore.put(object);
-            request.onsuccess = (event) => {
-                resolve(object)
-            };
-            request.onerror = (event) => {
-                reject(request.error)
-            };
-        });
+            objectStore.put(object);
+        }).catch(error => this.handleWriteError(error));
     }
 
     async clear() {
@@ -305,7 +323,7 @@ class Cache {
             transaction.oncomplete = () => {
                 resolve();
             };
-            transaction.onerror = () => {
+            transaction.onabort = () => {
                 reject(transaction.error);
             };
 
@@ -313,7 +331,7 @@ class Cache {
                 const objectStore = transaction.objectStore(storeName);
                 objectStore.clear();
             })
-        });
+        }).catch(error => this.handleWriteError(error));
     }
 }
 
@@ -573,6 +591,16 @@ app.controller('AfExplorerFormCtrl', [
 
                     modalScope.dismiss();
                     initializePage();
+                };
+
+                modalScope.cleanupLocalDatabases = function() {
+                    if (!$scope.cache || !$scope.showTreeData) {
+                        return;
+                    }
+
+                    return $q.when($scope.cache.cleanupLocalDatabases()).catch(error => {
+                        modalScope.loginErrorMessage = `Could not clean up local databases: ${error.message}`;
+                    });
                 };
 
                 modalScope.refreshCachedTree = function() {

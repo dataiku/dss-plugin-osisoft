@@ -58,6 +58,15 @@
                     Local database refreshed on {{ lastTreeUpdateDate | date:'medium' }}
                 </span>
             </div>
+            <div>
+                <button
+                        ng-click="cleanupLocalDatabases()"
+                        ng-disabled="!cache || !showTreeData"
+                        class="btn btn--secondary"
+                        title="Delete other PI System local databases while keeping the current database">
+                    Cleanup local databases
+                </button>
+            </div>
         </div>
     </div>
     <div class="modal-footer modal-footer-std-buttons">
