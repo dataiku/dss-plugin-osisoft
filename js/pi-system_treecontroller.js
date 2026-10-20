@@ -145,7 +145,7 @@ const GroupMode = Object.freeze({
 class Cache {
     constructor(projectKey, username, server, database) {
         this.oldDbName = [projectKey, server, database].join("::")
-        this.dbName = [username, server, database].join("::")
+        this.dbName = ["PI-SYS-AF-TREE", username, server, database].join("::")
         this.dbVersion = 3
         this.attributesStoreName = "attributes"
         this.elementTreeStoreName = "elementTree"
