@@ -2,8 +2,10 @@
 import dataiku
 import json
 import copy
+import pytz
 from dataiku.customrecipe import get_input_names_for_role, get_recipe_config, get_output_names_for_role
 import pandas as pd
+from datetime import datetime
 from osisoft_safe_logger import SafeLogger
 from osisoft_plugin_common import (
     get_credentials, get_base_for_data_type, check_debug_mode,
@@ -20,6 +22,9 @@ logger = SafeLogger("pi-system plugin", forbiden_keys=["token", "password"])
 logger.info("PIWebAPI Assets values downloader recipe v{}".format(
     OSIsoftConstants.PLUGIN_VERSION
 ))
+
+
+UTC_TIMEZONE = pytz.timezone('UTC')
 
 
 def get_step_value(item):
@@ -166,12 +171,15 @@ def dataframe_schema(dataframe):
 class Columns():
     def __init__(self):
         self.columns = {}
+
     def add(self, column_name, columns_type=None):
         columns_type = columns_type or "string"
         self.columns[column_name] = columns_type
+
     def set_schema(self, new_schema={}):
         for column in new_schema:
             self.columns[column] = new_schema.get(column)
+
     def get_schema(self):
         schema = []
         for column in self.columns:
@@ -182,6 +190,7 @@ class Columns():
                 }
             )
         return schema
+
     def parse_row(self, row):
         # Constraining the output row to the declared schema
         row = row or {}
@@ -194,21 +203,53 @@ class Columns():
             if column not in output_row:
                 output_row[column] = ""
         return self._reorder_row(output_row)
+
     def _reorder_row(self, row):
         # SRSLY PANDAS ???!!!
         output_row = {}
         for column_name in self.columns:
             output_row[column_name] = row.get(column_name)
         return output_row
+
     def parse_rows(self, rows):
         output_rows = []
         for row in rows:
             output_rows.append(self.parse_row(row))
         return output_rows
 
-STANDARD_SCHEMA = {"title":"string", "template_name":"string", "category_names":"string", "path":"string", "paths":"string", "id":"string", "url":"string", "data_type":"string", "summary_type":"string", "boundary_type":"string", "record_boundary_type":"string", "summary_duration":"string", "calculation_basis":"string", "max_count":"string", "interval":"string", "sync_time":"string", "Type":"string", "Timestamp":"string", "Value":"float", "UnitsAbbreviation":"string", "Good":"boolean", "Questionable":"boolean", "Substituted":"boolean", "Annotated":"boolean", "Errors": "string"}
+    def cast_to_column_type(self, columns):
+        for column in columns:
+            type_should_be = self.columns.get(column)
+            value = columns.get(column)
+            if type_should_be == "date" and isinstance(value, int):
+                new_value = datetime.fromtimestamp(
+                    value/1000, tz=UTC_TIMEZONE
+                ).strftime("%Y-%m-%dT%H:%M:%S%z")
+                columns[column] = new_value
+        return columns
 
-TRANSPOSED_SCHEMA = {"Total": "string", "Average": "string",  "Minimum": "string", "Maximum": "string", "Range": "string", "StdDev": "string", "PopulationStdDev": "string", "Count": "string", "PercentGood": "string", "TotalWithUOM": "string"}
+
+def de_pandify_time(time):
+    if isinstance(time, pd.Timestamp):
+        time = time.strftime("%Y-%m-%dT%H:%M:%SZ")
+    return time
+
+
+STANDARD_SCHEMA = {
+    "title": "string", "template_name": "string", "category_names": "string", "path": "string",
+    "paths": "string", "id": "string", "url": "string", "data_type": "string", "summary_type": "string",
+    "boundary_type": "string", "record_boundary_type": "string", "summary_duration": "string",
+    "calculation_basis": "string", "max_count": "string", "interval": "string", "sync_time": "string",
+    "Type": "string", "Timestamp": "string", "Value": "float", "UnitsAbbreviation": "string",
+    "Good": "boolean", "Questionable": "boolean", "Substituted": "boolean", "Annotated": "boolean",
+    "Errors": "string"
+}
+
+TRANSPOSED_SCHEMA = {
+    "Total": "string", "Average": "string",  "Minimum": "string", "Maximum": "string", "Range": "string",
+    "StdDev": "string", "PopulationStdDev": "string", "Count": "string", "PercentGood": "string",
+    "TotalWithUOM": "string"
+}
 
 input_dataset = get_input_names_for_role('input_dataset')
 output_names_stats = get_output_names_for_role('api_output')
@@ -289,12 +330,17 @@ with output_dataset.get_writer() as writer:
         start_time = input_parameters_row.get(start_time_column, start_time) if use_start_time_column else start_time
         end_time = input_parameters_row.get(end_time_column, end_time) if use_end_time_column else end_time
         time = input_parameters_row.get(time_column, time) if use_time_column else time
+        start_time = de_pandify_time(start_time)
+        end_time = de_pandify_time(end_time)
+        time = de_pandify_time(time)
         row_name = input_parameters_row.get("Name")
 
         # if self_contained_mode:
-        object_id, data_type, boundary_type, record_boundary_type, interval, sync_time, summary_type, summary_duration, calculation_basis = extract_params_from_row(
-            input_parameters_row
-        )
+        object_id, data_type, boundary_type, record_boundary_type, \
+            interval, sync_time, summary_type, summary_duration, \
+            calculation_basis = extract_params_from_row(
+                input_parameters_row
+            )
         path_column = "id"
 
         duplicate_initial_row = {}
@@ -317,8 +363,7 @@ with output_dataset.get_writer() as writer:
                 end_time = client.parse_pi_time(end_time)
                 sync_time = client.parse_pi_time(sync_time)
         step_value = None
-
-        if download_strategy=="batch":
+        if download_strategy == "batch":
             buffer.append(
                 {
                     "initial_index": int(absolute_index - 1),
@@ -375,6 +420,7 @@ with output_dataset.get_writer() as writer:
             if isinstance(row, list):
                 for line in row:
                     base = get_base_for_data_type(data_type, object_id, Step=step_value)
+                    base = columns_formater.cast_to_column_type(base)
                     base.update(line)
                     extention = client.unnest_row(base)
                     results.extend(extention)
@@ -383,10 +429,10 @@ with output_dataset.get_writer() as writer:
                     base = json.loads(copy.deepcopy(input_parameters_dataframe.loc[row.get("initial_index")].to_json()))
                 else:
                     base = json.loads(copy.deepcopy(input_parameters_dataframe.loc[absolute_index-1].to_json()))
+                base = columns_formater.cast_to_column_type(base)
                 base.update(row)
                 extention = client.unnest_row(base)
                 results.extend(extention)
-
         results = columns_formater.parse_rows(results)
         unnested_items_rows = pd.DataFrame(results)
         if first_dataframe:
