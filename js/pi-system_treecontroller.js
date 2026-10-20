@@ -170,13 +170,15 @@ class Cache {
     }
 
     async init() {
-        await new Promise((resolve) => {
-            // Cleanup old databases - fine if it fails
-            const request = indexedDB.deleteDatabase(this.oldDbName);
-            request.onsuccess = () => resolve();
-            request.onerror = () => resolve();
-            request.onblocked = () => resolve();
-        });
+        if (this.oldDbName !== this.dbName) {
+            await new Promise((resolve) => {
+                // Cleanup old databases - fine if it fails
+                const request = indexedDB.deleteDatabase(this.oldDbName);
+                request.onsuccess = () => resolve();
+                request.onerror = () => resolve();
+                request.onblocked = () => resolve();
+            });
+        }
 
         return new Promise((resolve, reject) => {
             const request = indexedDB.open(this.dbName, this.dbVersion);
