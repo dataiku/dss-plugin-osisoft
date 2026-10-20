@@ -1,5 +1,9 @@
 # Changelog
 
+## [Version 2.0.0-beta.10](https://github.com/dataiku/dss-plugin-pi-server/releases/tag/v2.0.0-beta.10) - Bugfix release - 2026-10-20
+
+- Fix memory leak on AF downloader recipe in recursive mode
+
 ## [Version 2.0.0-beta.9](https://github.com/dataiku/dss-plugin-pi-server/releases/tag/v2.0.0-beta.9) - Bugfix release - 2026-10-19
 
 - Fix recursive download on AF download recipe

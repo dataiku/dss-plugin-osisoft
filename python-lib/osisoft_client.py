@@ -1217,22 +1217,25 @@ class OSIsoftClient(object):
         return json_response
 
     def unnest_row(self, row):
-        rows_to_append = [row]
+        return list(self.iter_unnested_rows(row))
+
+    def iter_unnested_rows(self, row):
         if OSIsoftConstants.API_ITEM_KEY in row:
             items = row.pop(OSIsoftConstants.API_ITEM_KEY, [])
+            yield row
             for item in items:
                 base_row = copy.deepcopy(row)
                 base_row.update(item)
-                rows_to_append.append(base_row)
-            return rows_to_append
+                yield base_row
         else:
             if OSIsoftConstants.API_VALUE_KEY in row:
                 base_row = copy.deepcopy(row)
                 value = base_row.pop(OSIsoftConstants.API_VALUE_KEY)
                 if isinstance(value, dict):
                     base_row.update(value)
-                    return [base_row]
-            return rows_to_append
+                    yield base_row
+                    return
+            yield row
 
 
 def format_output_row(row):
