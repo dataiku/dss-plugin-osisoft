@@ -187,7 +187,6 @@ if not reference_attribute_path:
     raise ValueError("There is no full path to reference attribute selected. For transposing the dataset, use the pivot recipe.")
 
 input_parameters_dataset = dataiku.Dataset(input_dataset[0])
-input_parameters_dataframe = input_parameters_dataset.get_dataframe()
 
 results = []
 time_last_request = None
@@ -203,34 +202,36 @@ if type_of_interpolation == "auto":
 
 # Cache each attribute
 logger.info("Caching all attributes in {}".format(temp_location.name))
-for index, input_parameters_row in input_parameters_dataframe.iterrows():
-    row_datetime = get_datetime_from_row(input_parameters_row, datetime_column)
-    if not row_datetime:
-        continue
-    attribute_path = input_parameters_row.get(input_paths_column)
-    if should_make_column_names_db_compatible:
-        attribute_path = normalise_name(attribute_path, max_length=column_name_max_length, number_of_elements=number_of_elements)
-    value = input_parameters_row.get(value_column)
+for input_parameters_dataframe in input_parameters_dataset.iter_dataframes(chunksize=10000):
+    for index, input_parameters_row in input_parameters_dataframe.iterrows():
+        row_datetime = get_datetime_from_row(input_parameters_row, datetime_column)
+        if not row_datetime:
+            continue
+        attribute_path = input_parameters_row.get(input_paths_column)
+        if should_make_column_names_db_compatible:
+            attribute_path = normalise_name(attribute_path, max_length=column_name_max_length, number_of_elements=number_of_elements)
+        value = input_parameters_row.get(value_column)
 
-    if attribute_path in paths_to_file_handles:
-        pass
-    else:
-        paths_to_file_handles[attribute_path] = open(temp_location.name + "/temp_{}".format(file_counter), "w")
-        if attribute_path == reference_attribute_path:
-            time_reference_file = file_counter
-        file_counter = file_counter + 1
-    paths_to_file_handles[attribute_path].writelines("{}|{}\n".format(row_datetime, value))
+        if attribute_path in paths_to_file_handles:
+            pass
+        else:
+            paths_to_file_handles[attribute_path] = open(temp_location.name + "/temp_{}".format(file_counter), "w")
+            if attribute_path == reference_attribute_path:
+                time_reference_file = file_counter
+            file_counter = file_counter + 1
+        paths_to_file_handles[attribute_path].writelines("{}|{}\n".format(row_datetime, value))
 
-    if type_of_interpolation == "auto":
-        is_step_attribute = input_parameters_row.get(step_column_name)
-        if is_step_attribute == "True" or is_step_attribute is True:
-            step_attributes[attribute_path] = True
-        elif is_step_attribute == "False" or is_step_attribute is False:
+        if type_of_interpolation == "auto":
+            is_step_attribute = input_parameters_row.get(step_column_name)
+            if is_step_attribute == "True" or is_step_attribute is True:
+                step_attributes[attribute_path] = True
+            elif is_step_attribute == "False" or is_step_attribute is False:
+                step_attributes[attribute_path] = False
+        elif type_of_interpolation == "interpolation":
             step_attributes[attribute_path] = False
-    elif type_of_interpolation == "interpolation":
-        step_attributes[attribute_path] = False
-    elif type_of_interpolation == "last_value":
-        step_attributes[attribute_path] = True
+        elif type_of_interpolation == "last_value":
+            step_attributes[attribute_path] = True
+    del input_parameters_dataframe
 
 logger.info("Cached all {} attributes".format(file_counter))
 
