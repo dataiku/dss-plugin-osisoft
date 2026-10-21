@@ -142,10 +142,11 @@ const GroupMode = Object.freeze({
     CATEGORY: 'CATEGORY',
 });
 
+const CACHE_DB_PREFIX = "PI-SYS-AF-TREE::";
+
 class Cache {
-    constructor(projectKey, username, server, database) {
-        this.oldDbName = [projectKey, server, database].join("::")
-        this.dbName = ["PI-SYS-AF-TREE", username, server, database].join("::")
+    constructor(username, server, database) {
+        this.dbName = CACHE_DB_PREFIX + [username, server, database].join("::")
         this.dbVersion = 3
         this.attributesStoreName = "attributes"
         this.elementTreeStoreName = "elementTree"
@@ -170,15 +171,6 @@ class Cache {
     }
 
     async init() {
-        if (this.oldDbName !== this.dbName) {
-            await new Promise((resolve) => {
-                // Cleanup old databases - fine if it fails
-                const request = indexedDB.deleteDatabase(this.oldDbName);
-                request.onsuccess = () => resolve();
-                request.onerror = () => resolve();
-                request.onblocked = () => resolve();
-            });
-        }
 
         return new Promise((resolve, reject) => {
             const request = indexedDB.open(this.dbName, this.dbVersion);
@@ -281,22 +273,38 @@ class Cache {
         }, this.lastTreeUpdateDateStoreName);
     }
 
+    async cleanupLocalDatabases() {
+        const databases = await indexedDB.databases();
+        await Promise.all(databases
+            .filter(({ name }) => name?.startsWith(CACHE_DB_PREFIX) && name !== this.dbName)
+            .map(({ name }) => new Promise((resolve, reject) => {
+                const request = indexedDB.deleteDatabase(name);
+                request.onsuccess = () => resolve();
+                request.onerror = () => reject(request.error);
+                request.onblocked = () => reject(new Error('Close other tabs using local databases to finish cleanup.'));
+            })));
+    }
+
+    async handleWriteError(error) {
+        if (error?.name === "QuotaExceededError") {
+            try {
+                await this.cleanupLocalDatabases();
+            } catch (cleanupError) {
+                console.error("Could not clean up local databases", cleanupError);
+            }
+        }
+        throw error;
+    }
+
     async addOrUpdate(object, objectStoreName) {
         return new Promise((resolve, reject) => {
             const transaction = this.db.transaction([objectStoreName], "readwrite");
-            transaction.onerror = (event) => {
-                reject(transaction.error)
-            };
+            transaction.oncomplete = () => resolve(object);
+            transaction.onabort = () => reject(transaction.error);
 
             const objectStore = transaction.objectStore(objectStoreName);
-            const request = objectStore.put(object);
-            request.onsuccess = (event) => {
-                resolve(object)
-            };
-            request.onerror = (event) => {
-                reject(request.error)
-            };
-        });
+            objectStore.put(object);
+        }).catch(error => this.handleWriteError(error));
     }
 
     async clear() {
@@ -305,7 +313,7 @@ class Cache {
             transaction.oncomplete = () => {
                 resolve();
             };
-            transaction.onerror = () => {
+            transaction.onabort = () => {
                 reject(transaction.error);
             };
 
@@ -313,7 +321,7 @@ class Cache {
                 const objectStore = transaction.objectStore(storeName);
                 objectStore.clear();
             })
-        });
+        }).catch(error => this.handleWriteError(error));
     }
 }
 
@@ -575,6 +583,20 @@ app.controller('AfExplorerFormCtrl', [
                     initializePage();
                 };
 
+                modalScope.cleanupLocalDatabases = function() {
+                    if (!$scope.cache || !$scope.showTreeData) {
+                        return;
+                    }
+
+                    if (!$window.confirm('This will remove all cached PI System databases except the ones used during this work session. Your saved selection will be preserved, but removed data will need to be fetched again. Proceed ?')) {
+                        return;
+                    }
+
+                    return $q.when($scope.cache.cleanupLocalDatabases()).catch(error => {
+                        modalScope.loginErrorMessage = `Could not clean up local databases: ${error.message}`;
+                    });
+                };
+
                 modalScope.refreshCachedTree = function() {
                     if (!$scope.authConfigured() || !$scope.showTreeData) {
                         return;
@@ -643,13 +665,8 @@ app.controller('AfExplorerFormCtrl', [
 
         $scope.getServers = function() {
             startLoadingState(false);
-            $scope.loginErrorMessage = '';
-            $scope.server_name = [];
             $scope.callPythonDo({ parameterName: "server_name" }).then(function(data) {
                 $scope.server_name = data.choices;
-                $scope.loginErrorMessage = data.error || '';
-            }).catch(() => {
-                $scope.loginErrorMessage = 'Unable to load servers. Check your connection and credentials.';
             }).finally(stopLoadingState);
         };
         $scope.getDatabases = function() {
@@ -909,7 +926,6 @@ app.controller('AfExplorerFormCtrl', [
 
         function initCache() {
             $scope.cache = new Cache(
-                $stateParams.projectKey,
                 $scope.piUsername,
                 $scope.config.server_name,
                 $scope.config.database_name

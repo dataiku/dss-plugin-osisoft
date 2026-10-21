@@ -431,8 +431,8 @@ pi-system-auth-banner {
 
 .pi-system-config--params-advanced {
     display: flex;
-    align-items: flex-start;
-    gap: 64px;
+    flex-direction: column;
+    gap: 8px;
 }
 
 .pi-system-config--refresh-cache {
