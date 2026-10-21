@@ -145,8 +145,7 @@ const GroupMode = Object.freeze({
 const CACHE_DB_PREFIX = "PI-SYS-AF-TREE::";
 
 class Cache {
-    constructor(projectKey, username, server, database) {
-        this.oldDbName = [projectKey, server, database].join("::")
+    constructor(username, server, database) {
         this.dbName = CACHE_DB_PREFIX + [username, server, database].join("::")
         this.dbVersion = 3
         this.attributesStoreName = "attributes"
@@ -172,15 +171,6 @@ class Cache {
     }
 
     async init() {
-        if (this.oldDbName !== this.dbName) {
-            await new Promise((resolve) => {
-                // Cleanup old databases - fine if it fails
-                const request = indexedDB.deleteDatabase(this.oldDbName);
-                request.onsuccess = () => resolve();
-                request.onerror = () => resolve();
-                request.onblocked = () => resolve();
-            });
-        }
 
         return new Promise((resolve, reject) => {
             const request = indexedDB.open(this.dbName, this.dbVersion);
@@ -941,7 +931,6 @@ app.controller('AfExplorerFormCtrl', [
 
         function initCache() {
             $scope.cache = new Cache(
-                $stateParams.projectKey,
                 $scope.piUsername,
                 $scope.config.server_name,
                 $scope.config.database_name
