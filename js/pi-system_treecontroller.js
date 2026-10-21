@@ -665,13 +665,8 @@ app.controller('AfExplorerFormCtrl', [
 
         $scope.getServers = function() {
             startLoadingState(false);
-            $scope.loginErrorMessage = '';
-            $scope.server_name = [];
             $scope.callPythonDo({ parameterName: "server_name" }).then(function(data) {
                 $scope.server_name = data.choices;
-                $scope.loginErrorMessage = data.error || '';
-            }).catch(() => {
-                $scope.loginErrorMessage = 'Unable to load servers. Check your connection and credentials.';
             }).finally(stopLoadingState);
         };
         $scope.getDatabases = function() {
