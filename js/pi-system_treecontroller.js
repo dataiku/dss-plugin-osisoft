@@ -598,6 +598,10 @@ app.controller('AfExplorerFormCtrl', [
                         return;
                     }
 
+                    if (!$window.confirm('This will remove all cached PI System databases except the ones used during this work session. Your saved selection will be preserved, but removed data will need to be fetched again. Proceed ?')) {
+                        return;
+                    }
+
                     return $q.when($scope.cache.cleanupLocalDatabases()).catch(error => {
                         modalScope.loginErrorMessage = `Could not clean up local databases: ${error.message}`;
                     });
