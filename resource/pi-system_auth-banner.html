@@ -53,17 +53,6 @@
             <div class="control-group" style="display: flex; flex-direction: column; gap: 8px;">
                 <div class="controls">
                     <button type="button"
-                        ng-click="cleanupLocalDatabases()"
-                        ng-disabled="!cache || !showTreeData"
-                        class="btn btn--secondary btn--dku-icon"
-                        title="Delete other PI System local databases while keeping the current database">
-                        <i class="dku-icon-trash-16"></i>
-                        Cleanup
-                    </button>
-                    <span class="help-inline">Removes ALL cached databases not used in this session. You will not lose your saved selection but the data will need to be fetched again.</span>
-                </div>
-                <div class="controls">
-                    <button type="button"
                             ng-click="refreshCachedTree()"
                             ng-disabled="!authConfigured() || !showTreeData"
                             class="btn btn--secondary btn--dku-icon"
@@ -72,6 +61,17 @@
                         Refresh
                     </button>
                     <span class="help-inline">Update local data for the selected connection. You won't be able to close this tab until the data is done loading.</span>
+                </div>
+                <div class="controls">
+                    <button type="button"
+                        ng-click="cleanupLocalDatabases()"
+                        ng-disabled="!cache || !showTreeData"
+                        class="btn btn--secondary btn--dku-icon"
+                        title="Delete other PI System local databases while keeping the current database">
+                        <i class="dku-icon-trash-16"></i>
+                        Cleanup
+                    </button>
+                    <span class="help-inline">Removes ALL cached databases not used in this session. You will not lose your saved selection but the data will need to be fetched again.</span>
                 </div>
             </div>
         </div>
