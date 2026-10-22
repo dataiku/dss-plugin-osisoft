@@ -1,8 +1,40 @@
-from osisoft_client import format_output_row
+import copy
+
+from osisoft_client import OSIsoftClient, format_output_row
 from osisoft_plugin_common import is_child_attribute_path, get_element_name_from_path
 
 
 class TestCommonMethods:
+    def test_streamed_unnesting_preserves_existing_output(self):
+        client = OSIsoftClient.__new__(OSIsoftClient)
+        cases = [
+            ({"id": "asset", "Items": [{"Value": 1}, {"Value": 2}]},
+             [{"id": "asset"}, {"id": "asset", "Value": 1}, {"id": "asset", "Value": 2}]),
+            ({"id": "asset", "Items": []}, [{"id": "asset"}]),
+            ({"Value": {"Name": "state", "Value": 1}}, [{"Name": "state", "Value": 1}]),
+            ({"Value": 1}, [{"Value": 1}]),
+            ({"Errors": "failed"}, [{"Errors": "failed"}]),
+        ]
+        for row, expected in cases:
+            assert client.unnest_row(copy.deepcopy(row)) == expected
+            assert list(client.iter_unnested_rows(copy.deepcopy(row))) == expected
+
+    def test_unnesting_consumes_nested_items_lazily(self):
+        client = OSIsoftClient.__new__(OSIsoftClient)
+        consumed = []
+
+        def items():
+            for value in range(10000):
+                consumed.append(value)
+                yield {"Value": value}
+
+        rows = client.iter_unnested_rows({"id": "asset", "Items": items()})
+        assert next(rows) == {"id": "asset"}
+        assert consumed == []
+        assert next(rows) == {"id": "asset", "Value": 0}
+        assert consumed == [0]
+        rows.close()
+
     def setup_class(self):
         self.rows_to_format = {
             'a': 1, 'Links': 'should not see that',
