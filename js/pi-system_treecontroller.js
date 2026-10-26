@@ -143,9 +143,9 @@ const GroupMode = Object.freeze({
 });
 
 class Cache {
-    constructor(projectKey, server, database) {
-        // TODO: include preset in db name
-        this.dbName = [projectKey, server, database].join("::")
+    constructor(projectKey, username, server, database) {
+        this.oldDbName = [projectKey, server, database].join("::")
+        this.dbName = ["PI-SYS-AF-TREE", username, server, database].join("::")
         this.dbVersion = 3
         this.attributesStoreName = "attributes"
         this.elementTreeStoreName = "elementTree"
@@ -170,6 +170,16 @@ class Cache {
     }
 
     async init() {
+        if (this.oldDbName !== this.dbName) {
+            await new Promise((resolve) => {
+                // Cleanup old databases - fine if it fails
+                const request = indexedDB.deleteDatabase(this.oldDbName);
+                request.onsuccess = () => resolve();
+                request.onerror = () => resolve();
+                request.onblocked = () => resolve();
+            });
+        }
+
         return new Promise((resolve, reject) => {
             const request = indexedDB.open(this.dbName, this.dbVersion);
 
@@ -519,6 +529,31 @@ app.controller('AfExplorerFormCtrl', [
             });
         };
 
+        function initializePage() {
+            startLoadingState(true, "Initializing PI System", "Logging in ...");
+            $scope.showTreeData = false;
+            $scope.errorBannerVisible = false;
+            $scope.errorBannerMessage = '';
+
+            return $scope.callPythonDo({ method: "get_username" }).then(function(data) {
+                if (typeof data?.username !== 'string' || !data.username.trim()) {
+                    throw new Error('PI username is missing');
+                }
+                $scope.piUsername = data.username;
+                return initData();
+            }).then(() => {
+                $scope.showTreeData = true;
+            }).catch(() => {
+                $scope.showTreeData = false;
+                $scope.errorBannerMessage = 'Unable to initialize PI System. Check your login settings and try again.';
+                $scope.errorBannerVisible = true;
+                $scope.openLoginModal();
+            }).finally(() => {
+                stopLoadingState();
+                $scope.$applyAsync();
+            });
+        }
+
         $scope.openLoginModal = function() {
             if (loginModalOpen) {
                 return;
@@ -537,15 +572,7 @@ app.controller('AfExplorerFormCtrl', [
                     }
 
                     modalScope.dismiss();
-                    initData().then(() => {
-                        $scope.showTreeData = true;
-                    }).catch(() => {
-                        $scope.showTreeData = false;
-                        $scope.errorBannerMessage = 'There was a problem fetching data';
-                        $scope.errorBannerVisible = true;
-                    }).finally(() => {
-                        $scope.$applyAsync();
-                    });
+                    initializePage();
                 };
 
                 modalScope.refreshCachedTree = function() {
@@ -607,18 +634,7 @@ app.controller('AfExplorerFormCtrl', [
                 });
             }).error(setErrorInScope.bind($scope.errorScope));
             if ($scope.authConfigured() === true) {
-                // We try getting the elementTree from cache. If we can't we open the authSection
-                // And we will load the elementTree from db once the user has logged in
-                // This is brittle and should probably changed in the future
-                initData().then(() => {
-                    $scope.showTreeData = true;
-                }).catch(() => {
-                    $scope.errorBannerMessage = 'There was a problem fetching data';
-                    $scope.errorBannerVisible = true;
-                    $scope.openLoginModal();
-                }).then(() => {
-                    $scope.$applyAsync()
-                })
+                initializePage();
             } else {
                 $scope.openLoginModal();
             }
@@ -627,8 +643,13 @@ app.controller('AfExplorerFormCtrl', [
 
         $scope.getServers = function() {
             startLoadingState(false);
+            $scope.loginErrorMessage = '';
+            $scope.server_name = [];
             $scope.callPythonDo({ parameterName: "server_name" }).then(function(data) {
                 $scope.server_name = data.choices;
+                $scope.loginErrorMessage = data.error || '';
+            }).catch(() => {
+                $scope.loginErrorMessage = 'Unable to load servers. Check your connection and credentials.';
             }).finally(stopLoadingState);
         };
         $scope.getDatabases = function() {
@@ -889,6 +910,7 @@ app.controller('AfExplorerFormCtrl', [
         function initCache() {
             $scope.cache = new Cache(
                 $stateParams.projectKey,
+                $scope.piUsername,
                 $scope.config.server_name,
                 $scope.config.database_name
             );
