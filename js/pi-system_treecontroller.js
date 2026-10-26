@@ -142,15 +142,15 @@ const GroupMode = Object.freeze({
     CATEGORY: 'CATEGORY',
 });
 
+const CACHE_DB_PREFIX = "PI-SYS-AF-TREE::";
+
 class Cache {
-    constructor(projectKey, server, database) {
-        // TODO: include preset in db name
-        this.dbName = [projectKey, server, database].join("::")
+    constructor(username, server, database) {
+        this.dbName = CACHE_DB_PREFIX + [username, server, database].join("::")
         this.dbVersion = 3
         this.attributesStoreName = "attributes"
         this.elementTreeStoreName = "elementTree"
         this.templateTreeStoreName = "templateTree"
-        this.elementsByTemplateStoreName = "elementsByTemplate"
         this.elementCategoriesStoreName = "elementCategories"
         this.attributeCategoriesStoreName = "attributeCategories"
         this.lastTreeUpdateDateStoreName = "lastTreeUpdateDate"
@@ -158,7 +158,6 @@ class Cache {
             this.attributesStoreName,
             this.elementTreeStoreName,
             this.templateTreeStoreName,
-            this.elementsByTemplateStoreName,
             this.elementCategoriesStoreName,
             this.attributeCategoriesStoreName,
             this.lastTreeUpdateDateStoreName
@@ -166,13 +165,13 @@ class Cache {
 
         this.elementTreeRecordId = "elementTree"
         this.templateTreeRecordId = "templateTree"
-        this.elementsByTemplateRecordId = "elementsByTemplate"
         this.elementCategoriesRecordId = "elementCategories"
         this.attributeCategoriesRecordId = "attributeCategories"
         this.lastTreeUpdateDateRecordId = "lastTreeUpdateDate"
     }
 
     async init() {
+
         return new Promise((resolve, reject) => {
             const request = indexedDB.open(this.dbName, this.dbVersion);
 
@@ -206,10 +205,6 @@ class Cache {
 
     async getTemplateTree() {
         return this.getObject(this.templateTreeStoreName, this.templateTreeRecordId).then((data) => data?.nodes);
-    }
-
-    async getElementsByTemplate() {
-        return this.getObject(this.elementsByTemplateStoreName, this.elementsByTemplateRecordId).then((data) => data?.nodes);
     }
 
     async getElementCategories() {
@@ -257,13 +252,6 @@ class Cache {
         }, this.templateTreeStoreName);
     }
 
-    async addOrUpdateElementsByTemplate(elementsByTemplate) {
-        return this.addOrUpdate({
-                id: this.elementsByTemplateRecordId,
-                nodes: elementsByTemplate
-        }, this.elementsByTemplateStoreName);
-    }
-
     async addOrUpdateElementCategories(elementCategories) {
         return this.addOrUpdate({
                 id: this.elementCategoriesRecordId,
@@ -285,22 +273,38 @@ class Cache {
         }, this.lastTreeUpdateDateStoreName);
     }
 
+    async cleanupLocalDatabases() {
+        const databases = await indexedDB.databases();
+        await Promise.all(databases
+            .filter(({ name }) => name?.startsWith(CACHE_DB_PREFIX) && name !== this.dbName)
+            .map(({ name }) => new Promise((resolve, reject) => {
+                const request = indexedDB.deleteDatabase(name);
+                request.onsuccess = () => resolve();
+                request.onerror = () => reject(request.error);
+                request.onblocked = () => reject(new Error('Close other tabs using local databases to finish cleanup.'));
+            })));
+    }
+
+    async handleWriteError(error) {
+        if (error?.name === "QuotaExceededError") {
+            try {
+                await this.cleanupLocalDatabases();
+            } catch (cleanupError) {
+                console.error("Could not clean up local databases", cleanupError);
+            }
+        }
+        throw error;
+    }
+
     async addOrUpdate(object, objectStoreName) {
         return new Promise((resolve, reject) => {
             const transaction = this.db.transaction([objectStoreName], "readwrite");
-            transaction.onerror = (event) => {
-                reject(transaction.error)
-            };
+            transaction.oncomplete = () => resolve(object);
+            transaction.onabort = () => reject(transaction.error);
 
             const objectStore = transaction.objectStore(objectStoreName);
-            const request = objectStore.put(object);
-            request.onsuccess = (event) => {
-                resolve(object)
-            };
-            request.onerror = (event) => {
-                reject(request.error)
-            };
-        });
+            objectStore.put(object);
+        }).catch(error => this.handleWriteError(error));
     }
 
     async clear() {
@@ -309,7 +313,7 @@ class Cache {
             transaction.oncomplete = () => {
                 resolve();
             };
-            transaction.onerror = () => {
+            transaction.onabort = () => {
                 reject(transaction.error);
             };
 
@@ -317,7 +321,7 @@ class Cache {
                 const objectStore = transaction.objectStore(storeName);
                 objectStore.clear();
             })
-        });
+        }).catch(error => this.handleWriteError(error));
     }
 }
 
@@ -422,6 +426,42 @@ app.controller('AfExplorerFormCtrl', [
             ]);
         }
 
+        function buildElementsByTemplate(elementTree, templateTree) {
+            const elementsByTemplate = {};
+            const ancestorsByTemplate = new Map();
+            const seenElementIds = new Set();
+
+            function visitTemplates(templates, ancestors) {
+                (templates || []).forEach(template => {
+                    const templateNames = [template.title, ...ancestors];
+                    elementsByTemplate[template.title] = [];
+                    ancestorsByTemplate.set(template.title, templateNames);
+                    visitTemplates(template.children, templateNames);
+                });
+            }
+
+            function visitElements(elements) {
+                (elements || []).forEach(element => {
+                    if (!seenElementIds.has(element.id)) {
+                        seenElementIds.add(element.id);
+                        const templateNames = ancestorsByTemplate.get(element.template_name) || [];
+                        templateNames.forEach(templateName => {
+                            elementsByTemplate[templateName].push(element);
+                        });
+                    }
+                    visitElements(element.children);
+                });
+            }
+
+            visitTemplates(templateTree, []);
+            visitElements(elementTree);
+            return elementsByTemplate;
+        }
+
+        function rebuildElementsByTemplate() {
+            $scope.elementsByTemplate = buildElementsByTemplate($scope.elementTree, $scope.templateTree);
+        }
+
         function rebuildTemplateList() {
             $scope.templateList = flattenTemplateTree($scope.templateTree);
         }
@@ -497,6 +537,31 @@ app.controller('AfExplorerFormCtrl', [
             });
         };
 
+        function initializePage() {
+            startLoadingState(true, "Initializing PI System", "Logging in ...");
+            $scope.showTreeData = false;
+            $scope.errorBannerVisible = false;
+            $scope.errorBannerMessage = '';
+
+            return $scope.callPythonDo({ method: "get_username" }).then(function(data) {
+                if (typeof data?.username !== 'string' || !data.username.trim()) {
+                    throw new Error('PI username is missing');
+                }
+                $scope.piUsername = data.username;
+                return initData();
+            }).then(() => {
+                $scope.showTreeData = true;
+            }).catch(() => {
+                $scope.showTreeData = false;
+                $scope.errorBannerMessage = 'Unable to initialize PI System. Check your login settings and try again.';
+                $scope.errorBannerVisible = true;
+                $scope.openLoginModal();
+            }).finally(() => {
+                stopLoadingState();
+                $scope.$applyAsync();
+            });
+        }
+
         $scope.openLoginModal = function() {
             if (loginModalOpen) {
                 return;
@@ -515,14 +580,20 @@ app.controller('AfExplorerFormCtrl', [
                     }
 
                     modalScope.dismiss();
-                    initData().then(() => {
-                        $scope.showTreeData = true;
-                    }).catch(() => {
-                        $scope.showTreeData = false;
-                        $scope.errorBannerMessage = 'There was a problem fetching data';
-                        $scope.errorBannerVisible = true;
-                    }).finally(() => {
-                        $scope.$applyAsync();
+                    initializePage();
+                };
+
+                modalScope.cleanupLocalDatabases = function() {
+                    if (!$scope.cache || !$scope.showTreeData) {
+                        return;
+                    }
+
+                    if (!$window.confirm('This will remove all cached PI System databases except the ones used during this work session. Your saved selection will be preserved, but removed data will need to be fetched again. Proceed ?')) {
+                        return;
+                    }
+
+                    return $q.when($scope.cache.cleanupLocalDatabases()).catch(error => {
+                        modalScope.loginErrorMessage = `Could not clean up local databases: ${error.message}`;
                     });
                 };
 
@@ -585,18 +656,7 @@ app.controller('AfExplorerFormCtrl', [
                 });
             }).error(setErrorInScope.bind($scope.errorScope));
             if ($scope.authConfigured() === true) {
-                // We try getting the elementTree from cache. If we can't we open the authSection
-                // And we will load the elementTree from db once the user has logged in
-                // This is brittle and should probably changed in the future
-                initData().then(() => {
-                    $scope.showTreeData = true;
-                }).catch(() => {
-                    $scope.errorBannerMessage = 'There was a problem fetching data';
-                    $scope.errorBannerVisible = true;
-                    $scope.openLoginModal();
-                }).then(() => {
-                    $scope.$applyAsync()
-                })
+                initializePage();
             } else {
                 $scope.openLoginModal();
             }
@@ -702,12 +762,6 @@ app.controller('AfExplorerFormCtrl', [
             ).then(rebuildTemplateList);
         }
 
-        function loadElementsByTemplate() {
-            return $scope.cache.getElementsByTemplate().then(elementsByTemplate => {
-                $scope.elementsByTemplate =  elementsByTemplate || {}
-            });
-        }
-
         // Fetching data - only once auth has been verified
        function initData() {
             console.log("Initializing application data for PI systems Af tree explorer")
@@ -725,7 +779,6 @@ app.controller('AfExplorerFormCtrl', [
                 return $q.all([
                     loadElementTree(),
                     loadTemplateTree(),
-                    loadElementsByTemplate(),
                     loadElementCategories(),
                     loadAttributeCategories(),
                     loadLastTreeUpdateDate()
@@ -733,6 +786,7 @@ app.controller('AfExplorerFormCtrl', [
             }).catch((error) => {
                 throw new Error(`There was an error initializing data: ${error}`);
             }).then(() => {
+                rebuildElementsByTemplate();
                 cacheLastTreeUpdateDate();
                 $scope.$applyAsync();
             }).finally(stopLoadingState);
@@ -824,6 +878,7 @@ app.controller('AfExplorerFormCtrl', [
                 $scope.elementTree = elementTree;
                 $scope.templateTree = templateTree;
                 rebuildTemplateList();
+                rebuildElementsByTemplate();
                 $scope.attributeCategories = attributeCategories;
                 buildAttributeCategoryFilterOptions();
                 $scope.elementCategories = elementCategories;
@@ -871,7 +926,7 @@ app.controller('AfExplorerFormCtrl', [
 
         function initCache() {
             $scope.cache = new Cache(
-                $stateParams.projectKey,
+                $scope.piUsername,
                 $scope.config.server_name,
                 $scope.config.database_name
             );
@@ -906,10 +961,6 @@ app.controller('AfExplorerFormCtrl', [
             return $scope.cache.addOrUpdateTemplateTree(snapshot);
         }
 
-        function cacheElementsByTemplate() {
-            $scope.cache.addOrUpdateElementsByTemplate($scope.elementsByTemplate);
-        }
-
         function cacheLastTreeUpdateDate() {
             const date = new Date().toISOString();
             $scope.lastTreeUpdateDate = date;
@@ -928,23 +979,6 @@ app.controller('AfExplorerFormCtrl', [
                 return data.tree;
             }).finally(stopLoadingState);
         };
-
-        $scope.getFromCacheOrFetchBaselineObjects = function() {
-            $scope.cleanTree();
-            return $q.all([
-                $scope.getElementTreeFromDB(),
-                $scope.getTemplatesFromDB(),
-            ]).then(function([elementTree, templateTree]) {
-                cacheLastTreeUpdateDate();
-                $scope.elementTree = elementTree;
-                $scope.templateTree = templateTree;
-                rebuildTemplateList();
-                cacheElementTree();
-                cacheTemplateTree();
-                $scope.config.loadedDatabaseName = $scope.config.database_name || null;
-                return [elementTree, templateTree];
-            });
-        }
 
         $scope.populateAttributesFromDb = function(item) {
             if (item.type === "template") {
@@ -1195,25 +1229,10 @@ app.controller('AfExplorerFormCtrl', [
             return $scope.ui.clickedNodes.includes(element.url);
         }
 
-        $scope.getElementsForTemplate = function (templateName) {
-            startLoadingState(false);
-            return $scope.callPythonDo({ method: "get_elements_for_template", template_name: templateName}).then(
-                function(data) {
-                    $scope.elementsByTemplate[templateName] = data.elements;
-                    cacheElementsByTemplate();
-                }
-            ).finally(stopLoadingState);
-        }
-
         $scope.templateModeExcludedAttributes = {};
 
         $scope.initElementsDropdown = async function(templateName) {
-            const existingElements = $scope.elementsByTemplate[templateName];
-            if (Array.isArray(existingElements)) {
-                return existingElements.map(element => element.url);
-            }
-            await $scope.getElementsForTemplate(templateName);
-            return $scope.elementsByTemplate[templateName].map(element => element.url);
+            return ($scope.elementsByTemplate[templateName] || []).map(element => element.url);
         }
 
         // FIXME: the parent_element_path is not properly present !!! probably because loaded from cache
