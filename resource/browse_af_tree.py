@@ -34,6 +34,9 @@ def do(payload, config, plugin_config, inputs):
     if not server_url:
         return build_select_choices("Fill in the server address")
 
+    if payload.get("method") == "get_username":
+        return {"username": username}
+
     is_debug_mode = check_debug_mode(config)
 
     network_timer = PerformanceTimer()
@@ -57,8 +60,6 @@ def do(payload, config, plugin_config, inputs):
         return get_attribute_categories_from_db(client, payload, config)
     if method == "get_element_categories_from_db":
         return get_element_categories_from_db(client, payload, config)
-    if method == "get_elements_for_template":
-        return get_elements_for_template(client, payload, config)
     if method == "get_attribute_for_template":
         return get_attribute_for_template(client, payload, config)
     if method == "get_attributes":
@@ -184,26 +185,6 @@ def get_element_categories_from_db(client, payload, config):
     result = get_items_from_db(client, parent_node, "ElementCategories", database_name=database_name)
     logger.info(
         "End call [get_element_categories_from_db] database_name={}, parent_node={}".format(database_name, parent_node)
-    )
-    return result
-
-
-def get_elements_for_template(client, payload, config):
-    database_name = config.get("database_name")
-    template_name = payload.get("template_name", None)
-    logger.info(
-        "Start call [get_elements_for_template] database_name={}, template_name={}".format(
-            database_name, template_name
-        )
-    )
-    elements = []
-    for element in client.search_elements(database_name, name=None, description=None, category=None, template=template_name, full_search=True):
-        elements.append(get_item_details(element))
-    result = {"choices": [], "elements": elements}
-    logger.info(
-        "End call [get_elements_for_template] database_name={}, template_name={}".format(
-            database_name, template_name
-        )
     )
     return result
 

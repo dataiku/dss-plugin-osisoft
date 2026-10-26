@@ -899,41 +899,6 @@ class OSIsoftClient(object):
         items = json_response.get(OSIsoftConstants.API_ITEM_KEY, [])
         return items, next_page_url
 
-    def search_elements(self, database, name=None, description=None, category=None, template=None, full_search=True):
-        headers = self.get_requests_headers()
-        tempo_maxcount = OSIsoftConstants.DEFAULT_MAXCOUNT
-        params = {
-            "maxCount": tempo_maxcount,
-            "associations": "Paths",
-        }
-        # url = self.endpoint.get_base_url() + "/assetdatabases/{}/elements".format(database_webid)
-        url = "{}/elements".format(database)
-        if name:
-            params["nameFilter"] = name
-        if description:
-            params["descriptionFilter"] = description
-        if category:
-            params["categoryName"] = category
-        if template:
-            params["templateName"] = template
-        if full_search:
-            params["searchFullHierarchy"] = True
-        json_response = self.get(url=url, headers=headers, params=params)
-        if OSIsoftConstants.DKU_ERROR_KEY in json_response:
-            yield json_response
-        start_index = 0
-        while json_response:
-            items = json_response.get(OSIsoftConstants.API_ITEM_KEY, [])
-            for item in items:
-                yield item
-            if len(items) < tempo_maxcount:
-                logger.info("No more result items")
-                return
-            start_index += tempo_maxcount
-            logger.info("Trying again with startIndex={}".format(start_index))
-            params["startIndex"] = start_index
-            json_response = self.get(url=url, headers=headers, params=params)
-
     def search_element_attributes(self, database, template=None, full_search=True, selected_fields=[]):
         headers = self.get_requests_headers()
         tempo_maxcount = OSIsoftConstants.DEFAULT_MAXCOUNT
