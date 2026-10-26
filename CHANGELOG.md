@@ -1,5 +1,9 @@
 # Changelog
 
+## [Version 2.0.0-beta.11](https://github.com/dataiku/dss-plugin-pi-server/releases/tag/v2.0.0-beta.11) - Bugfix release - 2026-10-26
+
+- Use maxCount from preset
+
 ## [Version 2.0.0-beta.10](https://github.com/dataiku/dss-plugin-pi-server/releases/tag/v2.0.0-beta.10) - Bugfix release - 2026-10-20
 
 - Fix memory leak on AF downloader recipe in recursive mode

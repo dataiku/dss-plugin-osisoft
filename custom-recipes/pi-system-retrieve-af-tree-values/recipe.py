@@ -260,7 +260,6 @@ logger.info("Initialization with config config={}".format(logger.filter_secrets(
 
 auth_type, username, password, server_url, is_ssl_check_disabled = get_credentials(config)
 is_debug_mode = check_debug_mode(config)
-max_count = config.get("max_count", 10000)
 must_convert_object_to_string = check_must_convert_object_to_string(config)
 
 use_server_url_column = config.get("use_server_url_column", False)
@@ -308,7 +307,7 @@ server_url_column = config.get("server_url_column")
 _, batch_size = get_advanced_parameters(config)
 download_strategy = config.get("download_strategy", "recursive")
 
-max_request_size, estimated_density, maximum_points_returned = get_batch_parameters(config)
+max_count, estimated_density, maximum_points_returned = get_batch_parameters(config)
 max_time_to_retrieve_per_batch = estimated_density / maximum_points_returned  # density per hour <- max time is in hour
 
 network_timer = PerformanceTimer()
