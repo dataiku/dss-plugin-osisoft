@@ -204,11 +204,10 @@ if type_of_interpolation == "auto":
     step_column_name = config.get("step_column_name", "Step")
 
 try:
-    # Cache each attribute
     logger.info("Caching all attributes in {}".format(temp_location.name))
     input_columns = [column["name"] for column in input_parameters_dataset.read_schema()]
     input_chunks = input_parameters_dataset.iter_dataframes_forced_types(
-        names=input_columns, dtypes={value_column: str}, parse_date_columns=False, chunksize=chunk_size
+        names=input_columns, dtypes={value_column: str}, parse_date_columns=False, chunksize=10000
     )
     for input_parameters_dataframe in input_chunks:
         for index, input_parameters_row in input_parameters_dataframe.iterrows():
@@ -245,7 +244,6 @@ try:
             reference_attribute_path, input_paths_column
         ))
 
-    # Finalize each attribute's types
     output_types = {}
     for attribute_path, attribute_type in attribute_types.items():
         should_interpolate = attribute_path != reference_attribute_path and step_attributes.get(attribute_path) is False
@@ -256,7 +254,6 @@ try:
                 attribute_path, type_of_interpolation, error
             )) from error
 
-    # Reopen cache files from write mode to read mode
     for attribute_path, handle in paths_to_file_handles.items():
         handle.close()
         paths_to_file_handles[attribute_path] = open(handle.name, "r", encoding="utf-8")
@@ -265,8 +262,6 @@ try:
         attribute_path: handle for attribute_path, handle in paths_to_file_handles.items()
         if attribute_path != reference_attribute_path
     }
-
-    # Finalize output file's schema
     output_schema = [
         {"name": OSIsoftConstants.TIMESTAMP_COLUMN_NAME, "type": "string"},
         {"name": reference_attribute_path, "type": output_types[reference_attribute_path]}
@@ -283,11 +278,9 @@ try:
             ])
         else:
             output_schema.append({"name": attribute_path, "type": output_types[attribute_path]})
-    output_dataset.write_schema(output_schema)
 
+    output_dataset.write_schema(output_schema)
     logger.info("Polling all attributes into final dataset")
-    # For each timestamp of synchronizer attribute, read the most up to date value of all other attributes
-    # Write all that, one column per attribute
     with output_dataset.get_writer() as writer:
         for line in reference_values_file:
             timestamp, value = parse_timestamp_and_value(line)
