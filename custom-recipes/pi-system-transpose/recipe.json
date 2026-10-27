@@ -155,6 +155,15 @@
             "defaultValue": 1,
             "minI": 1,
             "visibilityCondition": "model.show_advanced_parameters && model.columns_names_normalization=='elements'"
+          },
+          {
+            "name": "chunk_size",
+            "label": "Chunk size",
+            "description": "Chunk size of input dataset ingestion",
+            "type": "INT",
+            "defaultValue": 10000,
+            "minI": 1,
+            "visibilityCondition": "model.show_advanced_parameters"
           }
     ],
     "resourceKeys": []

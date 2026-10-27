@@ -12,6 +12,8 @@ from osisoft_plugin_common import reorder_dataframe
 from datetime import datetime
 
 
+DEFAULT_INPUT_CHUNK_SIZE = 10000
+
 logger = SafeLogger("pi-system plugin", forbiden_keys=["token", "password"])
 
 logger.info("PIWebAPI Transpose & Synchronize recipe v{}".format(
@@ -175,8 +177,10 @@ column_name_suffix_margin = max([
 ])
 
 columns_names_normalization = config.get("columns_names_normalization", "raw")
-should_make_column_names_db_compatible = config.get("show_advanced_parameters", False) and (columns_names_normalization in ["hashed", "elements"])
-should_add_timestamps_columns = config.get("show_advanced_parameters", False) and config.get("should_add_timestamps_columns", False)
+show_advanced_parameters = config.get("show_advanced_parameters", False)
+chunk_size = config.get("chunk_size", DEFAULT_INPUT_CHUNK_SIZE) if show_advanced_parameters else DEFAULT_INPUT_CHUNK_SIZE
+should_make_column_names_db_compatible = show_advanced_parameters and (columns_names_normalization in ["hashed", "elements"])
+should_add_timestamps_columns = show_advanced_parameters and config.get("should_add_timestamps_columns", False)
 column_name_max_length, number_of_elements = get_column_name_specifications()
 if should_make_column_names_db_compatible:
     reference_attribute_path = normalise_name(reference_attribute_path, max_length=column_name_max_length, number_of_elements=number_of_elements)
@@ -202,7 +206,7 @@ if type_of_interpolation == "auto":
 
 # Cache each attribute
 logger.info("Caching all attributes in {}".format(temp_location.name))
-for input_parameters_dataframe in input_parameters_dataset.iter_dataframes(chunksize=10000):
+for input_parameters_dataframe in input_parameters_dataset.iter_dataframes(chunksize=chunk_size):
     for index, input_parameters_row in input_parameters_dataframe.iterrows():
         row_datetime = get_datetime_from_row(input_parameters_row, datetime_column)
         if not row_datetime:
