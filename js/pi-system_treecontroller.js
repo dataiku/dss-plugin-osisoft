@@ -145,8 +145,8 @@ const GroupMode = Object.freeze({
 const CACHE_DB_PREFIX = "PI-SYS-AF-TREE::";
 
 class Cache {
-    constructor(username, server, database) {
-        this.dbName = CACHE_DB_PREFIX + [username, server, database].join("::")
+    constructor(username, presetName, server, database) {
+        this.dbName = CACHE_DB_PREFIX + [presetName, username, server, database].join("::")
         this.dbVersion = 3
         this.attributesStoreName = "attributes"
         this.elementTreeStoreName = "elementTree"
@@ -927,6 +927,7 @@ app.controller('AfExplorerFormCtrl', [
         function initCache() {
             $scope.cache = new Cache(
                 $scope.piUsername,
+                $scope.config.credentials.name,
                 $scope.config.server_name,
                 $scope.config.database_name
             );
