@@ -1,5 +1,9 @@
 # Changelog
 
+## [Version 2.0.0-beta.13](https://github.com/dataiku/dss-plugin-pi-server/releases/tag/v2.0.0-beta.13) - Bugfix release - 2026-10-28
+
+- Add recursive calls in batch mode for AF download recipe
+
 ## [Version 2.0.0-beta.12](https://github.com/dataiku/dss-plugin-pi-server/releases/tag/v2.0.0-beta.12) - Bugfix release - 2026-10-27
 
 - Combined batch + recursive modes in AF download recipe
