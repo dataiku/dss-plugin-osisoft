@@ -40,8 +40,9 @@
 
 .recipe-settings-floating-result.recipe-job-result {
     position: absolute;
-    bottom: 16px;
-    left: 200px;
+    bottom: 17px;
+    left: 50%;
+    transform: translateX(-50%);
 }
 
 /* Make custom UI full width */
