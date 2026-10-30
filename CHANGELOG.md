@@ -1,34 +1,6 @@
 # Changelog
 
-## [Version 2.0.0-beta.12](https://github.com/dataiku/dss-plugin-pi-server/releases/tag/v2.0.0-beta.12) - Bugfix release - 2026-10-27
-
-- Combined batch + recursive modes in AF download recipe
-
-## [Version 2.0.0-beta.11](https://github.com/dataiku/dss-plugin-pi-server/releases/tag/v2.0.0-beta.11) - Bugfix release - 2026-10-26
-
-- Use maxCount from preset
-
-## [Version 2.0.0-beta.10](https://github.com/dataiku/dss-plugin-pi-server/releases/tag/v2.0.0-beta.10) - Bugfix release - 2026-10-20
-
-- Fix memory leak on AF downloader recipe in recursive mode
-
-## [Version 2.0.0-beta.9](https://github.com/dataiku/dss-plugin-pi-server/releases/tag/v2.0.0-beta.9) - Bugfix release - 2026-10-19
-
-- Fix recursive download on AF download recipe
-
-## [Version 2.0.0-beta.6](https://github.com/dataiku/dss-plugin-pi-server/releases/tag/v2.0.0-beta.6) - Bugfix release - 2026-10-07
-
-- Adding logs to AF download recipe
-
-## [Version 2.0.0-beta.5](https://github.com/dataiku/dss-plugin-pi-server/releases/tag/v2.0.0-beta.5) - Bugfix release - 2026-09-30
-
-- Fix issues with date type input columns
-
-## [Version 2.0.0-beta.4](https://github.com/dataiku/dss-plugin-pi-server/releases/tag/v2.0.0-beta.4) - Bugfix release - 2026-09-29
-
-- Fix select on template dropdown elements
-
-## [Version 2.0.0-beta.3](https://github.com/dataiku/dss-plugin-pi-server/releases/tag/v2.0.0-beta.3) - Feature release - 2026-09-25
+## [Version 2.0.0-rc.1](https://github.com/dataiku/dss-plugin-pi-server/releases/tag/v2.0.0-rc.1) - Feature release - 2026-10-30
 
 - Add a AF hierarchy downloader
 - Add a AF hierarchy specific download recipe
