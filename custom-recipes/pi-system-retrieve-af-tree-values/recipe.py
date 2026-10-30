@@ -1,18 +1,20 @@
 # -*- coding: utf-8 -*-
 import dataiku
 import json
-import copy
+import pytz
 from dataiku.customrecipe import get_input_names_for_role, get_recipe_config, get_output_names_for_role
 import pandas as pd
+from datetime import datetime
 from osisoft_safe_logger import SafeLogger
 from osisoft_plugin_common import (
     get_credentials, get_base_for_data_type, check_debug_mode,
-    PerformanceTimer, get_max_count, check_must_convert_object_to_string,
-    get_advanced_parameters,
-    get_batch_parameters
+    PerformanceTimer, check_must_convert_object_to_string,
+    get_advanced_parameters, get_batch_parameters,
 )
 from osisoft_client import OSIsoftClient
 from osisoft_constants import OSIsoftConstants
+from osisoft_output_writer import BufferedOutputWriter
+from osisoft_input_rows import input_row_to_dict
 
 
 logger = SafeLogger("pi-system plugin", forbiden_keys=["token", "password"])
@@ -20,6 +22,9 @@ logger = SafeLogger("pi-system plugin", forbiden_keys=["token", "password"])
 logger.info("PIWebAPI Assets values downloader recipe v{}".format(
     OSIsoftConstants.PLUGIN_VERSION
 ))
+
+
+UTC_TIMEZONE = pytz.timezone('UTC')
 
 
 def get_step_value(item):
@@ -166,12 +171,15 @@ def dataframe_schema(dataframe):
 class Columns():
     def __init__(self):
         self.columns = {}
+
     def add(self, column_name, columns_type=None):
         columns_type = columns_type or "string"
         self.columns[column_name] = columns_type
+
     def set_schema(self, new_schema={}):
         for column in new_schema:
             self.columns[column] = new_schema.get(column)
+
     def get_schema(self):
         schema = []
         for column in self.columns:
@@ -182,6 +190,7 @@ class Columns():
                 }
             )
         return schema
+
     def parse_row(self, row):
         # Constraining the output row to the declared schema
         row = row or {}
@@ -194,21 +203,53 @@ class Columns():
             if column not in output_row:
                 output_row[column] = ""
         return self._reorder_row(output_row)
+
     def _reorder_row(self, row):
         # SRSLY PANDAS ???!!!
         output_row = {}
         for column_name in self.columns:
             output_row[column_name] = row.get(column_name)
         return output_row
+
     def parse_rows(self, rows):
         output_rows = []
         for row in rows:
             output_rows.append(self.parse_row(row))
         return output_rows
 
-STANDARD_SCHEMA = {"title":"string", "template_name":"string", "category_names":"string", "path":"string", "paths":"string", "id":"string", "url":"string", "data_type":"string", "summary_type":"string", "boundary_type":"string", "record_boundary_type":"string", "summary_duration":"string", "calculation_basis":"string", "max_count":"string", "interval":"string", "sync_time":"string", "Type":"string", "Timestamp":"string", "Value":"float", "UnitsAbbreviation":"string", "Good":"boolean", "Questionable":"boolean", "Substituted":"boolean", "Annotated":"boolean", "Errors": "string"}
+    def cast_to_column_type(self, columns):
+        for column in columns:
+            type_should_be = self.columns.get(column)
+            value = columns.get(column)
+            if type_should_be == "date" and isinstance(value, int):
+                new_value = datetime.fromtimestamp(
+                    value/1000, tz=UTC_TIMEZONE
+                ).strftime("%Y-%m-%dT%H:%M:%S%z")
+                columns[column] = new_value
+        return columns
 
-TRANSPOSED_SCHEMA = {"Total": "string", "Average": "string",  "Minimum": "string", "Maximum": "string", "Range": "string", "StdDev": "string", "PopulationStdDev": "string", "Count": "string", "PercentGood": "string", "TotalWithUOM": "string"}
+
+def de_pandify_time(time):
+    if isinstance(time, pd.Timestamp):
+        time = time.strftime("%Y-%m-%dT%H:%M:%SZ")
+    return time
+
+
+STANDARD_SCHEMA = {
+    "title": "string", "template_name": "string", "category_names": "string", "path": "string",
+    "paths": "string", "id": "string", "url": "string", "data_type": "string", "summary_type": "string",
+    "boundary_type": "string", "record_boundary_type": "string", "summary_duration": "string",
+    "calculation_basis": "string", "max_count": "string", "interval": "string", "sync_time": "string",
+    "Type": "string", "Timestamp": "string", "Value": "float", "UnitsAbbreviation": "string",
+    "Good": "boolean", "Questionable": "boolean", "Substituted": "boolean", "Annotated": "boolean",
+    "Errors": "string"
+}
+
+TRANSPOSED_SCHEMA = {
+    "Total": "string", "Average": "string",  "Minimum": "string", "Maximum": "string", "Range": "string",
+    "StdDev": "string", "PopulationStdDev": "string", "Count": "string", "PercentGood": "string",
+    "TotalWithUOM": "string"
+}
 
 input_dataset = get_input_names_for_role('input_dataset')
 output_names_stats = get_output_names_for_role('api_output')
@@ -219,7 +260,6 @@ logger.info("Initialization with config config={}".format(logger.filter_secrets(
 
 auth_type, username, password, server_url, is_ssl_check_disabled = get_credentials(config)
 is_debug_mode = check_debug_mode(config)
-max_count = get_max_count(config)
 must_convert_object_to_string = check_must_convert_object_to_string(config)
 
 use_server_url_column = config.get("use_server_url_column", False)
@@ -228,7 +268,11 @@ if not server_url and not use_server_url_column:
 
 path_column = config.get("path_column", "")
 input_parameters_dataset = dataiku.Dataset(input_dataset[0])
-input_parameters_dataframe = input_parameters_dataset.get_dataframe()
+should_parse_date = config.get("should_parse_date", False)
+if should_parse_date:
+    input_parameters_dataframe = input_parameters_dataset.get_dataframe()
+else:
+    input_parameters_dataframe = input_parameters_dataset.get_dataframe(parse_dates=False)
 do_duplicate_input_row = config.get("do_duplicate_input_row", False)
 input_columns = list(input_parameters_dataframe.columns)
 input_columns_types = list(input_parameters_dataframe.dtypes)
@@ -249,15 +293,21 @@ end_time = config.get("end_time")
 time = config.get("time")
 use_start_time_column = config.get("use_start_time_column", False)
 start_time_column = config.get("start_time_column")
+if use_start_time_column and not start_time_column:
+    start_time_column = "start_time"
 use_end_time_column = config.get("use_end_time_column", False)
 end_time_column = config.get("end_time_column")
+if use_end_time_column and not end_time_column:
+    end_time_column = "end_time"
 use_time_column = config.get("use_time_column", False)
 time_column = config.get("time_column")
+if use_time_column and not time_column:
+    time_column = "time"
 server_url_column = config.get("server_url_column")
 _, batch_size = get_advanced_parameters(config)
 download_strategy = config.get("download_strategy", "recursive")
 
-max_request_size, estimated_density, maximum_points_returned = get_batch_parameters(config)
+max_count, estimated_density, maximum_points_returned = get_batch_parameters(config)
 max_time_to_retrieve_per_batch = estimated_density / maximum_points_returned  # density per hour <- max time is in hour
 
 network_timer = PerformanceTimer()
@@ -266,7 +316,6 @@ processing_timer.start()
 
 output_dataset = dataiku.Dataset(output_names_stats[0])
 
-results = []
 time_last_request = None
 client = None
 previous_server_url = ""
@@ -279,7 +328,7 @@ if transpose_summaries:
     input_schema.update(TRANSPOSED_SCHEMA)
 columns_formater.set_schema(input_schema)
 with output_dataset.get_writer() as writer:
-    first_dataframe = True
+    output_writer = BufferedOutputWriter(output_dataset, writer, columns_formater, batch_size)
     absolute_index = 0
     batch_buffer_size = 0
     buffer = []
@@ -289,12 +338,17 @@ with output_dataset.get_writer() as writer:
         start_time = input_parameters_row.get(start_time_column, start_time) if use_start_time_column else start_time
         end_time = input_parameters_row.get(end_time_column, end_time) if use_end_time_column else end_time
         time = input_parameters_row.get(time_column, time) if use_time_column else time
+        start_time = de_pandify_time(start_time)
+        end_time = de_pandify_time(end_time)
+        time = de_pandify_time(time)
         row_name = input_parameters_row.get("Name")
 
         # if self_contained_mode:
-        object_id, data_type, boundary_type, record_boundary_type, interval, sync_time, summary_type, summary_duration, calculation_basis = extract_params_from_row(
-            input_parameters_row
-        )
+        object_id, data_type, boundary_type, record_boundary_type, \
+            interval, sync_time, summary_type, summary_duration, \
+            calculation_basis = extract_params_from_row(
+                input_parameters_row
+            )
         path_column = "id"
 
         duplicate_initial_row = {}
@@ -317,8 +371,7 @@ with output_dataset.get_writer() as writer:
                 end_time = client.parse_pi_time(end_time)
                 sync_time = client.parse_pi_time(sync_time)
         step_value = None
-
-        if download_strategy=="batch":
+        if download_strategy == "batch":
             buffer.append(
                 {
                     "initial_index": int(absolute_index - 1),
@@ -364,39 +417,37 @@ with output_dataset.get_writer() as writer:
                 boundary_type=boundary_type,
                 record_boundary_type=record_boundary_type,
                 max_count=max_count,
-                can_raise=False,
+                can_raise=True,
                 endpoint_type="AF",
                 summary_type=summary_type,
                 summary_duration=summary_duration,
                 transpose_summaries=transpose_summaries,
                 calculation_basis=calculation_basis
             )
+        input_rows_cache = {}
         for row in rows:
             if isinstance(row, list):
                 for line in row:
                     base = get_base_for_data_type(data_type, object_id, Step=step_value)
+                    base = columns_formater.cast_to_column_type(base)
                     base.update(line)
-                    extention = client.unnest_row(base)
-                    results.extend(extention)
+                    output_writer.write_rows(client.iter_unnested_rows(base))
             else:
-                if row.get("initial_index") is not None:
-                    base = json.loads(copy.deepcopy(input_parameters_dataframe.loc[row.get("initial_index")].to_json()))
-                else:
-                    base = json.loads(copy.deepcopy(input_parameters_dataframe.loc[absolute_index-1].to_json()))
-                base.update(row)
-                extention = client.unnest_row(base)
-                results.extend(extention)
+                initial_index = row.get("initial_index")
+                if initial_index is None:
+                    initial_index = absolute_index - 1
+                try:
+                    if initial_index not in input_rows_cache:
+                        input_rows_cache[initial_index] = input_row_to_dict(input_parameters_dataframe.loc[initial_index])
+                    base = input_rows_cache[initial_index].copy()
+                except Exception as error:
+                    base = {"Errors": "{}".format(error)}
+                    logger.error("Error while loading input row {}: {}".format(initial_index, error))
 
-        results = columns_formater.parse_rows(results)
-        unnested_items_rows = pd.DataFrame(results)
-        if first_dataframe:
-            final_schema = columns_formater.get_schema()
-            output_dataset.write_schema(final_schema)
-            first_dataframe = False
-        if not unnested_items_rows.empty:
-            writer.write_dataframe(unnested_items_rows)
-        results = []
-        formated_results = []
+                base = columns_formater.cast_to_column_type(base)
+                base.update(row)
+                output_writer.write_rows(client.iter_unnested_rows(base))
+        output_writer.flush()
 
 processing_timer.stop()
 logger.info("Overall timer:{}".format(processing_timer.get_report()))
