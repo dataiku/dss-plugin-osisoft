@@ -48,7 +48,7 @@ server_url_column = config.get("server_url_column")
 search_full_hierarchy = config.get("search_full_hierarchy", None)
 use_batch_mode, batch_size = get_advanced_parameters(config)
 interval, sync_time, boundary_type = get_interpolated_parameters(config)
-summary_type, summary_duration = get_summary_parameters(config)
+summary_type, summary_duration, calculation_basis = get_summary_parameters(config)
 
 network_timer = PerformanceTimer()
 processing_timer = PerformanceTimer()
@@ -111,7 +111,8 @@ with output_dataset.get_writer() as writer:
                 can_raise=False,
                 max_count=max_count,
                 summary_type=summary_type,
-                summary_duration=summary_duration
+                summary_duration=summary_duration,
+                calculation_basis=calculation_basis
             )
         elif use_batch_mode:
             buffer.append({"WebId": object_id, "StartTime": event_frame_start_time, "EndTime": event_frame_end_time})
@@ -123,7 +124,8 @@ with output_dataset.get_writer() as writer:
                     can_raise=False,
                     batch_size=batch_size,
                     summary_type=summary_type,
-                    summary_duration=summary_duration
+                    summary_duration=summary_duration,
+                    calculation_basis=calculation_basis
                 )
                 batch_buffer_size = 0
                 buffer = []
@@ -142,7 +144,8 @@ with output_dataset.get_writer() as writer:
                 max_count=max_count,
                 can_raise=False,
                 summary_type=summary_type,
-                summary_duration=summary_duration
+                summary_duration=summary_duration,
+                calculation_basis=calculation_basis
             )
         unnested_items_rows = []
         row_count = 0
