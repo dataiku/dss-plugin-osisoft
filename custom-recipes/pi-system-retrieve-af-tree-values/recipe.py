@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 import dataiku
 import json
-import copy
 import pytz
 from dataiku.customrecipe import get_input_names_for_role, get_recipe_config, get_output_names_for_role
 import pandas as pd
@@ -9,12 +8,13 @@ from datetime import datetime
 from osisoft_safe_logger import SafeLogger
 from osisoft_plugin_common import (
     get_credentials, get_base_for_data_type, check_debug_mode,
-    PerformanceTimer, get_max_count, check_must_convert_object_to_string,
-    get_advanced_parameters,
-    get_batch_parameters
+    PerformanceTimer, check_must_convert_object_to_string,
+    get_advanced_parameters, get_batch_parameters,
 )
 from osisoft_client import OSIsoftClient
 from osisoft_constants import OSIsoftConstants
+from osisoft_output_writer import BufferedOutputWriter
+from osisoft_input_rows import input_row_to_dict
 
 
 logger = SafeLogger("pi-system plugin", forbiden_keys=["token", "password"])
@@ -260,7 +260,6 @@ logger.info("Initialization with config config={}".format(logger.filter_secrets(
 
 auth_type, username, password, server_url, is_ssl_check_disabled = get_credentials(config)
 is_debug_mode = check_debug_mode(config)
-max_count = get_max_count(config)
 must_convert_object_to_string = check_must_convert_object_to_string(config)
 
 use_server_url_column = config.get("use_server_url_column", False)
@@ -308,7 +307,7 @@ server_url_column = config.get("server_url_column")
 _, batch_size = get_advanced_parameters(config)
 download_strategy = config.get("download_strategy", "recursive")
 
-max_request_size, estimated_density, maximum_points_returned = get_batch_parameters(config)
+max_count, estimated_density, maximum_points_returned = get_batch_parameters(config)
 max_time_to_retrieve_per_batch = estimated_density / maximum_points_returned  # density per hour <- max time is in hour
 
 network_timer = PerformanceTimer()
@@ -317,7 +316,6 @@ processing_timer.start()
 
 output_dataset = dataiku.Dataset(output_names_stats[0])
 
-results = []
 time_last_request = None
 client = None
 previous_server_url = ""
@@ -330,7 +328,7 @@ if transpose_summaries:
     input_schema.update(TRANSPOSED_SCHEMA)
 columns_formater.set_schema(input_schema)
 with output_dataset.get_writer() as writer:
-    first_dataframe = True
+    output_writer = BufferedOutputWriter(output_dataset, writer, columns_formater, batch_size)
     absolute_index = 0
     batch_buffer_size = 0
     buffer = []
@@ -419,58 +417,37 @@ with output_dataset.get_writer() as writer:
                 boundary_type=boundary_type,
                 record_boundary_type=record_boundary_type,
                 max_count=max_count,
-                can_raise=False,
+                can_raise=True,
                 endpoint_type="AF",
                 summary_type=summary_type,
                 summary_duration=summary_duration,
                 transpose_summaries=transpose_summaries,
                 calculation_basis=calculation_basis
             )
+        input_rows_cache = {}
         for row in rows:
             if isinstance(row, list):
                 for line in row:
                     base = get_base_for_data_type(data_type, object_id, Step=step_value)
                     base = columns_formater.cast_to_column_type(base)
                     base.update(line)
-                    extention = client.unnest_row(base)
-                    results.extend(extention)
+                    output_writer.write_rows(client.iter_unnested_rows(base))
             else:
-                base = {"Errors": "Issue with this line"}
-                if row.get("initial_index") is not None:
-                    base = json.loads(copy.deepcopy(input_parameters_dataframe.loc[row.get("initial_index")].to_json()))
-                else:
-                    try:
-                        base = json.loads(copy.deepcopy(input_parameters_dataframe.loc[absolute_index-1].to_json()))
-                    except Exception as error:
-                        base = {"Errors": "{}".format(error)}
-                        logger.error("Error while loading json: {}".format(error))
-                        logger.error("absolute_index={}".format(absolute_index))
-                        logger.error("target schema={}".format(columns_formater.get_schema()))
-                        logger.error("input_parameters_dataframe.loc[absolute_index-1]={}".format(input_parameters_dataframe.loc[absolute_index-1]))
-                        logger.error("row to integrate={}".format(row))
-                        # logger.error("to_json={}".format(input_parameters_dataframe.loc[absolute_index-1].to_json()))
-                        faulty_row = input_parameters_dataframe.loc[absolute_index-1]
-                        for column, value in faulty_row.items():
-                            try:
-                                faulty_row.loc[[column]].to_json()
-                            except Exception:
-                                logger.error("Failing column:{}".format(column))
-                                base = {"Errors": "column {}={}:{}".format(column, value, error)}
+                initial_index = row.get("initial_index")
+                if initial_index is None:
+                    initial_index = absolute_index - 1
+                try:
+                    if initial_index not in input_rows_cache:
+                        input_rows_cache[initial_index] = input_row_to_dict(input_parameters_dataframe.loc[initial_index])
+                    base = input_rows_cache[initial_index].copy()
+                except Exception as error:
+                    base = {"Errors": "{}".format(error)}
+                    logger.error("Error while loading input row {}: {}".format(initial_index, error))
 
                 base = columns_formater.cast_to_column_type(base)
                 base.update(row)
-                extention = client.unnest_row(base)
-                results.extend(extention)
-        results = columns_formater.parse_rows(results)
-        unnested_items_rows = pd.DataFrame(results)
-        if first_dataframe:
-            final_schema = columns_formater.get_schema()
-            output_dataset.write_schema(final_schema)
-            first_dataframe = False
-        if not unnested_items_rows.empty:
-            writer.write_dataframe(unnested_items_rows)
-        results = []
-        formated_results = []
+                output_writer.write_rows(client.iter_unnested_rows(base))
+        output_writer.flush()
 
 processing_timer.stop()
 logger.info("Overall timer:{}".format(processing_timer.get_report()))
