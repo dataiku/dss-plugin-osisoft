@@ -185,7 +185,7 @@
             "type": "STRING",
             "defaultValue": ""
         },
-                {
+        {
             "name": "use_time_column",
             "label": "Use time value per row",
             "description": "",
@@ -210,12 +210,12 @@
             "defaultValue": ""
         },
         {
-            "name": "max_count",
-            "label": "Max count",
-            "visibilityCondition": "model.credentials.mode != 'NONE' && model.show_advanced_parameters==true && ['InterpolatedData','PlotData','RecordedData'].includes(model.data_type)",
-            "description": "Larger number speeds data transfer but loads the PI server",
-            "type": "INT",
-            "defaultValue": 10000
+            "name": "should_parse_date",
+            "label": "Parse dates",
+            "description": "",
+            "type": "BOOLEAN",
+            "visibilityCondition": "model.credentials.mode != 'NONE'",
+            "defaultValue": false
         }
     ],
     "resourceKeys": []
