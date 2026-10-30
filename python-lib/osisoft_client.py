@@ -4,6 +4,7 @@ import copy
 import json
 import simplejson
 import re
+from collections import deque
 from datetime import datetime
 from requests_ntlm import HttpNtlmAuth
 from osisoft_constants import OSIsoftConstants
@@ -250,86 +251,79 @@ class OSIsoftClient(object):
                         yield item
 
     def get_rows_from_af_trees(self, input_rows, transpose_summaries=False):
-        batch_requests_parameters = []
-        number_processed_webids = 0
-        number_of_webids_to_process = len(input_rows)
-        web_ids = []
-        event_start_times = []
-        event_end_times = []
-        initial_indexs = []
-        for input_row in input_rows:
-            initial_index = input_row.get("initial_index", None)
-            max_time_to_retrieve_per_batch = input_row.get("maximum_points_returned") / input_row.get("estimated_density")
-            batch_time = BatchTimeCounter(max_time_to_retrieve_per_batch)
-            endpoint_type = input_row.get("endpoint_type", "event_frames")
-            batch_size = input_row.get("batch_size", 500)
-            estimated_density = input_row.get("estimated_density", 500)
-            maximum_points_returned = input_row.get("maximum_points_returned", 500)
-            event_start_time = event_end_time = None
-            data_type = input_row.get("data_type")
-            if isinstance(input_row, dict):
-                webid = input_row.get("WebId")
-                event_start_time = input_row.get("StartTime")
-                event_end_time = input_row.get("EndTime")
-            else:
-                webid = input_row
-            url = self.endpoint.get_data_from_webid_url(endpoint_type, data_type, webid)
-            start_date = input_row.get("start_date")
-            end_date = input_row.get("end_date")
-            interval = input_row.get("interval")
-            requests_kwargs = self.generic_get_kwargs(**input_row)
-            batch_time.add(start_date, end_date, interval)
-            requests_kwargs['url'] = build_query_string(url, requests_kwargs.get("params"))
-            web_ids.append(webid)
-            event_start_times.append(event_start_time)
-            event_end_times.append(event_end_time)
-            initial_indexs.append(initial_index)
-            batch_requests_parameters.append(requests_kwargs)
-            number_processed_webids += 1
-            if (len(batch_requests_parameters) >= batch_size) or (number_processed_webids == number_of_webids_to_process) or batch_time.is_batch_full():
-                json_responses = self._batch_requests(batch_requests_parameters)
-                batch_requests_parameters = []
-                response_index = 0
-                for json_response in json_responses:
-                    response_content = json_response.get("Content", {})
-                    if error_in_batch_response(json_response):
-                        response_content = {"Errors": response_content}
-                    webid = web_ids[response_index]
-                    event_start_time = event_start_times[response_index]
-                    event_end_time = event_end_times[response_index]
-                    if OSIsoftConstants.DKU_ERROR_KEY in response_content:
-                        if endpoint_type == "event_frames":
-                            response_content['event_frame_webid'] = "{}".format(webid)
-                        if initial_index is not None:
-                            response_content['initial_index'] = initial_indexs[response_index]
-                            response_index += 1
-                        yield response_content
+        pending = deque((dict(input_row), None, False) for input_row in input_rows)
+        while pending:
+            first_row = pending[0][0]
+            batch_size = first_row.get("batch_size", 500)
+            if batch_size < 1:
+                raise ValueError("Request batch size must be positive")
+            batch_time = BatchTimeCounter(
+                first_row.get("maximum_points_returned", 500) / first_row.get("estimated_density", 500)
+            )
+            batch = []
+            requests_parameters = []
+            while pending and len(batch) < batch_size:
+                input_row, previous_timestamp, continuation = pending.popleft()
+                url = self.endpoint.get_data_from_webid_url(
+                    input_row.get("endpoint_type", "event_frames"), input_row.get("data_type"), input_row.get("WebId")
+                )
+                request = self.generic_get_kwargs(**input_row)
+                request["url"] = build_query_string(url, request.get("params"))
+                requests_parameters.append(request)
+                batch.append((input_row, previous_timestamp, continuation))
+                batch_time.add(input_row.get("start_date"), input_row.get("end_date"), input_row.get("interval"))
+                if batch_time.is_batch_full():
+                    break
+
+            for state, response in zip(batch, self._batch_requests(requests_parameters)):
+                input_row, previous_timestamp, continuation = state
+                content = response.get("Content", {})
+                if error_in_batch_response(response):
+                    error_message = "Error {}: {}".format(response.get("Status"), content)
+                    if is_parameter_greater_than_max_allowed(error_message):
+                        start, end, midpoint = self.halve_time_range(input_row.get("start_date"), input_row.get("end_date"))
+                        if midpoint in (start, end):
+                            raise PISystemClientError("Cannot split time range further for {}".format(input_row.get("WebId")))
+                        first_half = dict(input_row, start_date=start, end_date=midpoint)
+                        second_half = dict(input_row, start_date=midpoint, end_date=end)
+                        pending.append((first_half, previous_timestamp, continuation))
+                        pending.append((second_half, midpoint, True))
                         continue
-                    items = response_content.get(OSIsoftConstants.API_ITEM_KEY, [])
-                    if transpose_summaries and type_in_items(items):
-                        combined_item = combined_items(items)
-                        combined_item['initial_index'] = initial_indexs[response_index]
-                        yield combined_item
-                    elif len(items) == 0:
-                        item = {}
-                        if event_start_time:
-                            item['StartTime'] = event_start_time
-                        if event_end_time:
-                            item['EndTime'] = event_end_time
-                        if initial_index is not None:
-                            item['initial_index'] = initial_indexs[response_index]
-                        yield item
-                    else:
-                        for item in items:
-                            if event_start_time:
-                                item['StartTime'] = event_start_time
-                            if event_end_time:
-                                item['EndTime'] = event_end_time
-                            if initial_index is not None:
-                                item['initial_index'] = initial_indexs[response_index]
-                            yield item
-                    response_index += 1
-                web_ids = []
+                    content = {"Errors": content}
+
+                metadata = {}
+                if input_row.get("initial_index") is not None:
+                    metadata["initial_index"] = input_row["initial_index"]
+                for key in ("StartTime", "EndTime"):
+                    if input_row.get(key):
+                        metadata[key] = input_row[key]
+                if OSIsoftConstants.DKU_ERROR_KEY in content:
+                    if input_row.get("endpoint_type", "event_frames") == "event_frames":
+                        metadata["event_frame_webid"] = str(input_row.get("WebId"))
+                    yield dict(content, **metadata)
+                    continue
+
+                items = content.get(OSIsoftConstants.API_ITEM_KEY, [content] if content else [])
+                max_count = input_row.get("max_count")
+                last_timestamp = items[-1].get("Timestamp") if items else None
+                if max_count and len(items) == max_count and last_timestamp:
+                    if normalize_pi_timestamp(last_timestamp) == normalize_pi_timestamp(previous_timestamp):
+                        raise PISystemClientError(
+                            "Pagination made no progress for {} at {}. Increase maxCount in the preset.".format(
+                                input_row.get("WebId"), last_timestamp
+                            )
+                        )
+                    pending.append((dict(input_row, start_date=last_timestamp), last_timestamp, True))
+
+                if items and previous_timestamp and normalize_pi_timestamp(items[0].get("Timestamp")) == normalize_pi_timestamp(previous_timestamp):
+                    items = items[1:]
+                if items and transpose_summaries and type_in_items(items):
+                    yield dict(combined_items(items), **metadata)
+                elif items:
+                    for item in items:
+                        yield dict(item, **metadata)
+                elif not continuation:
+                    yield metadata
 
     def get_rows_from_webids(self, input_rows, data_type, **kwargs):
         endpoint_type = kwargs.get("endpoint_type", "event_frames")
@@ -1434,6 +1428,12 @@ def apply_manual_inputs(kwargs):
         elif not kwarg.endswith("_manual_input") and not kwarg.endswith("_variable_select"):
             new_kwargs[kwarg] = kwargs.get(kwarg)
     return new_kwargs
+
+
+def normalize_pi_timestamp(timestamp):
+    if not timestamp:
+        return timestamp
+    return re.sub(r"\.(\d+)", lambda match: ("." + match.group(1).rstrip("0")).rstrip("."), timestamp)
 
 
 def is_parameter_greater_than_max_allowed(error_message):
