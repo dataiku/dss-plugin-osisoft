@@ -417,7 +417,7 @@ with output_dataset.get_writer() as writer:
                 boundary_type=boundary_type,
                 record_boundary_type=record_boundary_type,
                 max_count=max_count,
-                can_raise=False,
+                can_raise=True,
                 endpoint_type="AF",
                 summary_type=summary_type,
                 summary_duration=summary_duration,
