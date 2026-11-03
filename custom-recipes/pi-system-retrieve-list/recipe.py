@@ -7,13 +7,16 @@ from osisoft_plugin_common import (
     get_credentials, get_interpolated_parameters, normalize_af_path,
     get_combined_description, get_base_for_data_type, check_debug_mode,
     PerformanceTimer, get_max_count, check_must_convert_object_to_string,
-    convert_schema_objects_to_string, get_summary_parameters, get_advanced_parameters
+    convert_schema_objects_to_string, get_summary_parameters, get_advanced_parameters,
+    get_batch_parameters
 )
 from osisoft_client import OSIsoftClient
 from osisoft_constants import OSIsoftConstants
 
 
 logger = SafeLogger("pi-system plugin", forbiden_keys=["token", "password"])
+INPUT_CHUNK_SIZE = 10000
+OUTPUT_CHUNK_SIZE = 10000
 
 logger.info("PIWebAPI Assets values downloader recipe v{}".format(
     OSIsoftConstants.PLUGIN_VERSION
@@ -27,6 +30,31 @@ def get_step_value(item):
         else:
             return "False"
     return None
+
+
+def iter_input_rows(dataset):
+    previous_row = None
+    for dataframe in dataset.iter_dataframes(chunksize=INPUT_CHUNK_SIZE):
+        for index, row in dataframe.iterrows():
+            if previous_row is not None:
+                yield previous_row, False
+            previous_row = row
+    if previous_row is not None:
+        yield previous_row, True
+
+
+def write_results(writer, results, first_dataframe):
+    unnested_items_rows = pd.DataFrame(results)
+    if first_dataframe:
+        default_columns = OSIsoftConstants.RECIPE_SCHEMA_PER_DATA_TYPE.get(data_type)
+        if must_convert_object_to_string:
+            default_columns = convert_schema_objects_to_string(default_columns)
+        combined_columns_description = get_combined_description(default_columns, unnested_items_rows)
+        output_dataset.write_schema(combined_columns_description)
+    if not unnested_items_rows.empty:
+        writer.write_dataframe(unnested_items_rows)
+    results.clear()
+    return False
 
 
 input_dataset = get_input_names_for_role('input_dataset')
@@ -59,6 +87,9 @@ use_end_time_column = config.get("use_end_time_column", False)
 end_time_column = config.get("end_time_column")
 server_url_column = config.get("server_url_column")
 use_batch_mode, batch_size = get_advanced_parameters(config)
+batch_max_count, estimated_density, maximum_points_returned = get_batch_parameters(config)
+if "max_request_size" not in config.get("credentials", {}):
+    batch_max_count = max_count
 interval, sync_time, boundary_type = get_interpolated_parameters(config)
 record_boundary_type = config.get("record_boundary_type") if data_type == "RecordedData" else None
 summary_type, summary_duration = get_summary_parameters(config)
@@ -70,7 +101,6 @@ processing_timer.start()
 
 input_parameters_dataset = dataiku.Dataset(input_dataset[0])
 output_dataset = dataiku.Dataset(output_names_stats[0])
-input_parameters_dataframe = input_parameters_dataset.get_dataframe()
 
 results = []
 time_last_request = None
@@ -78,21 +108,21 @@ client = None
 previous_server_url = ""
 time_not_parsed = True
 
-input_columns = list(input_parameters_dataframe.columns) if do_duplicate_input_row else []
+input_columns = [column["name"] for column in input_parameters_dataset.read_schema()] if do_duplicate_input_row else []
 
 with output_dataset.get_writer() as writer:
     first_dataframe = True
-    absolute_index = 0
     batch_buffer_size = 0
     buffer = []
-    for index, input_parameters_row in input_parameters_dataframe.iterrows():
+    input_rows_cache = {}
+    absolute_index = 0
+    for input_parameters_row, is_last_input_row in iter_input_rows(input_parameters_dataset):
         absolute_index += 1
         server_url = input_parameters_row.get(server_url_column, server_url) if use_server_url_column else server_url
         start_time = input_parameters_row.get(start_time_column, start_time) if use_start_time_column else start_time
         end_time = input_parameters_row.get(end_time_column, end_time) if use_end_time_column else end_time
         row_name = input_parameters_row.get("Name")
         duplicate_initial_row = {}
-        nb_rows_to_process = input_parameters_dataframe.shape[0]
         for input_column in input_columns:
             duplicate_initial_row[input_column] = input_parameters_row.get(input_column)
 
@@ -134,24 +164,30 @@ with output_dataset.get_writer() as writer:
                 summary_duration=summary_duration
             )
         elif use_batch_mode:
-            buffer.append({"WebId": object_id})
+            input_rows_cache[absolute_index] = (row_name, object_id, duplicate_initial_row)
+            buffer.append({
+                "WebId": object_id,
+                "initial_index": absolute_index,
+                "data_type": data_type,
+                "max_count": batch_max_count,
+                "start_date": client.parse_pi_time(start_time),
+                "end_date": client.parse_pi_time(end_time),
+                "interval": interval,
+                "sync_time": sync_time,
+                "boundary_type": boundary_type,
+                "record_boundary_type": record_boundary_type,
+                "can_raise": False,
+                "batch_size": batch_size,
+                "object_id": object_id,
+                "summary_type": summary_type,
+                "summary_duration": summary_duration,
+                "endpoint_type": "AF",
+                "estimated_density": estimated_density,
+                "maximum_points_returned": maximum_points_returned
+            })
             batch_buffer_size += 1
-            if (batch_buffer_size >= batch_size) or (absolute_index == nb_rows_to_process):
-                rows = client.get_rows_from_webids(
-                    buffer, data_type, max_count=max_count,
-                    start_date=start_time,
-                    end_date=end_time,
-                    interval=interval,
-                    sync_time=sync_time,
-                    boundary_type=boundary_type,
-                    record_boundary_type=record_boundary_type,
-                    can_raise=False,
-                    batch_size=batch_size,
-                    object_id=object_id,
-                    summary_type=summary_type,
-                    summary_duration=summary_duration,
-                    endpoint_type="AF"
-                )
+            if (batch_buffer_size >= batch_size) or is_last_input_row:
+                rows = client.get_rows_from_af_trees(buffer)
                 batch_buffer_size = 0
                 buffer = []
             else:
@@ -173,6 +209,9 @@ with output_dataset.get_writer() as writer:
                 summary_duration=summary_duration
             )
         for row in rows:
+            initial_index = row.pop("initial_index", None) if isinstance(row, dict) else None
+            if initial_index is not None:
+                row_name, object_id, duplicate_initial_row = input_rows_cache[initial_index]
             row["Name"] = row_name
             row[path_column] = object_id
             if isinstance(row, list):
@@ -180,26 +219,25 @@ with output_dataset.get_writer() as writer:
                     base = get_base_for_data_type(data_type, object_id, Step=step_value)
                     base.update(line)
                     extention = client.unnest_row(base)
-                    results.extend(extention)
+                    for output_row in extention:
+                        results.append(output_row)
+                        if len(results) >= OUTPUT_CHUNK_SIZE:
+                            first_dataframe = write_results(writer, results, first_dataframe)
             else:
                 base = get_base_for_data_type(data_type, object_id, Step=step_value)
                 if duplicate_initial_row:
                     base.update(duplicate_initial_row)
                 base.update(row)
                 extention = client.unnest_row(base)
-                results.extend(extention)
+                for output_row in extention:
+                    results.append(output_row)
+                    if len(results) >= OUTPUT_CHUNK_SIZE:
+                        first_dataframe = write_results(writer, results, first_dataframe)
 
-        unnested_items_rows = pd.DataFrame(results)
-        if first_dataframe:
-            default_columns = OSIsoftConstants.RECIPE_SCHEMA_PER_DATA_TYPE.get(data_type)
-            if must_convert_object_to_string:
-                default_columns = convert_schema_objects_to_string(default_columns)
-            combined_columns_description = get_combined_description(default_columns, unnested_items_rows)
-            output_dataset.write_schema(combined_columns_description)
-            first_dataframe = False
-        if not unnested_items_rows.empty:
-            writer.write_dataframe(unnested_items_rows)
-        results = []
+        if results or first_dataframe:
+            first_dataframe = write_results(writer, results, first_dataframe)
+        if not buffer:
+            input_rows_cache.clear()
 
 processing_timer.stop()
 logger.info("Overall timer:{}".format(processing_timer.get_report()))
