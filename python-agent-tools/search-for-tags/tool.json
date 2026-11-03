@@ -1,0 +1,93 @@
+{
+    "meta" : {
+        "label": "Search PI-System hierarchy",
+        "description": "Search in the hierarchy of you PI-system",
+        "icon": "icon-pi-system icon-cogs"
+    },
+    "kind": "PYTHON",
+    "paramsPythonSetup": "browse_attributes.py",
+    "params": [
+        {
+            "type": "SEPARATOR",
+            "label": "Authentication"
+        },
+        {
+            "name": "credentials",
+            "label": "User preset",
+            "type": "PRESET",
+            "parameterSetId": "basic-auth"
+        },
+        {
+            "name": "show_advanced_parameters",
+            "label": "Show advanced parameters",
+            "type": "BOOLEAN",
+            "definition": "",
+            "defaultValue": false
+        },
+        {
+            "name": "use_server_url_column",
+            "label": "Use server value per row",
+            "visibilityCondition": "model.show_advanced_parameters==true && false",
+            "description": "",
+            "type": "BOOLEAN",
+            "defaultValue": false
+        },
+        {
+            "visibilityCondition": "(model.use_server_url_column==true) && (model.show_advanced_parameters==true)",
+            "name": "server_url_column",
+            "label": "Server domain columnn",
+            "description": "Should match the required path for each row",
+            "type": "COLUMN",
+            "columnRole": "input_dataset"
+        },
+        {
+            "visibilityCondition": "(model.use_server_url_column==false) && (model.show_advanced_parameters==true)",
+            "name": "server_url",
+            "label": "Server URL",
+            "type": "STRING",
+            "definition": "https://my_server:8082",
+            "defaultValue": ""
+        },
+        {
+            "name": "is_ssl_check_disabled",
+            "label": "Disable SSL check",
+            "visibilityCondition": "model.show_advanced_parameters==true",
+            "type": "BOOLEAN",
+            "definition": "",
+            "defaultValue": false
+        },
+        {
+            "name": "ssl_cert_path",
+            "label": "Path to SSL certificate",
+            "type": "STRING",
+            "description": "(optional)",
+            "visibilityCondition": "model.show_advanced_parameters==true && model.is_ssl_check_disabled==false",
+            "mandatory": false
+        },
+        {
+            "type": "SEPARATOR",
+            "description": "Source"
+        },
+        {
+            "name": "server_name",
+            "label": "Server name",
+            "type": "SELECT",
+            "description": "",
+            "getChoicesFromPython": true
+        },
+        {
+            "name": "database_name",
+            "label": "Database name",
+            "type": "SELECT",
+            "description": "",
+            "visibilityCondition": "model.server_name.length>=0",
+            "getChoicesFromPython": true
+        },
+        {
+            "name": "database_url",
+            "label": "Database url",
+            "type": "STRING",
+            "description": ""
+        }
+    ]
+}
