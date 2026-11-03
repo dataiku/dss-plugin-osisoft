@@ -1,5 +1,9 @@
 # Changelog
 
+## [Version 2.0.1](https://github.com/dataiku/dss-plugin-pi-server/releases/tag/v2.0.1) - Security fix - 2026-11-03
+
+- Enforce SSL preset policy
+
 ## [Version 2.0.0](https://github.com/dataiku/dss-plugin-pi-server/releases/tag/v2.0.0) - Feature release - 2026-10-30
 
 - Add a AF hierarchy downloader
