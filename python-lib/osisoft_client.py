@@ -3,6 +3,8 @@ import logging
 import copy
 import json
 import simplejson
+import re
+from collections import deque
 from datetime import datetime
 from requests_ntlm import HttpNtlmAuth
 from osisoft_constants import OSIsoftConstants
@@ -10,7 +12,8 @@ from osisoft_endpoints import OSIsoftEndpoints
 from osisoft_plugin_common import (
     assert_server_url_ok, build_requests_params,
     is_filtered_out, is_server_throttling, escape, epoch_to_iso,
-    iso_to_epoch, RecordsLimit, is_iso8601, get_next_page_url, change_key_in_dict
+    iso_to_epoch, RecordsLimit, is_iso8601, get_next_page_url, change_key_in_dict,
+    BatchTimeCounter
 )
 from osisoft_pagination import OffsetPagination
 from osisoft_safe_logger import SafeLogger
@@ -28,6 +31,7 @@ class OSIsoftClient(object):
     def __init__(self, server_url, auth_type, username, password, is_ssl_check_disabled=False, can_raise=True, is_debug_mode=False, network_timer=None):
         if can_raise:
             assert_server_url_ok(server_url)
+        requests.packages.urllib3.disable_warnings()
         self.session = requests.Session()
         self.session.auth = self.get_auth(auth_type, username, password)
         self.session.verify = (not is_ssl_check_disabled)
@@ -239,6 +243,81 @@ class OSIsoftClient(object):
                     items = [{}]
                 for item in items:
                     yield item
+
+    def get_rows_from_af_trees(self, input_rows, transpose_summaries=False):
+        pending = deque((dict(input_row), None, False) for input_row in input_rows)
+        while pending:
+            first_row = pending[0][0]
+            batch_size = first_row.get("batch_size", 500)
+            if batch_size < 1:
+                raise ValueError("Request batch size must be positive")
+            batch_time = BatchTimeCounter(
+                first_row.get("maximum_points_returned", 500) / first_row.get("estimated_density", 500)
+            )
+            batch = []
+            requests_parameters = []
+            while pending and len(batch) < batch_size:
+                input_row, previous_timestamp, continuation = pending.popleft()
+                url = self.endpoint.get_data_from_webid_url(
+                    input_row.get("endpoint_type", "event_frames"), input_row.get("data_type"), input_row.get("WebId")
+                )
+                request = self.generic_get_kwargs(**input_row)
+                request["url"] = build_query_string(url, request.get("params"))
+                requests_parameters.append(request)
+                batch.append((input_row, previous_timestamp, continuation))
+                batch_time.add(input_row.get("start_date"), input_row.get("end_date"), input_row.get("interval"))
+                if batch_time.is_batch_full():
+                    break
+
+            for state, response in zip(batch, self._batch_requests(requests_parameters)):
+                input_row, previous_timestamp, continuation = state
+                content = response.get("Content", {})
+                if error_in_batch_response(response):
+                    error_message = "Error {}: {}".format(response.get("Status"), content)
+                    if is_parameter_greater_than_max_allowed(error_message):
+                        start, end, midpoint = self.halve_time_range(input_row.get("start_date"), input_row.get("end_date"))
+                        if midpoint in (start, end):
+                            raise PISystemClientError("Cannot split time range further for {}".format(input_row.get("WebId")))
+                        first_half = dict(input_row, start_date=start, end_date=midpoint)
+                        second_half = dict(input_row, start_date=midpoint, end_date=end)
+                        pending.append((first_half, previous_timestamp, continuation))
+                        pending.append((second_half, midpoint, True))
+                        continue
+                    content = {"Errors": content}
+
+                metadata = {}
+                if input_row.get("initial_index") is not None:
+                    metadata["initial_index"] = input_row["initial_index"]
+                for key in ("StartTime", "EndTime"):
+                    if input_row.get(key):
+                        metadata[key] = input_row[key]
+                if OSIsoftConstants.DKU_ERROR_KEY in content:
+                    if input_row.get("endpoint_type", "event_frames") == "event_frames":
+                        metadata["event_frame_webid"] = str(input_row.get("WebId"))
+                    yield dict(content, **metadata)
+                    continue
+
+                items = content.get(OSIsoftConstants.API_ITEM_KEY, [content] if content else [])
+                max_count = input_row.get("max_count")
+                last_timestamp = items[-1].get("Timestamp") if items else None
+                if max_count and len(items) == max_count and last_timestamp:
+                    if normalize_pi_timestamp(last_timestamp) == normalize_pi_timestamp(previous_timestamp):
+                        raise PISystemClientError(
+                            "Pagination made no progress for {} at {}. Increase maxCount in the preset.".format(
+                                input_row.get("WebId"), last_timestamp
+                            )
+                        )
+                    pending.append((dict(input_row, start_date=last_timestamp), last_timestamp, True))
+
+                if items and previous_timestamp and normalize_pi_timestamp(items[0].get("Timestamp")) == normalize_pi_timestamp(previous_timestamp):
+                    items = items[1:]
+                if items and transpose_summaries and type_in_items(items):
+                    yield dict(combined_items(items), **metadata)
+                elif items:
+                    for item in items:
+                        yield dict(item, **metadata)
+                elif not continuation:
+                    yield metadata
 
     def get_rows_from_webids(self, input_rows, data_type, **kwargs):
         endpoint_type = kwargs.get("endpoint_type", "event_frames")
@@ -1064,6 +1143,12 @@ def apply_manual_inputs(kwargs):
     return new_kwargs
 
 
+def normalize_pi_timestamp(timestamp):
+    if not timestamp:
+        return timestamp
+    return re.sub(r"\.(\d+)", lambda match: ("." + match.group(1).rstrip("0")).rstrip("."), timestamp)
+
+
 def is_parameter_greater_than_max_allowed(error_message):
     return "Error 400" in "{}".format(error_message) and "is greater than the maximum allowed" in "{}".format(error_message)
 
@@ -1085,3 +1170,25 @@ def prepare_request_buffer(request_buffer):
             dku_counter.append(_dku_counter)
         row_counter.append(dku_counter)
     return request_buffer, row_counter
+
+
+def type_in_items(items):
+    for item in items:
+        if 'Type' not in item:
+            return False
+    return True
+
+
+def combined_items(items):
+    output = {}
+    output["Timestamp"] = items[0].get("Value", {}).get("Timestamp")
+    for item in items:
+        output[item.get("Type")] = item.get("Value", {}).get("Value")
+    return output
+
+
+def error_in_batch_response(json_response):
+    if "Status" in json_response:
+        if int(json_response.get("Status")) >= 400:
+            return True
+    return False

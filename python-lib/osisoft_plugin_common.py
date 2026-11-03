@@ -56,6 +56,15 @@ def get_credentials(config, can_raise=True):
         return auth_type, username, password, server_url, is_ssl_check_disabled, error_message
 
 
+def get_batch_parameters(config):
+    credentials = config.get("credentials", {})
+    return (
+        credentials.get("max_request_size", 1000),
+        credentials.get("estimated_density", 6000),
+        credentials.get("maximum_points_returned", 1000000)
+    )
+
+
 def get_advanced_parameters(config):
     show_advanced_parameters = config.get('show_advanced_parameters', False)
     batch_size = 500
@@ -600,3 +609,18 @@ class PerformanceTimer():
         for slowest_event, slowest_time in zip(self.slowest_events, self.slowest_times):
             worst_performers.append("{}: {}s".format(slowest_event, slowest_time))
         return worst_performers
+
+
+class BatchTimeCounter(object):
+    def __init__(self, max_time_to_retrieve_per_batch):
+        self.max_time_to_retrieve_per_batch = max_time_to_retrieve_per_batch * 60 * 60
+        self.total_batched_time = 0
+
+    def is_batch_full(self):
+        return self.max_time_to_retrieve_per_batch >= 0 and self.total_batched_time > self.max_time_to_retrieve_per_batch
+
+    def add(self, start_time, end_time, interval):
+        start_timestamp = iso_to_epoch(start_time)
+        end_timestamp = iso_to_epoch(end_time)
+        if start_timestamp is not None and end_timestamp is not None:
+            self.total_batched_time += end_timestamp - start_timestamp

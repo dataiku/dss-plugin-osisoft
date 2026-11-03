@@ -51,6 +51,29 @@
             "defaultValue": ""
         },
         {
+            "name": "max_request_size",
+            "label": "Maximum request size",
+            "type": "INT",
+            "description": "Maximum points per request in batch mode",
+            "defaultValue": 1000,
+            "minI": 1
+        },
+        {
+            "name": "estimated_density",
+            "label": "Estimated point density",
+            "type": "DOUBLE",
+            "description": "points/hour",
+            "defaultValue": 2
+        },
+        {
+            "name": "maximum_points_returned",
+            "label": "Maximum points returned",
+            "type": "INT",
+            "description": "Target number of points returned per batch, estimated using point density",
+            "defaultValue": 1000000,
+            "minI": 1
+        },
+        {
             "name": "osisoft_basic",
             "type": "CREDENTIAL_REQUEST",
             "label": "PI System basic login",
