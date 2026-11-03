@@ -597,6 +597,7 @@ class OSIsoftClient(object):
             next_url = get_next_page_url(json_response)
             if next_url != url:
                 url = next_url
+                params = {}
             else:
                 # Some endpoints lead to a loop
                 url = None
