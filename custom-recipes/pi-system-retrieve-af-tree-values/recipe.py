@@ -240,7 +240,7 @@ STANDARD_SCHEMA = {
     "paths": "string", "id": "string", "url": "string", "data_type": "string", "summary_type": "string",
     "boundary_type": "string", "record_boundary_type": "string", "summary_duration": "string",
     "calculation_basis": "string", "max_count": "string", "interval": "string", "sync_time": "string",
-    "Type": "string", "Timestamp": "string", "Value": "float", "UnitsAbbreviation": "string",
+    "Type": "string", "Timestamp": "string", "Value": "string", "UnitsAbbreviation": "string",
     "Good": "boolean", "Questionable": "boolean", "Substituted": "boolean", "Annotated": "boolean",
     "Errors": "string"
 }
