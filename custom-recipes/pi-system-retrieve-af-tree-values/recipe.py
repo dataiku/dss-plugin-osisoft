@@ -146,24 +146,12 @@ def schema_from_sample_data(input_schema, pi_response_schema, sample_data):
     return output_schema
 
 
-def dataframe_schema(dataframe):
-    from pandas.api import types as ptypes
-    """Return a simplified schema for a pandas DataFrame."""
+def dataframe_schema(input_parameters_dataset):
+    columns_definitions = input_parameters_dataset.read_schema()
     schema = {}
-
-    for column_name, dtype in dataframe.dtypes.items():
-        if ptypes.is_string_dtype(dtype):
-            column_type = "string"
-        elif ptypes.is_datetime64_any_dtype(dtype):
-            column_type = "date"
-        elif ptypes.is_bool_dtype(dtype):
-            column_type = "boolean"
-        elif ptypes.is_float_dtype(dtype):
-            column_type = "float"
-        elif ptypes.is_integer_dtype(dtype):
-            column_type = "int"
-        else:
-            column_type = "object"
+    for column_definition in columns_definitions:
+        column_name = column_definition.get("name")
+        column_type = column_definition.get("type")
         schema[column_name] = column_type
     return schema
 
@@ -240,7 +228,7 @@ STANDARD_SCHEMA = {
     "paths": "string", "id": "string", "url": "string", "data_type": "string", "summary_type": "string",
     "boundary_type": "string", "record_boundary_type": "string", "summary_duration": "string",
     "calculation_basis": "string", "max_count": "string", "interval": "string", "sync_time": "string",
-    "Type": "string", "Timestamp": "string", "Value": "float", "UnitsAbbreviation": "string",
+    "Type": "string", "Timestamp": "string", "Value": "string", "UnitsAbbreviation": "string",
     "Good": "boolean", "Questionable": "boolean", "Substituted": "boolean", "Annotated": "boolean",
     "Errors": "string"
 }
@@ -268,6 +256,7 @@ if not server_url and not use_server_url_column:
 
 path_column = config.get("path_column", "")
 input_parameters_dataset = dataiku.Dataset(input_dataset[0])
+
 should_parse_date = config.get("should_parse_date", False)
 if should_parse_date:
     input_parameters_dataframe = input_parameters_dataset.get_dataframe()
@@ -276,7 +265,7 @@ else:
 do_duplicate_input_row = config.get("do_duplicate_input_row", False)
 input_columns = list(input_parameters_dataframe.columns)
 input_columns_types = list(input_parameters_dataframe.dtypes)
-input_schema = dataframe_schema(input_parameters_dataframe)
+input_schema = dataframe_schema(input_parameters_dataset)
 
 self_contained_mode = False
 if not path_column:
@@ -320,7 +309,6 @@ time_last_request = None
 client = None
 previous_server_url = ""
 time_not_parsed = True
-
 columns_formater = Columns()
 input_schema.update(STANDARD_SCHEMA)
 transpose_summaries = config.get("transpose_summaries", False)
@@ -332,122 +320,124 @@ with output_dataset.get_writer() as writer:
     absolute_index = 0
     batch_buffer_size = 0
     buffer = []
-    for index, input_parameters_row in input_parameters_dataframe.iterrows():
-        absolute_index += 1
-        server_url = input_parameters_row.get(server_url_column, server_url) if use_server_url_column else server_url
-        start_time = input_parameters_row.get(start_time_column, start_time) if use_start_time_column else start_time
-        end_time = input_parameters_row.get(end_time_column, end_time) if use_end_time_column else end_time
-        time = input_parameters_row.get(time_column, time) if use_time_column else time
-        start_time = de_pandify_time(start_time)
-        end_time = de_pandify_time(end_time)
-        time = de_pandify_time(time)
-        row_name = input_parameters_row.get("Name")
+    if not input_parameters_dataframe.empty:
+        for index, input_parameters_row in input_parameters_dataframe.iterrows():
+            absolute_index += 1
+            server_url = input_parameters_row.get(server_url_column, server_url) if use_server_url_column else server_url
+            start_time = input_parameters_row.get(start_time_column, start_time) if use_start_time_column else start_time
+            end_time = input_parameters_row.get(end_time_column, end_time) if use_end_time_column else end_time
+            time = input_parameters_row.get(time_column, time) if use_time_column else time
+            start_time = de_pandify_time(start_time)
+            end_time = de_pandify_time(end_time)
+            time = de_pandify_time(time)
+            row_name = input_parameters_row.get("Name")
 
-        # if self_contained_mode:
-        object_id, data_type, boundary_type, record_boundary_type, \
-            interval, sync_time, summary_type, summary_duration, \
-            calculation_basis = extract_params_from_row(
-                input_parameters_row
-            )
-        path_column = "id"
-
-        duplicate_initial_row = {}
-        nb_rows_to_process = input_parameters_dataframe.shape[0]
-        for input_column in input_columns:
-            duplicate_initial_row[input_column] = input_parameters_row.get(input_column)
-
-        if client is None or previous_server_url != server_url:
-            client = OSIsoftClient(
-                server_url, auth_type, username, password,
-                is_ssl_check_disabled=is_ssl_check_disabled,
-                is_debug_mode=is_debug_mode, network_timer=network_timer
-            )
-            previous_server_url = server_url
-            if time_not_parsed:
-                # make sure all OSIsoft time string format are evaluated at the same time
-                # rather than at every request, at least for start / end times set in the UI
-                time_not_parsed = False
-                start_time = client.parse_pi_time(start_time)
-                end_time = client.parse_pi_time(end_time)
-                sync_time = client.parse_pi_time(sync_time)
-        step_value = None
-        if download_strategy == "batch":
-            buffer.append(
-                {
-                    "initial_index": int(absolute_index - 1),
-                    "WebId": object_id, "data_type": data_type,
-                    "max_count": max_count,
-                    "start_date": start_time,
-                    "end_date": end_time,
-                    "time": time,
-                    "interval": interval,
-                    "sync_time": sync_time,
-                    "boundary_type": boundary_type,
-                    "record_boundary_type": record_boundary_type,
-                    "can_raise": False,
-                    "batch_size": batch_size,
-                    "object_id": object_id,
-                    "summary_type": summary_type,
-                    "summary_duration": summary_duration,
-                    "calculation_basis": calculation_basis,
-                    "endpoint_type": "AF",
-                    "estimated_density": estimated_density,
-                    "maximum_points_returned": maximum_points_returned
-                }
-            )
-            batch_buffer_size += 1
-            if (batch_buffer_size >= batch_size) or (absolute_index == nb_rows_to_process):
-                rows = client.get_rows_from_af_trees(
-                    buffer,
-                    transpose_summaries=transpose_summaries
+            # if self_contained_mode:
+            object_id, data_type, boundary_type, record_boundary_type, \
+                interval, sync_time, summary_type, summary_duration, \
+                calculation_basis = extract_params_from_row(
+                    input_parameters_row
                 )
-                batch_buffer_size = 0
-                buffer = []
-            else:
-                continue
-        else:
-            rows = client.recursive_get_rows_from_webid(
-                object_id,
-                data_type,
-                start_date=start_time,
-                end_date=end_time,
-                time=time,
-                interval=interval,
-                sync_time=sync_time,
-                boundary_type=boundary_type,
-                record_boundary_type=record_boundary_type,
-                max_count=max_count,
-                can_raise=True,
-                endpoint_type="AF",
-                summary_type=summary_type,
-                summary_duration=summary_duration,
-                transpose_summaries=transpose_summaries,
-                calculation_basis=calculation_basis
-            )
-        input_rows_cache = {}
-        for row in rows:
-            if isinstance(row, list):
-                for line in row:
-                    base = get_base_for_data_type(data_type, object_id, Step=step_value)
-                    base = columns_formater.cast_to_column_type(base)
-                    base.update(line)
-                    output_writer.write_rows(client.iter_unnested_rows(base))
-            else:
-                initial_index = row.get("initial_index")
-                if initial_index is None:
-                    initial_index = absolute_index - 1
-                try:
-                    if initial_index not in input_rows_cache:
-                        input_rows_cache[initial_index] = input_row_to_dict(input_parameters_dataframe.loc[initial_index])
-                    base = input_rows_cache[initial_index].copy()
-                except Exception as error:
-                    base = {"Errors": "{}".format(error)}
-                    logger.error("Error while loading input row {}: {}".format(initial_index, error))
+            path_column = "id"
 
-                base = columns_formater.cast_to_column_type(base)
-                base.update(row)
-                output_writer.write_rows(client.iter_unnested_rows(base))
-        output_writer.flush()
+            duplicate_initial_row = {}
+            nb_rows_to_process = input_parameters_dataframe.shape[0]
+            for input_column in input_columns:
+                duplicate_initial_row[input_column] = input_parameters_row.get(input_column)
+
+            if client is None or previous_server_url != server_url:
+                client = OSIsoftClient(
+                    server_url, auth_type, username, password,
+                    is_ssl_check_disabled=is_ssl_check_disabled,
+                    is_debug_mode=is_debug_mode, network_timer=network_timer
+                )
+                previous_server_url = server_url
+                if time_not_parsed:
+                    # make sure all OSIsoft time string format are evaluated at the same time
+                    # rather than at every request, at least for start / end times set in the UI
+                    time_not_parsed = False
+                    start_time = client.parse_pi_time(start_time)
+                    end_time = client.parse_pi_time(end_time)
+                    sync_time = client.parse_pi_time(sync_time)
+            step_value = None
+            if download_strategy == "batch":
+                buffer.append(
+                    {
+                        "initial_index": int(absolute_index - 1),
+                        "WebId": object_id, "data_type": data_type,
+                        "max_count": max_count,
+                        "start_date": start_time,
+                        "end_date": end_time,
+                        "time": time,
+                        "interval": interval,
+                        "sync_time": sync_time,
+                        "boundary_type": boundary_type,
+                        "record_boundary_type": record_boundary_type,
+                        "can_raise": False,
+                        "batch_size": batch_size,
+                        "object_id": object_id,
+                        "summary_type": summary_type,
+                        "summary_duration": summary_duration,
+                        "calculation_basis": calculation_basis,
+                        "endpoint_type": "AF",
+                        "estimated_density": estimated_density,
+                        "maximum_points_returned": maximum_points_returned
+                    }
+                )
+                batch_buffer_size += 1
+                if (batch_buffer_size >= batch_size) or (absolute_index == nb_rows_to_process):
+                    rows = client.get_rows_from_af_trees(
+                        buffer,
+                        transpose_summaries=transpose_summaries
+                    )
+                    batch_buffer_size = 0
+                    buffer = []
+                else:
+                    continue
+            else:
+                rows = client.recursive_get_rows_from_webid(
+                    object_id,
+                    data_type,
+                    start_date=start_time,
+                    end_date=end_time,
+                    time=time,
+                    interval=interval,
+                    sync_time=sync_time,
+                    boundary_type=boundary_type,
+                    record_boundary_type=record_boundary_type,
+                    max_count=max_count,
+                    can_raise=True,
+                    endpoint_type="AF",
+                    summary_type=summary_type,
+                    summary_duration=summary_duration,
+                    transpose_summaries=transpose_summaries,
+                    calculation_basis=calculation_basis
+                )
+            input_rows_cache = {}
+            for row in rows:
+                if isinstance(row, list):
+                    for line in row:
+                        base = get_base_for_data_type(data_type, object_id, Step=step_value)
+                        base = columns_formater.cast_to_column_type(base)
+                        base.update(line)
+                        output_writer.write_rows(client.iter_unnested_rows(base))
+                else:
+                    initial_index = row.get("initial_index")
+                    if initial_index is None:
+                        initial_index = absolute_index - 1
+                    try:
+                        if initial_index not in input_rows_cache:
+                            input_rows_cache[initial_index] = input_row_to_dict(input_parameters_dataframe.loc[initial_index])
+                        base = input_rows_cache[initial_index].copy()
+                    except Exception as error:
+                        base = {"Errors": "{}".format(error)}
+                        logger.error("Error while loading input row {}: {}".format(initial_index, error))
+
+                    base = columns_formater.cast_to_column_type(base)
+                    base.update(row)
+                    output_writer.write_rows(client.iter_unnested_rows(base))
+            output_writer.flush()
+    output_writer.flush()
 
 processing_timer.stop()
 logger.info("Overall timer:{}".format(processing_timer.get_report()))

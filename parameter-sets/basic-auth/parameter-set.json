@@ -62,7 +62,8 @@
             "label": "Estimated point density",
             "type": "DOUBLE",
             "description": "points/hour",
-            "defaultValue": 2
+            "defaultValue": 2,
+            "minI": 1
         },
         {
             "name": "maximum_points_returned",

@@ -17,7 +17,6 @@ def do(payload, config, plugin_config, inputs):
         return {"choices": [{"label": "Pick a credential"}]}
 
     auth_type, username, password, server_url, is_ssl_check_disabled, credential_error = get_credentials(config, can_raise=False)
-    is_ssl_check_disabled = config.get("is_ssl_check_disabled", False)  # Because no advanced parameter switch
 
     if credential_error:
         return build_select_choices(credential_error)
@@ -50,8 +49,6 @@ def do(payload, config, plugin_config, inputs):
     method = payload.get("method")
     parameter_name = payload.get("parameterName")
     logger.info("Running do for method '{}' / parameter '{}'".format(method, parameter_name))
-    if method == "get_query_catalogs":
-        return get_query_catalogs(payload, config)
     if method == "get_children_from_db":
         return get_children_from_db(client, payload, config)
     if method == "get_templates_from_db":
@@ -88,15 +85,6 @@ def do(payload, config, plugin_config, inputs):
         else:
             return build_select_choices()
     return build_select_choices()
-
-
-def get_query_catalogs(payload, config):
-    logger.info("Start call [get_query_catalogs] payload_keys={}".format(sorted(payload.keys())))
-    user = config.get("credentials", {}).get("osisoft_basic", {}).get("user")
-    password = config.get("credentials", {}).get("osisoft_basic", {}).get("password")
-    result = {"choices": [user, password]}
-    logger.info("End call [get_query_catalogs] payload_keys={}".format(sorted(payload.keys())))
-    return result
 
 
 def get_children_from_db(client, payload, config):
