@@ -1160,6 +1160,9 @@ app.controller('AfExplorerFormCtrl', [
             clearAllSearchHighlights(); // Clearing highlights on change mode
             const previousTab = $scope.activeTab;
             if (tab !== previousTab) {
+                if (tab === 'template') {
+                    $scope.ui.onlyDisplayCommon = false;
+                }
                 resetRightPanelForCurrentTabContext();
                 $scope.resetSearch();
             }
