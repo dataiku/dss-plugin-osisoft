@@ -717,7 +717,7 @@ app.controller('AfExplorerFormCtrl', [
                     $scope[scopeKey] = object;
                     if (fromDb) {
                         console.log("Saving in cache", scopeKey)
-                        cacheSetter(object);
+                        return cacheSetter(object).then(cacheLastTreeUpdateDate);
                     }
                 });
         }
@@ -774,20 +774,18 @@ app.controller('AfExplorerFormCtrl', [
             return initCache().catch((error) => {
                 // TODO: figure out what we want in that case
                 throw new Error(`There was an error initializing cache: ${error}`);
-            }).then(() => {
+            }).then(loadLastTreeUpdateDate).then(() => {
                 console.log("Loading data")
                 return $q.all([
                     loadElementTree(),
                     loadTemplateTree(),
                     loadElementCategories(),
-                    loadAttributeCategories(),
-                    loadLastTreeUpdateDate()
+                    loadAttributeCategories()
                 ])
             }).catch((error) => {
                 throw new Error(`There was an error initializing data: ${error}`);
             }).then(() => {
                 rebuildElementsByTemplate();
-                cacheLastTreeUpdateDate();
                 $scope.$applyAsync();
             }).finally(stopLoadingState);
         }
@@ -1295,8 +1293,8 @@ app.controller('AfExplorerFormCtrl', [
         };
 
         function nodeMatchesSearch(searchText, name, categoryNames, templateName) {
-            if (!name || !searchText) {
-                return true;
+            if (!name) {
+                return false;
             }
             const selectedCategories = $scope.search.elementCategoryFilterList;
             const selectedTemplate = $scope.search.elementTemplateFilter;
