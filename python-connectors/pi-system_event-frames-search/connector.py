@@ -63,7 +63,7 @@ class OSIsoftConnector(Connector):
         self.max_count = get_max_count(config)
         self.config = config
         self.use_batch_mode, self.batch_size = get_advanced_parameters(config)
-        self.summary_type, self.summary_duration = get_summary_parameters(config)
+        self.summary_type, self.summary_duration, self.calculation_basis = get_summary_parameters(config)
 
     def get_read_schema(self):
         return {
@@ -117,6 +117,7 @@ class OSIsoftConnector(Connector):
                                 batch_size=self.batch_size,
                                 summary_type=self.summary_type,
                                 summary_duration=self.summary_duration,
+                                calculation_basis=self.calculation_basis,
                                 boundary_type=self.boundary_type,
                                 interval=self.interval,
                                 sync_time=self.sync_time,
@@ -150,6 +151,7 @@ class OSIsoftConnector(Connector):
                             event_frame_id = event_frame.get("WebId")
                             event_frame_metrics = self.client.get_rows_from_webid(
                                 event_frame_id, self.data_type, summary_type=self.summary_type, summary_duration=self.summary_duration,
+                                calculation_basis=self.calculation_basis,
                                 interval=self.interval, sync_time=self.sync_time, boundary_type=self.boundary_type,
                                 search_full_hierarchy=self.search_full_hierarchy, max_count=self.max_count,
                                 can_raise=False

@@ -37,7 +37,7 @@ class OSIsoftConnector(Connector):  # Search
             self.object_id = normalize_af_path(self.object_id)
             self.item = self.client.get_item_from_path(self.object_id)
         self.max_count = get_max_count(config)
-        self.summary_type, self.summary_duration = get_summary_parameters(config)
+        self.summary_type, self.summary_duration, self.calculation_basis = get_summary_parameters(config)
 
     def get_read_schema(self):
         return None
@@ -56,7 +56,8 @@ class OSIsoftConnector(Connector):  # Search
                 sync_time=self.sync_time,
                 max_count=self.max_count,
                 summary_type=self.summary_type,
-                summary_duration=self.summary_duration
+                summary_duration=self.summary_duration,
+                calculation_basis=self.calculation_basis,
             ):
                 if limit.is_reached():
                     break
@@ -72,7 +73,8 @@ class OSIsoftConnector(Connector):  # Search
                 endpoint_type="AF",
                 max_count=self.max_count,
                 summary_type=self.summary_type,
-                summary_duration=self.summary_duration
+                summary_duration=self.summary_duration,
+                calculation_basis=self.calculation_basis
             ):
                 if limit.is_reached():
                     break
