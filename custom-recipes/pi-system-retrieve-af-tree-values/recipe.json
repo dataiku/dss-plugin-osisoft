@@ -205,7 +205,7 @@
             "visibilityCondition": "model.credentials.mode != 'NONE' && model.use_time_column==false",
             "name": "time",
             "label": "Time",
-            "description": "Optional, for RecordedAtTime data type",
+            "description": "RecordedAtTimes / InterpolatedAtTimes data types",
             "type": "STRING",
             "defaultValue": ""
         },

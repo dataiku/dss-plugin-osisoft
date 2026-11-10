@@ -417,6 +417,7 @@ class OSIsoftConstants(object):
         "InterpolatedData": "{base_url}/streams/{webid}/interpolated",
         "RecordedData": "{base_url}/streams/{webid}/recorded",
         "RecordedAtTimes": "{base_url}/streams/{webid}/recordedattimes",
+        "InterpolatedAtTimes": "{base_url}/streams/{webid}/interpolatedattimes",
         "PlotData": "{base_url}/streams/{webid}/plot",
         "SummaryData": "{base_url}/streams/{webid}/summary",
         "Value": "{base_url}/streams/{webid}/value",
@@ -433,6 +434,7 @@ class OSIsoftConstants(object):
         "InterpolatedData": "{base_url}/streamsets/{webid}/interpolated",
         "RecordedData": "{base_url}/streamsets/{webid}/recorded",
         "RecordedAtTimes": "{base_url}/streams/{webid}/recordedattimes",
+        "InterpolatedAtTimes": "{base_url}/streams/{webid}/interpolatedattimes",
         "PlotData": "{base_url}/streamsets/{webid}/plot",
         "SummaryData": "{base_url}/streamsets/{webid}/summary",
         "Value": "{base_url}/streamsets/{webid}/value",
@@ -440,7 +442,7 @@ class OSIsoftConstants(object):
         "Security": "{base_url}/eventframes/{webid}/security",
         "SecurityEntries": "{base_url}/eventframes/{webid}/securityentries"
     }
-    PLUGIN_VERSION = "2.0.1"
+    PLUGIN_VERSION = "2.0.2"
     VALUE_COLUMN_SUFFIX = "_val"
     WEB_API_PATH = "piwebapi"
     WRITE_HEADERS = {'X-Requested-With': 'XmlHttpRequest'}
