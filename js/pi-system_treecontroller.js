@@ -974,9 +974,35 @@ app.controller('AfExplorerFormCtrl', [
 
         $scope.getElementTreeFromDB = function() {
             startLoadingState(false);
-            return $scope.callPythonDo({ method: "build_af_tree"}).then(function(data) {
-                return data.tree;
-            }).finally(stopLoadingState);
+            const tree = [];
+            const nodeByTruePath = new Map();
+
+            function loadNextBatch(currentLevelPaths) {
+                return $scope.callPythonDo({
+                    method: "build_af_tree",
+                    current_level_paths: currentLevelPaths
+                }).then(function(data) {
+                    if (!Array.isArray(data.tree) || !Array.isArray(data.children) ||
+                        !Array.isArray(data.current_level_paths)) {
+                        throw new Error("Unable to load the AF element tree: invalid server response");
+                    }
+                    tree.push(...data.tree);
+                    data.tree.forEach(node => nodeByTruePath.set(node.true_path, node));
+                    data.children.forEach(group => {
+                        const parent = nodeByTruePath.get(group.parent_path);
+                        group.children.forEach(node => {
+                            parent.children.push(node);
+                            nodeByTruePath.set(node.true_path, node);
+                        });
+                    });
+                    if (data.current_level_paths.length) {
+                        return loadNextBatch(data.current_level_paths);
+                    }
+                    return tree;
+                });
+            }
+
+            return loadNextBatch(null).finally(stopLoadingState);
         };
 
         $scope.populateAttributesFromDb = function(item) {
@@ -2167,7 +2193,7 @@ app.component('treeNode', {
         };
 
         ctrl.canExpand = function(node) {
-            return !ctrl.hideChildren && !!node?.has_children;
+            return !ctrl.hideChildren && (!!node?.has_children || !!node?.children?.length);
         };
 
         ctrl.showElementFolder = function(node) {

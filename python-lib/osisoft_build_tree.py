@@ -1,21 +1,21 @@
-import requests
 from osisoft_constants import OSIsoftConstants
 
 
 def build_af_element_tree(
         client,
         database_url,
-        # pi_web_api_url,
-        # af_server,
-        # af_database,
-        # username=None,
-        # password=None,
-        # verify_ssl=True,
         batch_size=100,
         page_size=1000,
+        current_level_paths=None,
+        incremental=False,
     ):
     """
     Retrieve the full AF element tree for a given AF database using PI Web API batch calls.
+
+    With incremental=True, retrieve at most one batch of pages and return tree
+    fragments plus current_level_paths continuation records. Each record contains
+    the occurrence's true_path and WebId, and optionally a pagination URL.
+    None starts a traversal; an empty list marks a completed traversal.
 
     Returns:
         [
@@ -30,14 +30,6 @@ def build_af_element_tree(
     """
     base_url = client.endpoint.get_base_url()
     selectedFields = "Items.WebId;Items.Name;Items.Path;Items.TemplateName;Items.CategoryNames;Items.HasChildren;Items.Paths;Links.Next;Items.Links.Self"
-
-    # def to_node(element_json):
-    #     return {
-    #         "id": element_json["WebId"],
-    #         "name": element_json["Name"],
-    #         "path": element_json["Path"],
-    #         "children": [],
-    #     }
 
     def to_node(item):
         KEYS_TO_CHECK = {
@@ -162,6 +154,48 @@ def build_af_element_tree(
         return results
 
     element_url = "/".join([database_url.strip("/"), "elements"])
+    if incremental:
+        if current_level_paths is None:
+            current_level_paths = [{
+                "true_path": None,
+                "url": (
+                    f"{element_url}?selectedFields={selectedFields}"
+                    f"&maxCount={page_size}&associations=Paths"
+                ),
+            }]
+        pending = current_level_paths[:batch_size]
+        remaining_paths = list(current_level_paths[batch_size:])
+        resource_map = {}
+        for index, parent in enumerate(pending):
+            resource_map[str(index)] = parent.get("url") or (
+                f"{base_url}/elements/{parent['id']}/elements"
+                f"?selectedFields={selectedFields}&maxCount={page_size}&associations=Paths"
+            )
+        batch_response = post_batch_get(resource_map) if resource_map else {}
+        tree = []
+        children = []
+        for index, parent in enumerate(pending):
+            items, next_link = extract_items_and_next_link(
+                batch_response.get(str(index), {}), parent.get("id", "database")
+            )
+            nodes = []
+            for item in items:
+                node = to_node(item)
+                parent_path = parent["true_path"]
+                node["true_path"] = (
+                    parent_path + "\\" + node["title"] if parent_path is not None else node["path"]
+                )
+                node["is_weak"] = node["true_path"] != node["path"]
+                nodes.append(node)
+                remaining_paths.append({"true_path": node["true_path"], "id": node["id"]})
+            if parent["true_path"] is None:
+                tree.extend(nodes)
+            else:
+                children.append({"parent_path": parent["true_path"], "children": nodes})
+            if next_link:
+                remaining_paths.append(dict(parent, url=next_link))
+        return {"tree": tree, "children": children, "current_level_paths": remaining_paths}
+
     root_elements = get_root_elements_paginated(element_url)
     tree = []
     node_by_true_path = {}

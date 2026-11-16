@@ -270,17 +270,21 @@ def get_attributes_per_page(client, payload, config):
 def build_af_tree(client, payload, config):
     database_url = config.get("database_name")
     if not database_url:
-        return {}
+        return {"choices": [], "tree": [], "children": [], "current_level_paths": []}
     logger.info(
         "Start call [build_af_element_tree] database_url={}".format(
             database_url
         )
     )
-    tree = build_af_element_tree(client, database_url)
-    result = {"choices": [], "tree": tree}
+    result = build_af_element_tree(
+        client, database_url,
+        current_level_paths=payload.get("current_level_paths"),
+        incremental=True,
+    )
+    result["choices"] = []
     logger.info(
-        "End call [build_af_element_tree] database_url={}".format(
-            database_url
+        "End call [build_af_element_tree] database_url={}, roots={}, child_groups={}, remaining_paths={}".format(
+            database_url, len(result["tree"]), len(result["children"]), len(result["current_level_paths"])
         )
     )
     return result
