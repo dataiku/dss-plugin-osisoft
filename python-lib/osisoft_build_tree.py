@@ -118,7 +118,8 @@ def build_af_element_tree(
             )
             node["is_weak"] = node["true_path"] != node["path"]
             nodes.append(node)
-            remaining_paths.append({"true_path": node["true_path"], "id": node["id"]})
+            if item.get("HasChildren") is not False:
+                remaining_paths.append({"true_path": node["true_path"], "id": node["id"]})
         if parent["true_path"] is None:
             tree.extend(nodes)
         else:
