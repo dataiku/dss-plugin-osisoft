@@ -976,6 +976,9 @@ app.controller('AfExplorerFormCtrl', [
             startLoadingState(false);
             const tree = [];
             const nodeByTruePath = new Map();
+            const batchSize = 500;
+            let pendingPaths = [];
+            let pendingOffset = 0;
 
             function loadNextBatch(currentLevelPaths) {
                 return $scope.callPythonDo({
@@ -995,8 +998,15 @@ app.controller('AfExplorerFormCtrl', [
                             nodeByTruePath.set(node.true_path, node);
                         });
                     });
-                    if (data.current_level_paths.length) {
-                        return loadNextBatch(data.current_level_paths);
+                    data.current_level_paths.forEach(record => pendingPaths.push(record));
+                    if (pendingOffset < pendingPaths.length) {
+                        const batch = pendingPaths.slice(pendingOffset, pendingOffset + batchSize);
+                        pendingOffset += batch.length;
+                        if (pendingOffset * 2 >= pendingPaths.length) {
+                            pendingPaths = pendingPaths.slice(pendingOffset);
+                            pendingOffset = 0;
+                        }
+                        return loadNextBatch(batch);
                     }
                     return tree;
                 });

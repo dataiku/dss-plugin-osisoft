@@ -279,11 +279,10 @@ def build_af_tree(client, payload, config):
     result = build_af_element_tree(
         client, database_url,
         current_level_paths=payload.get("current_level_paths"),
-        incremental=True,
     )
     result["choices"] = []
     logger.info(
-        "End call [build_af_element_tree] database_url={}, roots={}, child_groups={}, remaining_paths={}".format(
+        "End call [build_af_element_tree] database_url={}, roots={}, child_groups={}, new_continuations={}".format(
             database_url, len(result["tree"]), len(result["children"]), len(result["current_level_paths"])
         )
     )
