@@ -973,9 +973,53 @@ app.controller('AfExplorerFormCtrl', [
         }
 
         $scope.getElementTreeFromDB = function() {
+            const startTime = performance.now();
+            console.log("Starting AF element tree loading");
             startLoadingState(false);
-            return $scope.callPythonDo({ method: "build_af_tree"}).then(function(data) {
-                return data.tree;
+            const tree = [];
+            const nodeByTruePath = new Map();
+            const batchSize = 100;
+            let pendingPaths = [];
+            let pendingOffset = 0;
+
+            function loadNextBatch(currentLevelPaths) {
+                return $scope.callPythonDo({
+                    method: "build_af_tree",
+                    current_level_paths: currentLevelPaths
+                }).then(function(data) {
+                    if (!Array.isArray(data.tree) || !Array.isArray(data.children) ||
+                        !Array.isArray(data.current_level_paths)) {
+                        throw new Error("Unable to load the AF element tree: invalid server response");
+                    }
+                    tree.push(...data.tree);
+                    data.tree.forEach(node => nodeByTruePath.set(node.true_path, node));
+                    data.children.forEach(group => {
+                        const parent = nodeByTruePath.get(group.parent_path);
+                        group.children.forEach(node => {
+                            parent.children.push(node);
+                            nodeByTruePath.set(node.true_path, node);
+                        });
+                    });
+                    data.current_level_paths.forEach(record => pendingPaths.push(record));
+                    if (pendingOffset < pendingPaths.length) {
+                        const batch = pendingPaths.slice(pendingOffset, pendingOffset + batchSize);
+                        pendingOffset += batch.length;
+                        if (pendingOffset * 2 >= pendingPaths.length) {
+                            pendingPaths = pendingPaths.slice(pendingOffset);
+                            pendingOffset = 0;
+                        }
+                        return loadNextBatch(batch);
+                    }
+                    return tree;
+                });
+            }
+
+            return loadNextBatch(null).then(() => {
+                console.log("Finished AF element tree loading", {
+                    elapsedMs: performance.now() - startTime,
+                    totalElements: nodeByTruePath.size
+                });
+                return tree;
             }).finally(stopLoadingState);
         };
 
@@ -2167,7 +2211,7 @@ app.component('treeNode', {
         };
 
         ctrl.canExpand = function(node) {
-            return !ctrl.hideChildren && !!node?.has_children;
+            return !ctrl.hideChildren && (!!node?.has_children || !!node?.children?.length);
         };
 
         ctrl.showElementFolder = function(node) {
