@@ -973,6 +973,8 @@ app.controller('AfExplorerFormCtrl', [
         }
 
         $scope.getElementTreeFromDB = function() {
+            const startTime = performance.now();
+            console.log("Starting AF element tree loading");
             startLoadingState(false);
             const tree = [];
             const nodeByTruePath = new Map();
@@ -1012,7 +1014,13 @@ app.controller('AfExplorerFormCtrl', [
                 });
             }
 
-            return loadNextBatch(null).finally(stopLoadingState);
+            return loadNextBatch(null).then(() => {
+                console.log("Finished AF element tree loading", {
+                    elapsedMs: performance.now() - startTime,
+                    totalElements: nodeByTruePath.size
+                });
+                return tree;
+            }).finally(stopLoadingState);
         };
 
         $scope.populateAttributesFromDb = function(item) {
