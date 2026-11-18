@@ -978,7 +978,7 @@ app.controller('AfExplorerFormCtrl', [
             startLoadingState(false);
             const tree = [];
             const nodeByTruePath = new Map();
-            const batchSize = 500;
+            const batchSize = 100;
             let pendingPaths = [];
             let pendingOffset = 0;
 
