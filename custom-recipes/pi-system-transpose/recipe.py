@@ -4,6 +4,10 @@ from dataiku.customrecipe import get_input_names_for_role, get_recipe_config, ge
 import pandas as pd
 from osisoft_safe_logger import SafeLogger
 import os
+from contextlib import ExitStack
+from heapq import merge
+from sys import getsizeof
+from tempfile import TemporaryDirectory
 from osisoft_temp_utils import CustomTmpFile
 from osisoft_constants import OSIsoftConstants
 import dateutil.parser
@@ -14,6 +18,8 @@ from datetime import datetime
 DEFAULT_INPUT_CHUNK_SIZE = 10000
 DEFAULT_OUTPUT_BATCH_SIZE = 1000
 MAX_OUTPUT_BATCH_CELLS = 100000
+CACHE_SORT_BATCH_BYTES = 16 * 1024 * 1024
+CACHE_SORT_MERGE_FAN_IN = 32
 
 logger = SafeLogger("pi-system plugin", forbiden_keys=["token", "password"])
 
@@ -40,6 +46,61 @@ def parse_timestamp_and_value(line):
     if value.endswith('\n'):
         value = value[:-1]
     return date, value
+
+
+def cache_timestamp(line):
+    return line.split("|", 1)[0]
+
+
+def write_sorted_run(lines, path):
+    lines.sort(key=cache_timestamp)
+    with open(path, "w") as output:
+        output.writelines(lines)
+
+
+def sort_cache_file(cache_path):
+    with TemporaryDirectory(dir=os.path.dirname(cache_path)) as run_directory:
+        run_count = 0
+        lines = []
+        batch_bytes = 0
+        with open(cache_path, "r") as source:
+            for line in source:
+                line_bytes = 2 * getsizeof(line) + 64
+                if lines and batch_bytes + line_bytes > CACHE_SORT_BATCH_BYTES:
+                    write_sorted_run(lines, os.path.join(run_directory, "0_{}".format(run_count)))
+                    run_count += 1
+                    lines.clear()
+                    batch_bytes = 0
+                lines.append(line)
+                batch_bytes += line_bytes
+        if lines:
+            write_sorted_run(lines, os.path.join(run_directory, "0_{}".format(run_count)))
+            run_count += 1
+            lines.clear()
+
+        run_pass = 0
+        while run_count > 1:
+            next_run_count = 0
+            for start in range(0, run_count, CACHE_SORT_MERGE_FAN_IN):
+                run_paths = [
+                    os.path.join(run_directory, "{}_{}".format(run_pass, index))
+                    for index in range(start, min(start + CACHE_SORT_MERGE_FAN_IN, run_count))
+                ]
+                merged_path = os.path.join(run_directory, "{}_{}".format(run_pass + 1, next_run_count))
+                if len(run_paths) == 1:
+                    os.replace(run_paths[0], merged_path)
+                else:
+                    with ExitStack() as stack:
+                        runs = [stack.enter_context(open(path, "r")) for path in run_paths]
+                        output = stack.enter_context(open(merged_path, "w"))
+                        output.writelines(merge(*runs, key=cache_timestamp))
+                    for path in run_paths:
+                        os.remove(path)
+                next_run_count += 1
+            run_count = next_run_count
+            run_pass += 1
+        if run_count:
+            os.replace(os.path.join(run_directory, "{}_0".format(run_pass)), cache_path)
 
 
 def get_epoch_from_string(datetime_string):
@@ -85,7 +146,6 @@ def get_values_at_timestamp(file_handles, seek_timestamp, step_attributes):
     for attribute_path in file_handles:
         should_interpolate = step_attributes.get(attribute_path) is False
         next_cached_timestamp = next_timestamps_cache[attribute_index]
-        previous_line = None
         # Continue along file till just passed the seek_timestamp - current_timestamps_cache &
         # current_values_cache should then have the values we read for the attribute at the timestamp we want
         while not next_cached_timestamp or (next_cached_timestamp <= seek_timestamp):
@@ -95,10 +155,6 @@ def get_values_at_timestamp(file_handles, seek_timestamp, step_attributes):
             line = file_handles[attribute_path].readline()
             if not line:
                 break
-            if previous_line and line == previous_line:
-                logger.error("Loop ! attribute_path={}, line={}".format(attribute_path, line))
-                break
-            previous_line = line
             attribute_timestamp, attribute_value = parse_timestamp_and_value(line)
             next_timestamps_cache[attribute_index] = attribute_timestamp
             next_values_cache[attribute_index] = attribute_value
@@ -205,6 +261,8 @@ time_last_request = None
 client = None
 previous_server_url = ""
 paths_to_file_handles = {}
+last_cache_timestamps = {}
+unordered_attributes = set()
 file_counter = 0
 step_attributes = {}
 
@@ -245,6 +303,13 @@ for input_parameters_dataframe in input_parameters_dataset.iter_dataframes(
                 time_reference_file = file_counter
             file_counter = file_counter + 1
         paths_to_file_handles[attribute_path].write("{}|{}\n".format(row_datetime, value))
+        if attribute_path not in unordered_attributes:
+            last_timestamp = last_cache_timestamps.get(attribute_path)
+            if last_timestamp is not None and row_datetime < last_timestamp:
+                unordered_attributes.add(attribute_path)
+                del last_cache_timestamps[attribute_path]
+            else:
+                last_cache_timestamps[attribute_path] = row_datetime
 
         if type_of_interpolation == "auto":
             is_step_attribute = input_parameters_row[step_index]
@@ -260,18 +325,23 @@ for input_parameters_dataframe in input_parameters_dataset.iter_dataframes(
 
 logger.info("Cached all {} attributes".format(file_counter))
 
+for handle in paths_to_file_handles.values():
+    handle.close()
+if unordered_attributes:
+    logger.info("Sorting {} out-of-order attribute caches".format(len(unordered_attributes)))
+    for attribute_path in unordered_attributes:
+        sort_cache_file(paths_to_file_handles[attribute_path].name)
+last_cache_timestamps.clear()
+
 # Reopen cache files from write mode to read mode
-file_counter = 0
-for attribute_path in paths_to_file_handles:
-    paths_to_file_handles[attribute_path].close()
-    paths_to_file_handles[attribute_path] = open(temp_location.name + "/temp_{}".format(file_counter), "r")
+for attribute_path, handle in paths_to_file_handles.items():
+    paths_to_file_handles[attribute_path] = open(handle.name, "r")
     current_timestamps_cache.append(None)
     current_values_cache.append(None)
     next_timestamps_cache.append(None)
     next_values_cache.append(None)
     current_epochs_cache.append(None)
     next_epochs_cache.append(None)
-    file_counter = file_counter + 1
 
 if len(current_timestamps_cache) == 0:
     clean_cache(paths_to_file_handles)
