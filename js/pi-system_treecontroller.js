@@ -41,7 +41,7 @@ const aggregateDataTypeFields = Object.freeze({
         ]
     },
     aggregates: {
-        retrievalMode: {
+        retrieval_mode: {
             label: 'Retrieval mode',
             type: 'select',
             defaultValue: 'Auto',
