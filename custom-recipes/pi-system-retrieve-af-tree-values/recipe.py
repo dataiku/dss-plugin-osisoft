@@ -57,6 +57,7 @@ def extract_params_from_row(row):
     data_type = normalize_value(row.get("data_type"))
     boundary_type = normalize_value(row.get("boundary_type"))
     record_boundary_type = normalize_value(row.get("record_boundary_type"))
+    retrieval_mode = normalize_value(row.get("retrieval_mode"))
     interval = normalize_value(row.get("interval"))
     sync_time = normalize_value(row.get("sync_time"))
     summary_type = row.get("summary_type", [])
@@ -71,7 +72,7 @@ def extract_params_from_row(row):
     object_id = normalize_value(row.get("id"))
     object_id = normalize_value(row.get("id"))
     calculation_basis = normalize_value(row.get("calculation_basis"))
-    return object_id, data_type, boundary_type, record_boundary_type, interval, sync_time, summary_type, summary_duration, calculation_basis
+    return object_id, data_type, boundary_type, record_boundary_type, interval, sync_time, summary_type, summary_duration, calculation_basis, retrieval_mode
 
 
 def format_results(results, output_schema_data_type):
@@ -335,7 +336,7 @@ with output_dataset.get_writer() as writer:
             # if self_contained_mode:
             object_id, data_type, boundary_type, record_boundary_type, \
                 interval, sync_time, summary_type, summary_duration, \
-                calculation_basis = extract_params_from_row(
+                calculation_basis, retrieval_mode = extract_params_from_row(
                     input_parameters_row
                 )
             path_column = "id"
@@ -379,6 +380,7 @@ with output_dataset.get_writer() as writer:
                         "summary_type": summary_type,
                         "summary_duration": summary_duration,
                         "calculation_basis": calculation_basis,
+                        "retrieval_mode": retrieval_mode,
                         "endpoint_type": "AF",
                         "estimated_density": estimated_density,
                         "maximum_points_returned": maximum_points_returned
@@ -411,7 +413,8 @@ with output_dataset.get_writer() as writer:
                     summary_type=summary_type,
                     summary_duration=summary_duration,
                     transpose_summaries=transpose_summaries,
-                    calculation_basis=calculation_basis
+                    calculation_basis=calculation_basis,
+                    retrieval_mode=retrieval_mode
                 )
             input_rows_cache = {}
             for row in rows:
