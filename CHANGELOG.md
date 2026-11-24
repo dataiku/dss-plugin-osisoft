@@ -1,7 +1,8 @@
 # Changelog
 
-## [Version 2.0.2](https://github.com/dataiku/dss-plugin-pi-server/releases/tag/v2.0.2) - Feature release - 2026-11-10
+## [Version 2.0.2](https://github.com/dataiku/dss-plugin-pi-server/releases/tag/v2.0.2) - Feature and optimization release - 2026-11-18
 
+- Avoid timeout on UI
 - Add "InterpolatedAtTimes" data type to AF hierarchy specific download recipe
 
 ## [Version 2.0.1](https://github.com/dataiku/dss-plugin-pi-server/releases/tag/v2.0.1) - Security fix - 2026-11-03
