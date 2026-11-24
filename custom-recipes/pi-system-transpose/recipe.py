@@ -8,7 +8,7 @@ from osisoft_temp_utils import CustomTmpFile
 from osisoft_constants import OSIsoftConstants
 import dateutil.parser
 from osisoft_column_name import normalise_name
-from datetime import datetime
+from datetime import datetime, timezone
 
 
 DEFAULT_INPUT_CHUNK_SIZE = 10000
@@ -24,8 +24,6 @@ current_timestamps_cache = []
 current_values_cache = []
 next_timestamps_cache = []
 next_values_cache = []
-current_epochs_cache = []
-next_epochs_cache = []
 
 temp_cache = CustomTmpFile()
 temp_location = temp_cache.get_temporary_cache_dir()
@@ -35,89 +33,64 @@ def parse_timestamp_and_value(line):
     split_line = line.split("|")
     if len(split_line) != 2:
         return None, None
-    date = split_line[0]
+    timestamp = float(split_line[0])
     value = split_line[1]
     if value.endswith('\n'):
         value = value[:-1]
-    return date, value
+    return timestamp, value
 
 
-def get_epoch_from_string(datetime_string):
+def get_epoch_from_row(row, datetime_column):
+    timestamp = row[datetime_column]
     try:
-        utc_time = datetime.strptime(datetime_string, "%Y-%m-%dT%H:%M:%SZ")
-        epoch_time = (utc_time - datetime(1970, 1, 1)).total_seconds()
-    except Exception:
+        if isinstance(timestamp, str):
+            timestamp = dateutil.parser.isoparse(timestamp)
+        if not isinstance(timestamp, datetime) or pd.isna(timestamp):
+            return None
+        if timestamp.tzinfo is None:
+            timestamp = timestamp.replace(tzinfo=timezone.utc)
+        return timestamp.timestamp()
+    except (ValueError, OverflowError, OSError):
         return None
-    return epoch_time
 
 
-def get_datetime_from_string(datetime_string):
-    try:
-        _ = dateutil.parser.isoparse(datetime_string)
-        return datetime_string
-    except Exception:
-        pass
-    return None
-
-
-def get_datetime_from_pandas(datetime_string):
-    try:
-        time_stamp = datetime_string.strftime('%Y-%m-%dT%H:%M:%SZ')
-        return time_stamp
-    except Exception:
-        pass
-    return None
-
-
-def get_datetime_from_row(row, datetime_column):
-    raw_datetime = row[datetime_column]
-    if isinstance(raw_datetime, str):
-        formated_datetime = get_datetime_from_string(raw_datetime)
-    else:
-        formated_datetime = get_datetime_from_pandas(raw_datetime)
-    return formated_datetime
+def format_epoch(timestamp):
+    if timestamp is None:
+        return None
+    return datetime.fromtimestamp(timestamp, tz=timezone.utc).isoformat().replace("+00:00", "Z")
 
 
 def get_values_at_timestamp(file_handles, seek_timestamp, step_attributes):
     attribute_index = 0
     values = {}
-    seek_epoch = get_epoch_from_string(seek_timestamp) if has_interpolated_attributes else None
     for attribute_path in file_handles:
         should_interpolate = step_attributes.get(attribute_path) is False
         next_cached_timestamp = next_timestamps_cache[attribute_index]
-        previous_line = None
         # Continue along file till just passed the seek_timestamp - current_timestamps_cache &
         # current_values_cache should then have the values we read for the attribute at the timestamp we want
-        while not next_cached_timestamp or (next_cached_timestamp <= seek_timestamp):
+        while next_cached_timestamp is None or next_cached_timestamp <= seek_timestamp:
             current_timestamps_cache[attribute_index] = next_timestamps_cache[attribute_index]
             current_values_cache[attribute_index] = next_values_cache[attribute_index]
-            current_epochs_cache[attribute_index] = next_epochs_cache[attribute_index]
             line = file_handles[attribute_path].readline()
             if not line:
                 break
-            if previous_line and line == previous_line:
-                logger.error("Loop ! attribute_path={}, line={}".format(attribute_path, line))
-                break
-            previous_line = line
             attribute_timestamp, attribute_value = parse_timestamp_and_value(line)
             next_timestamps_cache[attribute_index] = attribute_timestamp
             next_values_cache[attribute_index] = attribute_value
-            if should_interpolate:
-                next_epochs_cache[attribute_index] = get_epoch_from_string(attribute_timestamp)
             next_cached_timestamp = next_timestamps_cache[attribute_index]
         if should_interpolate:
             calculated_value = interpolate(
-                current_epochs_cache[attribute_index],
+                current_timestamps_cache[attribute_index],
                 current_values_cache[attribute_index],
-                next_epochs_cache[attribute_index],
+                next_timestamps_cache[attribute_index],
                 next_values_cache[attribute_index],
-                seek_epoch
+                seek_timestamp
             )
         else:
             calculated_value = current_values_cache[attribute_index]
         if should_add_timestamps_columns:
             values.update({
-                "{}{}".format(attribute_path, OSIsoftConstants.TIMESTAMP_COLUMN_SUFFIX): current_timestamps_cache[attribute_index],
+                "{}{}".format(attribute_path, OSIsoftConstants.TIMESTAMP_COLUMN_SUFFIX): format_epoch(current_timestamps_cache[attribute_index]),
                 "{}{}".format(attribute_path, OSIsoftConstants.VALUE_COLUMN_SUFFIX): calculated_value
             })
         else:
@@ -227,8 +200,8 @@ for input_parameters_dataframe in input_parameters_dataset.iter_dataframes(
     if type_of_interpolation == "auto":
         step_index = input_parameters_dataframe.columns.get_loc(step_column_name)
     for input_parameters_row in input_parameters_dataframe.itertuples(index=False, name=None):
-        row_datetime = get_datetime_from_row(input_parameters_row, datetime_index)
-        if not row_datetime:
+        row_epoch = get_epoch_from_row(input_parameters_row, datetime_index)
+        if row_epoch is None:
             continue
         attribute_path = input_parameters_row[path_index]
         if should_make_column_names_db_compatible:
@@ -244,7 +217,7 @@ for input_parameters_dataframe in input_parameters_dataset.iter_dataframes(
             if attribute_path == reference_attribute_path:
                 time_reference_file = file_counter
             file_counter = file_counter + 1
-        paths_to_file_handles[attribute_path].write("{}|{}\n".format(row_datetime, value))
+        paths_to_file_handles[attribute_path].write("{}|{}\n".format(row_epoch, value))
 
         if type_of_interpolation == "auto":
             is_step_attribute = input_parameters_row[step_index]
@@ -269,8 +242,6 @@ for attribute_path in paths_to_file_handles:
     current_values_cache.append(None)
     next_timestamps_cache.append(None)
     next_values_cache.append(None)
-    current_epochs_cache.append(None)
-    next_epochs_cache.append(None)
     file_counter = file_counter + 1
 
 if len(current_timestamps_cache) == 0:
@@ -286,9 +257,6 @@ current_timestamps_cache.pop(0)
 current_values_cache.pop(0)
 next_timestamps_cache.pop(0)
 next_values_cache.pop(0)
-current_epochs_cache.pop(0)
-next_epochs_cache.pop(0)
-has_interpolated_attributes = any(step_attributes.get(path) is False for path in paths_to_file_handles)
 
 logger.info("Polling all attributes into final dataset")
 # For each timestamp of synchronizer attribute, read the most up to date value of all other attributes
@@ -300,7 +268,7 @@ with output_dataset.get_writer() as writer:
         timestamp, value = parse_timestamp_and_value(line)
         output_columns_dictionary = get_values_at_timestamp(paths_to_file_handles, timestamp, step_attributes)
         output_columns_dictionary.update({
-            OSIsoftConstants.TIMESTAMP_COLUMN_NAME: timestamp,
+            OSIsoftConstants.TIMESTAMP_COLUMN_NAME: format_epoch(timestamp),
             reference_attribute_path: value
         })
         if first_dataframe:
