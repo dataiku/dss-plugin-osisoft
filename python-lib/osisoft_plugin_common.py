@@ -158,6 +158,7 @@ def build_requests_params(**kwargs):
         "sync_time": "syncTime",
         "sync_time_boundary_type": "syncTimeBoundaryType",
         "record_boundary_type": "boundaryType",
+        "retrieval_mode": "retrievalMode",
         "boundary_type": "syncTimeBoundaryType",
         "name_filter": "nameFilter",
         "category_name": "categoryName",
