@@ -72,6 +72,7 @@ schema = [
     {'name': 'summary_type', 'type': 'string'},
     {'name': 'boundary_type', 'type': 'string'},
     {'name': 'record_boundary_type', 'type': 'string'},
+    {'name': 'retrieval_mode', 'type': 'string'},
     {'name': 'summary_duration', 'type': 'string'},
     {'name': 'calculation_basis', 'type': 'string'},
     {'name': 'max_count', 'type': 'int'},

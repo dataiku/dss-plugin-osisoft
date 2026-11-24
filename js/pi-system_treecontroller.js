@@ -41,6 +41,22 @@ const aggregateDataTypeFields = Object.freeze({
         ]
     },
     aggregates: {
+        retrieval_mode: {
+            label: 'Retrieval mode',
+            type: 'select',
+            defaultValue: 'Auto',
+            isVisible: function(attribute) {
+                return attribute.data_type === 'RecordedAtTimes';
+            },
+            options: [
+                { value: 'Auto', label: 'Auto' },
+                { value: 'AtOrBefore', label: 'At or before' },
+                { value: 'Before', label: 'Before' },
+                { value: 'AtOrAfter', label: 'At or after' },
+                { value: 'After', label: 'After' },
+                { value: 'Exact', label: 'Exact' },
+            ]
+        },
         interval: {
             label: 'Interval',
             type: 'text',
