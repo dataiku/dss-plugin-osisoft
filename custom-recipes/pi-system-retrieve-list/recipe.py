@@ -43,18 +43,19 @@ def iter_input_rows(dataset):
         yield previous_row, True
 
 
-def write_results(writer, results, first_dataframe):
-    unnested_items_rows = pd.DataFrame(results)
-    if first_dataframe:
+def write_results(writer, results, output_columns):
+    if output_columns is None:
         default_columns = OSIsoftConstants.RECIPE_SCHEMA_PER_DATA_TYPE.get(data_type)
         if must_convert_object_to_string:
             default_columns = convert_schema_objects_to_string(default_columns)
-        combined_columns_description = get_combined_description(default_columns, unnested_items_rows)
+        result_columns = dict.fromkeys(column for row in results for column in row)
+        combined_columns_description = get_combined_description(default_columns, result_columns)
         output_dataset.write_schema(combined_columns_description)
-    if not unnested_items_rows.empty:
-        writer.write_dataframe(unnested_items_rows)
+        output_columns = [column["name"] for column in combined_columns_description]
+    if results:
+        writer.write_dataframe(pd.DataFrame(results, columns=output_columns))
     results.clear()
-    return False
+    return output_columns
 
 
 input_dataset = get_input_names_for_role('input_dataset')
@@ -111,7 +112,7 @@ time_not_parsed = True
 input_columns = [column["name"] for column in input_parameters_dataset.read_schema()] if do_duplicate_input_row else []
 
 with output_dataset.get_writer() as writer:
-    first_dataframe = True
+    output_columns = None
     batch_buffer_size = 0
     buffer = []
     input_rows_cache = {}
@@ -222,7 +223,7 @@ with output_dataset.get_writer() as writer:
                     for output_row in extention:
                         results.append(output_row)
                         if len(results) >= OUTPUT_CHUNK_SIZE:
-                            first_dataframe = write_results(writer, results, first_dataframe)
+                            output_columns = write_results(writer, results, output_columns)
             else:
                 base = get_base_for_data_type(data_type, object_id, Step=step_value)
                 if duplicate_initial_row:
@@ -232,10 +233,10 @@ with output_dataset.get_writer() as writer:
                 for output_row in extention:
                     results.append(output_row)
                     if len(results) >= OUTPUT_CHUNK_SIZE:
-                        first_dataframe = write_results(writer, results, first_dataframe)
+                        output_columns = write_results(writer, results, output_columns)
 
-        if results or first_dataframe:
-            first_dataframe = write_results(writer, results, first_dataframe)
+        if results or output_columns is None:
+            output_columns = write_results(writer, results, output_columns)
         if not buffer:
             input_rows_cache.clear()
 

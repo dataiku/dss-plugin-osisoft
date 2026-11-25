@@ -905,6 +905,9 @@ class OSIsoftClient(object):
                 base_row = copy.deepcopy(row)
                 value = base_row.pop(OSIsoftConstants.API_VALUE_KEY)
                 if isinstance(value, dict):
+                    if "Good" in row and row.get("Good") is False:
+                        value["Errors"] = "Error {} : {}".format(value.get("Value"), value.get("Name"))
+                        value["Value"] = None
                     base_row.update(value)
                     return [base_row]
             return rows_to_append
